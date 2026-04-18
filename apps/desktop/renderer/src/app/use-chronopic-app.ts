@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 
-import type { AppCapabilities, LibrarySnapshot, PhotoFilter, PhotoFilterPatch, PhotoRecord } from "@chronopic/domain";
+import type { AppCapabilities, LibrarySnapshot, Memory, PhotoFilter, PhotoFilterPatch, PhotoRecord } from "@chronopic/domain";
 import type { ViewerMode } from "@chronopic/ui-components";
 
 function toDatetimeInput(timestamp: number | null): string {
@@ -32,6 +32,7 @@ export function useChronoPicApp() {
   });
   const [capabilities, setCapabilities] = useState<AppCapabilities>({ aiEnabled: false, supportedMedia: [] });
   const [photos, setPhotos] = useState<PhotoRecord[]>([]);
+  const [memories, setMemories] = useState<Memory[]>([]);
   const [selectedPhotoId, setSelectedPhotoId] = useState<string | null>(null);
   const [draftTags, setDraftTags] = useState("");
   const [draftDatetime, setDraftDatetime] = useState("");
@@ -96,6 +97,7 @@ export function useChronoPicApp() {
     setSnapshot(response.snapshot);
     setCapabilities(response.capabilities);
     await refreshPhotos();
+    await refreshMemories();
   }
 
   async function refreshPhotos() {
@@ -134,10 +136,33 @@ export function useChronoPicApp() {
       await window.chronoPic.scanLibrary();
       await refreshSnapshot();
       await refreshPhotos();
+      await refreshMemories();
       setStatusMessage("Scan complete");
     } finally {
       setIsScanning(false);
     }
+  }
+
+  async function refreshMemories() {
+    const nextMemories = (await window.chronoPic.listMemories()) as Memory[];
+    setMemories(nextMemories);
+  }
+
+  async function handleCreateMemory(name: string, description?: string) {
+    const created = (await window.chronoPic.createMemory(name, description, "manual")) as Memory;
+    setMemories((current) => [...current, created]);
+    setStatusMessage(`Created memory: ${name}`);
+  }
+
+  async function handleDeleteMemory(memoryId: string) {
+    await window.chronoPic.deleteMemory(memoryId);
+    setMemories((current) => current.filter((m) => m.id !== memoryId));
+    setStatusMessage("Memory deleted");
+  }
+
+  async function handleToggleFavorite(photoId: string, favorite: boolean) {
+    const updated = (await window.chronoPic.updatePhotoFavorite(photoId, favorite)) as PhotoRecord;
+    setPhotos((current) => current.map((photo) => (photo.photo.id === updated.photo.id ? updated : photo)));
   }
 
   async function handleSaveTags() {
@@ -211,6 +236,7 @@ export function useChronoPicApp() {
     draftTags,
     filter,
     isScanning,
+    memories,
     openViewer,
     patchFilter,
     photos,
@@ -224,11 +250,14 @@ export function useChronoPicApp() {
     statusMessage,
     viewerMode,
     handleAddLibrary,
+    handleCreateMemory,
+    handleDeleteMemory,
     handleRollback,
     handleSaveDatetime,
     handleSaveTags,
     handleScanAll,
+    handleToggleFavorite,
     closeViewer,
-    selectRelativePhoto
+    selectRelativePhoto,
   };
 }

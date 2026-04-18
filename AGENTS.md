@@ -325,6 +325,51 @@ This file is the local execution record for ChronoPic. It complements `PLAN.md` 
   `pnpm build`
 - Result: the UI layer is now materially closer to a real `shadcn` component model, with shared controls exposed as dedicated components and the build remaining green.
 
+### 2026-04-18 Step 23
+
+- Added the `Home Page Layout Restructure Phase` (Phase 4.5) to `PLAN.md` to capture the next refactor direction.
+- Created new UI components for the restructured home page:
+  `avatar.tsx`, `search-input.tsx`, `header.tsx`, `sidebar.tsx`, `recent-memories.tsx`, `gallery-section.tsx`, `photo-card.tsx`, `home-stats.tsx`, `library-dialog.tsx`, `icon-button.tsx`, `filmstrip-item.tsx`, `page-view.tsx`
+- Added new Radix-backed components:
+  `tooltip.tsx` (`@radix-ui/react-tooltip`)
+  `dropdown-menu.tsx` (`@radix-ui/react-dropdown-menu`)
+  `tabs.tsx` (`@radix-ui/react-tabs`)
+- Extracted reusable card/thumbnail components from existing surfaces:
+  `PhotoCard` extracted from `photo-grid`
+  `FilmstripItem` extracted from `filmstrip`
+  `IconButton` extracted from `photo-viewer-overlay`
+- Wired the new layout into the renderer by replacing `DashboardShell` with `PhotoHome` in `App.tsx`.
+- `PhotoHome` uses an internal `PageView` context to switch between home and library-settings views within the main content area — no dialog for library management.
+- Header now has: logo (left), search + notification bell + user avatar (right-aligned).
+- Library Settings accessible via header dropdown or sidebar item; switches main content to the settings page.
+- Restored the full library management panel (stats, Add Folder, Scan, registered sources) on the library settings page.
+- Removed the now-obsolete `HomeStats` hero section from the home page.
+- Re-verified with:
+  `pnpm typecheck`
+  `pnpm build`
+- Result: the restructured home page layout is implemented and the build is green.
+
+### 2026-04-18 Step 24
+
+- Implemented Phase 4.6 (Favorite and Memory) as planned.
+- Added `favorite: boolean` to `Photo` domain, `favorite?: boolean` and `memoryId?: string` to `PhotoFilter`.
+- Added `Memory` and `MemoryPhoto` domain interfaces; updated SQLite schema with `memories` and `memory_photos` tables.
+- Added database migration so existing app databases automatically get the `favorite` column and new memory tables on next launch.
+- Updated repository layer: `mapPhotoRow` now maps `favorite`, `listPhotos` supports `favorite`/`memoryId` filters, added memory CRUD methods.
+- Preserved `favorite` in `upsertPhotoRecord` so re-indexing does not overwrite existing values.
+- Added `updatePhotoFavorite` to database, application, and IPC layers; wired `toggleFavorite` in the renderer hook.
+- Simplified `Sidebar` to only Library (All Photos, Favorites) and Memories sections — removed Albums/Collections placeholders.
+- Added `memories` state, `handleCreateMemory`, `handleDeleteMemory`, `handleToggleFavorite` to `useChronoPicApp`.
+- Updated `PhotoHomeProps` with `memories`, `onSelectMemory`, `onCreateMemory`, `onToggleFavorite`; wired through `App.tsx`.
+- Added Favorites toggle to `FilterToolbar` backed by `filter.favorite`.
+- Updated `PhotoCard` with a functional heart button (filled amber when favorited) and `onToggleFavorite` prop.
+- Updated `GallerySection` to thread `onToggleFavorite` through to `PhotoCard`.
+- Fixed `exactOptionalPropertyTypes` TypeScript issue by spreading `onToggleFavorite` conditionally in `GallerySection`.
+- Re-verified with:
+  `pnpm typecheck`
+  `pnpm build`
+- Result: all commands pass, favorite toggle and memory sidebar are functional.
+
 ## Next Immediate Tasks
 
 1. Workspace skeleton is implemented.
@@ -337,4 +382,6 @@ This file is the local execution record for ChronoPic. It complements `PLAN.md` 
 8. Viewer ergonomics have received a first focused polish pass and remain build-valid.
 9. The first real `shadcn/ui` / Radix-backed adoption pass is landed for `Select` and viewer dialogs.
 10. The base UI control layer has also been migrated toward dedicated `shadcn`-style component files and remains build-valid.
-11. Remaining follow-up: run a runtime smoke test in Electron and continue incremental component adoption/polish based on real use.
+11. Phase 4.5 home page layout restructure is implemented — Header, Sidebar, MainContent with page-view switching.
+12. Phase 4.6 Favorite and Memory is implemented and verified — sidebar simplified, favorite toggle wired, memory CRUD in hook.
+13. Next: add `CreateMemoryDialog` for naming new memories, then runtime smoke test in Electron.

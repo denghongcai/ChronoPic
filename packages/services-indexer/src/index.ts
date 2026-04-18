@@ -79,6 +79,7 @@ export class IndexerService {
         size: descriptor.size,
         mime: descriptor.mime,
         thumbnailPath,
+        favorite: existing?.photo.favorite ?? false,
         createdAt: existing?.photo.createdAt ?? descriptor.createdAt,
         updatedAt: timestamp
       },

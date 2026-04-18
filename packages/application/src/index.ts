@@ -1,4 +1,4 @@
-import type { IndexerStats, LibrarySnapshot, PhotoFilter, PhotoRecord } from "@chronopic/domain";
+import type { IndexerStats, LibrarySnapshot, Memory, MemorySource, PhotoFilter, PhotoRecord } from "@chronopic/domain";
 import type { ChronoPicDatabase } from "@chronopic/infra-db";
 import type { AIClient } from "@chronopic/services-ai-pipeline";
 import type { IndexerService } from "@chronopic/services-indexer";
@@ -65,5 +65,37 @@ export class ChronoPicAppService {
       aiEnabled: this.aiClient.isEnabled(),
       supportedMedia: this.indexer.listSupportedMedia()
     };
+  }
+
+  // ─── Favorite ────────────────────────────────────────────────────────────────
+
+  updatePhotoFavorite(photoId: string, favorite: boolean): PhotoRecord {
+    return this.db.updatePhotoFavorite(photoId, favorite);
+  }
+
+  // ─── Memory ─────────────────────────────────────────────────────────────────
+
+  listMemories(): Memory[] {
+    return this.db.listMemories();
+  }
+
+  createMemory(name: string, description?: string, source?: MemorySource): Memory {
+    return this.db.createMemory(name, description ?? null, source ?? "manual");
+  }
+
+  deleteMemory(memoryId: string): void {
+    this.db.deleteMemory(memoryId);
+  }
+
+  addPhotoToMemory(memoryId: string, photoId: string): void {
+    this.db.addPhotoToMemory(memoryId, photoId);
+  }
+
+  removePhotoFromMemory(memoryId: string, photoId: string): void {
+    this.db.removePhotoFromMemory(memoryId, photoId);
+  }
+
+  listPhotosByMemory(memoryId: string, filter?: PhotoFilter): PhotoRecord[] {
+    return this.db.listPhotosByMemory(memoryId, filter);
   }
 }

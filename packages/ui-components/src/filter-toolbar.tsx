@@ -131,6 +131,11 @@ export function FilterToolbar(props: FilterToolbarProps) {
         </div>
         <div className="flex flex-wrap gap-2">
           <FilterToggle
+            active={Boolean(props.filter.favorite)}
+            label="Favorites"
+            onClick={() => props.onChange({ favorite: props.filter.favorite ? undefined : true, offset: 0 })}
+          />
+          <FilterToggle
             active={Boolean(props.filter.indexed)}
             label="Indexed only"
             onClick={() => props.onChange({ indexed: props.filter.indexed ? undefined : true, offset: 0 })}

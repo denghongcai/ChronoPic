@@ -140,8 +140,25 @@ function registerHandlers(runtime: NonNullable<typeof runtimeHandle>) {
   ipcMain.handle("photos:updateDatetime", async (_event, photoId: string, datetime: number | null) =>
     runtime.appService.updatePhotoDatetime(photoId, datetime)
   );
+  ipcMain.handle("photos:toggleFavorite", async (_event, photoId: string, favorite: boolean) =>
+    runtime.appService.updatePhotoFavorite(photoId, favorite)
+  );
   ipcMain.handle("photos:rollback", async (_event, photoId?: string) => runtime.appService.rollbackLatestEdit(photoId));
   ipcMain.handle("system:snapshot", async () => runtime.appService.getSnapshot());
+  ipcMain.handle("memories:list", async () => runtime.appService.listMemories());
+  ipcMain.handle("memories:create", async (_event, name: string, description?: string, source?: string) =>
+    runtime.appService.createMemory(name, description, source as "manual" | "ai")
+  );
+  ipcMain.handle("memories:delete", async (_event, memoryId: string) => runtime.appService.deleteMemory(memoryId));
+  ipcMain.handle("memories:addPhoto", async (_event, memoryId: string, photoId: string) =>
+    runtime.appService.addPhotoToMemory(memoryId, photoId)
+  );
+  ipcMain.handle("memories:removePhoto", async (_event, memoryId: string, photoId: string) =>
+    runtime.appService.removePhotoFromMemory(memoryId, photoId)
+  );
+  ipcMain.handle("memories:listPhotos", async (_event, memoryId: string, filter?: PhotoFilter) =>
+    runtime.appService.listPhotosByMemory(memoryId, filter)
+  );
 }
 
 app.whenReady().then(createMainWindow);

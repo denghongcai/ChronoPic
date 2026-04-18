@@ -4,12 +4,15 @@ import type {
   EditHistory,
   LibrarySource,
   LibrarySnapshot,
+  Memory,
+  MemoryPhoto,
   Metadata,
   PhotoFilter,
   PhotoRecord,
   Semantic,
   UpsertPhotoPayload
 } from "@chronopic/domain";
+import type { MemorySource } from "@chronopic/domain";
 import { DEFAULT_FILTER } from "@chronopic/domain";
 import { createId, dedupeStrings, normalizeAbsolutePath, parseStringArray, serializeStringArray } from "@chronopic/shared-utils";
 
@@ -24,6 +27,7 @@ interface PhotoRow {
   size: number;
   mime: string;
   thumbnail_path: string | null;
+  favorite: number;
   created_at: number;
   updated_at: number;
   datetime: number | null;
@@ -52,6 +56,7 @@ function mapPhotoRow(row: PhotoRow): PhotoRecord {
       size: row.size,
       mime: row.mime,
       thumbnailPath: row.thumbnail_path,
+      favorite: Boolean(row.favorite),
       createdAt: row.created_at,
       updatedAt: row.updated_at
     },
@@ -88,7 +93,40 @@ export class ChronoPicDatabase {
   constructor(databasePath: string) {
     this.db = new Database(databasePath);
     this.db.pragma("foreign_keys = ON");
+    this.runMigrations();
     this.db.exec(SCHEMA_SQL);
+  }
+
+  private runMigrations(): void {
+    this.db.exec(`
+      PRAGMA journal_mode = WAL;
+
+      CREATE TABLE IF NOT EXISTS memories (
+        id TEXT PRIMARY KEY,
+        name TEXT NOT NULL,
+        description TEXT,
+        source TEXT NOT NULL DEFAULT 'manual',
+        created_at INTEGER NOT NULL,
+        updated_at INTEGER NOT NULL
+      );
+
+      CREATE TABLE IF NOT EXISTS memory_photos (
+        memory_id TEXT NOT NULL REFERENCES memories(id) ON DELETE CASCADE,
+        photo_id TEXT NOT NULL REFERENCES photos(id) ON DELETE CASCADE,
+        added_at INTEGER NOT NULL,
+        PRIMARY KEY (memory_id, photo_id)
+      );
+
+      CREATE INDEX IF NOT EXISTS idx_memory_photos_photo ON memory_photos(photo_id);
+    `);
+
+    // Migrate photos table: add favorite column if missing
+    const columns: Array<{ name: string }> = this.db
+      .prepare("PRAGMA table_info(photos)")
+      .all() as Array<{ name: string }>;
+    if (!columns.find((c) => c.name === "favorite")) {
+      this.db.exec("ALTER TABLE photos ADD COLUMN favorite INTEGER NOT NULL DEFAULT 0");
+    }
   }
 
   close(): void {
@@ -200,7 +238,7 @@ export class ChronoPicDatabase {
     const row = this.db
       .prepare(
         `SELECT
-          p.id, p.path, p.hash, p.size, p.mime, p.thumbnail_path, p.created_at, p.updated_at,
+          p.id, p.path, p.hash, p.size, p.mime, p.thumbnail_path, p.favorite, p.created_at, p.updated_at,
           m.datetime, m.lat, m.lng, m.camera, m.confidence, m.original_datetime_text,
           s.labels, s.caption, s.embedding_ref, s.ai_status,
           i.indexed, i.ai_processed, i.error, i.last_indexed_at, i.duplicate_of
@@ -233,8 +271,8 @@ export class ChronoPicDatabase {
     const transaction = this.db.transaction((input: UpsertPhotoPayload) => {
       this.db
         .prepare(
-          `INSERT INTO photos (id, path, hash, size, mime, thumbnail_path, created_at, updated_at)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+          `INSERT INTO photos (id, path, hash, size, mime, thumbnail_path, favorite, created_at, updated_at)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
            ON CONFLICT(id) DO UPDATE SET
              path = excluded.path,
              hash = excluded.hash,
@@ -250,6 +288,7 @@ export class ChronoPicDatabase {
           input.photo.size,
           input.photo.mime,
           input.photo.thumbnailPath,
+          input.photo.favorite ? 1 : 0,
           input.photo.createdAt,
           input.photo.updatedAt
         );
@@ -339,6 +378,16 @@ export class ChronoPicDatabase {
       params.push(`%${resolvedFilter.tag}%`);
     }
 
+    if (typeof resolvedFilter.favorite === "boolean") {
+      clauses.push("p.favorite = ?");
+      params.push(resolvedFilter.favorite ? 1 : 0);
+    }
+
+    if (resolvedFilter.memoryId) {
+      clauses.push("mp.memory_id = ?");
+      params.push(resolvedFilter.memoryId);
+    }
+
     if (typeof resolvedFilter.indexed === "boolean") {
       clauses.push("i.indexed = ?");
       params.push(resolvedFilter.indexed ? 1 : 0);
@@ -373,7 +422,7 @@ export class ChronoPicDatabase {
     const rows = this.db
       .prepare(
         `SELECT
-          p.id, p.path, p.hash, p.size, p.mime, p.thumbnail_path, p.created_at, p.updated_at,
+          p.id, p.path, p.hash, p.size, p.mime, p.thumbnail_path, p.favorite, p.created_at, p.updated_at,
           m.datetime, m.lat, m.lng, m.camera, m.confidence, m.original_datetime_text,
           s.labels, s.caption, s.embedding_ref, s.ai_status,
           i.indexed, i.ai_processed, i.error, i.last_indexed_at, i.duplicate_of
@@ -381,6 +430,7 @@ export class ChronoPicDatabase {
         JOIN metadata m ON m.photo_id = p.id
         JOIN semantic s ON s.photo_id = p.id
         JOIN index_state i ON i.photo_id = p.id
+        ${resolvedFilter.memoryId ? "LEFT JOIN memory_photos mp ON mp.photo_id = p.id" : ""}
         ${whereSql}
         ORDER BY ${orderSql}
         LIMIT ? OFFSET ?`
@@ -394,7 +444,7 @@ export class ChronoPicDatabase {
     const row = this.db
       .prepare(
         `SELECT
-          p.id, p.path, p.hash, p.size, p.mime, p.thumbnail_path, p.created_at, p.updated_at,
+          p.id, p.path, p.hash, p.size, p.mime, p.thumbnail_path, p.favorite, p.created_at, p.updated_at,
           m.datetime, m.lat, m.lng, m.camera, m.confidence, m.original_datetime_text,
           s.labels, s.caption, s.embedding_ref, s.ai_status,
           i.indexed, i.ai_processed, i.error, i.last_indexed_at, i.duplicate_of
@@ -566,6 +616,79 @@ export class ChronoPicDatabase {
         duplicatePhotos: stats.duplicatePhotos ?? 0
       }
     };
+  }
+
+  // ─── Favorite ────────────────────────────────────────────────────────────────
+
+  updatePhotoFavorite(photoId: string, favorite: boolean): PhotoRecord {
+    const now = Date.now();
+    this.db.prepare("UPDATE photos SET favorite = ?, updated_at = ? WHERE id = ?").run(favorite ? 1 : 0, now, photoId);
+    return this.getPhoto(photoId) as PhotoRecord;
+  }
+
+  // ─── Memory ─────────────────────────────────────────────────────────────────
+
+  listMemories(): Memory[] {
+    const rows = this.db
+      .prepare(
+        "SELECT id, name, description, source, created_at, updated_at FROM memories ORDER BY created_at DESC"
+      )
+      .all() as Array<{
+      id: string;
+      name: string;
+      description: string | null;
+      source: MemorySource;
+      created_at: number;
+      updated_at: number;
+    }>;
+
+    return rows.map((row) => ({
+      id: row.id,
+      name: row.name,
+      description: row.description,
+      source: row.source,
+      createdAt: row.created_at,
+      updatedAt: row.updated_at,
+    }));
+  }
+
+  createMemory(name: string, description: string | null, source: MemorySource = "manual"): Memory {
+    const now = Date.now();
+    const memory: Memory = {
+      id: createId("mem"),
+      name,
+      description,
+      source,
+      createdAt: now,
+      updatedAt: now,
+    };
+    this.db
+      .prepare(
+        "INSERT INTO memories (id, name, description, source, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)"
+      )
+      .run(memory.id, memory.name, memory.description, memory.source, memory.createdAt, memory.updatedAt);
+    return memory;
+  }
+
+  deleteMemory(memoryId: string): void {
+    this.db.prepare("DELETE FROM memories WHERE id = ?").run(memoryId);
+  }
+
+  addPhotoToMemory(memoryId: string, photoId: string): void {
+    const now = Date.now();
+    this.db
+      .prepare(
+        "INSERT OR IGNORE INTO memory_photos (memory_id, photo_id, added_at) VALUES (?, ?, ?)"
+      )
+      .run(memoryId, photoId, now);
+  }
+
+  removePhotoFromMemory(memoryId: string, photoId: string): void {
+    this.db.prepare("DELETE FROM memory_photos WHERE memory_id = ? AND photo_id = ?").run(memoryId, photoId);
+  }
+
+  listPhotosByMemory(memoryId: string, filter: PhotoFilter = {}): PhotoRecord[] {
+    return this.listPhotos({ ...filter, memoryId });
   }
 }
 

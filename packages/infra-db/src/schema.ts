@@ -17,6 +17,7 @@ CREATE TABLE IF NOT EXISTS photos (
   size INTEGER NOT NULL,
   mime TEXT NOT NULL,
   thumbnail_path TEXT,
+  favorite INTEGER NOT NULL DEFAULT 0,
   created_at INTEGER NOT NULL,
   updated_at INTEGER NOT NULL
 );
@@ -64,4 +65,22 @@ CREATE INDEX IF NOT EXISTS idx_metadata_datetime ON metadata(datetime);
 CREATE INDEX IF NOT EXISTS idx_index_state_error ON index_state(error);
 CREATE INDEX IF NOT EXISTS idx_index_state_duplicate ON index_state(duplicate_of);
 CREATE INDEX IF NOT EXISTS idx_edit_history_photo_created ON edit_history(photo_id, created_at DESC);
+
+CREATE TABLE IF NOT EXISTS memories (
+  id TEXT PRIMARY KEY,
+  name TEXT NOT NULL,
+  description TEXT,
+  source TEXT NOT NULL DEFAULT 'manual',
+  created_at INTEGER NOT NULL,
+  updated_at INTEGER NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS memory_photos (
+  memory_id TEXT NOT NULL REFERENCES memories(id) ON DELETE CASCADE,
+  photo_id TEXT NOT NULL REFERENCES photos(id) ON DELETE CASCADE,
+  added_at INTEGER NOT NULL,
+  PRIMARY KEY (memory_id, photo_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_memory_photos_photo ON memory_photos(photo_id);
 `;

@@ -7,6 +7,7 @@ export interface Photo {
   size: number;
   mime: string;
   thumbnailPath: string | null;
+  favorite: boolean;
   createdAt: number;
   updatedAt: number;
 }
@@ -57,6 +58,23 @@ export interface EditHistory {
   rolledBackAt: number | null;
 }
 
+export type MemorySource = "manual" | "ai";
+
+export interface Memory {
+  id: string;
+  name: string;
+  description: string | null;
+  source: MemorySource;
+  createdAt: number;
+  updatedAt: number;
+}
+
+export interface MemoryPhoto {
+  memoryId: string;
+  photoId: string;
+  addedAt: number;
+}
+
 export interface PhotoRecord {
   photo: Photo;
   metadata: Metadata;
@@ -68,6 +86,8 @@ export interface PhotoFilter {
   query?: string;
   mimePrefix?: string;
   tag?: string;
+  favorite?: boolean;
+  memoryId?: string;
   indexed?: boolean;
   hasError?: boolean;
   hasGps?: boolean;
