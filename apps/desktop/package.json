@@ -21,6 +21,8 @@
     "typecheck": "pnpm exec tsc -p tsconfig.main.json --noEmit && pnpm exec tsc -p tsconfig.renderer.json --noEmit"
   },
   "dependencies": {
+    "@blocknote/core": "^0.48.1",
+    "@blocknote/react": "^0.48.1",
     "@chronopic/application": "workspace:*",
     "@chronopic/domain": "workspace:*",
     "@chronopic/infra-db": "workspace:*",

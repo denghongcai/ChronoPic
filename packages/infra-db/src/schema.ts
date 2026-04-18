@@ -70,6 +70,7 @@ CREATE TABLE IF NOT EXISTS memories (
   id TEXT PRIMARY KEY,
   name TEXT NOT NULL,
   description TEXT,
+  cover_photo_id TEXT REFERENCES photos(id) ON DELETE SET NULL,
   source TEXT NOT NULL DEFAULT 'manual',
   created_at INTEGER NOT NULL,
   updated_at INTEGER NOT NULL

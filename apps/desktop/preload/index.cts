@@ -18,12 +18,16 @@ const api: ChronoPicBridge = {
   rollbackLatestEdit: (photoId?: string) => ipcRenderer.invoke("photos:rollback", photoId),
   getSnapshot: () => ipcRenderer.invoke("system:snapshot"),
   listMemories: () => ipcRenderer.invoke("memories:list"),
+  getMemory: (memoryId: string) => ipcRenderer.invoke("memories:get", memoryId),
   createMemory: (name: string, description?: string, source?: "manual" | "ai") =>
     ipcRenderer.invoke("memories:create", name, description, source),
+  updateMemory: (memoryId: string, updates: { name?: string; description?: string | null; coverPhotoId?: string | null }) =>
+    ipcRenderer.invoke("memories:update", memoryId, updates),
   deleteMemory: (memoryId: string) => ipcRenderer.invoke("memories:delete", memoryId),
   addPhotoToMemory: (memoryId: string, photoId: string) => ipcRenderer.invoke("memories:addPhoto", memoryId, photoId),
   removePhotoFromMemory: (memoryId: string, photoId: string) =>
     ipcRenderer.invoke("memories:removePhoto", memoryId, photoId),
+  listMemoriesByPhoto: (photoId: string) => ipcRenderer.invoke("memories:listByPhoto", photoId),
   listPhotosByMemory: (memoryId: string, filter) => ipcRenderer.invoke("memories:listPhotos", memoryId, filter),
 };
 

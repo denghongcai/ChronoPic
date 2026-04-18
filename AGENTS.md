@@ -409,6 +409,148 @@ This file is the local execution record for ChronoPic. It complements `PLAN.md` 
 - Deleted unused `dashboard-shell.tsx` (superseded by `PhotoHome`).
 - All 6 E2E tests still pass. `pnpm typecheck` and `pnpm build` pass.
 
+### 2026-04-18 Step 29
+
+- Audited the latest home-page and memory/favorites implementation against `PLAN.md` and found a few state-model gaps after the recent layout refactor.
+- Fixed sidebar navigation so `activeItem` now reflects the real app state instead of a mostly hard-coded `"all"`/`"settings"` split:
+  `all`,
+  `favorites`,
+  selected `memoryId`,
+  and `library-settings` now resolve correctly.
+- Added a real `Library Settings` entry to the sidebar so the settings page is reachable from both the header dropdown and the sidebar, matching the plan.
+- Wired sidebar actions to the real filter/page model:
+  selecting Favorites clears `memoryId` and enables `favorite`,
+  selecting All Photos clears both `favorite` and `memoryId`,
+  selecting a memory switches back to the home view and applies that memory filter.
+- Finished the `GallerySection` composition by restoring the `FilterToolbar` inside the section instead of leaving `filter` / `onFilterChange` as effectively unused props.
+- Added `test-results` to `.gitignore` to keep Playwright artifacts out of the working tree.
+- Re-verified the repository after the navigation/layout state cleanup with:
+  `pnpm typecheck`
+  `pnpm build`
+- Result: the home-page navigation model is now more consistent with the plan, the gallery section owns its filter UI again, and the repository remains build-clean.
+
+### 2026-04-18 Step 30
+
+- Re-reviewed the latest memory implementation from a product perspective and confirmed that memory currently behaves more like a scoped photo filter than a first-class product object.
+- Updated `PLAN.md` to add a dedicated `Memory Productization Phase`.
+- Locked the next phase around turning memory into a real content surface with:
+  memory cards,
+  a memories list page,
+  a memory detail page,
+  cover/title/description metadata,
+  and photo-management actions inside a memory.
+- Captured the next implementation direction clearly:
+  stop treating memory browsing as only a gallery filter,
+  and instead split memory list navigation from memory-detail photo browsing.
+
+### 2026-04-18 Step 31
+
+- Implemented the first pass of the `Memory Productization Phase`.
+- Expanded the memory data model and persistence layer so memories now carry richer product-facing summary data:
+  `coverPhotoId`,
+  derived `coverThumbnailPath`,
+  and `photoCount`.
+- Added memory metadata read/update support through the full desktop stack:
+  database methods,
+  application service methods,
+  IPC handlers,
+  preload bridge methods,
+  and renderer hook support for `selectedMemory` and `handleUpdateMemory`.
+- Reworked the desktop page model so memories are no longer only a gallery filter:
+  `PageView` now includes
+  `memories`
+  and
+  `memory-detail`,
+  the sidebar has a dedicated `Memories` entry,
+  the home surface shows actual recent memory cards,
+  and selecting a memory opens a dedicated detail page instead of just reusing the gallery shell.
+- Added the new memory UI surfaces:
+  `MemoryCard`,
+  `MemoryListSection`,
+  `MemoryDetailPage`,
+  and a shared memory-description helper.
+- Implemented memory description editing with `BlockNote` in `MemoryDescriptionEditor`, and added the required renderer-side BlockNote stylesheet import.
+- Declared the BlockNote packages explicitly where they are consumed so build-time CSS resolution matches runtime package semantics:
+  `@chronopic/ui-components`
+  and
+  `@chronopic/desktop`
+  now both declare the required BlockNote dependencies.
+- Re-verified the repository after the new memory surfaces landed with:
+  `pnpm typecheck`
+  `pnpm build`
+- Result: the memory experience now has a real list/detail split and BlockNote-backed description editing, while the workspace remains build-valid.
+
+### 2026-04-18 Step 32
+
+- Performed a focused UX correction pass on the new memory detail experience after runtime review.
+- Changed memory description from always-inline editing to a read-first interaction model:
+  memory detail now shows a display card by default,
+  and clicking `Edit Description` or the description surface opens a dedicated modal editor backed by `BlockNote`.
+- Reduced the delete affordance from a prominent full-width button to a compact icon action in the memory-detail header so destructive UI no longer dominates the page.
+- Added the first explicit `Add to Memory` workflow so memory management is no longer hidden in the data model:
+  gallery photo cards now expose an `Add to Memory` menu,
+  and the focused viewer inspector / detail viewer also exposes the same action.
+- Added removal inside memory detail so the current memory lifecycle is at least minimally closed:
+  photo cards inside a memory now expose a `Remove from Memory` action.
+- Wired the new memory actions through the renderer hook with:
+  `handleAddPhotoToMemory`
+  and
+  `handleRemovePhotoFromMemory`,
+  including memory-list refreshes and filtered-photo refreshes when the active memory is affected.
+- Re-verified the repository after the memory UX/action pass with:
+  `pnpm typecheck`
+  `pnpm build`
+- Result: memory detail now reads more like a product page, destructive UI is less noisy, and the app finally has visible add/remove memory operations in the primary browsing flows.
+
+### 2026-04-19 Step 33
+
+- Fixed a nested-scroll issue in the home gallery flow by removing the inner vertical scroll container from `GallerySection`; the page now uses the main content area as the single scroll owner.
+- Continued the memory lifecycle implementation beyond add/remove:
+  memory detail now supports renaming the memory,
+  selecting a photo inside the memory and promoting it to the memory cover,
+  and keeping cover state consistent when the current cover photo is removed from that memory.
+- Added a dedicated memory-actions panel to the memory detail page so cover management is explicit instead of hidden behind card hover affordances.
+- Added a lightweight transient status banner in the main content area and an auto-reset behavior in the renderer hook so add/remove/update actions produce visible feedback instead of silently mutating state.
+- Re-verified the repository after the scroll and memory-management pass with:
+  `pnpm typecheck`
+  `pnpm build`
+- Result: scrolling is simpler, memory detail has a clearer management model, and the user now gets immediate feedback for memory actions while the build remains green.
+
+### 2026-04-19 Step 34
+
+- Simplified the focused photo viewer memory action so detail view now keeps only a single `+` trigger in the preview-header action cluster; the duplicate inspector-side `Add to Memory` entry was removed.
+- Added a real `photo -> memories` query path through the stack:
+  database,
+  application service,
+  IPC,
+  preload bridge,
+  and renderer hook now support listing which memories currently contain the selected photo.
+- Used that new relation in the inspector metadata area so focused viewing can show the memories the current photo belongs to, including an explicit marker when the photo is the cover of one of those memories.
+- Improved memory-card legibility in list views by surfacing whether a memory is using a custom cover image.
+- Re-verified the repository after the viewer/memory-membership pass with:
+  `pnpm typecheck`
+  `pnpm build`
+- Result: the viewer has a cleaner action surface, and the app now exposes memory membership as an explicit user-facing concept instead of a hidden internal relation.
+
+### 2026-04-19 Step 35
+
+- Implemented the first real batch-add workflow for memories on the gallery surface.
+- Added explicit batch-selection state in the renderer hook with:
+  `selectedPhotoIds`,
+  selection toggling,
+  selection clearing,
+  and automatic pruning when the filtered photo result set changes.
+- Extended photo cards with a dedicated batch-select affordance so multi-select does not depend on keyboard modifiers or replace the primary single-photo selection model.
+- Added a batch action bar to `GallerySection` which appears when one or more photos are batch-selected.
+- Wired that action bar to a bulk memory assignment flow using the existing memory menu pattern:
+  selected photos can now be added to a memory in one operation,
+  the batch selection clears after completion,
+  and feedback reflects full or partial completion counts.
+- Re-verified the repository after the batch-memory implementation with:
+  `pnpm typecheck`
+  `pnpm build`
+- Result: the app now supports multi-photo selection and one-shot memory assignment from the gallery without breaking the existing single-photo browsing and viewer flows.
+
 ## Next Immediate Tasks
 
 1. Workspace skeleton is implemented.
@@ -418,12 +560,18 @@ This file is the local execution record for ChronoPic. It complements `PLAN.md` 
 5. Shared-package Tailwind extraction is fixed and rebuilt successfully.
 6. The first dedicated detail-view and gallery-view implementation is landed and verified at typecheck/build level.
 7. The first renderer/UI structural split is landed and verified at typecheck/build level.
-8. Viewer ergonomics have received a first focused polish pass and remain build-valid.
-9. The first real `shadcn/ui` / Radix-backed adoption pass is landed for `Select` and viewer dialogs.
-10. The base UI control layer has also been migrated toward dedicated `shadcn`-style component files and remains build-valid.
-11. Phase 4.5 home page layout restructure is implemented — Header, Sidebar, MainContent with page-view switching.
-12. Phase 4.6 Favorite and Memory is implemented and verified — sidebar simplified, favorite toggle wired, memory CRUD in hook.
-13. `CreateMemoryDialog` is implemented — dialog opens from sidebar, confirms with name, calls IPC to create memory.
-14. E2E smoke tests written and passing via Playwright — verifies app shell, sidebar, header, dialog, and gallery render correctly.
-15. Phase 5 (Editing and History) fully implemented — tag chip UI (TagInput component), caption/name editing (updatePhotoCaption full stack), rollback wired. Full edit/rollback E2E requires integration test setup with real database (documented limitation).
-16. Deleted unused `dashboard-shell.tsx`. Next: Phase 6 — Additional polish passes or new feature development.
+8. The home-page layout, favorites, memories, edit UX, and memory list/detail productization phases have all landed in code.
+9. Sidebar navigation and gallery-section composition are now aligned more closely with the current plan.
+10. Memory description editing now uses `BlockNote`, and the desktop build/typecheck pipeline remains green with the new dependency surface.
+11. Viewer ergonomics have received a focused polish pass and remain build-valid.
+12. The real `shadcn/ui` / Radix-backed adoption pass is landed for `Select`, dialogs, and the base shared control layer.
+13. The app now exposes visible add/remove memory actions in gallery, viewer, and memory-detail flows, but deeper lifecycle polish is still pending.
+14. Memory detail now supports rename, set-cover, remove-from-memory, and transient action feedback; cover state is also cleared automatically when the removed photo was the active cover.
+15. Focused viewing now exposes which memories the current photo belongs to, and marks when that photo is serving as a memory cover.
+16. Gallery now supports batch photo selection and one-shot add-to-memory actions through a dedicated batch action bar.
+17. E2E smoke tests exist and pass via Playwright for the current shell-level flows; deeper memory-management runtime validation still needs a real Electron smoke test.
+18. Next: continue memory lifecycle polish with:
+    richer success/error feedback,
+    better empty/error states for batch actions,
+    bulk remove flows,
+    and runtime validation of the updated memory detail and batch-assignment experience.

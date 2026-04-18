@@ -105,6 +105,7 @@ export class ChronoPicDatabase {
         id TEXT PRIMARY KEY,
         name TEXT NOT NULL,
         description TEXT,
+        cover_photo_id TEXT REFERENCES photos(id) ON DELETE SET NULL,
         source TEXT NOT NULL DEFAULT 'manual',
         created_at INTEGER NOT NULL,
         updated_at INTEGER NOT NULL
@@ -126,6 +127,13 @@ export class ChronoPicDatabase {
       .all() as Array<{ name: string }>;
     if (!columns.find((c) => c.name === "favorite")) {
       this.db.exec("ALTER TABLE photos ADD COLUMN favorite INTEGER NOT NULL DEFAULT 0");
+    }
+
+    const memoryColumns: Array<{ name: string }> = this.db
+      .prepare("PRAGMA table_info(memories)")
+      .all() as Array<{ name: string }>;
+    if (!memoryColumns.find((c) => c.name === "cover_photo_id")) {
+      this.db.exec("ALTER TABLE memories ADD COLUMN cover_photo_id TEXT REFERENCES photos(id) ON DELETE SET NULL");
     }
   }
 
@@ -654,12 +662,43 @@ export class ChronoPicDatabase {
   listMemories(): Memory[] {
     const rows = this.db
       .prepare(
-        "SELECT id, name, description, source, created_at, updated_at FROM memories ORDER BY created_at DESC"
+        `SELECT
+          m.id,
+          m.name,
+          m.description,
+          m.cover_photo_id,
+          m.source,
+          m.created_at,
+          m.updated_at,
+          (
+            SELECT COUNT(*)
+            FROM memory_photos mp_count
+            WHERE mp_count.memory_id = m.id
+          ) AS photo_count,
+          (
+            SELECT p.thumbnail_path
+            FROM photos p
+            WHERE p.id = COALESCE(
+              m.cover_photo_id,
+              (
+                SELECT mp_cover.photo_id
+                FROM memory_photos mp_cover
+                WHERE mp_cover.memory_id = m.id
+                ORDER BY mp_cover.added_at DESC
+                LIMIT 1
+              )
+            )
+          ) AS cover_thumbnail_path
+        FROM memories m
+        ORDER BY m.updated_at DESC, m.created_at DESC`
       )
       .all() as Array<{
       id: string;
       name: string;
       description: string | null;
+      cover_photo_id: string | null;
+      cover_thumbnail_path: string | null;
+      photo_count: number;
       source: MemorySource;
       created_at: number;
       updated_at: number;
@@ -669,6 +708,9 @@ export class ChronoPicDatabase {
       id: row.id,
       name: row.name,
       description: row.description,
+      coverPhotoId: row.cover_photo_id,
+      coverThumbnailPath: row.cover_thumbnail_path,
+      photoCount: row.photo_count,
       source: row.source,
       createdAt: row.created_at,
       updatedAt: row.updated_at,
@@ -681,16 +723,48 @@ export class ChronoPicDatabase {
       id: createId("mem"),
       name,
       description,
+      coverPhotoId: null,
+      coverThumbnailPath: null,
+      photoCount: 0,
       source,
       createdAt: now,
       updatedAt: now,
     };
     this.db
       .prepare(
-        "INSERT INTO memories (id, name, description, source, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)"
+        "INSERT INTO memories (id, name, description, cover_photo_id, source, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)"
       )
-      .run(memory.id, memory.name, memory.description, memory.source, memory.createdAt, memory.updatedAt);
+      .run(memory.id, memory.name, memory.description, memory.coverPhotoId, memory.source, memory.createdAt, memory.updatedAt);
     return memory;
+  }
+
+  getMemory(memoryId: string): Memory | null {
+    return this.listMemories().find((memory) => memory.id === memoryId) ?? null;
+  }
+
+  updateMemory(memoryId: string, updates: { name?: string; description?: string | null; coverPhotoId?: string | null }): Memory {
+    const current = this.getMemory(memoryId);
+
+    if (!current) {
+      throw new Error(`Memory not found: ${memoryId}`);
+    }
+
+    const next = {
+      name: updates.name ?? current.name,
+      description: updates.description === undefined ? current.description : updates.description,
+      coverPhotoId: updates.coverPhotoId === undefined ? current.coverPhotoId : updates.coverPhotoId,
+      updatedAt: Date.now(),
+    };
+
+    this.db
+      .prepare(
+        `UPDATE memories
+         SET name = ?, description = ?, cover_photo_id = ?, updated_at = ?
+         WHERE id = ?`
+      )
+      .run(next.name, next.description, next.coverPhotoId, next.updatedAt, memoryId);
+
+    return this.getMemory(memoryId) as Memory;
   }
 
   deleteMemory(memoryId: string): void {
@@ -704,10 +778,79 @@ export class ChronoPicDatabase {
         "INSERT OR IGNORE INTO memory_photos (memory_id, photo_id, added_at) VALUES (?, ?, ?)"
       )
       .run(memoryId, photoId, now);
+    this.db.prepare("UPDATE memories SET updated_at = ? WHERE id = ?").run(now, memoryId);
   }
 
   removePhotoFromMemory(memoryId: string, photoId: string): void {
     this.db.prepare("DELETE FROM memory_photos WHERE memory_id = ? AND photo_id = ?").run(memoryId, photoId);
+    this.db
+      .prepare(
+        `UPDATE memories
+         SET cover_photo_id = CASE WHEN cover_photo_id = ? THEN NULL ELSE cover_photo_id END,
+             updated_at = ?
+         WHERE id = ?`
+      )
+      .run(photoId, Date.now(), memoryId);
+  }
+
+  listMemoriesByPhoto(photoId: string): Memory[] {
+    const rows = this.db
+      .prepare(
+        `SELECT
+          m.id,
+          m.name,
+          m.description,
+          m.cover_photo_id,
+          m.source,
+          m.created_at,
+          m.updated_at,
+          (
+            SELECT COUNT(*)
+            FROM memory_photos mp_count
+            WHERE mp_count.memory_id = m.id
+          ) AS photo_count,
+          (
+            SELECT p.thumbnail_path
+            FROM photos p
+            WHERE p.id = COALESCE(
+              m.cover_photo_id,
+              (
+                SELECT mp_cover.photo_id
+                FROM memory_photos mp_cover
+                WHERE mp_cover.memory_id = m.id
+                ORDER BY mp_cover.added_at DESC
+                LIMIT 1
+              )
+            )
+          ) AS cover_thumbnail_path
+        FROM memories m
+        JOIN memory_photos mp ON mp.memory_id = m.id
+        WHERE mp.photo_id = ?
+        ORDER BY m.updated_at DESC, m.created_at DESC`
+      )
+      .all(photoId) as Array<{
+      id: string;
+      name: string;
+      description: string | null;
+      cover_photo_id: string | null;
+      cover_thumbnail_path: string | null;
+      photo_count: number;
+      source: MemorySource;
+      created_at: number;
+      updated_at: number;
+    }>;
+
+    return rows.map((row) => ({
+      id: row.id,
+      name: row.name,
+      description: row.description,
+      coverPhotoId: row.cover_photo_id,
+      coverThumbnailPath: row.cover_thumbnail_path,
+      photoCount: row.photo_count,
+      source: row.source,
+      createdAt: row.created_at,
+      updatedAt: row.updated_at,
+    }));
   }
 
   listPhotosByMemory(memoryId: string, filter: PhotoFilter = {}): PhotoRecord[] {

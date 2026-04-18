@@ -149,8 +149,14 @@ function registerHandlers(runtime: NonNullable<typeof runtimeHandle>) {
   ipcMain.handle("photos:rollback", async (_event, photoId?: string) => runtime.appService.rollbackLatestEdit(photoId));
   ipcMain.handle("system:snapshot", async () => runtime.appService.getSnapshot());
   ipcMain.handle("memories:list", async () => runtime.appService.listMemories());
+  ipcMain.handle("memories:get", async (_event, memoryId: string) => runtime.appService.getMemory(memoryId));
   ipcMain.handle("memories:create", async (_event, name: string, description?: string, source?: string) =>
     runtime.appService.createMemory(name, description, source as "manual" | "ai")
+  );
+  ipcMain.handle(
+    "memories:update",
+    async (_event, memoryId: string, updates: { name?: string; description?: string | null; coverPhotoId?: string | null }) =>
+      runtime.appService.updateMemory(memoryId, updates)
   );
   ipcMain.handle("memories:delete", async (_event, memoryId: string) => runtime.appService.deleteMemory(memoryId));
   ipcMain.handle("memories:addPhoto", async (_event, memoryId: string, photoId: string) =>
@@ -158,6 +164,9 @@ function registerHandlers(runtime: NonNullable<typeof runtimeHandle>) {
   );
   ipcMain.handle("memories:removePhoto", async (_event, memoryId: string, photoId: string) =>
     runtime.appService.removePhotoFromMemory(memoryId, photoId)
+  );
+  ipcMain.handle("memories:listByPhoto", async (_event, photoId: string) =>
+    runtime.appService.listMemoriesByPhoto(photoId)
   );
   ipcMain.handle("memories:listPhotos", async (_event, memoryId: string, filter?: PhotoFilter) =>
     runtime.appService.listPhotosByMemory(memoryId, filter)

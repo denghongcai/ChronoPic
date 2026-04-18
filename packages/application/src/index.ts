@@ -83,8 +83,16 @@ export class ChronoPicAppService {
     return this.db.listMemories();
   }
 
+  getMemory(memoryId: string): Memory | null {
+    return this.db.getMemory(memoryId);
+  }
+
   createMemory(name: string, description?: string, source?: MemorySource): Memory {
     return this.db.createMemory(name, description ?? null, source ?? "manual");
+  }
+
+  updateMemory(memoryId: string, updates: { name?: string; description?: string | null; coverPhotoId?: string | null }): Memory {
+    return this.db.updateMemory(memoryId, updates);
   }
 
   deleteMemory(memoryId: string): void {
@@ -101,5 +109,9 @@ export class ChronoPicAppService {
 
   listPhotosByMemory(memoryId: string, filter?: PhotoFilter): PhotoRecord[] {
     return this.db.listPhotosByMemory(memoryId, filter);
+  }
+
+  listMemoriesByPhoto(photoId: string): Memory[] {
+    return this.db.listMemoriesByPhoto(photoId);
   }
 }

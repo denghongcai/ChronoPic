@@ -151,6 +151,43 @@ ChronoPic starts from a greenfield repository. The first implementation pass wil
 - Add a `CreateMemoryDialog` for creating a new memory with a name. ✅
 - Update the test plan: add verification for favorite toggle, memory creation, memory listing, and photo-membership queries.
 
+### 4.7 Memory Productization Phase
+
+- Promote `Memory` from a lightweight filter target into a first-class product object with its own list and detail experiences.
+- Extend the `Memory` data model with presentational/product metadata needed for a real memory surface:
+  `description`,
+  `coverPhotoId`,
+  and stable update timestamps suitable for sorting and preview cards.
+- Introduce a dedicated `Memories` page in the main content area instead of using the photo gallery as the primary memory browser.
+- Introduce a dedicated `Memory Detail` page:
+  hero/summary block,
+  cover image,
+  title,
+  description,
+  item count,
+  update time,
+  and then the memory-scoped photo grid below it.
+- Add reusable UI components for memory presentation:
+  `MemoryCard`,
+  `MemoryListSection`,
+  and `MemoryDetailPage`.
+- Update `RecentMemories` so it renders actual memory cards rather than recent photos.
+- Keep memory selection and navigation distinct from photo filtering:
+  the memory list page browses memories,
+  the memory detail page browses photos within one memory,
+  and the all-photos gallery remains a separate surface.
+- Add memory-management actions required for a usable loop:
+  create,
+  rename/edit metadata,
+  delete,
+  set cover,
+  add photo to memory,
+  remove photo from memory.
+- Expose an "Add to Memory" action from focused photo surfaces such as the viewer/detail inspector so memories are manageable from normal browsing flows.
+- Preserve package boundaries:
+  data-model/database/app/IPC changes belong in shared and main layers,
+  page/view composition belongs in renderer/UI layers.
+
 ### 5. Editing and History ✅
 
 - Support local tag edits and datetime correction in the database projection. ✅
@@ -199,6 +236,10 @@ ChronoPic starts from a greenfield repository. The first implementation pass wil
 - Verify memory creation, listing, and photo membership queries work end-to-end.
 - Verify sidebar shows only Library (All Photos, Favorites) and Memories sections with no placeholders.
 - Verify the database migration adds the `favorite` column and memory tables to existing app databases on next launch.
+- Verify memory cards render title, cover, photo count, and updated time.
+- Verify memory navigation is page-based rather than only a gallery filter side effect.
+- Verify the memory detail page supports remove-photo and edit-metadata actions without breaking viewer state.
+- Verify `RecentMemories` displays memories rather than raw photo thumbnails.
 
 ### E2E Test Plan (Playwright)
 
@@ -224,3 +265,4 @@ ChronoPic starts from a greenfield repository. The first implementation pass wil
 - The UI structure phase is a code-organization refactor first; it should preserve behavior unless a specific follow-up UX change is explicitly planned.
 - The real `shadcn/ui` adoption phase should prefer a minimal, deliberate component set over importing a broad catalog that the product does not actually use.
 - Favorite and Memory are local-only concepts; no cloud sync or sharing in this phase.
+- The memory productization phase should reuse the existing photo/memory persistence model where possible, but it is allowed to extend the schema if memory metadata is insufficient for a proper product surface.

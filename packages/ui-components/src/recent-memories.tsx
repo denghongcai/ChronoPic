@@ -1,26 +1,26 @@
 import { CalendarClock, ChevronRight } from "lucide-react";
 
-import type { PhotoRecord } from "@chronopic/domain";
+import type { Memory } from "@chronopic/domain";
 
 import { Panel } from "./panel.js";
-import { PhotoCard } from "./photo-card.js";
 import { Button } from "./button.js";
 import { Badge } from "./badge.js";
+import { MemoryCard } from "./memory-card.js";
 
 export interface RecentMemoriesProps {
-  photos: PhotoRecord[];
-  selectedPhotoId?: string | null;
-  onSelect?: (photoId: string) => void;
-  onOpenDetail?: (photoId: string) => void;
+  memories: Memory[];
+  selectedMemoryId?: string | null;
+  onOpenMemory?: (memoryId: string) => void;
+  onSeeAll?: () => void;
 }
 
 export function RecentMemories({
-  photos,
-  selectedPhotoId,
-  onSelect,
-  onOpenDetail,
+  memories,
+  selectedMemoryId,
+  onOpenMemory,
+  onSeeAll,
 }: RecentMemoriesProps) {
-  if (photos.length === 0) return null;
+  if (memories.length === 0) return null;
 
   return (
     <Panel className="overflow-hidden">
@@ -28,21 +28,20 @@ export function RecentMemories({
         <div className="flex items-center gap-2">
           <CalendarClock className="h-4 w-4 text-amber-500" />
           <h3 className="font-semibold text-stone-900">Recent Memories</h3>
-          <Badge tone="neutral">{photos.length}</Badge>
+          <Badge tone="neutral">{memories.length}</Badge>
         </div>
-        <Button className="text-stone-500" size="sm" variant="ghost">
+        <Button className="text-stone-500" onClick={onSeeAll} size="sm" variant="ghost">
           See All Recent
           <ChevronRight className="h-4 w-4" />
         </Button>
       </div>
       <div className="flex gap-4 overflow-x-auto p-5 pb-4">
-        {photos.slice(0, 6).map((record) => (
-          <div className="w-48 shrink-0" key={record.photo.id}>
-            <PhotoCard
-              onOpenDetail={() => onOpenDetail?.(record.photo.id)}
-              onSelect={() => onSelect?.(record.photo.id)}
-              record={record}
-              selected={selectedPhotoId === record.photo.id}
+        {memories.slice(0, 6).map((memory) => (
+          <div className="w-48 shrink-0" key={memory.id}>
+            <MemoryCard
+              memory={memory}
+              onOpen={() => onOpenMemory?.(memory.id)}
+              selected={selectedMemoryId === memory.id}
             />
           </div>
         ))}

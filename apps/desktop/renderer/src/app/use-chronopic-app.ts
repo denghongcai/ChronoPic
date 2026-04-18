@@ -33,6 +33,8 @@ export function useChronoPicApp() {
   const [capabilities, setCapabilities] = useState<AppCapabilities>({ aiEnabled: false, supportedMedia: [] });
   const [photos, setPhotos] = useState<PhotoRecord[]>([]);
   const [memories, setMemories] = useState<Memory[]>([]);
+  const [selectedPhotoMemories, setSelectedPhotoMemories] = useState<Memory[]>([]);
+  const [selectedPhotoIds, setSelectedPhotoIds] = useState<string[]>([]);
   const [selectedPhotoId, setSelectedPhotoId] = useState<string | null>(null);
   const [draftTags, setDraftTags] = useState<string[]>([]);
   const [draftDatetime, setDraftDatetime] = useState("");
@@ -50,6 +52,10 @@ export function useChronoPicApp() {
   const selectedPhoto = useMemo(
     () => photos.find((photo) => photo.photo.id === selectedPhotoId) ?? null,
     [photos, selectedPhotoId]
+  );
+  const selectedMemory = useMemo(
+    () => memories.find((memory) => memory.id === filter.memoryId) ?? null,
+    [filter.memoryId, memories]
   );
   const selectedPhotoIndex = useMemo(
     () => photos.findIndex((photo) => photo.photo.id === selectedPhotoId),
@@ -89,10 +95,30 @@ export function useChronoPicApp() {
   }, [selectedPhotoId, selectedPhoto?.metadata.datetime, selectedPhoto?.semantic.labels, selectedPhoto?.semantic.caption]);
 
   useEffect(() => {
+    setSelectedPhotoIds((current) => current.filter((photoId) => photos.some((photo) => photo.photo.id === photoId)));
+  }, [photos]);
+
+  useEffect(() => {
     if (!selectedPhoto && viewerMode) {
       setViewerMode(null);
     }
   }, [selectedPhoto, viewerMode]);
+
+  useEffect(() => {
+    void refreshSelectedPhotoMemories();
+  }, [selectedPhotoId, memories]);
+
+  useEffect(() => {
+    if (isScanning || statusMessage === "Idle") {
+      return;
+    }
+
+    const timer = window.setTimeout(() => {
+      setStatusMessage("Idle");
+    }, 2400);
+
+    return () => window.clearTimeout(timer);
+  }, [isScanning, statusMessage]);
 
   async function hydrate() {
     const response = await window.chronoPic.initialize();
@@ -150,6 +176,16 @@ export function useChronoPicApp() {
     setMemories(nextMemories);
   }
 
+  async function refreshSelectedPhotoMemories() {
+    if (!selectedPhotoId) {
+      setSelectedPhotoMemories([]);
+      return;
+    }
+
+    const nextMemories = (await window.chronoPic.listMemoriesByPhoto(selectedPhotoId)) as Memory[];
+    setSelectedPhotoMemories(nextMemories);
+  }
+
   async function handleCreateMemory(name: string, description?: string) {
     const created = (await window.chronoPic.createMemory(name, description, "manual")) as Memory;
     setMemories((current) => [...current, created]);
@@ -160,6 +196,63 @@ export function useChronoPicApp() {
     await window.chronoPic.deleteMemory(memoryId);
     setMemories((current) => current.filter((m) => m.id !== memoryId));
     setStatusMessage("Memory deleted");
+  }
+
+  async function handleUpdateMemory(
+    memoryId: string,
+    updates: { name?: string; description?: string | null; coverPhotoId?: string | null }
+  ) {
+    const updated = (await window.chronoPic.updateMemory(memoryId, updates)) as Memory;
+    setMemories((current) => current.map((memory) => (memory.id === updated.id ? updated : memory)));
+    setStatusMessage("Memory updated");
+    return updated;
+  }
+
+  async function handleAddPhotoToMemory(memoryId: string, photoId: string) {
+    await window.chronoPic.addPhotoToMemory(memoryId, photoId);
+    await refreshMemories();
+    if (filter.memoryId === memoryId) {
+      await refreshPhotos();
+    }
+    setStatusMessage("Photo added to memory");
+  }
+
+  async function handleAddSelectionToMemory(memoryId: string, photoIds: string[]) {
+    const uniquePhotoIds = Array.from(new Set(photoIds));
+    const failures: string[] = [];
+
+    await Promise.all(
+      uniquePhotoIds.map(async (photoId) => {
+        try {
+          await window.chronoPic.addPhotoToMemory(memoryId, photoId);
+        } catch {
+          failures.push(photoId);
+        }
+      })
+    );
+
+    await refreshMemories();
+    if (filter.memoryId === memoryId) {
+      await refreshPhotos();
+    }
+
+    setSelectedPhotoIds([]);
+
+    if (failures.length > 0) {
+      setStatusMessage(`Added ${uniquePhotoIds.length - failures.length}/${uniquePhotoIds.length} photos to memory`);
+      return;
+    }
+
+    setStatusMessage(`Added ${uniquePhotoIds.length} photos to memory`);
+  }
+
+  async function handleRemovePhotoFromMemory(memoryId: string, photoId: string) {
+    await window.chronoPic.removePhotoFromMemory(memoryId, photoId);
+    await refreshMemories();
+    if (filter.memoryId === memoryId) {
+      await refreshPhotos();
+    }
+    setStatusMessage("Photo removed from memory");
   }
 
   async function handleToggleFavorite(photoId: string, favorite: boolean) {
@@ -226,6 +319,16 @@ export function useChronoPicApp() {
     setViewerMode(null);
   }
 
+  function toggleBatchSelect(photoId: string) {
+    setSelectedPhotoIds((current) =>
+      current.includes(photoId) ? current.filter((id) => id !== photoId) : [...current, photoId]
+    );
+  }
+
+  function clearBatchSelection() {
+    setSelectedPhotoIds([]);
+  }
+
   function selectRelativePhoto(step: number) {
     if (photos.length === 0) {
       return;
@@ -253,6 +356,9 @@ export function useChronoPicApp() {
     openViewer,
     patchFilter,
     photos,
+    selectedPhotoIds,
+    selectedPhotoMemories,
+    selectedMemory,
     selectedPhoto,
     selectedPhotoId,
     setDraftCaption,
@@ -264,15 +370,21 @@ export function useChronoPicApp() {
     statusMessage,
     viewerMode,
     handleAddLibrary,
+    handleAddPhotoToMemory,
+    handleAddSelectionToMemory,
     handleCreateMemory,
     handleDeleteMemory,
+    handleRemovePhotoFromMemory,
     handleRollback,
     handleSaveCaption,
     handleSaveDatetime,
     handleSaveTags,
     handleScanAll,
     handleToggleFavorite,
+    handleUpdateMemory,
+    clearBatchSelection,
     closeViewer,
     selectRelativePhoto,
+    toggleBatchSelect,
   };
 }

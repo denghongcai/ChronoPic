@@ -1,29 +1,56 @@
 import * as React from "react";
+import {
+  AlertTriangle,
+  CheckCheck,
+  FolderOpen,
+  FolderPlus,
+  HardDrive,
+  LoaderCircle,
+  Sparkles,
+} from "lucide-react";
 
-import type { AppCapabilities, LibrarySnapshot, Memory, PhotoFilter, PhotoFilterPatch, PhotoRecord } from "@chronopic/domain";
+import type {
+  LibrarySnapshot,
+  Memory,
+  PhotoFilter,
+  PhotoFilterPatch,
+  PhotoRecord,
+} from "@chronopic/domain";
 
+import { Badge } from "./badge.js";
+import { Button } from "./button.js";
 import { CreateMemoryDialog } from "./create-memory-dialog.js";
+import type { EditControlsProps } from "./edit-controls.js";
 import { GallerySection } from "./gallery-section.js";
 import { Header } from "./header.js";
+import { formatTimestamp } from "./lib/media.js";
+import { Label } from "./label.js";
+import { MemoryDetailPage } from "./memory-detail-page.js";
+import { MemoryListSection } from "./memory-list-section.js";
+import { PageViewContext, type PageView } from "./page-view.js";
 import { PhotoViewerOverlay } from "./photo-viewer-overlay.js";
 import { RecentMemories } from "./recent-memories.js";
 import { Sidebar } from "./sidebar.js";
-import { PageViewContext, type PageView } from "./page-view.js";
-import type { EditControlsProps } from "./edit-controls.js";
 import type { ViewerMode } from "./types.js";
 
 export interface PhotoHomeProps extends EditControlsProps {
   photos: PhotoRecord[];
+  memories: Memory[];
+  selectedPhotoMemories: Memory[];
+  selectedPhotoIds: string[];
   selectedPhotoId: string | null;
+  selectedMemory: Memory | null;
   viewerMode: ViewerMode | null;
   viewerPhoto: PhotoRecord | null;
   filter: PhotoFilter;
   searchQuery: string;
+  statusMessage: string;
   snapshot: LibrarySnapshot;
   isScanning: boolean;
   aiEnabled: boolean;
-  memories: Memory[];
   onSelectPhoto: (photoId: string) => void;
+  onToggleBatchSelect: (photoId: string) => void;
+  onClearBatchSelection: () => void;
   onOpenDetail: (photoId: string) => void;
   onFilterChange: (patch: PhotoFilterPatch) => void;
   onSearchChange: (query: string) => void;
@@ -35,7 +62,18 @@ export interface PhotoHomeProps extends EditControlsProps {
   onSelectViewerPhoto: (photoId: string) => void;
   onSwitchViewerMode: (mode: ViewerMode) => void;
   onSelectMemory: (memoryId: string) => void;
-  onConfirmCreateMemory: (name: string) => void;
+  onSelectAllPhotos: () => void;
+  onSelectFavorites: () => void;
+  onSelectMemories: () => void;
+  onConfirmCreateMemory: (name: string) => void | Promise<void>;
+  onUpdateMemory: (
+    memoryId: string,
+    updates: { name?: string; description?: string | null; coverPhotoId?: string | null }
+  ) => Promise<Memory>;
+  onAddPhotoToMemory: (memoryId: string, photoId: string) => Promise<void> | void;
+  onAddSelectionToMemory: (memoryId: string, photoIds: string[]) => Promise<void> | void;
+  onRemovePhotoFromMemory: (memoryId: string, photoId: string) => Promise<void> | void;
+  onDeleteMemory: (memoryId: string) => Promise<void> | void;
   onToggleFavorite: (photoId: string, favorite: boolean) => void;
   canNavigatePrevious: boolean;
   canNavigateNext: boolean;
@@ -43,38 +81,66 @@ export interface PhotoHomeProps extends EditControlsProps {
 
 function HomeView({
   photos,
-  recentPhotos,
+  memories,
+  selectedPhotoIds,
   selectedPhotoId,
+  selectedMemoryId,
   filter,
   onFilterChange,
   onSelectPhoto,
+  onToggleBatchSelect,
+  onClearBatchSelection,
   onOpenDetail,
+  onOpenMemory,
+  onSeeAllMemories,
   onToggleFavorite,
+  onAddPhotoToMemory,
+  onAddSelectionToMemory,
+  selectionMode,
+  onSelectionModeChange,
 }: {
   photos: PhotoRecord[];
-  recentPhotos: PhotoRecord[];
+  memories: Memory[];
+  selectedPhotoIds: string[];
   selectedPhotoId: string | null;
+  selectedMemoryId: string | null;
   filter: PhotoFilter;
   onFilterChange: (patch: PhotoFilterPatch) => void;
   onSelectPhoto: (photoId: string) => void;
+  onToggleBatchSelect: (photoId: string) => void;
+  onClearBatchSelection: () => void;
   onOpenDetail: (photoId: string) => void;
+  onOpenMemory: (memoryId: string) => void;
+  onSeeAllMemories: () => void;
   onToggleFavorite: (photoId: string, favorite: boolean) => void;
+  onAddPhotoToMemory: (memoryId: string, photoId: string) => Promise<void> | void;
+  onAddSelectionToMemory: (memoryId: string, photoIds: string[]) => Promise<void> | void;
+  selectionMode: boolean;
+  onSelectionModeChange: (active: boolean) => void;
 }) {
   return (
     <div className="space-y-6">
       <RecentMemories
-        onOpenDetail={onOpenDetail}
-        onSelect={onSelectPhoto}
-        photos={recentPhotos}
-        selectedPhotoId={selectedPhotoId}
+        memories={memories}
+        onOpenMemory={onOpenMemory}
+        onSeeAll={onSeeAllMemories}
+        selectedMemoryId={selectedMemoryId}
       />
       <GallerySection
         filter={filter}
         onFilterChange={onFilterChange}
+        memories={memories}
+        onAddToMemory={onAddPhotoToMemory}
+        onAddSelectionToMemory={onAddSelectionToMemory}
+        onClearBatchSelection={onClearBatchSelection}
         onOpenDetail={onOpenDetail}
         onSelect={onSelectPhoto}
+        onSelectionModeChange={onSelectionModeChange}
+        onToggleBatchSelect={onToggleBatchSelect}
         onToggleFavorite={onToggleFavorite}
         photos={photos}
+        selectionMode={selectionMode}
+        selectedPhotoIds={selectedPhotoIds}
         selectedPhotoId={selectedPhotoId}
       />
     </div>
@@ -83,16 +149,22 @@ function HomeView({
 
 export function PhotoHome({
   photos,
+  memories,
+  selectedPhotoMemories,
+  selectedPhotoIds,
   selectedPhotoId,
+  selectedMemory,
   viewerMode,
   viewerPhoto,
   filter,
   searchQuery,
+  statusMessage,
   snapshot,
   isScanning,
   aiEnabled,
-  memories,
   onSelectPhoto,
+  onToggleBatchSelect,
+  onClearBatchSelection,
   onOpenDetail,
   onFilterChange,
   onSearchChange,
@@ -104,7 +176,15 @@ export function PhotoHome({
   onSelectViewerPhoto,
   onSwitchViewerMode,
   onSelectMemory,
+  onSelectAllPhotos,
+  onSelectFavorites,
+  onSelectMemories,
   onConfirmCreateMemory,
+  onUpdateMemory,
+  onAddPhotoToMemory,
+  onAddSelectionToMemory,
+  onRemovePhotoFromMemory,
+  onDeleteMemory,
   onToggleFavorite,
   canNavigatePrevious,
   canNavigateNext,
@@ -121,18 +201,53 @@ export function PhotoHome({
 }: PhotoHomeProps) {
   const [page, setPage] = React.useState<PageView>("home");
   const [createMemoryDialogOpen, setCreateMemoryDialogOpen] = React.useState(false);
+  const [selectionMode, setSelectionMode] = React.useState(false);
 
-  const recentPhotos = React.useMemo(
-    () =>
-      [...photos]
-        .sort((a, b) => {
-          const aTime = a.metadata.datetime ?? 0;
-          const bTime = b.metadata.datetime ?? 0;
-          return bTime - aTime;
-        })
-        .slice(0, 6),
-    [photos]
+  const recentMemories = React.useMemo(
+    () => [...memories].sort((a, b) => b.updatedAt - a.updatedAt),
+    [memories]
   );
+
+  const activeSidebarItem = React.useMemo(() => {
+    if (page === "library-settings") {
+      return "settings";
+    }
+
+    if (page === "memories") {
+      return "memories";
+    }
+
+    if (page === "memory-detail" && selectedMemory) {
+      return selectedMemory.id;
+    }
+
+    if (filter.favorite) {
+      return "favorites";
+    }
+
+    return "all";
+  }, [filter.favorite, page, selectedMemory]);
+
+  function openMemoryDetail(memoryId: string) {
+    onSelectMemory(memoryId);
+    setPage("memory-detail");
+  }
+
+  async function handleCreateMemory(name: string) {
+    await onConfirmCreateMemory(name);
+    onSelectMemories();
+    setPage("memories");
+  }
+
+  async function handleSaveMemoryDescription(memoryId: string, description: string) {
+    await onUpdateMemory(memoryId, { description });
+  }
+
+  async function handleDeleteMemory(memoryId: string) {
+    await onDeleteMemory(memoryId);
+    onSelectMemories();
+    setPage("memories");
+  }
 
   return (
     <PageViewContext.Provider value={{ page, setPage }}>
@@ -144,23 +259,38 @@ export function PhotoHome({
         />
 
         <div className="flex flex-1 overflow-hidden">
-          {/* Sidebar */}
           <Sidebar
-            activeItem={page === "library-settings" ? "settings" : "all"}
-            memories={memories}
+            activeItem={activeSidebarItem}
             className="w-56 shrink-0 border-r border-stone-200/80 bg-white"
-            onSelectItem={(id) => {
-              if (id === "settings") setPage("library-settings");
-              else setPage("home");
-            }}
-            onSelectMemory={onSelectMemory}
+            memories={recentMemories}
             onCreateMemory={() => setCreateMemoryDialogOpen(true)}
+            onSelectItem={(id) => {
+              if (id === "settings") {
+                setPage("library-settings");
+                return;
+              }
+
+              if (id === "memories") {
+                onSelectMemories();
+                setPage("memories");
+                return;
+              }
+
+              if (id === "favorites") {
+                onSelectFavorites();
+                setPage("home");
+                return;
+              }
+
+              onSelectAllPhotos();
+              setPage("home");
+            }}
+            onSelectMemory={openMemoryDetail}
           />
 
-          {/* Main content */}
           <main className="flex-1 overflow-y-auto">
-            {page === "library-settings" ? (
-              <div className="p-6">
+            <div className="p-6">
+              {page === "library-settings" ? (
                 <div className="rounded-[32px] border border-stone-200/70 bg-white p-6 shadow-sm">
                   <LibrarySettingsPanel
                     isScanning={isScanning}
@@ -169,21 +299,77 @@ export function PhotoHome({
                     snapshot={snapshot}
                   />
                 </div>
-              </div>
-            ) : (
-              <div className="p-6">
-                <HomeView
-                  onOpenDetail={onOpenDetail}
-                  onSelectPhoto={onSelectPhoto}
-                  photos={photos}
-                  recentPhotos={recentPhotos}
-                  selectedPhotoId={selectedPhotoId}
-                  filter={filter}
-                  onFilterChange={onFilterChange}
-                  onToggleFavorite={onToggleFavorite}
+              ) : null}
+
+              {statusMessage !== "Idle" ? (
+                <div className="mb-4 flex items-center justify-between rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900 shadow-sm">
+                  <span>{statusMessage}</span>
+                  <Badge tone="warn">Recent Action</Badge>
+                </div>
+              ) : null}
+
+              {page === "memories" ? (
+                <MemoryListSection
+                  memories={recentMemories}
+                  onOpenMemory={openMemoryDetail}
+                  selectedMemoryId={selectedMemory?.id ?? null}
                 />
-              </div>
-            )}
+              ) : null}
+
+              {page === "memory-detail" && selectedMemory ? (
+                <MemoryDetailPage
+                  memory={selectedMemory}
+                  onDeleteMemory={handleDeleteMemory}
+                  onOpenDetail={onOpenDetail}
+                  onRemovePhoto={onRemovePhotoFromMemory}
+                  onRenameMemory={async (memoryId, name) => {
+                    await onUpdateMemory(memoryId, { name });
+                  }}
+                  onSaveDescription={handleSaveMemoryDescription}
+                  onSelectPhoto={onSelectPhoto}
+                  onSetCover={async (memoryId, photoId) => {
+                    await onUpdateMemory(memoryId, { coverPhotoId: photoId });
+                  }}
+                  onToggleFavorite={onToggleFavorite}
+                  photos={photos}
+                  selectedPhotoId={selectedPhotoId}
+                />
+              ) : null}
+
+              {page === "memory-detail" && !selectedMemory ? (
+                <MemoryListSection
+                  memories={recentMemories}
+                  onOpenMemory={openMemoryDetail}
+                  selectedMemoryId={null}
+                />
+              ) : null}
+
+              {page === "home" ? (
+                <HomeView
+                  filter={filter}
+                  memories={recentMemories}
+                  onFilterChange={onFilterChange}
+                  onOpenDetail={onOpenDetail}
+                  onOpenMemory={openMemoryDetail}
+                  onSeeAllMemories={() => {
+                    onSelectMemories();
+                    setPage("memories");
+                  }}
+                  onAddPhotoToMemory={onAddPhotoToMemory}
+                  onAddSelectionToMemory={onAddSelectionToMemory}
+                  onClearBatchSelection={onClearBatchSelection}
+                  onSelectPhoto={onSelectPhoto}
+                  onSelectionModeChange={setSelectionMode}
+                  onToggleBatchSelect={onToggleBatchSelect}
+                  onToggleFavorite={onToggleFavorite}
+                  photos={photos}
+                  selectionMode={selectionMode}
+                  selectedPhotoIds={selectedPhotoIds}
+                  selectedMemoryId={selectedMemory?.id ?? null}
+                  selectedPhotoId={selectedPhotoId}
+                />
+              ) : null}
+            </div>
           </main>
         </div>
 
@@ -194,7 +380,9 @@ export function PhotoHome({
           draftCaption={draftCaption}
           draftDatetime={draftDatetime}
           draftTags={draftTags}
+          memories={recentMemories}
           mode={viewerMode}
+          onAddToMemory={onAddPhotoToMemory}
           onCaptionChange={onCaptionChange}
           onClose={onCloseViewer}
           onDatetimeChange={onDatetimeChange}
@@ -208,25 +396,20 @@ export function PhotoHome({
           onSwitchMode={onSwitchViewerMode}
           onTagsChange={onTagsChange}
           photo={viewerPhoto}
+          photoMemories={selectedPhotoMemories}
           photos={photos}
           selectedPhotoId={selectedPhotoId}
         />
 
         <CreateMemoryDialog
-          open={createMemoryDialogOpen}
+          onConfirm={handleCreateMemory}
           onOpenChange={setCreateMemoryDialogOpen}
-          onConfirm={onConfirmCreateMemory}
+          open={createMemoryDialogOpen}
         />
       </div>
     </PageViewContext.Provider>
   );
 }
-
-import { AlertTriangle, CheckCheck, FolderOpen, FolderPlus, HardDrive, LoaderCircle, Sparkles } from "lucide-react";
-import { Badge } from "./badge.js";
-import { Button } from "./button.js";
-import { formatTimestamp } from "./lib/media.js";
-import { Label } from "./label.js";
 
 function LibrarySettingsPanel({
   snapshot,

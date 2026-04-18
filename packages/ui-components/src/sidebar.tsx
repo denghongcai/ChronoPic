@@ -1,5 +1,5 @@
 import type * as React from "react";
-import { ImageIcon, PlusIcon, StarIcon } from "lucide-react";
+import { BookOpenIcon, CogIcon, ImageIcon, PlusIcon, StarIcon } from "lucide-react";
 
 import type { Memory } from "@chronopic/domain";
 
@@ -77,6 +77,18 @@ export function Sidebar({
           icon={StarIcon}
           label="Favorites"
           onClick={() => onSelectItem?.("favorites")}
+        />
+        <SidebarItem
+          active={activeItem === "memories"}
+          icon={BookOpenIcon}
+          label="Memories"
+          onClick={() => onSelectItem?.("memories")}
+        />
+        <SidebarItem
+          active={activeItem === "settings"}
+          icon={CogIcon}
+          label="Library Settings"
+          onClick={() => onSelectItem?.("settings")}
         />
       </SidebarSection>
 

@@ -64,6 +64,9 @@ export interface Memory {
   id: string;
   name: string;
   description: string | null;
+  coverPhotoId: string | null;
+  coverThumbnailPath: string | null;
+  photoCount: number;
   source: MemorySource;
   createdAt: number;
   updatedAt: number;

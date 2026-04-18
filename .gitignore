@@ -4,6 +4,7 @@ coverage
 .turbo
 .vite
 .codex
+test-results
 *.tsbuildinfo
 apps/desktop/.electron
 apps/desktop/out

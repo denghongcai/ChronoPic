@@ -1,7 +1,8 @@
-import { ArrowLeft, ArrowRight } from "lucide-react";
+import { ArrowLeft, ArrowRight, X } from "lucide-react";
 
-import type { PhotoRecord } from "@chronopic/domain";
+import type { Memory, PhotoRecord } from "@chronopic/domain";
 
+import { AddToMemoryMenu } from "./add-to-memory-menu.js";
 import { Badge } from "./badge.js";
 import { Button } from "./button.js";
 import { Dialog, DialogContent } from "./dialog.js";
@@ -17,6 +18,8 @@ export interface PhotoViewerOverlayProps extends EditControlsProps {
   mode: ViewerMode | null;
   photo: PhotoRecord | null;
   photos: PhotoRecord[];
+  memories: Memory[];
+  photoMemories: Memory[];
   selectedPhotoId: string | null;
   aiEnabled: boolean;
   canNavigatePrevious: boolean;
@@ -26,6 +29,7 @@ export interface PhotoViewerOverlayProps extends EditControlsProps {
   onNext: () => void;
   onSelectPhoto: (photoId: string) => void;
   onSwitchMode: (mode: ViewerMode) => void;
+  onAddToMemory: (memoryId: string, photoId: string) => void;
 }
 
 export function PhotoViewerOverlay(props: PhotoViewerOverlayProps) {
@@ -136,6 +140,24 @@ export function PhotoViewerOverlay(props: PhotoViewerOverlayProps) {
                       <span className="text-sm text-stone-300">{indexLabel}</span>
                     </div>
                     <div className="flex items-center gap-2">
+                      <AddToMemoryMenu
+                        memories={props.memories}
+                        onAddToMemory={(memoryId) => props.onAddToMemory(memoryId, props.photo!.photo.id)}
+                        tone="dark"
+                        trigger="icon"
+                      />
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <IconButton
+                            icon={<X className="h-4 w-4" />}
+                            label="Close viewer"
+                            onClick={props.onClose}
+                            size="sm"
+                            tone="dark"
+                          />
+                        </TooltipTrigger>
+                        <TooltipContent>Close (Esc)</TooltipContent>
+                      </Tooltip>
                       <Tooltip>
                         <TooltipTrigger asChild>
                           <IconButton
@@ -197,7 +219,7 @@ export function PhotoViewerOverlay(props: PhotoViewerOverlayProps) {
                     </Badge>
                   </div>
                   <div className="grid gap-5 p-5">
-                    <MetadataGrid aiEnabled={props.aiEnabled} photo={props.photo} />
+                    <MetadataGrid aiEnabled={props.aiEnabled} memories={props.photoMemories} photo={props.photo} />
                     <EditControls
                       draftCaption={props.draftCaption}
                       draftDatetime={props.draftDatetime}
