@@ -2,9 +2,11 @@ import { CalendarClock } from "lucide-react";
 
 import type { PhotoRecord } from "@chronopic/domain";
 
+import { Badge } from "./badge.js";
+import { Button } from "./button.js";
 import { cn } from "./lib/cn.js";
 import { formatTimestamp, mediaIcon, mediaLabel, MediaPreview } from "./lib/media.js";
-import { Badge, Panel } from "./primitives.js";
+import { Panel } from "./panel.js";
 
 export interface PhotoGridProps {
   photos: PhotoRecord[];
@@ -41,9 +43,9 @@ export function PhotoGrid(props: PhotoGridProps) {
               const MediaIcon = mediaIcon(record.photo.mime);
 
               return (
-                <button
+                <Button
                   className={cn(
-                    "group overflow-hidden rounded-[24px] border bg-white text-left shadow-sm transition duration-200 hover:-translate-y-0.5 hover:shadow-lg",
+                    "group h-auto overflow-hidden rounded-[24px] border bg-white p-0 text-left shadow-sm transition duration-200 hover:-translate-y-0.5 hover:shadow-lg",
                     props.selectedPhotoId === record.photo.id
                       ? "border-amber-400 ring-2 ring-amber-200"
                       : "border-stone-200 hover:border-stone-300"
@@ -58,6 +60,7 @@ export function PhotoGrid(props: PhotoGridProps) {
                     }
                   }}
                   type="button"
+                  variant="outline"
                 >
                   <div className="relative aspect-[1.05] overflow-hidden bg-gradient-to-br from-stone-200 via-stone-100 to-amber-50">
                     <MediaPreview className="transition duration-300 group-hover:scale-[1.03]" record={record} />
@@ -86,7 +89,7 @@ export function PhotoGrid(props: PhotoGridProps) {
                       </span>
                     </div>
                   </div>
-                </button>
+                </Button>
               );
             })}
           </div>

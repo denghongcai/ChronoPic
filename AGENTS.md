@@ -273,6 +273,58 @@ This file is the local execution record for ChronoPic. It complements `PLAN.md` 
   `pnpm build`
 - Result: focused viewing remains build-valid while offering clearer exit paths, better mode transitions, and more discoverable keyboard behavior.
 
+### 2026-04-18 Step 20
+
+- Reviewed the current UI layer and confirmed that the project is still using custom Tailwind primitives rather than actual `shadcn/ui` interaction components.
+- Updated `PLAN.md` to add a dedicated `Real shadcn/ui Component Adoption Phase`.
+- Locked this phase as a genuine component-stack migration rather than a visual cleanup task.
+- Set the first migration targets to the most obvious gaps:
+  `Select` controls in the filter toolbar,
+  and viewer overlays moving toward dialog-style primitives instead of custom full-screen wrappers.
+- Captured an explicit constraint for the next work:
+  adopt only the minimal Radix-backed component set needed for current product surfaces, and keep those dependencies confined to the UI package layer.
+
+### 2026-04-18 Step 21
+
+- Implemented the first pass of the `Real shadcn/ui Component Adoption Phase`.
+- Added the minimal Radix dependency set needed for current product surfaces inside `@chronopic/ui-components`:
+  `@radix-ui/react-select`
+  `@radix-ui/react-dialog`
+- Introduced real `shadcn/ui`-style component modules backed by Radix primitives:
+  `select.tsx`
+  `dialog.tsx`
+- Migrated the filter toolbar away from raw DOM `<select>` controls onto the new Radix-backed `Select` component set.
+- Migrated the focused viewer overlays away from ad hoc fixed wrappers onto Radix-backed dialog primitives while preserving the existing detail/gallery layout and keyboard flow.
+- Kept the migration deliberately narrow:
+  only the interaction families currently in use were moved,
+  while the broader UI package structure and page behavior remained intact.
+- Re-verified the repository after the real component adoption pass with:
+  `pnpm install`
+  `pnpm typecheck`
+  `pnpm build`
+- Result: the project now uses genuine Radix-backed interaction primitives for `Select` and viewer dialogs instead of pure lookalike wrappers, and the build remains green.
+
+### 2026-04-18 Step 22
+
+- Tightened the `Real shadcn/ui Component Adoption Phase` further by migrating the shared base controls away from the previous catch-all custom primitives module.
+- Added focused component files for the core `shadcn`-style base layer:
+  `button.tsx`
+  `input.tsx`
+  `textarea.tsx`
+  `badge.tsx`
+  `label.tsx`
+  `panel.tsx`
+- Added the additional minimal Radix dependencies needed for those components:
+  `@radix-ui/react-slot`
+  `@radix-ui/react-label`
+- Updated the shared UI package so feature modules now consume the new base components instead of the old monolithic primitives file.
+- This means key surfaces such as the filter toolbar, edit controls, filmstrip, grid cards, detail panel, and viewer overlay are now composed through the new component files rather than directly relying on raw scattered element implementations.
+- Re-verified the repository after the base-component migration with:
+  `pnpm install`
+  `pnpm typecheck`
+  `pnpm build`
+- Result: the UI layer is now materially closer to a real `shadcn` component model, with shared controls exposed as dedicated components and the build remaining green.
+
 ## Next Immediate Tasks
 
 1. Workspace skeleton is implemented.
@@ -283,4 +335,6 @@ This file is the local execution record for ChronoPic. It complements `PLAN.md` 
 6. The first dedicated detail-view and gallery-view implementation is landed and verified at typecheck/build level.
 7. The first renderer/UI structural split is landed and verified at typecheck/build level.
 8. Viewer ergonomics have received a first focused polish pass and remain build-valid.
-9. Remaining follow-up: run a runtime smoke test in Electron and continue polish based on real use.
+9. The first real `shadcn/ui` / Radix-backed adoption pass is landed for `Select` and viewer dialogs.
+10. The base UI control layer has also been migrated toward dedicated `shadcn`-style component files and remains build-valid.
+11. Remaining follow-up: run a runtime smoke test in Electron and continue incremental component adoption/polish based on real use.

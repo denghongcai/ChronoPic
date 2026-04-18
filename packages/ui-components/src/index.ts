@@ -1,7 +1,14 @@
 export type { ViewerMode } from "./types.js";
 
-export { Badge, Button, FieldLabel, Input, Panel, Textarea } from "./primitives.js";
+export { Badge } from "./badge.js";
+export { Button, buttonVariants } from "./button.js";
+export { Dialog, DialogClose, DialogContent, DialogOverlay, DialogPortal } from "./dialog.js";
+export { Input } from "./input.js";
+export { Label } from "./label.js";
 export { MediaPreview, formatTimestamp, mediaIcon, mediaLabel, mediaUrl, thumbnailUrl } from "./lib/media.js";
+export { Panel } from "./panel.js";
+export { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./select.js";
+export { Textarea } from "./textarea.js";
 
 export { EditControls } from "./edit-controls.js";
 export type { EditControlsProps } from "./edit-controls.js";

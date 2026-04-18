@@ -1,6 +1,9 @@
 import { CalendarClock, Tags, Undo2 } from "lucide-react";
 
-import { Button, FieldLabel, Input, Textarea } from "./primitives.js";
+import { Button } from "./button.js";
+import { Input } from "./input.js";
+import { Label } from "./label.js";
+import { Textarea } from "./textarea.js";
 
 export interface EditControlsProps {
   draftTags: string;
@@ -15,18 +18,18 @@ export interface EditControlsProps {
 export function EditControls(props: EditControlsProps) {
   return (
     <div className="grid gap-4">
-      <label className="space-y-2">
-        <FieldLabel>Tags</FieldLabel>
+      <div className="space-y-2">
+        <Label>Tags</Label>
         <Textarea onChange={(event) => props.onTagsChange(event.target.value)} rows={3} value={props.draftTags} />
-      </label>
+      </div>
       <Button className="w-full" onClick={props.onSaveTags} variant="accent">
         <Tags className="h-4 w-4" />
         Save Tags
       </Button>
-      <label className="space-y-2">
-        <FieldLabel>Datetime</FieldLabel>
+      <div className="space-y-2">
+        <Label>Datetime</Label>
         <Input onChange={(event) => props.onDatetimeChange(event.target.value)} type="datetime-local" value={props.draftDatetime} />
-      </label>
+      </div>
       <div className="grid gap-2 sm:grid-cols-2">
         <Button onClick={props.onSaveDatetime} variant="secondary">
           <CalendarClock className="h-4 w-4" />

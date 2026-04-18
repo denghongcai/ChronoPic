@@ -99,6 +99,23 @@ ChronoPic starts from a greenfield repository. The first implementation pass wil
 - Align exports with the new structure so each public component is exported intentionally rather than incidentally through one catch-all implementation file.
 - Use this phase to improve modification cost and reasoning clarity, not to change product scope or behavior by default.
 
+### 4.4 Real shadcn/ui Component Adoption Phase
+
+- Add a dedicated phase to replace the current Tailwind-only lookalike primitives with actual `shadcn/ui`-style component implementations backed by the expected Radix primitives where applicable.
+- Treat this as distinct from the earlier visual refactor:
+  the goal here is to align interaction components with the real `shadcn/ui` composition model, accessibility behavior, and dependency stack rather than only matching the visual language.
+- Start with the most visible interactive surfaces:
+  `Select` in the filter toolbar,
+  viewer overlays via `Dialog`/`Sheet`-style primitives,
+  and any other controls whose current implementation still relies on raw DOM widgets or ad hoc overlay behavior.
+- Introduce the minimal Radix dependency set required for the adopted `shadcn/ui` components, and keep those dependencies isolated to the UI package layer.
+- Keep low-level visual tokens, utility merging, and public exports organized so the package still exposes a deliberate UI surface after the migration.
+- Migrate incrementally:
+  replace one interaction family at a time,
+  validate behavior,
+  then continue to adjacent controls instead of attempting a full UI rewrite in one pass.
+- Preserve current product behavior unless a specific interaction improvement is part of the migration target.
+
 ### 5. Editing and History
 
 - Support local tag edits and datetime correction in the database projection.
@@ -132,6 +149,9 @@ ChronoPic starts from a greenfield repository. The first implementation pass wil
 - Verify the structural split does not change runtime behavior:
   the same key UI flows should remain functional after files are decomposed.
 - Verify package exports remain deliberate and build/runtime resolution still matches the public package surface after the split.
+- Verify adopted `shadcn/ui` components are genuinely backed by the expected primitives rather than raw DOM stand-ins for the same interaction.
+- Verify `Select` keyboard behavior, focus handling, and overlay positioning remain correct after the migration.
+- Verify viewer overlays continue to support dismissal, focus trapping, and keyboard controls after moving onto dialog-style primitives.
 
 ## Assumptions
 
@@ -142,3 +162,4 @@ ChronoPic starts from a greenfield repository. The first implementation pass wil
 - The `shadcn/ui` phase is a renderer-only refactor and must not widen package boundaries or bypass existing application-layer APIs.
 - The detail/gallery viewing phase should reuse the current photo list query model and active-record data flow instead of introducing a second parallel retrieval path unless runtime validation shows that the existing list payload is insufficient.
 - The UI structure phase is a code-organization refactor first; it should preserve behavior unless a specific follow-up UX change is explicitly planned.
+- The real `shadcn/ui` adoption phase should prefer a minimal, deliberate component set over importing a broad catalog that the product does not actually use.

@@ -2,8 +2,11 @@ import { AlertTriangle, CheckCheck, FolderOpen, FolderPlus, HardDrive, LoaderCir
 
 import type { LibrarySnapshot } from "@chronopic/domain";
 
+import { Badge } from "./badge.js";
+import { Button } from "./button.js";
 import { formatTimestamp } from "./lib/media.js";
-import { Badge, Button, FieldLabel, Panel } from "./primitives.js";
+import { Label } from "./label.js";
+import { Panel } from "./panel.js";
 
 export interface LibrarySidebarProps {
   snapshot: LibrarySnapshot;
@@ -60,7 +63,7 @@ export function LibrarySidebar(props: LibrarySidebarProps) {
           </div>
           <div className="space-y-3">
             <div className="flex items-center justify-between">
-              <FieldLabel>Registered Sources</FieldLabel>
+              <Label>Registered Sources</Label>
               <Badge tone="info">{props.snapshot.sources.length} active</Badge>
             </div>
             <div className="grid max-h-[38vh] gap-3 overflow-auto pr-1">

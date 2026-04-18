@@ -3,7 +3,14 @@ import type { ChangeEvent } from "react";
 
 import type { PhotoFilter, PhotoFilterPatch } from "@chronopic/domain";
 
-import { Badge, Button, FieldLabel, Input, Panel } from "./primitives.js";
+import { Badge } from "./badge.js";
+import { Button } from "./button.js";
+import { Input } from "./input.js";
+import { Label } from "./label.js";
+import { Panel } from "./panel.js";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./select.js";
+
+const ALL_VALUE = "__all__";
 
 function currentSortBy(value: PhotoFilter["sortBy"]): NonNullable<PhotoFilter["sortBy"]> {
   return value ?? "datetime";
@@ -13,7 +20,7 @@ function currentSortDirection(value: PhotoFilter["sortDirection"]): NonNullable<
   return value ?? "desc";
 }
 
-function readInputValue(event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>): string {
+function readInputValue(event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>): string {
   return event.target.value;
 }
 
@@ -47,8 +54,8 @@ export function FilterToolbar(props: FilterToolbarProps) {
           </Badge>
         </div>
         <div className="grid gap-4 xl:grid-cols-[minmax(0,1.7fr)_repeat(4,minmax(0,1fr))]">
-          <label className="space-y-2">
-            <FieldLabel>Search</FieldLabel>
+          <div className="space-y-2">
+            <Label>Search</Label>
             <div className="relative">
               <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-stone-400" />
               <Input
@@ -59,56 +66,68 @@ export function FilterToolbar(props: FilterToolbarProps) {
                 value={props.filter.query ?? ""}
               />
             </div>
-          </label>
-          <label className="space-y-2">
-            <FieldLabel>Type</FieldLabel>
-            <select
-              className="h-11 rounded-xl border border-stone-200 bg-white px-3.5 text-sm text-stone-900 shadow-sm outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-200"
-              onChange={(event) => props.onChange({ mimePrefix: readInputValue(event) || undefined, offset: 0 })}
-              value={props.filter.mimePrefix ?? ""}
+          </div>
+          <div className="space-y-2">
+            <Label>Type</Label>
+            <Select
+              onValueChange={(value) => props.onChange({ mimePrefix: value === ALL_VALUE ? undefined : value, offset: 0 })}
+              value={props.filter.mimePrefix ?? ALL_VALUE}
             >
-              <option value="">All</option>
-              <option value="image/">Images</option>
-              <option value="video/">Videos</option>
-            </select>
-          </label>
-          <label className="space-y-2">
-            <FieldLabel>Tag</FieldLabel>
+              <SelectTrigger>
+                <SelectValue placeholder="All" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={ALL_VALUE}>All</SelectItem>
+                <SelectItem value="image/">Images</SelectItem>
+                <SelectItem value="video/">Videos</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-2">
+            <Label>Tag</Label>
             <Input
               onChange={(event) => props.onChange({ tag: readInputValue(event) || undefined, offset: 0 })}
               placeholder="family"
               type="text"
               value={props.filter.tag ?? ""}
             />
-          </label>
-          <label className="space-y-2">
-            <FieldLabel>Sort</FieldLabel>
-            <select
-              className="h-11 rounded-xl border border-stone-200 bg-white px-3.5 text-sm text-stone-900 shadow-sm outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-200"
-              onChange={(event) => props.onChange({ sortBy: readInputValue(event) as NonNullable<PhotoFilter["sortBy"]>, offset: 0 })}
+          </div>
+          <div className="space-y-2">
+            <Label>Sort</Label>
+            <Select
+              onValueChange={(value) => props.onChange({ sortBy: value as NonNullable<PhotoFilter["sortBy"]>, offset: 0 })}
               value={currentSortBy(props.filter.sortBy)}
             >
-              <option value="datetime">Datetime</option>
-              <option value="updatedAt">Updated</option>
-              <option value="path">Path</option>
-            </select>
-          </label>
-          <label className="space-y-2">
-            <FieldLabel>Direction</FieldLabel>
-            <select
-              className="h-11 rounded-xl border border-stone-200 bg-white px-3.5 text-sm text-stone-900 shadow-sm outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-200"
-              onChange={(event) =>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="datetime">Datetime</SelectItem>
+                <SelectItem value="updatedAt">Updated</SelectItem>
+                <SelectItem value="path">Path</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-2">
+            <Label>Direction</Label>
+            <Select
+              onValueChange={(value) =>
                 props.onChange({
-                  sortDirection: readInputValue(event) as NonNullable<PhotoFilter["sortDirection"]>,
+                  sortDirection: value as NonNullable<PhotoFilter["sortDirection"]>,
                   offset: 0
                 })
               }
               value={currentSortDirection(props.filter.sortDirection)}
             >
-              <option value="desc">Desc</option>
-              <option value="asc">Asc</option>
-            </select>
-          </label>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="desc">Desc</SelectItem>
+                <SelectItem value="asc">Asc</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </div>
         <div className="flex flex-wrap gap-2">
           <FilterToggle

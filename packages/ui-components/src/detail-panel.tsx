@@ -2,10 +2,12 @@ import { ImageIcon } from "lucide-react";
 
 import type { PhotoRecord } from "@chronopic/domain";
 
+import { Badge } from "./badge.js";
+import { Button } from "./button.js";
 import { EditControls, type EditControlsProps } from "./edit-controls.js";
 import { MediaPreview } from "./lib/media.js";
 import { MetadataGrid } from "./metadata-grid.js";
-import { Badge, Button, Panel } from "./primitives.js";
+import { Panel } from "./panel.js";
 
 export interface DetailPanelProps extends EditControlsProps {
   photo: PhotoRecord | null;
