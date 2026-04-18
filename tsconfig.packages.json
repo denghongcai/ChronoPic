@@ -1,0 +1,32 @@
+{
+  "files": [],
+  "references": [
+    {
+      "path": "./packages/domain"
+    },
+    {
+      "path": "./packages/shared-utils"
+    },
+    {
+      "path": "./packages/infra-db"
+    },
+    {
+      "path": "./packages/infra-fs"
+    },
+    {
+      "path": "./packages/infra-image"
+    },
+    {
+      "path": "./packages/services-ai-pipeline"
+    },
+    {
+      "path": "./packages/services-indexer"
+    },
+    {
+      "path": "./packages/application"
+    },
+    {
+      "path": "./packages/ui-components"
+    }
+  ]
+}

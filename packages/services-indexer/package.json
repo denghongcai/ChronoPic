@@ -1,0 +1,30 @@
+{
+  "name": "@chronopic/services-indexer",
+  "version": "0.1.0",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    }
+  },
+  "dependencies": {
+    "@chronopic/domain": "workspace:*",
+    "@chronopic/infra-db": "workspace:*",
+    "@chronopic/infra-fs": "workspace:*",
+    "@chronopic/infra-image": "workspace:*",
+    "@chronopic/shared-utils": "workspace:*"
+  },
+  "scripts": {
+    "build": "pnpm exec tsc -p tsconfig.json",
+    "lint": "pnpm exec tsc -p tsconfig.json --noEmit",
+    "test": "node -e \"console.log('Run tests from repo root: pnpm test')\"",
+    "typecheck": "pnpm exec tsc -p tsconfig.json --noEmit"
+  }
+}

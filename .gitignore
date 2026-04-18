@@ -1,0 +1,11 @@
+node_modules
+dist
+coverage
+.turbo
+.vite
+.codex
+*.tsbuildinfo
+apps/desktop/.electron
+apps/desktop/out
+data
+thumbs

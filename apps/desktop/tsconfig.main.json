@@ -1,0 +1,19 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "outDir": "dist",
+    "rootDir": ".",
+    "jsx": "react-jsx",
+    "types": [
+      "node",
+      "electron"
+    ]
+  },
+  "include": [
+    "main/**/*.ts",
+    "preload/**/*.ts",
+    "preload/**/*.cts"
+  ]
+}

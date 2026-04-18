@@ -1,0 +1,58 @@
+@import "tailwindcss";
+@source "../../../../packages/ui-components/src";
+
+:root {
+  color-scheme: light;
+  font-family: "IBM Plex Sans", "Space Grotesk", "Noto Sans SC", sans-serif;
+  background:
+    radial-gradient(circle at top left, rgba(251, 191, 36, 0.18), transparent 26%),
+    radial-gradient(circle at 82% 12%, rgba(59, 130, 246, 0.12), transparent 22%),
+    linear-gradient(180deg, #fcfaf6 0%, #f5efe7 48%, #efe7dc 100%);
+  color: #1f2937;
+}
+
+@layer base {
+  * {
+    box-sizing: border-box;
+  }
+
+  html,
+  body,
+  #root {
+    min-height: 100vh;
+  }
+
+  body {
+    margin: 0;
+    background: transparent;
+    color: #1f2937;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  button,
+  input,
+  textarea,
+  select {
+    font: inherit;
+  }
+
+  img {
+    display: block;
+    max-width: 100%;
+  }
+
+  ::selection {
+    background: rgba(245, 158, 11, 0.24);
+  }
+
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    border-radius: 999px;
+    background: rgba(120, 113, 108, 0.34);
+  }
+}

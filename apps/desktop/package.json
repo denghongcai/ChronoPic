@@ -1,0 +1,52 @@
+{
+  "name": "@chronopic/desktop",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "dist/main/main.js",
+  "scripts": {
+    "build": "pnpm run build:main && pnpm run build:renderer",
+    "build:main": "pnpm exec tsc -p tsconfig.main.json",
+    "build:renderer": "pnpm exec vite build",
+    "dev": "pnpm run dev:electron",
+    "dev:electron": "pnpm exec concurrently -k -n renderer,main,electron -c cyan,yellow,green \"pnpm run dev:renderer\" \"pnpm run dev:main\" \"pnpm run dev:launch\"",
+    "dev:launch": "pnpm run ensure:electron && pnpm run ensure:native && pnpm exec wait-on tcp:5173 file:dist/main/main.js && VITE_DEV_SERVER_URL=http://localhost:5173 pnpm exec electronmon dist/main/main.js",
+    "dev:main": "pnpm exec tsc -p tsconfig.main.json --watch --preserveWatchOutput",
+    "dev:renderer": "pnpm exec vite",
+    "ensure:electron": "node ../../scripts/ensure-electron.mjs",
+    "ensure:native": "node ../../scripts/ensure-native-modules.mjs",
+    "lint": "pnpm exec tsc -p tsconfig.main.json --noEmit && pnpm exec tsc -p tsconfig.renderer.json --noEmit",
+    "start": "pnpm run ensure:electron && pnpm run ensure:native && pnpm exec electron dist/main/main.js",
+    "test": "node -e \"console.log('Run tests from repo root: pnpm test')\"",
+    "typecheck": "pnpm exec tsc -p tsconfig.main.json --noEmit && pnpm exec tsc -p tsconfig.renderer.json --noEmit"
+  },
+  "dependencies": {
+    "@chronopic/application": "workspace:*",
+    "@chronopic/domain": "workspace:*",
+    "@chronopic/infra-db": "workspace:*",
+    "@chronopic/infra-fs": "workspace:*",
+    "@chronopic/infra-image": "workspace:*",
+    "@chronopic/services-ai-pipeline": "workspace:*",
+    "@chronopic/services-indexer": "workspace:*",
+    "@chronopic/ui-components": "workspace:*",
+    "lucide-react": "^1.8.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "zustand": "^5.0.0"
+  },
+  "devDependencies": {
+    "@electron/rebuild": "^4.0.3",
+    "@tailwindcss/vite": "^4.2.2",
+    "@types/node": "^24.0.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "@vitejs/plugin-react": "^5.0.0",
+    "concurrently": "^9.2.1",
+    "electron": "^37.0.0",
+    "electronmon": "^2.0.4",
+    "tailwindcss": "^4.2.2",
+    "typescript": "^5.8.0",
+    "vite": "^7.0.0",
+    "wait-on": "^9.0.5"
+  }
+}

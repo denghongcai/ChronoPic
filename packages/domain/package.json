@@ -1,0 +1,23 @@
+{
+  "name": "@chronopic/domain",
+  "version": "0.1.0",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "pnpm exec tsc -p tsconfig.json",
+    "lint": "pnpm exec tsc -p tsconfig.json --noEmit",
+    "test": "node -e \"console.log('Run tests from repo root: pnpm test')\"",
+    "typecheck": "pnpm exec tsc -p tsconfig.json --noEmit"
+  }
+}
