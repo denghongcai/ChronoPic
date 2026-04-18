@@ -51,7 +51,7 @@ export interface LibrarySource {
 export interface EditHistory {
   id: string;
   photoId: string;
-  fieldName: "labels" | "datetime";
+  fieldName: "labels" | "datetime" | "caption";
   previousValue: string | null;
   nextValue: string | null;
   createdAt: number;

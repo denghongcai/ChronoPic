@@ -3,7 +3,6 @@ import { CalendarClock, Heart, Info, Trash2 } from "lucide-react";
 import type { PhotoRecord } from "@chronopic/domain";
 
 import { Badge } from "./badge.js";
-import { Button } from "./button.js";
 import { cn } from "./lib/cn.js";
 import { formatTimestamp, mediaIcon, mediaLabel, MediaPreview } from "./lib/media.js";
 
@@ -27,7 +26,7 @@ export function PhotoCard({
   const MediaIcon = mediaIcon(record.photo.mime);
 
   return (
-    <Button
+    <div
       className={cn(
         "group relative h-auto overflow-hidden rounded-[24px] border bg-white p-0 text-left shadow-sm transition duration-200 hover:-translate-y-0.5 hover:shadow-lg",
         selected ? "border-amber-400 ring-2 ring-amber-200" : "border-stone-200 hover:border-stone-300"
@@ -40,8 +39,8 @@ export function PhotoCard({
           onOpenDetail();
         }
       }}
-      type="button"
-      variant="outline"
+      role="button"
+      tabIndex={0}
     >
       <div className="relative aspect-[1.05] overflow-hidden bg-gradient-to-br from-stone-200 via-stone-100 to-amber-50">
         <MediaPreview className="transition duration-300 group-hover:scale-[1.03]" record={record} />
@@ -106,6 +105,6 @@ export function PhotoCard({
           </span>
         </div>
       </div>
-    </Button>
+    </div>
   );
 }

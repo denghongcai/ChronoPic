@@ -11,6 +11,7 @@ const api: ChronoPicBridge = {
   listPhotos: (filter) => ipcRenderer.invoke("photos:list", filter),
   getPhoto: (photoId: string) => ipcRenderer.invoke("photos:get", photoId),
   updatePhotoTags: (photoId: string, labels: string[]) => ipcRenderer.invoke("photos:updateTags", photoId, labels),
+  updatePhotoCaption: (photoId: string, caption: string | null) => ipcRenderer.invoke("photos:updateCaption", photoId, caption),
   updatePhotoDatetime: (photoId: string, datetime: number | null) =>
     ipcRenderer.invoke("photos:updateDatetime", photoId, datetime),
   updatePhotoFavorite: (photoId: string, favorite: boolean) => ipcRenderer.invoke("photos:toggleFavorite", photoId, favorite),

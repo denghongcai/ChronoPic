@@ -199,10 +199,13 @@ export function PhotoViewerOverlay(props: PhotoViewerOverlayProps) {
                   <div className="grid gap-5 p-5">
                     <MetadataGrid aiEnabled={props.aiEnabled} photo={props.photo} />
                     <EditControls
+                      draftCaption={props.draftCaption}
                       draftDatetime={props.draftDatetime}
                       draftTags={props.draftTags}
+                      onCaptionChange={props.onCaptionChange}
                       onDatetimeChange={props.onDatetimeChange}
                       onRollback={props.onRollback}
+                      onSaveCaption={props.onSaveCaption}
                       onSaveDatetime={props.onSaveDatetime}
                       onSaveTags={props.onSaveTags}
                       onTagsChange={props.onTagsChange}

@@ -48,6 +48,10 @@ export class ChronoPicAppService {
     return this.db.updatePhotoTags(photoId, labels);
   }
 
+  updatePhotoCaption(photoId: string, caption: string | null): PhotoRecord {
+    return this.db.updatePhotoCaption(photoId, caption);
+  }
+
   updatePhotoDatetime(photoId: string, datetime: number | null): PhotoRecord {
     return this.db.updatePhotoDatetime(photoId, datetime);
   }

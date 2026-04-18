@@ -137,6 +137,9 @@ function registerHandlers(runtime: NonNullable<typeof runtimeHandle>) {
   ipcMain.handle("photos:updateTags", async (_event, photoId: string, labels: string[]) =>
     runtime.appService.updatePhotoTags(photoId, labels)
   );
+  ipcMain.handle("photos:updateCaption", async (_event, photoId: string, caption: string | null) =>
+    runtime.appService.updatePhotoCaption(photoId, caption)
+  );
   ipcMain.handle("photos:updateDatetime", async (_event, photoId: string, datetime: number | null) =>
     runtime.appService.updatePhotoDatetime(photoId, datetime)
   );

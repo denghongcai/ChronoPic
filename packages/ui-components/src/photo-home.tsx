@@ -2,6 +2,7 @@ import * as React from "react";
 
 import type { AppCapabilities, LibrarySnapshot, Memory, PhotoFilter, PhotoFilterPatch, PhotoRecord } from "@chronopic/domain";
 
+import { CreateMemoryDialog } from "./create-memory-dialog.js";
 import { GallerySection } from "./gallery-section.js";
 import { Header } from "./header.js";
 import { PhotoViewerOverlay } from "./photo-viewer-overlay.js";
@@ -34,7 +35,7 @@ export interface PhotoHomeProps extends EditControlsProps {
   onSelectViewerPhoto: (photoId: string) => void;
   onSwitchViewerMode: (mode: ViewerMode) => void;
   onSelectMemory: (memoryId: string) => void;
-  onCreateMemory: () => void;
+  onConfirmCreateMemory: (name: string) => void;
   onToggleFavorite: (photoId: string, favorite: boolean) => void;
   canNavigatePrevious: boolean;
   canNavigateNext: boolean;
@@ -103,19 +104,23 @@ export function PhotoHome({
   onSelectViewerPhoto,
   onSwitchViewerMode,
   onSelectMemory,
-  onCreateMemory,
+  onConfirmCreateMemory,
   onToggleFavorite,
   canNavigatePrevious,
   canNavigateNext,
+  draftCaption,
   draftDatetime,
   draftTags,
+  onCaptionChange,
   onDatetimeChange,
   onTagsChange,
+  onSaveCaption,
   onSaveDatetime,
   onSaveTags,
   onRollback,
 }: PhotoHomeProps) {
   const [page, setPage] = React.useState<PageView>("home");
+  const [createMemoryDialogOpen, setCreateMemoryDialogOpen] = React.useState(false);
 
   const recentPhotos = React.useMemo(
     () =>
@@ -149,7 +154,7 @@ export function PhotoHome({
               else setPage("home");
             }}
             onSelectMemory={onSelectMemory}
-            onCreateMemory={onCreateMemory}
+            onCreateMemory={() => setCreateMemoryDialogOpen(true)}
           />
 
           {/* Main content */}
@@ -186,14 +191,17 @@ export function PhotoHome({
           aiEnabled={aiEnabled}
           canNavigateNext={canNavigateNext}
           canNavigatePrevious={canNavigatePrevious}
+          draftCaption={draftCaption}
           draftDatetime={draftDatetime}
           draftTags={draftTags}
           mode={viewerMode}
+          onCaptionChange={onCaptionChange}
           onClose={onCloseViewer}
           onDatetimeChange={onDatetimeChange}
           onNext={onNextPhoto}
           onPrevious={onPreviousPhoto}
           onRollback={onRollback}
+          onSaveCaption={onSaveCaption}
           onSaveDatetime={onSaveDatetime}
           onSaveTags={onSaveTags}
           onSelectPhoto={onSelectViewerPhoto}
@@ -202,6 +210,12 @@ export function PhotoHome({
           photo={viewerPhoto}
           photos={photos}
           selectedPhotoId={selectedPhotoId}
+        />
+
+        <CreateMemoryDialog
+          open={createMemoryDialogOpen}
+          onOpenChange={setCreateMemoryDialogOpen}
+          onConfirm={onConfirmCreateMemory}
         />
       </div>
     </PageViewContext.Provider>

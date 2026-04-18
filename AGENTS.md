@@ -10,6 +10,7 @@ This file is the local execution record for ChronoPic. It complements `PLAN.md` 
 - Update this file after each meaningful implementation step.
 - Record what changed, why it changed, and what remains next.
 - Do not mark a step complete unless the corresponding code or verification has landed locally.
+- After completing a phase or task (including each checklist item in PLAN.md), always update both `PLAN.md` and this file before considering the work done.
 
 ## Current Plan Reference
 
@@ -370,6 +371,44 @@ This file is the local execution record for ChronoPic. It complements `PLAN.md` 
   `pnpm build`
 - Result: all commands pass, favorite toggle and memory sidebar are functional.
 
+### 2026-04-18 Step 25
+
+- Implemented `CreateMemoryDialog` for naming new memories.
+- Added `CreateMemoryDialog` component backed by Radix `Dialog` primitive with title, description, name input, and confirm/cancel buttons.
+- Exported `DialogTitle` and `DialogDescription` from `dialog.tsx` (missing Radix re-exports).
+- `PhotoHome` now manages dialog open state internally; `onCreateMemory` prop replaced with `onConfirmCreateMemory(name: string)`.
+- Sidebar "Create Memory" button opens the dialog; confirmation calls `onConfirmCreateMemory` with the trimmed name.
+- `App.tsx` updated to pass `onConfirmCreateMemory={app.handleCreateMemory}`.
+- Re-verified with:
+  `pnpm typecheck`
+  `pnpm build`
+- Result: all commands pass, dialog integrated into the home page layout.
+
+### 2026-04-18 Step 26
+
+- Designed and implemented Playwright E2E smoke test suite at `tests/e2e/smoke.spec.ts`.
+- Set up `tests/e2e/playwright.config.ts` and installed `@playwright/test` as root dev dependency.
+- Tests verify: app shell loads, sidebar (Library/Memories sections), header search, CreateMemoryDialog open/close/confirm, gallery section.
+- All 6 tests pass. Verified against `pnpm desktop:dev` running on `http://localhost:5173`.
+- Known limitation documented: `window.chronoPic` IPC errors are expected when production-built renderer loads outside Electron preload context — filtered in test assertions, not app defects.
+- Updated PLAN.md with E2E test plan section.
+
+### 2026-04-18 Step 27
+
+- Audited Phase 5 (Editing and History) implementation: confirmed all components are wired end-to-end.
+- Phase 5 is already fully implemented: `EditHistory` domain, `edit_history` SQLite table, `recordTagEdit`/`recordDatetimeEdit` write to history, `rollbackLatestEdit` reverses latest change, IPC handlers (`photos:updateTags`, `photos:updateDatetime`, `photos:rollback`), renderer hook (`handleSaveTags`, `handleSaveDatetime`, `handleRollback`), and `EditControls` component in viewer overlay.
+- Attempted E2E test for edit/rollback flow: found that `window.chronoPic` IPC is provided by Electron preload and requires a live database connection — not mockable in HTTP-rendered smoke test environment.
+- Marked Phase 5 as complete in PLAN.md. Full edit/rollback E2E requires integration test setup with real database (documented as known limitation).
+
+### 2026-04-18 Step 28
+
+- Phase 5 UX polish: replaced plain textarea tag input with chip-based `TagInput` component (removable chips, type-to-add, Enter/comma to commit).
+- Added caption (name) field: extended domain `EditHistory.fieldName` with `"caption"`, added `updatePhotoCaption` to db/app/IPC/preload layers.
+- Changed `draftTags` from comma-separated `string` to `string[]` to match TagInput API directly.
+- Added `draftCaption` and `handleSaveCaption` to renderer hook; `EditControls` now shows Name input, TagInput, and Datetime controls.
+- Deleted unused `dashboard-shell.tsx` (superseded by `PhotoHome`).
+- All 6 E2E tests still pass. `pnpm typecheck` and `pnpm build` pass.
+
 ## Next Immediate Tasks
 
 1. Workspace skeleton is implemented.
@@ -384,4 +423,7 @@ This file is the local execution record for ChronoPic. It complements `PLAN.md` 
 10. The base UI control layer has also been migrated toward dedicated `shadcn`-style component files and remains build-valid.
 11. Phase 4.5 home page layout restructure is implemented — Header, Sidebar, MainContent with page-view switching.
 12. Phase 4.6 Favorite and Memory is implemented and verified — sidebar simplified, favorite toggle wired, memory CRUD in hook.
-13. Next: add `CreateMemoryDialog` for naming new memories, then runtime smoke test in Electron.
+13. `CreateMemoryDialog` is implemented — dialog opens from sidebar, confirms with name, calls IPC to create memory.
+14. E2E smoke tests written and passing via Playwright — verifies app shell, sidebar, header, dialog, and gallery render correctly.
+15. Phase 5 (Editing and History) fully implemented — tag chip UI (TagInput component), caption/name editing (updatePhotoCaption full stack), rollback wired. Full edit/rollback E2E requires integration test setup with real database (documented limitation).
+16. Deleted unused `dashboard-shell.tsx`. Next: Phase 6 — Additional polish passes or new feature development.

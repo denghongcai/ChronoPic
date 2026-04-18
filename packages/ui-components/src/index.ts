@@ -2,6 +2,8 @@ export type { ViewerMode } from "./types.js";
 
 export { Badge } from "./badge.js";
 export { Button, buttonVariants } from "./button.js";
+export { TagInput } from "./tag-input.js";
+export type { TagInputProps } from "./tag-input.js";
 export { IconButton } from "./icon-button.js";
 export type { IconButtonProps } from "./icon-button.js";
 export { Dialog, DialogClose, DialogContent, DialogOverlay, DialogPortal } from "./dialog.js";
@@ -26,6 +28,8 @@ export { Avatar } from "./avatar.js";
 export { SearchInput } from "./search-input.js";
 export { LibraryDialog } from "./library-dialog.js";
 export type { LibraryDialogProps } from "./library-dialog.js";
+export { CreateMemoryDialog } from "./create-memory-dialog.js";
+export type { CreateMemoryDialogProps } from "./create-memory-dialog.js";
 export { HomeStats } from "./home-stats.js";
 export type { HomeStatsProps } from "./home-stats.js";
 export { Label } from "./label.js";

@@ -490,6 +490,29 @@ export class ChronoPicDatabase {
     return this.getPhoto(photoId) as PhotoRecord;
   }
 
+  updatePhotoCaption(photoId: string, caption: string | null): PhotoRecord {
+    const existing = this.getPhoto(photoId);
+
+    if (!existing) {
+      throw new Error(`Photo not found: ${photoId}`);
+    }
+
+    const now = Date.now();
+
+    const transaction = this.db.transaction(() => {
+      this.db.prepare("UPDATE semantic SET caption = ? WHERE photo_id = ?").run(caption, photoId);
+      this.db.prepare("UPDATE photos SET updated_at = ? WHERE id = ?").run(now, photoId);
+      this.db
+        .prepare(
+          "INSERT INTO edit_history (id, photo_id, field_name, previous_value, next_value, created_at, rolled_back_at) VALUES (?, ?, ?, ?, ?, ?, NULL)"
+        )
+        .run(createId("edit"), photoId, "caption", existing.semantic.caption, caption, now);
+    });
+
+    transaction();
+    return this.getPhoto(photoId) as PhotoRecord;
+  }
+
   updatePhotoDatetime(photoId: string, datetime: number | null): PhotoRecord {
     const existing = this.getPhoto(photoId);
 

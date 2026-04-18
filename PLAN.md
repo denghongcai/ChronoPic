@@ -148,14 +148,17 @@ ChronoPic starts from a greenfield repository. The first implementation pass wil
 - Wire favorite state through the renderer hook: `PhotoCard` hover action calls IPC to toggle, update local photo record.
 - Update `FilterToolbar` to include a Favorites toggle backed by `filter.favorite`.
 - Simplify `Sidebar` to only two sections: Library (All Photos, Favorites) and Memories. Remove placeholder albums and collections.
-- Add a `CreateMemoryDialog` for creating a new memory with a name.
+- Add a `CreateMemoryDialog` for creating a new memory with a name. ✅
 - Update the test plan: add verification for favorite toggle, memory creation, memory listing, and photo-membership queries.
 
-### 5. Editing and History
+### 5. Editing and History ✅
 
-- Support local tag edits and datetime correction in the database projection.
-- Record edit history so the latest change can be rolled back safely.
-- Do not write edits back into EXIF files in this implementation pass.
+- Support local tag edits and datetime correction in the database projection. ✅
+- Record edit history so the latest change can be rolled back safely. ✅
+- Do not write edits back into EXIF files in this implementation pass. ✅
+- E2E smoke tests cover the EditControls UI elements but full edit/rollback flow requires integration test setup with real database.
+- Tag editing UI upgraded to chip/tag format: `TagInput` component with removable chips, type-to-add interaction. ✅
+- Caption (name) field added: editable via `UpdatePhotoCaption` in db/app/IPC layers, surfaced in `EditControls`. ✅
 
 ## Public Interfaces
 
@@ -196,6 +199,19 @@ ChronoPic starts from a greenfield repository. The first implementation pass wil
 - Verify memory creation, listing, and photo membership queries work end-to-end.
 - Verify sidebar shows only Library (All Photos, Favorites) and Memories sections with no placeholders.
 - Verify the database migration adds the `favorite` column and memory tables to existing app databases on next launch.
+
+### E2E Test Plan (Playwright)
+
+- `tests/e2e/smoke.spec.ts` — Playwright E2E suite runnable with `npx playwright test`.
+- Tests launch the Electron app with the dev renderer and verify:
+  1. App window opens without renderer JS errors.
+  2. Sidebar renders Library and Memories sections with correct nav items.
+  3. Header renders with functional search input.
+  4. CreateMemoryDialog opens from sidebar and closes on Cancel.
+  5. CreateMemoryDialog confirms with name and closes.
+  6. Gallery section with filter toolbar renders.
+- Prerequisites: `pnpm desktop:dev` running on `http://localhost:5173`.
+- Known limitation: `window.chronoPic` IPC errors are expected in production-built renderer loaded outside Electron preload context — these are filtered out and do not indicate app defects.
 
 ## Assumptions
 

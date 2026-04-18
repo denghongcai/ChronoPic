@@ -34,8 +34,9 @@ export function useChronoPicApp() {
   const [photos, setPhotos] = useState<PhotoRecord[]>([]);
   const [memories, setMemories] = useState<Memory[]>([]);
   const [selectedPhotoId, setSelectedPhotoId] = useState<string | null>(null);
-  const [draftTags, setDraftTags] = useState("");
+  const [draftTags, setDraftTags] = useState<string[]>([]);
   const [draftDatetime, setDraftDatetime] = useState("");
+  const [draftCaption, setDraftCaption] = useState("");
   const [isScanning, setIsScanning] = useState(false);
   const [statusMessage, setStatusMessage] = useState("Idle");
   const [viewerMode, setViewerMode] = useState<ViewerMode | null>(null);
@@ -82,9 +83,10 @@ export function useChronoPicApp() {
   }, [filter]);
 
   useEffect(() => {
-    setDraftTags(selectedPhoto?.semantic.labels.join(", ") ?? "");
+    setDraftTags(selectedPhoto?.semantic.labels ?? []);
     setDraftDatetime(toDatetimeInput(selectedPhoto?.metadata.datetime ?? null));
-  }, [selectedPhotoId, selectedPhoto?.metadata.datetime, selectedPhoto?.semantic.labels]);
+    setDraftCaption(selectedPhoto?.semantic.caption ?? "");
+  }, [selectedPhotoId, selectedPhoto?.metadata.datetime, selectedPhoto?.semantic.labels, selectedPhoto?.semantic.caption]);
 
   useEffect(() => {
     if (!selectedPhoto && viewerMode) {
@@ -170,9 +172,19 @@ export function useChronoPicApp() {
       return;
     }
 
-    const updated = (await window.chronoPic.updatePhotoTags(selectedPhotoId, parseTags(draftTags))) as PhotoRecord;
+    const updated = (await window.chronoPic.updatePhotoTags(selectedPhotoId, draftTags)) as PhotoRecord;
     setPhotos((current) => current.map((photo) => (photo.photo.id === updated.photo.id ? updated : photo)));
     setStatusMessage("Tags updated");
+  }
+
+  async function handleSaveCaption() {
+    if (!selectedPhotoId) {
+      return;
+    }
+
+    const updated = (await window.chronoPic.updatePhotoCaption(selectedPhotoId, draftCaption || null)) as PhotoRecord;
+    setPhotos((current) => current.map((photo) => (photo.photo.id === updated.photo.id ? updated : photo)));
+    setStatusMessage("Caption updated");
   }
 
   async function handleSaveDatetime() {
@@ -232,6 +244,7 @@ export function useChronoPicApp() {
     canNavigateNext,
     canNavigatePrevious,
     capabilities,
+    draftCaption,
     draftDatetime,
     draftTags,
     filter,
@@ -242,6 +255,7 @@ export function useChronoPicApp() {
     photos,
     selectedPhoto,
     selectedPhotoId,
+    setDraftCaption,
     setDraftDatetime,
     setDraftTags,
     setSelectedPhotoId,
@@ -253,6 +267,7 @@ export function useChronoPicApp() {
     handleCreateMemory,
     handleDeleteMemory,
     handleRollback,
+    handleSaveCaption,
     handleSaveDatetime,
     handleSaveTags,
     handleScanAll,

@@ -21,6 +21,7 @@ export function App() {
       aiEnabled={app.capabilities.aiEnabled}
       canNavigateNext={app.canNavigateNext}
       canNavigatePrevious={app.canNavigatePrevious}
+      draftCaption={app.draftCaption}
       draftDatetime={app.draftDatetime}
       draftTags={app.draftTags}
       filter={app.filter}
@@ -42,8 +43,10 @@ export function App() {
       onSelectViewerPhoto={app.setSelectedPhotoId}
       onSwitchViewerMode={app.setViewerMode}
       onTagsChange={app.setDraftTags}
+      onCaptionChange={app.setDraftCaption}
+      onSaveCaption={app.handleSaveCaption}
       onSelectMemory={(memoryId) => app.patchFilter({ memoryId, offset: 0 })}
-      onCreateMemory={() => app.handleCreateMemory("New Memory")}
+      onConfirmCreateMemory={app.handleCreateMemory}
       onToggleFavorite={app.handleToggleFavorite}
       photos={app.photos}
       searchQuery={app.filter.query ?? ""}
