@@ -44,6 +44,7 @@ export interface PhotoHomeProps extends EditControlsProps {
   viewerPhoto: PhotoRecord | null;
   filter: PhotoFilter;
   searchQuery: string;
+  statusKind: "idle" | "info" | "success" | "warn" | "error";
   statusMessage: string;
   snapshot: LibrarySnapshot;
   isScanning: boolean;
@@ -158,6 +159,7 @@ export function PhotoHome({
   viewerPhoto,
   filter,
   searchQuery,
+  statusKind,
   statusMessage,
   snapshot,
   isScanning,
@@ -199,6 +201,24 @@ export function PhotoHome({
   onSaveTags,
   onRollback,
 }: PhotoHomeProps) {
+  const statusTone =
+    statusKind === "success"
+      ? "success"
+      : statusKind === "error"
+        ? "danger"
+        : statusKind === "info"
+          ? "info"
+          : "warn";
+
+  const statusShellClassName =
+    statusKind === "success"
+      ? "border-emerald-200 bg-emerald-50 text-emerald-900"
+      : statusKind === "error"
+        ? "border-rose-200 bg-rose-50 text-rose-900"
+        : statusKind === "info"
+          ? "border-sky-200 bg-sky-50 text-sky-900"
+          : "border-amber-200 bg-amber-50 text-amber-900";
+
   const [page, setPage] = React.useState<PageView>("home");
   const [createMemoryDialogOpen, setCreateMemoryDialogOpen] = React.useState(false);
   const [selectionMode, setSelectionMode] = React.useState(false);
@@ -253,7 +273,6 @@ export function PhotoHome({
     <PageViewContext.Provider value={{ page, setPage }}>
       <div className="flex h-screen flex-col overflow-hidden bg-stone-50">
         <Header
-          onOpenLibrarySettings={() => setPage("library-settings")}
           onSearchChange={onSearchChange}
           searchQuery={searchQuery}
         />
@@ -301,10 +320,12 @@ export function PhotoHome({
                 </div>
               ) : null}
 
-              {statusMessage !== "Idle" ? (
-                <div className="mb-4 flex items-center justify-between rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900 shadow-sm">
+              {statusKind !== "idle" ? (
+                <div
+                  className={`mb-4 flex items-center justify-between rounded-2xl border px-4 py-3 text-sm shadow-sm ${statusShellClassName}`}
+                >
                   <span>{statusMessage}</span>
-                  <Badge tone="warn">Recent Action</Badge>
+                  <Badge tone={statusTone}>Recent Action</Badge>
                 </div>
               ) : null}
 

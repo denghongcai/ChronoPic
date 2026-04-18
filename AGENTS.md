@@ -551,6 +551,24 @@ This file is the local execution record for ChronoPic. It complements `PLAN.md` 
   `pnpm build`
 - Result: the app now supports multi-photo selection and one-shot memory assignment from the gallery without breaking the existing single-photo browsing and viewer flows.
 
+### 2026-04-19 Step 36
+
+- Refined the batch-selection interaction after runtime feedback showed the small card-corner affordance was too easy to miss or conflict with other pointer targets.
+- Promoted batch selection into an explicit gallery-level `Select` mode so multi-select now has a stable primary entry point, while the card-corner control remains only as an in-mode assist.
+- Tightened the renderer status-feedback model from a plain string into a structured `status` object with:
+  `idle`,
+  `info`,
+  `success`,
+  `warn`,
+  and `error` kinds.
+- Updated the main content feedback banner so action results now render with severity-appropriate tones instead of a single generic warning treatment.
+- Added defensive error handling around the main memory-management and library-management actions in the renderer hook so failures produce visible feedback instead of silently failing.
+- Removed the unused top-right user/avatar entry from the header, leaving search plus the notification affordance only.
+- Re-verified the repository after the interaction/feedback cleanup with:
+  `pnpm typecheck`
+  `pnpm build`
+- Result: batch selection now has a clearer primary interaction model, action feedback is more trustworthy, and the header no longer exposes a dead user affordance.
+
 ## Next Immediate Tasks
 
 1. Workspace skeleton is implemented.
@@ -569,8 +587,10 @@ This file is the local execution record for ChronoPic. It complements `PLAN.md` 
 14. Memory detail now supports rename, set-cover, remove-from-memory, and transient action feedback; cover state is also cleared automatically when the removed photo was the active cover.
 15. Focused viewing now exposes which memories the current photo belongs to, and marks when that photo is serving as a memory cover.
 16. Gallery now supports batch photo selection and one-shot add-to-memory actions through a dedicated batch action bar.
-17. E2E smoke tests exist and pass via Playwright for the current shell-level flows; deeper memory-management runtime validation still needs a real Electron smoke test.
-18. Next: continue memory lifecycle polish with:
+17. Batch selection now has an explicit `Select` mode, and transient feedback is structured by severity rather than rendered as a single generic banner state.
+18. The unused header avatar entry has been removed; header chrome is now closer to the actual product surface.
+19. E2E smoke tests exist and pass via Playwright for the current shell-level flows; deeper memory-management runtime validation still needs a real Electron smoke test.
+20. Next: continue memory lifecycle polish with:
     richer success/error feedback,
     better empty/error states for batch actions,
     bulk remove flows,

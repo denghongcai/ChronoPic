@@ -60,7 +60,8 @@ export function App() {
       onUpdateMemory={app.handleUpdateMemory}
       photos={app.photos}
       searchQuery={app.filter.query ?? ""}
-      statusMessage={app.statusMessage}
+      statusKind={app.status.kind}
+      statusMessage={app.status.message}
       selectedPhotoIds={app.selectedPhotoIds}
       selectedPhotoMemories={app.selectedPhotoMemories}
       selectedMemory={app.selectedMemory}

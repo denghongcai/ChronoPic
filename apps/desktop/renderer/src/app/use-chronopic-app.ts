@@ -3,6 +3,13 @@ import { useEffect, useMemo, useState } from "react";
 import type { AppCapabilities, LibrarySnapshot, Memory, PhotoFilter, PhotoFilterPatch, PhotoRecord } from "@chronopic/domain";
 import type { ViewerMode } from "@chronopic/ui-components";
 
+type StatusKind = "idle" | "info" | "success" | "warn" | "error";
+
+interface AppStatus {
+  kind: StatusKind;
+  message: string;
+}
+
 function toDatetimeInput(timestamp: number | null): string {
   if (!timestamp) {
     return "";
@@ -21,6 +28,7 @@ function parseTags(input: string): string[] {
 }
 
 export function useChronoPicApp() {
+  const idleStatus: AppStatus = { kind: "idle", message: "Idle" };
   const [snapshot, setSnapshot] = useState<LibrarySnapshot>({
     sources: [],
     stats: {
@@ -40,7 +48,7 @@ export function useChronoPicApp() {
   const [draftDatetime, setDraftDatetime] = useState("");
   const [draftCaption, setDraftCaption] = useState("");
   const [isScanning, setIsScanning] = useState(false);
-  const [statusMessage, setStatusMessage] = useState("Idle");
+  const [status, setStatus] = useState<AppStatus>(idleStatus);
   const [viewerMode, setViewerMode] = useState<ViewerMode | null>(null);
   const [filter, setFilter] = useState<PhotoFilter>({
     limit: 120,
@@ -63,6 +71,18 @@ export function useChronoPicApp() {
   );
   const canNavigatePrevious = selectedPhotoIndex > 0;
   const canNavigateNext = selectedPhotoIndex >= 0 && selectedPhotoIndex < photos.length - 1;
+
+  function showStatus(kind: Exclude<StatusKind, "idle">, message: string) {
+    setStatus({ kind, message });
+  }
+
+  function formatErrorMessage(error: unknown, fallback: string): string {
+    if (error instanceof Error && error.message) {
+      return `${fallback}: ${error.message}`;
+    }
+
+    return fallback;
+  }
 
   function patchFilter(patch: PhotoFilterPatch) {
     setFilter((current) => {
@@ -109,16 +129,16 @@ export function useChronoPicApp() {
   }, [selectedPhotoId, memories]);
 
   useEffect(() => {
-    if (isScanning || statusMessage === "Idle") {
+    if (isScanning || status.kind === "idle") {
       return;
     }
 
     const timer = window.setTimeout(() => {
-      setStatusMessage("Idle");
+      setStatus(idleStatus);
     }, 2400);
 
     return () => window.clearTimeout(timer);
-  }, [isScanning, statusMessage]);
+  }, [idleStatus, isScanning, status]);
 
   async function hydrate() {
     const response = await window.chronoPic.initialize();
@@ -145,27 +165,33 @@ export function useChronoPicApp() {
   }
 
   async function handleAddLibrary() {
-    const libraryPath = await window.chronoPic.pickLibraryDirectory();
+    try {
+      const libraryPath = await window.chronoPic.pickLibraryDirectory();
 
-    if (!libraryPath) {
-      return;
+      if (!libraryPath) {
+        return;
+      }
+
+      await window.chronoPic.addLibrarySource(libraryPath);
+      await refreshSnapshot();
+      showStatus("success", `Added library: ${libraryPath}`);
+    } catch (error) {
+      showStatus("error", formatErrorMessage(error, "Failed to add library"));
     }
-
-    await window.chronoPic.addLibrarySource(libraryPath);
-    await refreshSnapshot();
-    setStatusMessage(`Added library: ${libraryPath}`);
   }
 
   async function handleScanAll() {
     setIsScanning(true);
-    setStatusMessage("Scanning libraries...");
+    showStatus("info", "Scanning libraries...");
 
     try {
       await window.chronoPic.scanLibrary();
       await refreshSnapshot();
       await refreshPhotos();
       await refreshMemories();
-      setStatusMessage("Scan complete");
+      showStatus("success", "Scan complete");
+    } catch (error) {
+      showStatus("error", formatErrorMessage(error, "Scan failed"));
     } finally {
       setIsScanning(false);
     }
@@ -187,34 +213,51 @@ export function useChronoPicApp() {
   }
 
   async function handleCreateMemory(name: string, description?: string) {
-    const created = (await window.chronoPic.createMemory(name, description, "manual")) as Memory;
-    setMemories((current) => [...current, created]);
-    setStatusMessage(`Created memory: ${name}`);
+    try {
+      const created = (await window.chronoPic.createMemory(name, description, "manual")) as Memory;
+      setMemories((current) => [...current, created]);
+      showStatus("success", `Created memory: ${name}`);
+    } catch (error) {
+      showStatus("error", formatErrorMessage(error, "Failed to create memory"));
+    }
   }
 
   async function handleDeleteMemory(memoryId: string) {
-    await window.chronoPic.deleteMemory(memoryId);
-    setMemories((current) => current.filter((m) => m.id !== memoryId));
-    setStatusMessage("Memory deleted");
+    try {
+      await window.chronoPic.deleteMemory(memoryId);
+      setMemories((current) => current.filter((m) => m.id !== memoryId));
+      showStatus("success", "Memory deleted");
+    } catch (error) {
+      showStatus("error", formatErrorMessage(error, "Failed to delete memory"));
+    }
   }
 
   async function handleUpdateMemory(
     memoryId: string,
     updates: { name?: string; description?: string | null; coverPhotoId?: string | null }
   ) {
-    const updated = (await window.chronoPic.updateMemory(memoryId, updates)) as Memory;
-    setMemories((current) => current.map((memory) => (memory.id === updated.id ? updated : memory)));
-    setStatusMessage("Memory updated");
-    return updated;
+    try {
+      const updated = (await window.chronoPic.updateMemory(memoryId, updates)) as Memory;
+      setMemories((current) => current.map((memory) => (memory.id === updated.id ? updated : memory)));
+      showStatus("success", "Memory updated");
+      return updated;
+    } catch (error) {
+      showStatus("error", formatErrorMessage(error, "Failed to update memory"));
+      throw error;
+    }
   }
 
   async function handleAddPhotoToMemory(memoryId: string, photoId: string) {
-    await window.chronoPic.addPhotoToMemory(memoryId, photoId);
-    await refreshMemories();
-    if (filter.memoryId === memoryId) {
-      await refreshPhotos();
+    try {
+      await window.chronoPic.addPhotoToMemory(memoryId, photoId);
+      await refreshMemories();
+      if (filter.memoryId === memoryId) {
+        await refreshPhotos();
+      }
+      showStatus("success", "Photo added to memory");
+    } catch (error) {
+      showStatus("error", formatErrorMessage(error, "Failed to add photo to memory"));
     }
-    setStatusMessage("Photo added to memory");
   }
 
   async function handleAddSelectionToMemory(memoryId: string, photoIds: string[]) {
@@ -239,20 +282,24 @@ export function useChronoPicApp() {
     setSelectedPhotoIds([]);
 
     if (failures.length > 0) {
-      setStatusMessage(`Added ${uniquePhotoIds.length - failures.length}/${uniquePhotoIds.length} photos to memory`);
+      showStatus("warn", `Added ${uniquePhotoIds.length - failures.length}/${uniquePhotoIds.length} photos to memory`);
       return;
     }
 
-    setStatusMessage(`Added ${uniquePhotoIds.length} photos to memory`);
+    showStatus("success", `Added ${uniquePhotoIds.length} photos to memory`);
   }
 
   async function handleRemovePhotoFromMemory(memoryId: string, photoId: string) {
-    await window.chronoPic.removePhotoFromMemory(memoryId, photoId);
-    await refreshMemories();
-    if (filter.memoryId === memoryId) {
-      await refreshPhotos();
+    try {
+      await window.chronoPic.removePhotoFromMemory(memoryId, photoId);
+      await refreshMemories();
+      if (filter.memoryId === memoryId) {
+        await refreshPhotos();
+      }
+      showStatus("success", "Photo removed from memory");
+    } catch (error) {
+      showStatus("error", formatErrorMessage(error, "Failed to remove photo from memory"));
     }
-    setStatusMessage("Photo removed from memory");
   }
 
   async function handleToggleFavorite(photoId: string, favorite: boolean) {
@@ -265,9 +312,13 @@ export function useChronoPicApp() {
       return;
     }
 
-    const updated = (await window.chronoPic.updatePhotoTags(selectedPhotoId, draftTags)) as PhotoRecord;
-    setPhotos((current) => current.map((photo) => (photo.photo.id === updated.photo.id ? updated : photo)));
-    setStatusMessage("Tags updated");
+    try {
+      const updated = (await window.chronoPic.updatePhotoTags(selectedPhotoId, draftTags)) as PhotoRecord;
+      setPhotos((current) => current.map((photo) => (photo.photo.id === updated.photo.id ? updated : photo)));
+      showStatus("success", "Tags updated");
+    } catch (error) {
+      showStatus("error", formatErrorMessage(error, "Failed to update tags"));
+    }
   }
 
   async function handleSaveCaption() {
@@ -275,9 +326,13 @@ export function useChronoPicApp() {
       return;
     }
 
-    const updated = (await window.chronoPic.updatePhotoCaption(selectedPhotoId, draftCaption || null)) as PhotoRecord;
-    setPhotos((current) => current.map((photo) => (photo.photo.id === updated.photo.id ? updated : photo)));
-    setStatusMessage("Caption updated");
+    try {
+      const updated = (await window.chronoPic.updatePhotoCaption(selectedPhotoId, draftCaption || null)) as PhotoRecord;
+      setPhotos((current) => current.map((photo) => (photo.photo.id === updated.photo.id ? updated : photo)));
+      showStatus("success", "Caption updated");
+    } catch (error) {
+      showStatus("error", formatErrorMessage(error, "Failed to update caption"));
+    }
   }
 
   async function handleSaveDatetime() {
@@ -285,10 +340,14 @@ export function useChronoPicApp() {
       return;
     }
 
-    const timestamp = draftDatetime ? new Date(draftDatetime).getTime() : null;
-    const updated = (await window.chronoPic.updatePhotoDatetime(selectedPhotoId, timestamp)) as PhotoRecord;
-    setPhotos((current) => current.map((photo) => (photo.photo.id === updated.photo.id ? updated : photo)));
-    setStatusMessage("Datetime updated");
+    try {
+      const timestamp = draftDatetime ? new Date(draftDatetime).getTime() : null;
+      const updated = (await window.chronoPic.updatePhotoDatetime(selectedPhotoId, timestamp)) as PhotoRecord;
+      setPhotos((current) => current.map((photo) => (photo.photo.id === updated.photo.id ? updated : photo)));
+      showStatus("success", "Datetime updated");
+    } catch (error) {
+      showStatus("error", formatErrorMessage(error, "Failed to update datetime"));
+    }
   }
 
   async function handleRollback() {
@@ -299,12 +358,12 @@ export function useChronoPicApp() {
     const updated = (await window.chronoPic.rollbackLatestEdit(selectedPhotoId)) as PhotoRecord | null;
 
     if (!updated) {
-      setStatusMessage("No edit to roll back");
+      showStatus("warn", "No edit to roll back");
       return;
     }
 
     setPhotos((current) => current.map((photo) => (photo.photo.id === updated.photo.id ? updated : photo)));
-    setStatusMessage("Rolled back latest edit");
+    showStatus("success", "Rolled back latest edit");
   }
 
   function openViewer(mode: ViewerMode, photoId?: string) {
@@ -367,7 +426,7 @@ export function useChronoPicApp() {
     setSelectedPhotoId,
     setViewerMode,
     snapshot,
-    statusMessage,
+    status,
     viewerMode,
     handleAddLibrary,
     handleAddPhotoToMemory,
