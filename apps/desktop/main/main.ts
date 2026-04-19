@@ -5,7 +5,7 @@ import { pathToFileURL } from "node:url";
 import { app, BrowserWindow, dialog, ipcMain, net, protocol } from "electron";
 import type { OpenDialogOptions } from "electron";
 
-import type { PhotoFilter } from "@chronopic/domain";
+import type { PhotoFilter, PlaceGroupQuery, TimelineGroupQuery } from "@chronopic/domain";
 
 import { createRuntime } from "./runtime.js";
 
@@ -133,6 +133,11 @@ function registerHandlers(runtime: NonNullable<typeof runtimeHandle>) {
   ipcMain.handle("library:list", async () => runtime.appService.listLibrarySources());
   ipcMain.handle("library:scan", async (_event, sourceId?: string) => runtime.appService.scanLibrary(sourceId));
   ipcMain.handle("photos:list", async (_event, filter?: PhotoFilter) => runtime.appService.listPhotos(filter));
+  ipcMain.handle("photos:countMappable", async (_event, filter?: PhotoFilter) => runtime.appService.countMappablePhotos(filter));
+  ipcMain.handle("photos:listPlaceGroups", async (_event, query?: PlaceGroupQuery) => runtime.appService.listPlaceGroups(query));
+  ipcMain.handle("photos:listTimelineGroups", async (_event, query?: TimelineGroupQuery) =>
+    runtime.appService.listTimelineGroups(query)
+  );
   ipcMain.handle("photos:get", async (_event, photoId: string) => runtime.appService.getPhoto(photoId));
   ipcMain.handle("photos:updateTags", async (_event, photoId: string, labels: string[]) =>
     runtime.appService.updatePhotoTags(photoId, labels)

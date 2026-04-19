@@ -569,6 +569,240 @@ This file is the local execution record for ChronoPic. It complements `PLAN.md` 
   `pnpm build`
 - Result: batch selection now has a clearer primary interaction model, action feedback is more trustworthy, and the header no longer exposes a dead user affordance.
 
+### 2026-04-19 Step 37
+
+- Extended the memory lifecycle flow with a real batch-remove path inside `MemoryDetailPage` instead of forcing one-by-one removal through per-card hover actions only.
+- Added an explicit `Select` mode to the memory-detail photo grid so multi-select in memories now matches the gallery interaction model.
+- Added a memory-detail batch action bar with:
+  selected-count feedback,
+  `Remove Selected`,
+  and `Clear Selection`.
+- Added renderer-side `handleRemoveSelectionFromMemory` with the same partial-failure accounting model used by batch add-to-memory:
+  empty selection warns,
+  partial completion returns a warning,
+  full completion returns success,
+  and the active photo/memory data is refreshed afterward.
+- Cleared stale batch selection when switching primary browsing contexts so selection state from one surface does not leak into another page unexpectedly.
+- Re-verified the repository after the memory batch-removal pass with:
+  `pnpm typecheck`
+  `pnpm build`
+- Result: memories now support both batch add and batch remove flows with a clearer, symmetric selection model across gallery and memory-detail surfaces.
+
+### 2026-04-19 Step 38
+
+- Continued the `Memory Lifecycle Polish` work by making action feedback more object-aware instead of using generic success/warn copy.
+- Memory add/remove flows now resolve the target memory name and distinguish between:
+  successful changes,
+  no-op cases such as "already there" / "already absent",
+  and partial failures in batch operations.
+- Updated batch add/remove messaging so counts for added/removed, already-present/already-absent, and failed items are surfaced explicitly in the transient status banner.
+- Tightened the create-memory flow so the creation dialog stays open when creation fails instead of closing immediately and forcing the user to reopen it.
+- Added explicit confirmation dialogs in `MemoryDetailPage` for:
+  deleting the memory,
+  removing the current batch selection from the memory,
+  and removing a single photo from the memory.
+- Updated async save flows in memory detail so rename/description/delete/remove confirmations only close after the underlying action succeeds.
+- Re-verified the repository after the memory-feedback and confirmation pass with:
+  `pnpm typecheck`
+  `pnpm build`
+- Result: memory actions now communicate what actually happened, destructive operations have confirmation affordances, and failed create/save flows keep the user in context for retry.
+
+### 2026-04-19 Step 39
+
+- Continued the remaining polish by improving empty states and memory-relation visibility across the main product surfaces.
+- `RecentMemories` no longer disappears when empty:
+  it now shows a dedicated empty state with a direct `Create First Memory` CTA so the home page does not collapse into an unexplained gap.
+- `MemoryListSection` now also exposes a create CTA in its empty state so the dedicated memories page has a complete zero-state loop.
+- `GallerySection` now renders contextual scope messaging for:
+  active memory browsing,
+  favorites,
+  search,
+  and structured filter states,
+  instead of always presenting the shelf as a generic unscoped gallery.
+- Added a selected-photo relation banner inside the gallery shelf so the currently selected asset now surfaces which memories it belongs to, including whether it is serving as a cover image.
+- Improved gallery empty-state copy so it responds to the active context:
+  generic filtered results,
+  search,
+  favorites,
+  or a specific memory scope.
+- Added compact memory-membership badges to gallery-mode viewing so the immersive viewer still communicates memory relationships without forcing a switch back to the full inspector.
+- Re-verified the repository after the relation-visibility and zero-state pass with:
+  `pnpm typecheck`
+  `pnpm build`
+- Result: the app now better explains where the user is, why a shelf is empty, and how the current photo relates to memory objects across home, memories, gallery, and viewer surfaces.
+
+### 2026-04-19 Step 40
+
+- Added new product-planning phases to `PLAN.md` for GPS-driven browsing and browse-mode expansion.
+- Captured a dedicated `Geospatial Browse and Map View Phase` covering:
+  GPS-based place aggregation,
+  Gaode / AMap JavaScript API 2.0 web-map rendering,
+  viewport-aware photo browsing,
+  and coordinate-normalization boundaries between shared logic and renderer-only map code.
+- Captured a dedicated `Timeline View and Multi-Browse Shell Phase` covering:
+  explicit browse-mode switching between waterfall, map, and timeline,
+  shared browse-state preservation,
+  and time-bucketed library exploration.
+- Kept this step planning-only: no code paths were changed yet, and no execution step is marked complete beyond local plan updates.
+
+### 2026-04-19 Step 41
+
+- Refined the new geospatial and browse-expansion phases into implementation-ready task breakdowns inside `PLAN.md`.
+- Broke the `Geospatial Browse and Map View Phase` into:
+  geospatial domain/query foundation,
+  renderer browse-shell changes,
+  AMap / Gaode JS API 2.0 integration,
+  map-to-photo interaction wiring,
+  and map-specific zero/error states.
+- Broke the `Timeline View and Multi-Browse Shell Phase` into:
+  shared browse-shell state,
+  timeline projection/grouping,
+  timeline renderer implementation,
+  cross-mode transition rules,
+  and browse-mode UX completion.
+- Recorded the intended architecture boundary explicitly:
+  GPS/place aggregation logic belongs in shared/app layers,
+  while Gaode map lifecycle and rendering remain renderer-only.
+- Kept this step planning-only as well; no implementation code has landed yet for map/timeline browse.
+
+### 2026-04-19 Step 42
+
+- Added the recommended delivery order explicitly to both `PLAN.md` and the local execution record so future implementation does not drift or introduce contradictory sequencing.
+- Locked the intended implementation order as:
+  1. shared browse shell / `BrowseMode`,
+  2. geospatial foundation and place aggregation,
+  3. renderer-side Gaode map integration,
+  4. timeline view.
+- Captured the reasoning behind that order:
+  map and timeline should plug into one stable browse-state model,
+  and the AMap SDK should consume an already-defined query layer rather than shaping the business/data model itself.
+- This step is still planning-only; the next implementation step should begin with browse-shell state and UI wiring rather than map SDK work.
+
+### 2026-04-19 Step 43
+
+- Started implementation of the new browse stack with the first concrete step: the shared browse shell and explicit `BrowseMode`.
+- Added `BrowseMode` to `@chronopic/domain` and updated the home/library browse surface so it now switches explicitly among:
+  `waterfall`,
+  `map`,
+  and `timeline`.
+- Added a reusable `BrowseModeSwitcher` to the shared UI layer so browse-mode switching is now part of the product surface instead of only a plan concept.
+- Added a `BrowseModePlaceholder` surface so non-waterfall modes have a stable container and state contract before their full renderers are implemented.
+- Kept map/timeline rendering out of `@chronopic/ui-components` by introducing renderer-owned browse slots in `PhotoHome`, preserving the intended boundary between shared UI primitives and renderer-only map logic.
+- Re-verified the repository after the browse-shell implementation with:
+  `pnpm typecheck`
+  `pnpm build`
+- Result: the product now has a real multi-browse shell in code, with waterfall still functioning and map/timeline able to plug into a stable state model.
+
+### 2026-04-19 Step 44
+
+- Implemented the first geospatial foundation pass behind the new browse shell.
+- Added shared geospatial browse types to `@chronopic/domain`:
+  `GeoBounds`,
+  `PlaceGroup`,
+  and `PlaceGroupQuery`.
+- Added database/application/IPC/preload support for:
+  counting mappable photos in the current scope,
+  and grouping GPS-bearing photos into local place buckets.
+- Wired those geospatial queries into the renderer hook so browse-mode surfaces now receive real foundation data rather than inferring everything from the currently paged photo list.
+- Added a renderer-only `MapBrowseSurface` and AMap loader utility:
+  the map surface is now renderer-owned,
+  consumes shared geospatial query results,
+  renders a real Gaode map when `VITE_AMAP_API_KEY` is available,
+  and falls back to clear zero/config/error states when GPS data or API configuration is missing.
+- Added a place-group side list beside the map so the current geospatial foundation already participates in selection and the existing focused viewer flow, even before viewport-driven queries are implemented.
+- Re-verified the repository after the browse-shell + geospatial-foundation + first map-surface pass with:
+  `pnpm typecheck`
+  `pnpm build`
+- Result: the codebase now has a real browse shell, a shared geospatial query layer, and the first renderer-owned Gaode map surface wired to current product state.
+
+### 2026-04-19 Step 45
+
+- Continued the map phase by turning the first Gaode surface from a static map shell into a viewport-aware browse surface.
+- Extended the lightweight AMap type layer with bounds and event capabilities so the renderer can react to map movement without leaking SDK types into shared packages.
+- Updated `MapBrowseSurface` so map pan/zoom now refreshes the active place groups based on the current viewport bounds through the shared geospatial query layer.
+- Added selection-aware marker styling and viewport-scoped group counts so the map surface reflects current selection/context more clearly.
+- Kept the right-hand place list synchronized to the current viewport result rather than always showing the full initial place-group set.
+- Re-verified the repository after the viewport-aware map-browse pass with:
+  `pnpm typecheck`
+  `pnpm build`
+- Result: map browse now behaves more like a real geographic exploration surface instead of a one-time rendering of all known place groups.
+
+### 2026-04-19 Step 46
+
+- Implemented the first `Timeline View` pass on top of the shared multi-browse shell instead of extending the old waterfall-only browse model.
+- Added shared timeline browse types to `@chronopic/domain`:
+  `TimelineGranularity`,
+  `TimelineGroup`,
+  and `TimelineGroupQuery`.
+- Added timeline grouping to the application layer by projecting the current filtered photo scope into deterministic time buckets derived from persisted `metadata.datetime`.
+- Exposed timeline grouping through the desktop IPC and preload bridge with:
+  `photos:listTimelineGroups`.
+- Wired the renderer hook to fetch and hold timeline-group data alongside photos/place groups so timeline mode is driven by a shared query path rather than local ad hoc grouping only.
+- Added a renderer-owned `TimelineBrowseSurface` that:
+  renders grouped monthly sections,
+  reuses the existing photo-card interactions,
+  supports explicit batch-selection mode,
+  and keeps add-to-memory, favorite, and focused-viewer flows aligned with waterfall mode.
+- Updated the local plan record so Phase 4.9 now reflects that the first timeline renderer is landed and remaining work is polish-oriented rather than foundational.
+- Re-verified the repository after the timeline implementation with:
+  `pnpm typecheck`
+  `pnpm build`
+- Result: browse is now materially split across waterfall, map, and timeline, with all three modes sharing the same underlying result scope and viewer pipeline.
+
+### 2026-04-19 Step 47
+
+- Performed the first multi-browse UX polish pass after the initial timeline landing.
+- Added renderer-side timeline granularity state so timeline grouping is no longer hard-coded to month buckets:
+  the current implementation now supports
+  `year`,
+  `month`,
+  and
+  `day`
+  grouping through the existing shared timeline query contract.
+- Updated the timeline browse surface to expose explicit granularity controls and a scope-summary bar that explains:
+  how many dated photos are visible in the current result scope,
+  how many timeline groups are shown,
+  and how many photos are currently excluded because they lack usable datetime metadata.
+- Tightened multi-browse transitions in `PhotoHome` so switching among waterfall/map/timeline now clears stale batch-selection state instead of carrying selection-mode artifacts across surfaces.
+- Re-verified the repository after the browse-polish pass with:
+  `pnpm typecheck`
+  `pnpm build`
+- Result: the multi-browse shell now behaves more coherently during mode switches, and timeline mode exposes clearer temporal controls and scope context instead of only rendering grouped cards.
+
+### 2026-04-19 Step 48
+
+- Continued the runtime browse-polish pass with a focus on map-mode continuity rather than adding another new browse surface.
+- Added renderer-local map viewport state so the Gaode map now preserves its approximate center/zoom when the user switches away from map mode and later returns.
+- Kept that viewport state renderer-only on purpose:
+  no map SDK lifecycle or viewport model was pushed into shared packages or the application service layer.
+- Updated `MapBrowseSurface` so viewport changes now also publish current center/zoom back into the renderer hook while still refreshing place groups from the shared geospatial query layer.
+- Improved map/list selection synchronization:
+  when the currently selected photo corresponds to a visible place group,
+  the right-hand place card list now scrolls that group into view,
+  and the map attempts to re-center on the selected place group instead of leaving the active selection off-screen.
+- Re-verified the repository after the map-continuity polish with:
+  `pnpm typecheck`
+  `pnpm build`
+- Result: browse-mode switching now feels less lossy for geographic exploration, and map-mode selection is more tightly synchronized between markers, place cards, and the shared photo/viewer state.
+
+### 2026-04-19 Step 49
+
+- Continued browse runtime polish by aligning contextual affordances across waterfall, map, and timeline instead of leaving map/timeline as thinner secondary views.
+- Added selected-photo context surfaces to both `MapBrowseSurface` and `TimelineBrowseSurface`:
+  the current selection is now called out explicitly,
+  can be opened directly into detail view,
+  and shows the same memory-membership / cover-role signals that waterfall browse already exposed.
+- Added clearer browse-scope explanation to non-waterfall modes:
+  map mode now explains when it is rendering a filtered/search/favorites/memory scope,
+  and timeline mode now surfaces that same scope context instead of only showing grouped cards.
+- Kept these changes renderer-owned and presentation-focused:
+  no additional data model expansion was required,
+  and the shared app/query layer remained unchanged except for already-landed browse state.
+- Re-verified the repository after the cross-mode context-alignment pass with:
+  `pnpm typecheck`
+  `pnpm build`
+- Result: the three browse modes now feel more like one coherent browsing product surface with different lenses, rather than one primary mode plus two detached alternates.
+
 ## Next Immediate Tasks
 
 1. Workspace skeleton is implemented.
@@ -590,8 +824,16 @@ This file is the local execution record for ChronoPic. It complements `PLAN.md` 
 17. Batch selection now has an explicit `Select` mode, and transient feedback is structured by severity rather than rendered as a single generic banner state.
 18. The unused header avatar entry has been removed; header chrome is now closer to the actual product surface.
 19. E2E smoke tests exist and pass via Playwright for the current shell-level flows; deeper memory-management runtime validation still needs a real Electron smoke test.
-20. Next: continue memory lifecycle polish with:
-    richer success/error feedback,
-    better empty/error states for batch actions,
-    bulk remove flows,
-    and runtime validation of the updated memory detail and batch-assignment experience.
+20. Memory detail now also supports batch selection and batch removal, giving memories a more complete lifecycle loop instead of one-way accumulation.
+21. Memory feedback is now more specific and destructive actions in memory detail are confirmation-gated rather than firing immediately.
+22. Empty states and relation visibility have now been strengthened across recent memories, memory list, gallery, and gallery-mode viewing surfaces.
+23. The plan now includes explicit geospatial/map-browse and timeline/multi-browse phases for future product expansion.
+24. The new browse work is now decomposed enough to implement without revisiting product shape from scratch.
+25. The recommended implementation order is now explicit and should be treated as binding unless a later design change is consciously made.
+26. The shared browse shell, geospatial foundation, and first renderer-owned map surface are now all landed and build-valid.
+27. The map phase now includes viewport-aware group querying and better marker/selection synchronization.
+28. The first timeline renderer is now landed and wired through the shared app/IPC/query path instead of being a renderer-only mock surface.
+29. Timeline now supports multiple grouping granularities and clearer scope explanation, so the remaining browse work is primarily runtime polish rather than missing core structure.
+30. Map mode now preserves viewport context and better syncs selected place groups, so the remaining browse polish is mostly about smaller runtime affordances rather than missing state foundations.
+31. Browse modes now share stronger scope and selection context, so the remaining polish is mostly around finer discoverability and performance/runtime behavior rather than missing interaction semantics.
+32. Next: continue with smaller runtime/discoverability polish across waterfall/map/timeline, or shift to a new product phase once browse feels settled enough in actual use.

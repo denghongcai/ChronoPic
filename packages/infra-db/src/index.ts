@@ -7,6 +7,8 @@ import type {
   Memory,
   MemoryPhoto,
   Metadata,
+  PlaceGroup,
+  PlaceGroupQuery,
   PhotoFilter,
   PhotoRecord,
   Semantic,
@@ -855,6 +857,169 @@ export class ChronoPicDatabase {
 
   listPhotosByMemory(memoryId: string, filter: PhotoFilter = {}): PhotoRecord[] {
     return this.listPhotos({ ...filter, memoryId });
+  }
+
+  countMappablePhotos(filter: PhotoFilter = {}): number {
+    const resolvedFilter = { ...DEFAULT_FILTER, ...filter };
+    const clauses: string[] = ["m.lat IS NOT NULL", "m.lng IS NOT NULL"];
+    const params: unknown[] = [];
+
+    if (resolvedFilter.query) {
+      clauses.push("(p.path LIKE ? OR s.caption LIKE ? OR s.labels LIKE ?)");
+      params.push(`%${resolvedFilter.query}%`, `%${resolvedFilter.query}%`, `%${resolvedFilter.query}%`);
+    }
+
+    if (resolvedFilter.mimePrefix) {
+      clauses.push("p.mime LIKE ?");
+      params.push(`${resolvedFilter.mimePrefix}%`);
+    }
+
+    if (resolvedFilter.tag) {
+      clauses.push("s.labels LIKE ?");
+      params.push(`%${resolvedFilter.tag}%`);
+    }
+
+    if (typeof resolvedFilter.favorite === "boolean") {
+      clauses.push("p.favorite = ?");
+      params.push(resolvedFilter.favorite ? 1 : 0);
+    }
+
+    if (resolvedFilter.memoryId) {
+      clauses.push("mp.memory_id = ?");
+      params.push(resolvedFilter.memoryId);
+    }
+
+    if (typeof resolvedFilter.indexed === "boolean") {
+      clauses.push("i.indexed = ?");
+      params.push(resolvedFilter.indexed ? 1 : 0);
+    }
+
+    if (resolvedFilter.hasError) {
+      clauses.push("i.error IS NOT NULL");
+    }
+
+    if (resolvedFilter.fromDatetime) {
+      clauses.push("m.datetime >= ?");
+      params.push(resolvedFilter.fromDatetime);
+    }
+
+    if (resolvedFilter.toDatetime) {
+      clauses.push("m.datetime <= ?");
+      params.push(resolvedFilter.toDatetime);
+    }
+
+    const row = this.db
+      .prepare(
+        `SELECT COUNT(*) AS total
+         FROM photos p
+         JOIN metadata m ON m.photo_id = p.id
+         JOIN semantic s ON s.photo_id = p.id
+         JOIN index_state i ON i.photo_id = p.id
+         ${resolvedFilter.memoryId ? "LEFT JOIN memory_photos mp ON mp.photo_id = p.id" : ""}
+         WHERE ${clauses.join(" AND ")}`
+      )
+      .get(...params) as { total: number };
+
+    return row.total;
+  }
+
+  listPlaceGroups(query: PlaceGroupQuery = {}): PlaceGroup[] {
+    const resolvedFilter = { ...DEFAULT_FILTER, ...(query.filter ?? {}) };
+    const precision = Math.min(Math.max(query.precision ?? 2, 0), 6);
+    const limit = query.limit ?? 200;
+    const clauses: string[] = ["m.lat IS NOT NULL", "m.lng IS NOT NULL"];
+    const params: unknown[] = [];
+
+    if (resolvedFilter.query) {
+      clauses.push("(p.path LIKE ? OR s.caption LIKE ? OR s.labels LIKE ?)");
+      params.push(`%${resolvedFilter.query}%`, `%${resolvedFilter.query}%`, `%${resolvedFilter.query}%`);
+    }
+
+    if (resolvedFilter.mimePrefix) {
+      clauses.push("p.mime LIKE ?");
+      params.push(`${resolvedFilter.mimePrefix}%`);
+    }
+
+    if (resolvedFilter.tag) {
+      clauses.push("s.labels LIKE ?");
+      params.push(`%${resolvedFilter.tag}%`);
+    }
+
+    if (typeof resolvedFilter.favorite === "boolean") {
+      clauses.push("p.favorite = ?");
+      params.push(resolvedFilter.favorite ? 1 : 0);
+    }
+
+    if (resolvedFilter.memoryId) {
+      clauses.push("mp.memory_id = ?");
+      params.push(resolvedFilter.memoryId);
+    }
+
+    if (typeof resolvedFilter.indexed === "boolean") {
+      clauses.push("i.indexed = ?");
+      params.push(resolvedFilter.indexed ? 1 : 0);
+    }
+
+    if (resolvedFilter.hasError) {
+      clauses.push("i.error IS NOT NULL");
+    }
+
+    if (resolvedFilter.fromDatetime) {
+      clauses.push("m.datetime >= ?");
+      params.push(resolvedFilter.fromDatetime);
+    }
+
+    if (resolvedFilter.toDatetime) {
+      clauses.push("m.datetime <= ?");
+      params.push(resolvedFilter.toDatetime);
+    }
+
+    if (query.bounds) {
+      clauses.push("m.lat BETWEEN ? AND ?");
+      clauses.push("m.lng BETWEEN ? AND ?");
+      params.push(query.bounds.south, query.bounds.north, query.bounds.west, query.bounds.east);
+    }
+
+    const rows = this.db
+      .prepare(
+        `SELECT
+          ROUND(m.lat, ${precision}) AS bucket_lat,
+          ROUND(m.lng, ${precision}) AS bucket_lng,
+          COUNT(*) AS photo_count,
+          MIN(m.datetime) AS from_datetime,
+          MAX(m.datetime) AS to_datetime,
+          MAX(p.id) AS representative_photo_id,
+          MAX(p.thumbnail_path) AS representative_thumbnail_path
+        FROM photos p
+        JOIN metadata m ON m.photo_id = p.id
+        JOIN semantic s ON s.photo_id = p.id
+        JOIN index_state i ON i.photo_id = p.id
+        ${resolvedFilter.memoryId ? "LEFT JOIN memory_photos mp ON mp.photo_id = p.id" : ""}
+        WHERE ${clauses.join(" AND ")}
+        GROUP BY bucket_lat, bucket_lng
+        ORDER BY photo_count DESC, to_datetime DESC
+        LIMIT ?`
+      )
+      .all(...params, limit) as Array<{
+      bucket_lat: number;
+      bucket_lng: number;
+      photo_count: number;
+      from_datetime: number | null;
+      to_datetime: number | null;
+      representative_photo_id: string | null;
+      representative_thumbnail_path: string | null;
+    }>;
+
+    return rows.map((row) => ({
+      id: `${row.bucket_lat},${row.bucket_lng}`,
+      centerLat: row.bucket_lat,
+      centerLng: row.bucket_lng,
+      photoCount: row.photo_count,
+      representativePhotoId: row.representative_photo_id,
+      representativeThumbnailPath: row.representative_thumbnail_path,
+      fromDatetime: row.from_datetime,
+      toDatetime: row.to_datetime,
+    }));
   }
 }
 

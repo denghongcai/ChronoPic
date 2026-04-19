@@ -1,6 +1,7 @@
 import type { Memory } from "@chronopic/domain";
 
 import { Badge } from "./badge.js";
+import { Button } from "./button.js";
 import { MemoryCard } from "./memory-card.js";
 import { Panel } from "./panel.js";
 
@@ -8,9 +9,10 @@ export interface MemoryListSectionProps {
   memories: Memory[];
   selectedMemoryId?: string | null;
   onOpenMemory: (memoryId: string) => void;
+  onCreateMemory?: () => void;
 }
 
-export function MemoryListSection({ memories, selectedMemoryId, onOpenMemory }: MemoryListSectionProps) {
+export function MemoryListSection({ memories, selectedMemoryId, onOpenMemory, onCreateMemory }: MemoryListSectionProps) {
   return (
     <Panel className="overflow-hidden">
       <div className="flex items-center justify-between border-b border-stone-200/70 px-5 py-4">
@@ -30,6 +32,13 @@ export function MemoryListSection({ memories, selectedMemoryId, onOpenMemory }: 
             <div className="max-w-sm space-y-3">
               <h3 className="text-lg font-semibold text-stone-900">No memories yet</h3>
               <p className="text-sm leading-6 text-stone-500">Create a memory to group photos into a reusable story object instead of a temporary filter.</p>
+              {onCreateMemory ? (
+                <div className="pt-2">
+                  <Button onClick={onCreateMemory} variant="outline">
+                    Create First Memory
+                  </Button>
+                </div>
+              ) : null}
             </div>
           </div>
         ) : (

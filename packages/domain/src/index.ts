@@ -85,6 +85,54 @@ export interface PhotoRecord {
   indexState: IndexState;
 }
 
+export type BrowseMode = "waterfall" | "map" | "timeline";
+
+export interface GeoBounds {
+  north: number;
+  south: number;
+  east: number;
+  west: number;
+}
+
+export interface PlaceGroup {
+  id: string;
+  centerLat: number;
+  centerLng: number;
+  photoCount: number;
+  representativePhotoId: string | null;
+  representativeThumbnailPath: string | null;
+  fromDatetime: number | null;
+  toDatetime: number | null;
+}
+
+export interface PlaceGroupQuery {
+  bounds?: GeoBounds;
+  filter?: PhotoFilter;
+  limit?: number;
+  precision?: number;
+}
+
+export type TimelineGranularity = "year" | "month" | "day";
+
+export interface TimelineGroup {
+  id: string;
+  key: string;
+  label: string;
+  granularity: TimelineGranularity;
+  photoIds: string[];
+  photoCount: number;
+  coverPhotoId: string | null;
+  coverThumbnailPath: string | null;
+  fromDatetime: number | null;
+  toDatetime: number | null;
+}
+
+export interface TimelineGroupQuery {
+  filter?: PhotoFilter;
+  granularity?: TimelineGranularity;
+  limitGroups?: number;
+}
+
 export interface PhotoFilter {
   query?: string;
   mimePrefix?: string;

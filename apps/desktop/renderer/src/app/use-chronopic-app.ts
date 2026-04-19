@@ -1,6 +1,16 @@
 import { useEffect, useMemo, useState } from "react";
 
-import type { AppCapabilities, LibrarySnapshot, Memory, PhotoFilter, PhotoFilterPatch, PhotoRecord } from "@chronopic/domain";
+import type {
+  AppCapabilities,
+  LibrarySnapshot,
+  Memory,
+  PhotoFilter,
+  PhotoFilterPatch,
+  PhotoRecord,
+  PlaceGroup,
+  TimelineGranularity,
+  TimelineGroup,
+} from "@chronopic/domain";
 import type { ViewerMode } from "@chronopic/ui-components";
 
 type StatusKind = "idle" | "info" | "success" | "warn" | "error";
@@ -8,6 +18,12 @@ type StatusKind = "idle" | "info" | "success" | "warn" | "error";
 interface AppStatus {
   kind: StatusKind;
   message: string;
+}
+
+interface MapViewportState {
+  centerLat: number;
+  centerLng: number;
+  zoom: number;
 }
 
 function toDatetimeInput(timestamp: number | null): string {
@@ -40,7 +56,12 @@ export function useChronoPicApp() {
   });
   const [capabilities, setCapabilities] = useState<AppCapabilities>({ aiEnabled: false, supportedMedia: [] });
   const [photos, setPhotos] = useState<PhotoRecord[]>([]);
+  const [placeGroups, setPlaceGroups] = useState<PlaceGroup[]>([]);
+  const [timelineGroups, setTimelineGroups] = useState<TimelineGroup[]>([]);
+  const [timelineGranularity, setTimelineGranularity] = useState<TimelineGranularity>("month");
+  const [mapViewport, setMapViewport] = useState<MapViewportState | null>(null);
   const [memories, setMemories] = useState<Memory[]>([]);
+  const [mappablePhotoCount, setMappablePhotoCount] = useState(0);
   const [selectedPhotoMemories, setSelectedPhotoMemories] = useState<Memory[]>([]);
   const [selectedPhotoIds, setSelectedPhotoIds] = useState<string[]>([]);
   const [selectedPhotoId, setSelectedPhotoId] = useState<string | null>(null);
@@ -71,6 +92,10 @@ export function useChronoPicApp() {
   );
   const canNavigatePrevious = selectedPhotoIndex > 0;
   const canNavigateNext = selectedPhotoIndex >= 0 && selectedPhotoIndex < photos.length - 1;
+
+  function resolveMemoryName(memoryId: string): string {
+    return memories.find((memory) => memory.id === memoryId)?.name ?? "memory";
+  }
 
   function showStatus(kind: Exclude<StatusKind, "idle">, message: string) {
     setStatus({ kind, message });
@@ -107,6 +132,14 @@ export function useChronoPicApp() {
   useEffect(() => {
     void refreshPhotos();
   }, [filter]);
+
+  useEffect(() => {
+    void refreshGeospatial();
+  }, [filter]);
+
+  useEffect(() => {
+    void refreshTimeline();
+  }, [filter, timelineGranularity]);
 
   useEffect(() => {
     setDraftTags(selectedPhoto?.semantic.labels ?? []);
@@ -160,6 +193,26 @@ export function useChronoPicApp() {
     });
   }
 
+  async function refreshGeospatial() {
+    const [nextMappableCount, nextPlaceGroups] = await Promise.all([
+      window.chronoPic.countMappablePhotos(filter),
+      window.chronoPic.listPlaceGroups({ filter, limit: 200, precision: 2 }),
+    ]);
+
+    setMappablePhotoCount(nextMappableCount as number);
+    setPlaceGroups(nextPlaceGroups as PlaceGroup[]);
+  }
+
+  async function refreshTimeline() {
+    const nextTimelineGroups = await window.chronoPic.listTimelineGroups({
+      filter,
+      granularity: timelineGranularity,
+      limitGroups: 48,
+    });
+
+    setTimelineGroups(nextTimelineGroups as TimelineGroup[]);
+  }
+
   async function refreshSnapshot() {
     setSnapshot((await window.chronoPic.getSnapshot()) as LibrarySnapshot);
   }
@@ -189,6 +242,8 @@ export function useChronoPicApp() {
       await refreshSnapshot();
       await refreshPhotos();
       await refreshMemories();
+      await refreshGeospatial();
+      await refreshTimeline();
       showStatus("success", "Scan complete");
     } catch (error) {
       showStatus("error", formatErrorMessage(error, "Scan failed"));
@@ -219,16 +274,19 @@ export function useChronoPicApp() {
       showStatus("success", `Created memory: ${name}`);
     } catch (error) {
       showStatus("error", formatErrorMessage(error, "Failed to create memory"));
+      throw error;
     }
   }
 
   async function handleDeleteMemory(memoryId: string) {
+    const memoryName = resolveMemoryName(memoryId);
     try {
       await window.chronoPic.deleteMemory(memoryId);
       setMemories((current) => current.filter((m) => m.id !== memoryId));
-      showStatus("success", "Memory deleted");
+      showStatus("success", `Deleted memory: ${memoryName}`);
     } catch (error) {
       showStatus("error", formatErrorMessage(error, "Failed to delete memory"));
+      throw error;
     }
   }
 
@@ -239,7 +297,17 @@ export function useChronoPicApp() {
     try {
       const updated = (await window.chronoPic.updateMemory(memoryId, updates)) as Memory;
       setMemories((current) => current.map((memory) => (memory.id === updated.id ? updated : memory)));
-      showStatus("success", "Memory updated");
+
+      if (Object.prototype.hasOwnProperty.call(updates, "name") && updates.name) {
+        showStatus("success", `Renamed memory to ${updated.name}`);
+      } else if (Object.prototype.hasOwnProperty.call(updates, "description")) {
+        showStatus("success", `Saved description for ${updated.name}`);
+      } else if (Object.prototype.hasOwnProperty.call(updates, "coverPhotoId")) {
+        showStatus("success", `Updated cover for ${updated.name}`);
+      } else {
+        showStatus("success", `Updated memory: ${updated.name}`);
+      }
+
       return updated;
     } catch (error) {
       showStatus("error", formatErrorMessage(error, "Failed to update memory"));
@@ -248,13 +316,20 @@ export function useChronoPicApp() {
   }
 
   async function handleAddPhotoToMemory(memoryId: string, photoId: string) {
+    const memoryName = resolveMemoryName(memoryId);
     try {
+      const memberships = (await window.chronoPic.listMemoriesByPhoto(photoId)) as Memory[];
+      if (memberships.some((memory) => memory.id === memoryId)) {
+        showStatus("warn", `Photo is already in ${memoryName}`);
+        return;
+      }
+
       await window.chronoPic.addPhotoToMemory(memoryId, photoId);
       await refreshMemories();
       if (filter.memoryId === memoryId) {
         await refreshPhotos();
       }
-      showStatus("success", "Photo added to memory");
+      showStatus("success", `Added photo to ${memoryName}`);
     } catch (error) {
       showStatus("error", formatErrorMessage(error, "Failed to add photo to memory"));
     }
@@ -262,14 +337,29 @@ export function useChronoPicApp() {
 
   async function handleAddSelectionToMemory(memoryId: string, photoIds: string[]) {
     const uniquePhotoIds = Array.from(new Set(photoIds));
-    const failures: string[] = [];
+    if (uniquePhotoIds.length === 0) {
+      showStatus("warn", "Select at least one photo first");
+      return;
+    }
+
+    const memoryName = resolveMemoryName(memoryId);
+    let addedCount = 0;
+    let alreadyPresentCount = 0;
+    let failedCount = 0;
 
     await Promise.all(
       uniquePhotoIds.map(async (photoId) => {
         try {
+          const memberships = (await window.chronoPic.listMemoriesByPhoto(photoId)) as Memory[];
+          if (memberships.some((memory) => memory.id === memoryId)) {
+            alreadyPresentCount += 1;
+            return;
+          }
+
           await window.chronoPic.addPhotoToMemory(memoryId, photoId);
+          addedCount += 1;
         } catch {
-          failures.push(photoId);
+          failedCount += 1;
         }
       })
     );
@@ -281,22 +371,105 @@ export function useChronoPicApp() {
 
     setSelectedPhotoIds([]);
 
-    if (failures.length > 0) {
-      showStatus("warn", `Added ${uniquePhotoIds.length - failures.length}/${uniquePhotoIds.length} photos to memory`);
+    const segments = [];
+    if (addedCount > 0) {
+      segments.push(`added ${addedCount}`);
+    }
+    if (alreadyPresentCount > 0) {
+      segments.push(`${alreadyPresentCount} already there`);
+    }
+    if (failedCount > 0) {
+      segments.push(`${failedCount} failed`);
+    }
+
+    if (addedCount === 0 && alreadyPresentCount > 0 && failedCount === 0) {
+      showStatus("warn", `No changes in ${memoryName}: ${alreadyPresentCount} already there`);
       return;
     }
 
-    showStatus("success", `Added ${uniquePhotoIds.length} photos to memory`);
+    if (failedCount > 0 || alreadyPresentCount > 0) {
+      showStatus("warn", `${memoryName}: ${segments.join(", ")}`);
+      return;
+    }
+
+    showStatus("success", `Added ${addedCount} photo${addedCount === 1 ? "" : "s"} to ${memoryName}`);
+  }
+
+  async function handleRemoveSelectionFromMemory(memoryId: string, photoIds: string[]) {
+    const uniquePhotoIds = Array.from(new Set(photoIds));
+    if (uniquePhotoIds.length === 0) {
+      showStatus("warn", "Select at least one photo first");
+      return;
+    }
+
+    const memoryName = resolveMemoryName(memoryId);
+    let removedCount = 0;
+    let missingCount = 0;
+    let failedCount = 0;
+
+    await Promise.all(
+      uniquePhotoIds.map(async (photoId) => {
+        try {
+          const memberships = (await window.chronoPic.listMemoriesByPhoto(photoId)) as Memory[];
+          if (!memberships.some((memory) => memory.id === memoryId)) {
+            missingCount += 1;
+            return;
+          }
+
+          await window.chronoPic.removePhotoFromMemory(memoryId, photoId);
+          removedCount += 1;
+        } catch {
+          failedCount += 1;
+        }
+      })
+    );
+
+    await refreshMemories();
+    if (filter.memoryId === memoryId) {
+      await refreshPhotos();
+    }
+
+    setSelectedPhotoIds([]);
+
+    const segments = [];
+    if (removedCount > 0) {
+      segments.push(`removed ${removedCount}`);
+    }
+    if (missingCount > 0) {
+      segments.push(`${missingCount} already absent`);
+    }
+    if (failedCount > 0) {
+      segments.push(`${failedCount} failed`);
+    }
+
+    if (removedCount === 0 && missingCount > 0 && failedCount === 0) {
+      showStatus("warn", `No changes in ${memoryName}: ${missingCount} already absent`);
+      return;
+    }
+
+    if (failedCount > 0 || missingCount > 0) {
+      showStatus("warn", `${memoryName}: ${segments.join(", ")}`);
+      return;
+    }
+
+    showStatus("success", `Removed ${removedCount} photo${removedCount === 1 ? "" : "s"} from ${memoryName}`);
   }
 
   async function handleRemovePhotoFromMemory(memoryId: string, photoId: string) {
+    const memoryName = resolveMemoryName(memoryId);
     try {
+      const memberships = (await window.chronoPic.listMemoriesByPhoto(photoId)) as Memory[];
+      if (!memberships.some((memory) => memory.id === memoryId)) {
+        showStatus("warn", `Photo is no longer in ${memoryName}`);
+        return;
+      }
+
       await window.chronoPic.removePhotoFromMemory(memoryId, photoId);
       await refreshMemories();
       if (filter.memoryId === memoryId) {
         await refreshPhotos();
       }
-      showStatus("success", "Photo removed from memory");
+      showStatus("success", `Removed photo from ${memoryName}`);
     } catch (error) {
       showStatus("error", formatErrorMessage(error, "Failed to remove photo from memory"));
     }
@@ -411,9 +584,12 @@ export function useChronoPicApp() {
     draftTags,
     filter,
     isScanning,
+    mappablePhotoCount,
+    mapViewport,
     memories,
     openViewer,
     patchFilter,
+    placeGroups,
     photos,
     selectedPhotoIds,
     selectedPhotoMemories,
@@ -423,10 +599,14 @@ export function useChronoPicApp() {
     setDraftCaption,
     setDraftDatetime,
     setDraftTags,
+    setMapViewport,
     setSelectedPhotoId,
+    setTimelineGranularity,
     setViewerMode,
     snapshot,
     status,
+    timelineGranularity,
+    timelineGroups,
     viewerMode,
     handleAddLibrary,
     handleAddPhotoToMemory,
@@ -434,6 +614,7 @@ export function useChronoPicApp() {
     handleCreateMemory,
     handleDeleteMemory,
     handleRemovePhotoFromMemory,
+    handleRemoveSelectionFromMemory,
     handleRollback,
     handleSaveCaption,
     handleSaveDatetime,

@@ -17,25 +17,33 @@ import { formatTimestamp, thumbnailUrl } from "./lib/media.js";
 export interface MemoryDetailPageProps {
   memory: Memory;
   photos: PhotoRecord[];
+  selectedPhotoIds?: string[];
   selectedPhotoId?: string | null;
   onSelectPhoto: (photoId: string) => void;
+  onToggleBatchSelect: (photoId: string) => void;
+  onClearBatchSelection: () => void;
   onOpenDetail: (photoId: string) => void;
   onToggleFavorite: (photoId: string, favorite: boolean) => void;
   onRemovePhoto: (memoryId: string, photoId: string) => void;
+  onRemoveSelection: (memoryId: string, photoIds: string[]) => void | Promise<void>;
   onRenameMemory: (memoryId: string, name: string) => void | Promise<void>;
   onSetCover: (memoryId: string, photoId: string) => void | Promise<void>;
-  onDeleteMemory: (memoryId: string) => void;
-  onSaveDescription: (memoryId: string, serializedDescription: string) => void;
+  onDeleteMemory: (memoryId: string) => void | Promise<void>;
+  onSaveDescription: (memoryId: string, serializedDescription: string) => void | Promise<void>;
 }
 
 export function MemoryDetailPage({
   memory,
   photos,
+  selectedPhotoIds = [],
   selectedPhotoId,
   onSelectPhoto,
+  onToggleBatchSelect,
+  onClearBatchSelection,
   onOpenDetail,
   onToggleFavorite,
   onRemovePhoto,
+  onRemoveSelection,
   onRenameMemory,
   onSetCover,
   onDeleteMemory,
@@ -44,16 +52,31 @@ export function MemoryDetailPage({
   const coverUrl = thumbnailUrl(memory.coverThumbnailPath);
   const [editingDescription, setEditingDescription] = React.useState(false);
   const [renaming, setRenaming] = React.useState(false);
+  const [selectionMode, setSelectionMode] = React.useState(false);
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = React.useState(false);
+  const [removeSelectedConfirmOpen, setRemoveSelectedConfirmOpen] = React.useState(false);
+  const [pendingRemovalPhotoId, setPendingRemovalPhotoId] = React.useState<string | null>(null);
   const [draftName, setDraftName] = React.useState(memory.name);
   const descriptionPreview = getMemoryDescriptionPreview(memory.description);
+  const hasBatchSelection = selectedPhotoIds.length > 0;
+  const isSelecting = selectionMode || hasBatchSelection;
   const selectedRecord = React.useMemo(
     () => photos.find((record) => record.photo.id === selectedPhotoId) ?? null,
     [photos, selectedPhotoId]
+  );
+  const pendingRemovalRecord = React.useMemo(
+    () => photos.find((record) => record.photo.id === pendingRemovalPhotoId) ?? null,
+    [pendingRemovalPhotoId, photos]
   );
 
   React.useEffect(() => {
     setDraftName(memory.name);
   }, [memory.name]);
+
+  React.useEffect(() => {
+    onClearBatchSelection();
+    setSelectionMode(false);
+  }, [memory.id, onClearBatchSelection]);
 
   return (
     <div className="space-y-6">
@@ -102,7 +125,7 @@ export function MemoryDetailPage({
                   <IconButton
                     icon={<Trash2 className="h-4 w-4" />}
                     label="Delete Memory"
-                    onClick={() => onDeleteMemory(memory.id)}
+                    onClick={() => setDeleteConfirmOpen(true)}
                     size="sm"
                     variant="ghost"
                   />
@@ -177,8 +200,8 @@ export function MemoryDetailPage({
               </Button>
             </div>
             <MemoryDescriptionEditor
-              onSave={(serializedDescription) => {
-                onSaveDescription(memory.id, serializedDescription);
+              onSave={async (serializedDescription) => {
+                await onSaveDescription(memory.id, serializedDescription);
                 setEditingDescription(false);
               }}
               value={memory.description}
@@ -216,8 +239,8 @@ export function MemoryDetailPage({
                 </Button>
                 <Button
                   disabled={!draftName.trim() || draftName.trim() === memory.name}
-                  onClick={() => {
-                    onRenameMemory(memory.id, draftName.trim());
+                  onClick={async () => {
+                    await onRenameMemory(memory.id, draftName.trim());
                     setRenaming(false);
                   }}
                   variant="accent"
@@ -238,9 +261,49 @@ export function MemoryDetailPage({
               Photos inside this memory
             </h2>
           </div>
-          <Badge tone="neutral">{photos.length} visible</Badge>
+          <div className="flex items-center gap-2">
+            <Button
+              onClick={() => {
+                if (isSelecting) {
+                  onClearBatchSelection();
+                  setSelectionMode(false);
+                  return;
+                }
+
+                setSelectionMode(true);
+              }}
+              size="sm"
+              variant={isSelecting ? "accent" : "outline"}
+            >
+              {isSelecting ? "Done" : "Select"}
+            </Button>
+            <Badge tone="neutral">{photos.length} visible</Badge>
+          </div>
         </div>
         <div className="p-5">
+          {hasBatchSelection ? (
+            <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-[24px] border border-rose-200 bg-rose-50 px-4 py-3">
+              <div className="flex items-center gap-2">
+                <Badge tone="danger">{selectedPhotoIds.length} selected</Badge>
+                <p className="text-sm font-medium text-rose-950">Batch actions for photos in this memory</p>
+              </div>
+              <div className="flex items-center gap-2">
+                <Button
+                  onClick={() => {
+                    setRemoveSelectedConfirmOpen(true);
+                  }}
+                  size="sm"
+                  variant="accent"
+                >
+                  <Trash2 className="h-4 w-4" />
+                  Remove Selected
+                </Button>
+                <Button onClick={onClearBatchSelection} size="sm" variant="outline">
+                  Clear Selection
+                </Button>
+              </div>
+            </div>
+          ) : null}
           {photos.length === 0 ? (
             <div className="grid min-h-[240px] place-items-center rounded-[24px] border border-dashed border-stone-300 bg-stone-50/70 px-6 text-center">
               <div className="max-w-sm space-y-3">
@@ -252,10 +315,23 @@ export function MemoryDetailPage({
             <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
               {photos.map((record) => (
                 <PhotoCard
+                  batchSelected={selectedPhotoIds.includes(record.photo.id)}
                   key={record.photo.id}
-                  onOpenDetail={() => onOpenDetail(record.photo.id)}
-                  onSecondaryAction={(photoId) => onRemovePhoto(memory.id, photoId)}
-                  onSelect={() => onSelectPhoto(record.photo.id)}
+                  onOpenDetail={() => {
+                    if (!isSelecting) {
+                      onOpenDetail(record.photo.id);
+                    }
+                  }}
+                  onSecondaryAction={(photoId) => setPendingRemovalPhotoId(photoId)}
+                  onSelect={() => {
+                    if (isSelecting) {
+                      onToggleBatchSelect(record.photo.id);
+                      return;
+                    }
+
+                    onSelectPhoto(record.photo.id);
+                  }}
+                  {...(isSelecting ? { onToggleBatchSelect } : {})}
                   onToggleFavorite={onToggleFavorite}
                   record={record}
                   secondaryActionLabel="Remove from Memory"
@@ -267,6 +343,101 @@ export function MemoryDetailPage({
           )}
         </div>
       </Panel>
+
+      <Dialog onOpenChange={setDeleteConfirmOpen} open={deleteConfirmOpen}>
+        <DialogContent className="flex items-center justify-center p-6">
+          <div className="w-full max-w-lg rounded-[28px] border border-stone-200 bg-white p-6 shadow-2xl">
+            <div className="space-y-3">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-stone-500">Delete Memory</p>
+              <h2 className="font-['Space_Grotesk','IBM_Plex_Sans',sans-serif] text-2xl font-semibold tracking-tight text-stone-950">
+                Delete {memory.name}?
+              </h2>
+              <p className="text-sm leading-6 text-stone-500">
+                This removes the memory container and its curated grouping. Photos stay in the library, but the memory itself will be deleted.
+              </p>
+            </div>
+            <div className="mt-6 flex justify-end gap-2">
+              <Button onClick={() => setDeleteConfirmOpen(false)} variant="ghost">
+                Cancel
+              </Button>
+              <Button
+                onClick={async () => {
+                  await onDeleteMemory(memory.id);
+                  setDeleteConfirmOpen(false);
+                }}
+                variant="accent"
+              >
+                Delete Memory
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog onOpenChange={setRemoveSelectedConfirmOpen} open={removeSelectedConfirmOpen}>
+        <DialogContent className="flex items-center justify-center p-6">
+          <div className="w-full max-w-lg rounded-[28px] border border-stone-200 bg-white p-6 shadow-2xl">
+            <div className="space-y-3">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-stone-500">Remove Selected</p>
+              <h2 className="font-['Space_Grotesk','IBM_Plex_Sans',sans-serif] text-2xl font-semibold tracking-tight text-stone-950">
+                Remove {selectedPhotoIds.length} selected photo{selectedPhotoIds.length === 1 ? "" : "s"} from {memory.name}?
+              </h2>
+              <p className="text-sm leading-6 text-stone-500">
+                This only removes the selected photos from this memory. The original media stays in your library and can still belong to other memories.
+              </p>
+            </div>
+            <div className="mt-6 flex justify-end gap-2">
+              <Button onClick={() => setRemoveSelectedConfirmOpen(false)} variant="ghost">
+                Cancel
+              </Button>
+              <Button
+                onClick={async () => {
+                  await onRemoveSelection(memory.id, selectedPhotoIds);
+                  setSelectionMode(false);
+                  setRemoveSelectedConfirmOpen(false);
+                }}
+                variant="accent"
+              >
+                Remove Selected
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog onOpenChange={(open) => !open && setPendingRemovalPhotoId(null)} open={Boolean(pendingRemovalPhotoId)}>
+        <DialogContent className="flex items-center justify-center p-6">
+          <div className="w-full max-w-lg rounded-[28px] border border-stone-200 bg-white p-6 shadow-2xl">
+            <div className="space-y-3">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-stone-500">Remove Photo</p>
+              <h2 className="font-['Space_Grotesk','IBM_Plex_Sans',sans-serif] text-2xl font-semibold tracking-tight text-stone-950">
+                Remove this photo from {memory.name}?
+              </h2>
+              <p className="text-sm leading-6 text-stone-500">
+                {pendingRemovalRecord
+                  ? `${pendingRemovalRecord.photo.path.split("/").at(-1)} will be removed from this memory only.`
+                  : "This removes the photo from the memory only."}
+              </p>
+            </div>
+            <div className="mt-6 flex justify-end gap-2">
+              <Button onClick={() => setPendingRemovalPhotoId(null)} variant="ghost">
+                Cancel
+              </Button>
+              <Button
+                onClick={async () => {
+                  if (pendingRemovalPhotoId) {
+                    await onRemovePhoto(memory.id, pendingRemovalPhotoId);
+                  }
+                  setPendingRemovalPhotoId(null);
+                }}
+                variant="accent"
+              >
+                Remove Photo
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

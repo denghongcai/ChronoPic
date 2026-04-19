@@ -11,6 +11,8 @@ import { PhotoCard } from "./photo-card.js";
 
 export interface GallerySectionProps {
   photos: PhotoRecord[];
+  activeMemory?: Memory | null;
+  selectedPhotoMemories?: Memory[];
   selectedPhotoId?: string | null;
   selectedPhotoIds?: string[];
   selectionMode?: boolean;
@@ -29,6 +31,8 @@ export interface GallerySectionProps {
 
 export function GallerySection({
   photos,
+  activeMemory,
+  selectedPhotoMemories = [],
   selectedPhotoId,
   selectedPhotoIds = [],
   selectionMode = false,
@@ -46,6 +50,32 @@ export function GallerySection({
 }: GallerySectionProps) {
   const hasBatchSelection = selectedPhotoIds.length > 0;
   const isSelecting = selectionMode || hasBatchSelection;
+  const hasStructuredFilters = Boolean(
+    filter.query ||
+      filter.favorite ||
+      filter.memoryId ||
+      filter.hasError ||
+      filter.indexed ||
+      filter.hasGps ||
+      filter.mimePrefix ||
+      filter.tag
+  );
+
+  const emptyTitle = activeMemory
+    ? `${activeMemory.name} has no visible photos`
+    : filter.favorite
+      ? "No favorite photos match the current filters"
+      : filter.query
+        ? "No media matches this search"
+        : "No media matches the current filters";
+
+  const emptyDescription = activeMemory
+    ? "Add photos to this memory from the gallery or viewer, or loosen the current query to reveal more of this memory."
+    : filter.favorite
+      ? "Try clearing a filter or favorite a few photos first so this shelf has something to show."
+      : filter.query
+        ? "Try a broader search term, remove a label/type filter, or scan another folder."
+        : "Adjust the query, remove a filter, or scan another folder to expand the result set.";
 
   return (
     <Panel className="overflow-hidden">
@@ -82,6 +112,42 @@ export function GallerySection({
       </div>
 
       <div className="p-5">
+        {activeMemory || hasStructuredFilters ? (
+          <div className="mb-4 flex flex-wrap items-center gap-2 rounded-[24px] border border-stone-200 bg-stone-50/80 px-4 py-3">
+            <Badge tone={activeMemory ? "info" : "neutral"}>{activeMemory ? "Memory Scope" : "Filtered View"}</Badge>
+            <p className="text-sm text-stone-700">
+              {activeMemory
+                ? `Browsing photos inside ${activeMemory.name}.`
+                : filter.favorite
+                  ? "Browsing favorite photos."
+                  : filter.query
+                    ? `Search active: “${filter.query}”.`
+                    : "Structured filters are narrowing the current media shelf."}
+            </p>
+          </div>
+        ) : null}
+
+        {!isSelecting && selectedPhotoId ? (
+          <div className="mb-4 rounded-[24px] border border-sky-200 bg-sky-50/80 px-4 py-3">
+            <div className="flex flex-wrap items-center gap-2">
+              <Badge tone="info">Selected Photo</Badge>
+              {selectedPhotoMemories.length === 0 ? (
+                <p className="text-sm text-sky-900">This photo is not saved to any memory yet.</p>
+              ) : (
+                <>
+                  <p className="text-sm text-sky-900">Saved to:</p>
+                  {selectedPhotoMemories.map((memory) => (
+                    <Badge key={memory.id} tone={memory.coverPhotoId === selectedPhotoId ? "info" : "neutral"}>
+                      {memory.name}
+                      {memory.coverPhotoId === selectedPhotoId ? " cover" : ""}
+                    </Badge>
+                  ))}
+                </>
+              )}
+            </div>
+          </div>
+        ) : null}
+
         {hasBatchSelection ? (
           <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-[24px] border border-amber-200 bg-amber-50 px-4 py-3">
             <div className="flex items-center gap-2">
@@ -109,8 +175,8 @@ export function GallerySection({
         {photos.length === 0 ? (
           <div className="grid min-h-[360px] place-items-center rounded-[24px] border border-dashed border-stone-300 bg-stone-50/70 px-6 text-center">
             <div className="max-w-sm space-y-3">
-              <p className="text-lg font-semibold text-stone-900">No media matches the current filters</p>
-              <p className="text-sm leading-6 text-stone-500">Adjust the query, remove a filter, or scan another folder to expand the result set.</p>
+              <p className="text-lg font-semibold text-stone-900">{emptyTitle}</p>
+              <p className="text-sm leading-6 text-stone-500">{emptyDescription}</p>
             </div>
           </div>
         ) : (

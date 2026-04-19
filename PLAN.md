@@ -188,6 +188,183 @@ ChronoPic starts from a greenfield repository. The first implementation pass wil
   data-model/database/app/IPC changes belong in shared and main layers,
   page/view composition belongs in renderer/UI layers.
 
+### 4.8 Geospatial Browse and Map View Phase
+
+- Add a dedicated product phase to turn GPS metadata into a first-class browsing dimension rather than treating location as a passive metadata field.
+- Extend the local data model with place-oriented projections derived from photo GPS metadata:
+  normalized latitude/longitude buckets,
+  place-group summaries,
+  viewport query helpers,
+  and optional cached reverse-geocode labels for higher-quality place cards later.
+- Introduce a new browse-mode model for the library surface:
+  `waterfall`,
+  `map`,
+  and `timeline`,
+  replacing the current implicit single gallery mode.
+- Keep the existing grid/waterfall implementation as the default browse mode, but move it under an explicit browse-mode shell so the library page can switch views without duplicating filter/query state.
+- Add a dedicated `Map View` rendered with the Gaode / AMap JavaScript API 2.0.
+- Use GPS-bearing photos to render map markers or clustered overlays and allow viewport-driven browsing:
+  click a marker/cluster/place-group to narrow the visible photo shelf,
+  and keep selection synchronized between map results and photo results.
+- Add a place-aggregation layer above raw points:
+  at minimum city/area or distance-bucket grouping for photos with nearby coordinates,
+  so the product can show “place groups” instead of only unstructured individual markers.
+- Preserve a clean separation between raw EXIF GPS data and map-rendering coordinates:
+  coordinate normalization/conversion logic belongs in shared/application layers,
+  while Gaode-specific map rendering stays in the renderer/UI layer.
+- Keep map access key handling and loader wiring isolated to the desktop renderer config/runtime rather than leaking them into business packages.
+- Make the phase resilient to missing GPS:
+  photos without coordinates remain visible in waterfall/timeline views,
+  while map view shows a clear zero-state and count of mappable photos.
+
+Recommended execution order:
+
+1. Build the shared browse shell first
+- Introduce `BrowseMode` and the renderer/page shell that can switch among `waterfall`, `map`, and `timeline`.
+- Do this before map/timeline implementation so later views plug into one stable state model instead of creating parallel shells.
+
+2. Add the geospatial foundation second
+- Add domain/application/database support for GPS-bounded queries, mappable-photo counts, and place-group aggregation.
+- Do this before map rendering so the map consumes a stable product-facing query layer rather than reaching into raw photo records directly.
+
+3. Integrate Gaode map rendering third
+- Add the renderer-only AMap loader and `MapView` after the browse shell and geospatial query layer exist.
+- This keeps SDK-specific concerns from driving the shape of the data model.
+
+4. Add timeline view last
+- Implement timeline after browse-shell and shared query/state semantics are stable.
+- Timeline depends on the same multi-mode shell, but does not need to block map delivery.
+
+Implementation breakdown:
+
+1. Geospatial domain and query foundation
+- Add explicit geospatial browse types to `@chronopic/domain`, such as:
+  `BrowseMode`,
+  `GeoBounds`,
+  `PlaceGroup`,
+  and map/timeline query DTOs that do not depend on any map SDK.
+- Add database/application query methods for:
+  listing GPS-bearing photos inside bounds,
+  counting mappable photos,
+  and grouping nearby photos into place buckets.
+- Keep first-pass place aggregation local and deterministic:
+  use coordinate rounding / distance buckets rather than server-side reverse geocoding.
+
+2. Renderer browse shell
+- Refactor the current library browse surface so the main photo shelf is driven by an explicit browse mode:
+  `waterfall`,
+  `map`,
+  `timeline`.
+- Preserve the current filter/query model and selected-photo state while switching modes.
+- Add a top-level mode switcher to the library browse page rather than creating separate disconnected pages.
+
+3. Gaode map integration
+- Integrate AMap JavaScript API 2.0 in the desktop renderer with a dedicated loader utility.
+- Source references:
+  Gaode JS API 2.0 overview and React guidance,
+  point-cluster documentation,
+  and coordinate-conversion utilities are documented in the official JS API 2.0 docs.
+- Keep the Gaode key in renderer configuration/env only.
+- Add a renderer-only `MapView` component that owns:
+  map lifecycle,
+  marker/cluster rendering,
+  viewport events,
+  and marker selection interactions.
+
+4. Map-to-photo interaction loop
+- Clicking a place group or marker should update the adjacent photo result shelf / current selection.
+- Selecting a photo in the shelf should reflect back onto the map as an active marker or highlighted group where possible.
+- The focused viewer should still open through the existing viewer pipeline rather than a map-specific detail flow.
+
+5. Zero/edge states
+- Map view must clearly explain:
+  no GPS photos in current scope,
+  current filter removes all mappable photos,
+  or map failed to initialize because the API key/config is missing.
+- Waterfall/timeline remain usable even when map view has no content.
+
+### 4.9 Timeline View and Multi-Browse Shell Phase
+
+- Add a dedicated phase to complete the browse split so `Library > Browse` is no longer synonymous with only the waterfall grid.
+- Introduce a shared browse shell for the library page with stable state across:
+  current query,
+  favorites/memory filters,
+  selection,
+  and active browse mode.
+- Implement a `Timeline View` that groups photos by date hierarchy:
+  year,
+  month,
+  day,
+  and optionally time segments for dense captures.
+- Make the three browse modes first-class peers:
+  `Waterfall View` for visual scanning,
+  `Map View` for geographic exploration,
+  and `Timeline View` for temporal exploration.
+- Ensure transitions between browse modes preserve the same underlying result scope where possible:
+  the user should be able to start from a search/filter/memory context and switch among waterfall, map, and timeline without losing that context.
+- Add explicit empty/loading states per mode so the shell can explain why a mode has no content:
+  no photos,
+  no GPS-bearing photos,
+  or no photos in the active time bucket.
+- Keep viewer/detail interactions mode-agnostic:
+  opening a photo from waterfall, map, or timeline enters the same focused viewing flow.
+
+Recommended sequencing note:
+
+- Even though this phase defines the final multi-browse shell, implementation should start by introducing the browse shell contract before map/timeline surfaces land.
+- In practice the delivery order should be:
+  browse shell contract first,
+  then geospatial foundation,
+  then map view,
+  then timeline view.
+- This avoids building timeline or map-specific state models that later need to be reconciled.
+
+Implementation breakdown:
+
+1. Shared browse shell contract
+- Introduce a stable renderer-side browse-shell state model with:
+  active browse mode,
+  current filter,
+  current selection,
+  and mode-local UI state such as map viewport or expanded timeline groups.
+- Keep cross-mode state explicit so waterfall/map/timeline are peers instead of separate ad hoc pages.
+
+2. Timeline projection and grouping
+- Add timeline grouping utilities in shared/application layers to bucket visible photos by:
+  year,
+  month,
+  and day.
+- Keep the first implementation deterministic and local:
+  use persisted `metadata.datetime` and existing fallback timestamps.
+
+3. Timeline renderer
+- Add a dedicated `TimelineView` to the UI package or renderer shell.
+- Render grouped sections with:
+  sticky period headers where appropriate,
+  dense photo strips/cards,
+  and empty states for sparse or missing timeline data.
+
+4. Multi-mode transitions
+- Switching among waterfall/map/timeline should preserve the same logical result scope whenever possible.
+- Map mode may additionally constrain by viewport, but the base query/filter must remain understandable and reversible when returning to waterfall/timeline.
+
+5. UX completion
+- Add clear mode labels and onboarding copy so users understand why they would use each browse mode.
+- Ensure the home/library information architecture still feels coherent after browse becomes a multi-mode surface rather than a single grid.
+
+Current local implementation status:
+
+- The shared browse shell is landed.
+- The geospatial foundation and the first renderer-owned Gaode `Map View` are landed, including viewport-aware place-group refresh.
+- The first `Timeline View` is also landed:
+  timeline groups are projected from persisted `metadata.datetime`,
+  exposed through the app/IPC bridge,
+  and rendered as grouped monthly sections that reuse the existing selection, favorite, add-to-memory, and viewer flows.
+- Remaining work in this area is now polish-oriented:
+  richer cross-mode transition behavior,
+  deeper timeline hierarchy if needed,
+  and multi-browse UX refinement.
+
 ### 5. Editing and History ✅
 
 - Support local tag edits and datetime correction in the database projection. ✅

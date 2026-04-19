@@ -49,6 +49,10 @@ export {
 
 export { EditControls } from "./edit-controls.js";
 export type { EditControlsProps } from "./edit-controls.js";
+export { BrowseModePlaceholder } from "./browse-mode-placeholder.js";
+export type { BrowseModePlaceholderProps } from "./browse-mode-placeholder.js";
+export { BrowseModeSwitcher } from "./browse-mode-switcher.js";
+export type { BrowseModeSwitcherProps } from "./browse-mode-switcher.js";
 export { Filmstrip } from "./filmstrip.js";
 export type { FilmstripProps } from "./filmstrip.js";
 export { FilmstripItem } from "./filmstrip-item.js";

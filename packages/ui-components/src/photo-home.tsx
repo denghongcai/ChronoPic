@@ -10,14 +10,18 @@ import {
 } from "lucide-react";
 
 import type {
+  BrowseMode,
   LibrarySnapshot,
   Memory,
+  PlaceGroup,
   PhotoFilter,
   PhotoFilterPatch,
   PhotoRecord,
 } from "@chronopic/domain";
 
 import { Badge } from "./badge.js";
+import { BrowseModePlaceholder } from "./browse-mode-placeholder.js";
+import { BrowseModeSwitcher } from "./browse-mode-switcher.js";
 import { Button } from "./button.js";
 import { CreateMemoryDialog } from "./create-memory-dialog.js";
 import type { EditControlsProps } from "./edit-controls.js";
@@ -34,8 +38,11 @@ import { Sidebar } from "./sidebar.js";
 import type { ViewerMode } from "./types.js";
 
 export interface PhotoHomeProps extends EditControlsProps {
+  mapBrowseContent?: React.ReactNode;
   photos: PhotoRecord[];
+  placeGroups: PlaceGroup[];
   memories: Memory[];
+  mappablePhotoCount: number;
   selectedPhotoMemories: Memory[];
   selectedPhotoIds: string[];
   selectedPhotoId: string | null;
@@ -74,17 +81,22 @@ export interface PhotoHomeProps extends EditControlsProps {
   onAddPhotoToMemory: (memoryId: string, photoId: string) => Promise<void> | void;
   onAddSelectionToMemory: (memoryId: string, photoIds: string[]) => Promise<void> | void;
   onRemovePhotoFromMemory: (memoryId: string, photoId: string) => Promise<void> | void;
+  onRemoveSelectionFromMemory: (memoryId: string, photoIds: string[]) => Promise<void> | void;
   onDeleteMemory: (memoryId: string) => Promise<void> | void;
   onToggleFavorite: (photoId: string, favorite: boolean) => void;
+  timelineBrowseContent?: React.ReactNode;
   canNavigatePrevious: boolean;
   canNavigateNext: boolean;
 }
 
 function HomeView({
   photos,
+  placeGroups,
   memories,
+  mappablePhotoCount,
   selectedPhotoIds,
   selectedPhotoId,
+  selectedPhotoMemories,
   selectedMemoryId,
   filter,
   onFilterChange,
@@ -97,13 +109,21 @@ function HomeView({
   onToggleFavorite,
   onAddPhotoToMemory,
   onAddSelectionToMemory,
+  onCreateMemory,
+  browseMode,
+  onBrowseModeChange,
+  mapBrowseContent,
   selectionMode,
+  timelineBrowseContent,
   onSelectionModeChange,
 }: {
   photos: PhotoRecord[];
+  placeGroups: PlaceGroup[];
   memories: Memory[];
+  mappablePhotoCount: number;
   selectedPhotoIds: string[];
   selectedPhotoId: string | null;
+  selectedPhotoMemories: Memory[];
   selectedMemoryId: string | null;
   filter: PhotoFilter;
   onFilterChange: (patch: PhotoFilterPatch) => void;
@@ -116,41 +136,75 @@ function HomeView({
   onToggleFavorite: (photoId: string, favorite: boolean) => void;
   onAddPhotoToMemory: (memoryId: string, photoId: string) => Promise<void> | void;
   onAddSelectionToMemory: (memoryId: string, photoIds: string[]) => Promise<void> | void;
+  onCreateMemory: () => void;
+  browseMode: BrowseMode;
+  onBrowseModeChange: (mode: BrowseMode) => void;
+  mapBrowseContent?: React.ReactNode;
   selectionMode: boolean;
+  timelineBrowseContent?: React.ReactNode;
   onSelectionModeChange: (active: boolean) => void;
 }) {
   return (
     <div className="space-y-6">
+      <BrowseModeSwitcher mode={browseMode} onModeChange={onBrowseModeChange} />
       <RecentMemories
         memories={memories}
+        onCreateMemory={onCreateMemory}
         onOpenMemory={onOpenMemory}
         onSeeAll={onSeeAllMemories}
         selectedMemoryId={selectedMemoryId}
       />
-      <GallerySection
-        filter={filter}
-        onFilterChange={onFilterChange}
-        memories={memories}
-        onAddToMemory={onAddPhotoToMemory}
-        onAddSelectionToMemory={onAddSelectionToMemory}
-        onClearBatchSelection={onClearBatchSelection}
-        onOpenDetail={onOpenDetail}
-        onSelect={onSelectPhoto}
-        onSelectionModeChange={onSelectionModeChange}
-        onToggleBatchSelect={onToggleBatchSelect}
-        onToggleFavorite={onToggleFavorite}
-        photos={photos}
-        selectionMode={selectionMode}
-        selectedPhotoIds={selectedPhotoIds}
-        selectedPhotoId={selectedPhotoId}
-      />
+      {browseMode === "waterfall" ? (
+        <GallerySection
+          activeMemory={memories.find((memory) => memory.id === selectedMemoryId) ?? null}
+          filter={filter}
+          selectedPhotoMemories={selectedPhotoMemories}
+          onFilterChange={onFilterChange}
+          memories={memories}
+          onAddToMemory={onAddPhotoToMemory}
+          onAddSelectionToMemory={onAddSelectionToMemory}
+          onClearBatchSelection={onClearBatchSelection}
+          onOpenDetail={onOpenDetail}
+          onSelect={onSelectPhoto}
+          onSelectionModeChange={onSelectionModeChange}
+          onToggleBatchSelect={onToggleBatchSelect}
+          onToggleFavorite={onToggleFavorite}
+          photos={photos}
+          selectionMode={selectionMode}
+          selectedPhotoIds={selectedPhotoIds}
+          selectedPhotoId={selectedPhotoId}
+        />
+      ) : browseMode === "map" ? (
+        mapBrowseContent ?? (
+          <BrowseModePlaceholder
+            currentScopeCount={photos.length}
+            mappablePhotoCount={mappablePhotoCount}
+            mode={browseMode}
+            placeGroupCount={placeGroups.length}
+            timelineReadyCount={photos.filter((record) => record.metadata.datetime != null).length}
+          />
+        )
+      ) : timelineBrowseContent ? (
+        timelineBrowseContent
+      ) : (
+        <BrowseModePlaceholder
+          currentScopeCount={photos.length}
+          mappablePhotoCount={mappablePhotoCount}
+          mode={browseMode}
+          placeGroupCount={placeGroups.length}
+          timelineReadyCount={photos.filter((record) => record.metadata.datetime != null).length}
+        />
+      )}
     </div>
   );
 }
 
 export function PhotoHome({
   photos,
+  placeGroups,
   memories,
+  mappablePhotoCount,
+  mapBrowseContent,
   selectedPhotoMemories,
   selectedPhotoIds,
   selectedPhotoId,
@@ -186,8 +240,10 @@ export function PhotoHome({
   onAddPhotoToMemory,
   onAddSelectionToMemory,
   onRemovePhotoFromMemory,
+  onRemoveSelectionFromMemory,
   onDeleteMemory,
   onToggleFavorite,
+  timelineBrowseContent,
   canNavigatePrevious,
   canNavigateNext,
   draftCaption,
@@ -221,6 +277,7 @@ export function PhotoHome({
 
   const [page, setPage] = React.useState<PageView>("home");
   const [createMemoryDialogOpen, setCreateMemoryDialogOpen] = React.useState(false);
+  const [browseMode, setBrowseMode] = React.useState<BrowseMode>("waterfall");
   const [selectionMode, setSelectionMode] = React.useState(false);
 
   const recentMemories = React.useMemo(
@@ -249,6 +306,8 @@ export function PhotoHome({
   }, [filter.favorite, page, selectedMemory]);
 
   function openMemoryDetail(memoryId: string) {
+    onClearBatchSelection();
+    setSelectionMode(false);
     onSelectMemory(memoryId);
     setPage("memory-detail");
   }
@@ -269,6 +328,16 @@ export function PhotoHome({
     setPage("memories");
   }
 
+  function handleBrowseModeChange(nextMode: BrowseMode) {
+    if (nextMode === browseMode) {
+      return;
+    }
+
+    onClearBatchSelection();
+    setSelectionMode(false);
+    setBrowseMode(nextMode);
+  }
+
   return (
     <PageViewContext.Provider value={{ page, setPage }}>
       <div className="flex h-screen flex-col overflow-hidden bg-stone-50">
@@ -285,22 +354,30 @@ export function PhotoHome({
             onCreateMemory={() => setCreateMemoryDialogOpen(true)}
             onSelectItem={(id) => {
               if (id === "settings") {
+                onClearBatchSelection();
+                setSelectionMode(false);
                 setPage("library-settings");
                 return;
               }
 
               if (id === "memories") {
+                onClearBatchSelection();
+                setSelectionMode(false);
                 onSelectMemories();
                 setPage("memories");
                 return;
               }
 
               if (id === "favorites") {
+                onClearBatchSelection();
+                setSelectionMode(false);
                 onSelectFavorites();
                 setPage("home");
                 return;
               }
 
+              onClearBatchSelection();
+              setSelectionMode(false);
               onSelectAllPhotos();
               setPage("home");
             }}
@@ -332,6 +409,7 @@ export function PhotoHome({
               {page === "memories" ? (
                 <MemoryListSection
                   memories={recentMemories}
+                  onCreateMemory={() => setCreateMemoryDialogOpen(true)}
                   onOpenMemory={openMemoryDetail}
                   selectedMemoryId={selectedMemory?.id ?? null}
                 />
@@ -343,16 +421,20 @@ export function PhotoHome({
                   onDeleteMemory={handleDeleteMemory}
                   onOpenDetail={onOpenDetail}
                   onRemovePhoto={onRemovePhotoFromMemory}
+                  onRemoveSelection={onRemoveSelectionFromMemory}
                   onRenameMemory={async (memoryId, name) => {
                     await onUpdateMemory(memoryId, { name });
                   }}
                   onSaveDescription={handleSaveMemoryDescription}
+                  onClearBatchSelection={onClearBatchSelection}
                   onSelectPhoto={onSelectPhoto}
                   onSetCover={async (memoryId, photoId) => {
                     await onUpdateMemory(memoryId, { coverPhotoId: photoId });
                   }}
+                  onToggleBatchSelect={onToggleBatchSelect}
                   onToggleFavorite={onToggleFavorite}
                   photos={photos}
+                  selectedPhotoIds={selectedPhotoIds}
                   selectedPhotoId={selectedPhotoId}
                 />
               ) : null}
@@ -360,6 +442,7 @@ export function PhotoHome({
               {page === "memory-detail" && !selectedMemory ? (
                 <MemoryListSection
                   memories={recentMemories}
+                  onCreateMemory={() => setCreateMemoryDialogOpen(true)}
                   onOpenMemory={openMemoryDetail}
                   selectedMemoryId={null}
                 />
@@ -379,15 +462,23 @@ export function PhotoHome({
                   onAddPhotoToMemory={onAddPhotoToMemory}
                   onAddSelectionToMemory={onAddSelectionToMemory}
                   onClearBatchSelection={onClearBatchSelection}
+                  onCreateMemory={() => setCreateMemoryDialogOpen(true)}
+                  browseMode={browseMode}
+                  mappablePhotoCount={mappablePhotoCount}
+                  mapBrowseContent={mapBrowseContent}
+                  onBrowseModeChange={handleBrowseModeChange}
                   onSelectPhoto={onSelectPhoto}
                   onSelectionModeChange={setSelectionMode}
                   onToggleBatchSelect={onToggleBatchSelect}
                   onToggleFavorite={onToggleFavorite}
+                  placeGroups={placeGroups}
                   photos={photos}
                   selectionMode={selectionMode}
                   selectedPhotoIds={selectedPhotoIds}
+                  selectedPhotoMemories={selectedPhotoMemories}
                   selectedMemoryId={selectedMemory?.id ?? null}
                   selectedPhotoId={selectedPhotoId}
+                  timelineBrowseContent={timelineBrowseContent}
                 />
               ) : null}
             </div>

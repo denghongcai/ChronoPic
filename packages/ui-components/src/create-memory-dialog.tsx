@@ -10,7 +10,7 @@ import { cn } from "./lib/cn.js";
 export interface CreateMemoryDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onConfirm: (name: string) => void;
+  onConfirm: (name: string) => void | Promise<void>;
 }
 
 export function CreateMemoryDialog({ open, onOpenChange, onConfirm }: CreateMemoryDialogProps) {
@@ -24,18 +24,25 @@ export function CreateMemoryDialog({ open, onOpenChange, onConfirm }: CreateMemo
     }
   }, [open]);
 
-  function handleConfirm() {
+  async function handleConfirm() {
     const trimmed = name.trim();
     if (!trimmed) return;
     setSubmitting(true);
-    onConfirm(trimmed);
-    onOpenChange(false);
+
+    try {
+      await onConfirm(trimmed);
+      onOpenChange(false);
+    } catch {
+      // The caller surfaces the actual failure message; keep the dialog open for correction/retry.
+    } finally {
+      setSubmitting(false);
+    }
   }
 
   function handleKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
     if (e.key === "Enter") {
       e.preventDefault();
-      handleConfirm();
+      void handleConfirm();
     }
   }
 
@@ -74,7 +81,7 @@ export function CreateMemoryDialog({ open, onOpenChange, onConfirm }: CreateMemo
                 <Button variant="outline" type="button">Cancel</Button>
               </DialogClose>
               <Button
-                onClick={handleConfirm}
+                onClick={() => void handleConfirm()}
                 disabled={!name.trim() || submitting}
                 variant="accent"
                 type="button"

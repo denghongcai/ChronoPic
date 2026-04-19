@@ -1,4 +1,16 @@
-import type { IndexerStats, LibrarySnapshot, Memory, MemorySource, PhotoFilter, PhotoRecord } from "@chronopic/domain";
+import type {
+  IndexerStats,
+  LibrarySnapshot,
+  Memory,
+  MemorySource,
+  PhotoFilter,
+  PhotoRecord,
+  PlaceGroup,
+  PlaceGroupQuery,
+  TimelineGranularity,
+  TimelineGroup,
+  TimelineGroupQuery,
+} from "@chronopic/domain";
 import type { ChronoPicDatabase } from "@chronopic/infra-db";
 import type { AIClient } from "@chronopic/services-ai-pipeline";
 import type { IndexerService } from "@chronopic/services-indexer";
@@ -114,4 +126,91 @@ export class ChronoPicAppService {
   listMemoriesByPhoto(photoId: string): Memory[] {
     return this.db.listMemoriesByPhoto(photoId);
   }
+
+  countMappablePhotos(filter?: PhotoFilter): number {
+    return this.db.countMappablePhotos(filter);
+  }
+
+  listPlaceGroups(query?: PlaceGroupQuery): PlaceGroup[] {
+    return this.db.listPlaceGroups(query);
+  }
+
+  listTimelineGroups(query: TimelineGroupQuery = {}): TimelineGroup[] {
+    const { filter, granularity = "month", limitGroups } = query;
+    const photos = this.db
+      .listPhotos(filter)
+      .filter((record) => record.metadata.datetime != null)
+      .sort((left, right) => (right.metadata.datetime ?? 0) - (left.metadata.datetime ?? 0));
+
+    const groups = new Map<string, TimelineGroup>();
+
+    for (const record of photos) {
+      const datetime = record.metadata.datetime;
+      if (datetime == null) {
+        continue;
+      }
+
+      const date = new Date(datetime);
+      const key = toTimelineKey(date, granularity);
+      const label = toTimelineLabel(date, granularity);
+      const existing = groups.get(key);
+
+      if (existing) {
+        existing.photoIds.push(record.photo.id);
+        existing.photoCount += 1;
+        existing.fromDatetime = Math.min(existing.fromDatetime ?? datetime, datetime);
+        existing.toDatetime = Math.max(existing.toDatetime ?? datetime, datetime);
+        continue;
+      }
+
+      groups.set(key, {
+        id: key,
+        key,
+        label,
+        granularity,
+        photoIds: [record.photo.id],
+        photoCount: 1,
+        coverPhotoId: record.photo.id,
+        coverThumbnailPath: record.photo.thumbnailPath,
+        fromDatetime: datetime,
+        toDatetime: datetime,
+      });
+    }
+
+    const ordered = Array.from(groups.values()).sort((left, right) => (right.toDatetime ?? 0) - (left.toDatetime ?? 0));
+    return typeof limitGroups === "number" ? ordered.slice(0, limitGroups) : ordered;
+  }
+}
+
+function toTimelineKey(date: Date, granularity: TimelineGranularity): string {
+  const year = date.getFullYear();
+  const month = `${date.getMonth() + 1}`.padStart(2, "0");
+  const day = `${date.getDate()}`.padStart(2, "0");
+
+  if (granularity === "year") {
+    return `${year}`;
+  }
+
+  if (granularity === "month") {
+    return `${year}-${month}`;
+  }
+
+  return `${year}-${month}-${day}`;
+}
+
+function toTimelineLabel(date: Date, granularity: TimelineGranularity): string {
+  if (granularity === "year") {
+    return new Intl.DateTimeFormat("zh-CN", { year: "numeric" }).format(date);
+  }
+
+  if (granularity === "month") {
+    return new Intl.DateTimeFormat("zh-CN", { year: "numeric", month: "long" }).format(date);
+  }
+
+  return new Intl.DateTimeFormat("zh-CN", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+    weekday: "short",
+  }).format(date);
 }

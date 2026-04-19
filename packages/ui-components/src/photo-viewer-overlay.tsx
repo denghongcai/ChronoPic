@@ -112,6 +112,20 @@ export function PhotoViewerOverlay(props: PhotoViewerOverlayProps) {
                       <div>
                         <p className="text-sm font-semibold text-stone-100">{props.photo.photo.path.split("/").at(-1)}</p>
                         <p className="text-sm text-stone-400">{formatTimestamp(props.photo.metadata.datetime)}</p>
+                        <div className="mt-2 flex flex-wrap gap-2">
+                          {props.photoMemories.length === 0 ? (
+                            <Badge className="border-stone-700 bg-stone-900/80 text-stone-300" tone="dark">
+                              Not in any memory
+                            </Badge>
+                          ) : (
+                            props.photoMemories.map((memory) => (
+                              <Badge className="border-stone-700 bg-stone-900/80 text-stone-200" key={memory.id} tone="dark">
+                                {memory.name}
+                                {memory.coverPhotoId === props.selectedPhotoId ? " cover" : ""}
+                              </Badge>
+                            ))
+                          )}
+                        </div>
                       </div>
                       <Tooltip>
                         <TooltipTrigger asChild>

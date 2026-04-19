@@ -1,4 +1,15 @@
-import type { AppCapabilities, LibrarySnapshot, Memory, MemorySource, PhotoFilter, PhotoRecord } from "@chronopic/domain";
+import type {
+  AppCapabilities,
+  LibrarySnapshot,
+  Memory,
+  MemorySource,
+  PhotoFilter,
+  PhotoRecord,
+  PlaceGroup,
+  PlaceGroupQuery,
+  TimelineGroup,
+  TimelineGroupQuery,
+} from "@chronopic/domain";
 
 export interface ChronoPicBridge {
   initialize: () => Promise<{ snapshot: LibrarySnapshot; capabilities: AppCapabilities }>;
@@ -7,6 +18,9 @@ export interface ChronoPicBridge {
   listLibrarySources: () => Promise<unknown>;
   scanLibrary: (sourceId?: string) => Promise<unknown>;
   listPhotos: (filter?: PhotoFilter) => Promise<PhotoRecord[]>;
+  countMappablePhotos: (filter?: PhotoFilter) => Promise<number>;
+  listPlaceGroups: (query?: PlaceGroupQuery) => Promise<PlaceGroup[]>;
+  listTimelineGroups: (query?: TimelineGroupQuery) => Promise<TimelineGroup[]>;
   getPhoto: (photoId: string) => Promise<PhotoRecord | null>;
   updatePhotoTags: (photoId: string, labels: string[]) => Promise<PhotoRecord>;
   updatePhotoCaption: (photoId: string, caption: string | null) => Promise<PhotoRecord>;

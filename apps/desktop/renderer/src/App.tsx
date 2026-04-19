@@ -1,5 +1,7 @@
 import { PhotoHome } from "@chronopic/ui-components";
 
+import { MapBrowseSurface } from "./app/map-browse-surface";
+import { TimelineBrowseSurface } from "./app/timeline-browse-surface";
 import { useChronoPicApp } from "./app/use-chronopic-app";
 import { useViewerShortcuts } from "./app/use-viewer-shortcuts";
 
@@ -26,6 +28,21 @@ export function App() {
       draftTags={app.draftTags}
       filter={app.filter}
       isScanning={app.isScanning}
+      mapBrowseContent={
+        <MapBrowseSurface
+          filter={app.filter}
+          mapViewport={app.mapViewport}
+          mappablePhotoCount={app.mappablePhotoCount}
+          onOpenDetail={(photoId) => app.openViewer("detail", photoId)}
+          onSelectPhoto={app.setSelectedPhotoId}
+          onViewportChange={app.setMapViewport}
+          photos={app.photos}
+          placeGroups={app.placeGroups}
+          selectedPhotoMemories={app.selectedPhotoMemories}
+          selectedPhotoId={app.selectedPhotoId}
+        />
+      }
+      mappablePhotoCount={app.mappablePhotoCount}
       memories={app.memories}
       onAddLibrary={app.handleAddLibrary}
       onAddPhotoToMemory={app.handleAddPhotoToMemory}
@@ -39,6 +56,7 @@ export function App() {
       onOpenDetail={(photoId) => app.openViewer("detail", photoId)}
       onPreviousPhoto={() => app.selectRelativePhoto(-1)}
       onRemovePhotoFromMemory={app.handleRemovePhotoFromMemory}
+      onRemoveSelectionFromMemory={app.handleRemoveSelectionFromMemory}
       onRollback={app.handleRollback}
       onSaveDatetime={app.handleSaveDatetime}
       onSaveTags={app.handleSaveTags}
@@ -58,6 +76,7 @@ export function App() {
       onConfirmCreateMemory={app.handleCreateMemory}
       onToggleFavorite={app.handleToggleFavorite}
       onUpdateMemory={app.handleUpdateMemory}
+      placeGroups={app.placeGroups}
       photos={app.photos}
       searchQuery={app.filter.query ?? ""}
       statusKind={app.status.kind}
@@ -67,6 +86,26 @@ export function App() {
       selectedMemory={app.selectedMemory}
       selectedPhotoId={app.selectedPhotoId}
       snapshot={app.snapshot}
+      timelineBrowseContent={
+        <TimelineBrowseSurface
+          filter={app.filter}
+          memories={app.memories}
+          onAddPhotoToMemory={app.handleAddPhotoToMemory}
+          onAddSelectionToMemory={app.handleAddSelectionToMemory}
+          onClearBatchSelection={app.clearBatchSelection}
+          onOpenDetail={(photoId) => app.openViewer("detail", photoId)}
+          onSelectPhoto={app.setSelectedPhotoId}
+          onTimelineGranularityChange={app.setTimelineGranularity}
+          onToggleBatchSelect={app.toggleBatchSelect}
+          onToggleFavorite={app.handleToggleFavorite}
+          photos={app.photos}
+          selectedPhotoId={app.selectedPhotoId}
+          selectedPhotoIds={app.selectedPhotoIds}
+          selectedPhotoMemories={app.selectedPhotoMemories}
+          timelineGranularity={app.timelineGranularity}
+          timelineGroups={app.timelineGroups}
+        />
+      }
       viewerMode={app.viewerMode}
       viewerPhoto={app.selectedPhoto}
     />
