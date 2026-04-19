@@ -365,6 +365,116 @@ Current local implementation status:
   deeper timeline hierarchy if needed,
   and multi-browse UX refinement.
 
+### 4.10 UI/UX Redesign Phase
+
+- Add a dedicated redesign phase to bring the product closer to a calm, collection-first photo workspace rather than a dashboard-like tool surface.
+- Use [DESIGN.md](./DESIGN.md) as the normative design-direction document for this phase.
+- Treat this phase as a deliberate visual and interaction redesign,
+  not a backend or product-scope expansion.
+
+Design goals:
+
+- make the home screen feel memory-first and editorial
+- reduce dashboard-like chrome and control density
+- unify the browse shell across `waterfall`, `map`, and `timeline`
+- strengthen featured-memory presentation
+- keep navigation quiet and content dominant
+
+Primary redesign targets:
+
+1. Sidebar redesign
+- Simplify the sidebar into a quiet navigation rail with stable global destinations:
+  `All Photos`,
+  `Favorites`,
+  `Recent`,
+  `Settings`,
+  and memory / collection links.
+- Move the create-memory affordance into a low-emphasis anchored action near the bottom.
+- Avoid heavy stats or management surfaces in the navigation column.
+
+2. Highlights / Recent Memories redesign
+- Redesign the top memory row into a more cinematic highlights strip with large featured cards.
+- Each memory card should prioritize:
+  cover imagery,
+  title,
+  media count,
+  and relative update time.
+- Keep a create-new tile in the row, but make it visually secondary to real memories.
+
+3. Browse Library shell redesign
+- Redesign the library section into a cleaner shared shell:
+  title,
+  browse-mode switcher,
+  total result count,
+  search input,
+  and secondary filter action.
+- Reduce the perception of stacked toolbars and nested panels.
+- Make `waterfall`, `map`, and `timeline` feel like peers under one browse surface rather than independent sub-pages.
+
+4. Waterfall / Map / Timeline visual alignment
+- Align spacing, headings, contextual scope messaging, and selected-photo callouts across all three browse modes.
+- Keep each mode’s specialized surface intact,
+  but ensure the shell and supporting affordances read as one product language.
+
+5. Visual-system refinement
+- Move toward a spacious editorial layout with softer surfaces, quieter chrome, and stronger image-led hierarchy.
+- Prefer spacing, grouping, and typography before adding more borders or panels.
+
+Technical implementation approach:
+
+1. Document-first redesign guardrails
+- `DESIGN.md` defines the redesign principles, screen intent, and component expectations.
+- Implementation should reference that document rather than improvising screen-by-screen style changes.
+
+2. Preserve architecture boundaries
+- Keep renderer-only concerns in `apps/desktop/renderer`, especially:
+  page composition,
+  browse shell orchestration,
+  and AMap lifecycle.
+- Keep reusable design-system and shared UI pieces in `@chronopic/ui-components`.
+- Do not move business logic, persistence logic, or SDK-specific behavior into shared UI packages just to simplify styling.
+
+3. Token and component refinement
+- Evolve the existing `shadcn`-based component layer rather than replacing it wholesale.
+- Refine shared components such as:
+  sidebar items,
+  memory cards,
+  browse mode switcher,
+  search input,
+  selected-context callouts,
+  and browse section framing.
+
+4. Renderer shell restructuring where needed
+- Allow the renderer home shell to be re-composed if needed to match the redesign direction,
+  but preserve:
+  existing page model,
+  browse-mode model,
+  viewer model,
+  and current IPC-backed actions.
+
+5. Validation expectations
+- Keep `pnpm typecheck` and `pnpm build` green throughout redesign work.
+- Validate that redesign changes do not regress:
+  memory navigation,
+  browse-mode switching,
+  viewer opening,
+  add-to-memory flows,
+  and settings/library access.
+
+Current local implementation status:
+
+- `DESIGN.md` is landed and defines the redesign direction and constraints.
+- The redesign pass is now landed across both the home/library shell and the primary browse experience:
+  header chrome is quieter,
+  the sidebar is moving toward a calmer navigation rail,
+  recent memories are being reframed as a cinematic highlights row,
+  the browse-library heading/search/switcher area has been restructured to match the new editorial layout direction,
+  filters now default to a collapsed state,
+  duplicate browse headings have been removed,
+  and waterfall cards are now substantially more image-first.
+- Core behavior remains unchanged:
+  the redesign work is still limited to renderer/UI composition and presentation rather than business-logic expansion.
+
 ### 5. Editing and History ✅
 
 - Support local tag edits and datetime correction in the database projection. ✅

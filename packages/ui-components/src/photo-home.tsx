@@ -6,6 +6,7 @@ import {
   FolderPlus,
   HardDrive,
   LoaderCircle,
+  SlidersHorizontal,
   Sparkles,
 } from "lucide-react";
 
@@ -25,8 +26,8 @@ import { BrowseModeSwitcher } from "./browse-mode-switcher.js";
 import { Button } from "./button.js";
 import { CreateMemoryDialog } from "./create-memory-dialog.js";
 import type { EditControlsProps } from "./edit-controls.js";
+import { FilterToolbar } from "./filter-toolbar.js";
 import { GallerySection } from "./gallery-section.js";
-import { Header } from "./header.js";
 import { formatTimestamp } from "./lib/media.js";
 import { Label } from "./label.js";
 import { MemoryDetailPage } from "./memory-detail-page.js";
@@ -34,6 +35,7 @@ import { MemoryListSection } from "./memory-list-section.js";
 import { PageViewContext, type PageView } from "./page-view.js";
 import { PhotoViewerOverlay } from "./photo-viewer-overlay.js";
 import { RecentMemories } from "./recent-memories.js";
+import { SearchInput } from "./search-input.js";
 import { Sidebar } from "./sidebar.js";
 import type { ViewerMode } from "./types.js";
 
@@ -94,12 +96,14 @@ function HomeView({
   placeGroups,
   memories,
   mappablePhotoCount,
+  searchQuery,
   selectedPhotoIds,
   selectedPhotoId,
   selectedPhotoMemories,
   selectedMemoryId,
   filter,
   onFilterChange,
+  onSearchChange,
   onSelectPhoto,
   onToggleBatchSelect,
   onClearBatchSelection,
@@ -121,12 +125,14 @@ function HomeView({
   placeGroups: PlaceGroup[];
   memories: Memory[];
   mappablePhotoCount: number;
+  searchQuery: string;
   selectedPhotoIds: string[];
   selectedPhotoId: string | null;
   selectedPhotoMemories: Memory[];
   selectedMemoryId: string | null;
   filter: PhotoFilter;
   onFilterChange: (patch: PhotoFilterPatch) => void;
+  onSearchChange: (query: string) => void;
   onSelectPhoto: (photoId: string) => void;
   onToggleBatchSelect: (photoId: string) => void;
   onClearBatchSelection: () => void;
@@ -144,9 +150,10 @@ function HomeView({
   timelineBrowseContent?: React.ReactNode;
   onSelectionModeChange: (active: boolean) => void;
 }) {
+  const [filtersOpen, setFiltersOpen] = React.useState(false);
+
   return (
     <div className="space-y-6">
-      <BrowseModeSwitcher mode={browseMode} onModeChange={onBrowseModeChange} />
       <RecentMemories
         memories={memories}
         onCreateMemory={onCreateMemory}
@@ -154,12 +161,51 @@ function HomeView({
         onSeeAll={onSeeAllMemories}
         selectedMemoryId={selectedMemoryId}
       />
+      <section className="space-y-4">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <BrowseModeSwitcher mode={browseMode} onModeChange={onBrowseModeChange} />
+          <div className="ml-auto flex flex-wrap items-center justify-end gap-3">
+            <SearchInput
+              className="w-[320px]"
+              onValueChange={onSearchChange}
+              placeholder="Search moments, locations..."
+              value={searchQuery}
+            />
+            {browseMode === "waterfall" ? (
+              <Button
+                className="rounded-full"
+                onClick={() => {
+                  if (selectionMode || selectedPhotoIds.length > 0) {
+                    onClearBatchSelection();
+                    onSelectionModeChange(false);
+                    return;
+                  }
+
+                  onSelectionModeChange(true);
+                }}
+                size="sm"
+                variant={selectionMode || selectedPhotoIds.length > 0 ? "accent" : "outline"}
+              >
+                {selectionMode || selectedPhotoIds.length > 0 ? "Done" : "Select"}
+              </Button>
+            ) : null}
+            <Button
+              className="rounded-full"
+              onClick={() => setFiltersOpen((current) => !current)}
+              size="sm"
+              variant={filtersOpen ? "default" : "outline"}
+            >
+              <SlidersHorizontal className="h-4 w-4" />
+              Filter
+            </Button>
+          </div>
+        </div>
+        {filtersOpen ? <FilterToolbar filter={filter} onChange={onFilterChange} /> : null}
+      </section>
       {browseMode === "waterfall" ? (
         <GallerySection
           activeMemory={memories.find((memory) => memory.id === selectedMemoryId) ?? null}
-          filter={filter}
           selectedPhotoMemories={selectedPhotoMemories}
-          onFilterChange={onFilterChange}
           memories={memories}
           onAddToMemory={onAddPhotoToMemory}
           onAddSelectionToMemory={onAddSelectionToMemory}
@@ -340,16 +386,11 @@ export function PhotoHome({
 
   return (
     <PageViewContext.Provider value={{ page, setPage }}>
-      <div className="flex h-screen flex-col overflow-hidden bg-stone-50">
-        <Header
-          onSearchChange={onSearchChange}
-          searchQuery={searchQuery}
-        />
-
+      <div className="flex h-screen overflow-hidden bg-stone-50">
         <div className="flex flex-1 overflow-hidden">
           <Sidebar
             activeItem={activeSidebarItem}
-            className="w-56 shrink-0 border-r border-stone-200/80 bg-white"
+            className="w-64 shrink-0 border-r border-stone-200/70 bg-white/80 backdrop-blur-sm"
             memories={recentMemories}
             onCreateMemory={() => setCreateMemoryDialogOpen(true)}
             onSelectItem={(id) => {
@@ -365,6 +406,14 @@ export function PhotoHome({
                 setSelectionMode(false);
                 onSelectMemories();
                 setPage("memories");
+                return;
+              }
+
+              if (id === "recent") {
+                onClearBatchSelection();
+                setSelectionMode(false);
+                onSelectAllPhotos();
+                setPage("home");
                 return;
               }
 
@@ -385,7 +434,7 @@ export function PhotoHome({
           />
 
           <main className="flex-1 overflow-y-auto">
-            <div className="p-6">
+            <div className="mx-auto w-full max-w-[1680px] p-6">
               {page === "library-settings" ? (
                 <div className="rounded-[32px] border border-stone-200/70 bg-white p-6 shadow-sm">
                   <LibrarySettingsPanel
@@ -467,12 +516,14 @@ export function PhotoHome({
                   mappablePhotoCount={mappablePhotoCount}
                   mapBrowseContent={mapBrowseContent}
                   onBrowseModeChange={handleBrowseModeChange}
+                  onSearchChange={onSearchChange}
                   onSelectPhoto={onSelectPhoto}
                   onSelectionModeChange={setSelectionMode}
                   onToggleBatchSelect={onToggleBatchSelect}
                   onToggleFavorite={onToggleFavorite}
                   placeGroups={placeGroups}
                   photos={photos}
+                  searchQuery={searchQuery}
                   selectionMode={selectionMode}
                   selectedPhotoIds={selectedPhotoIds}
                   selectedPhotoMemories={selectedPhotoMemories}
@@ -484,7 +535,6 @@ export function PhotoHome({
             </div>
           </main>
         </div>
-
         <PhotoViewerOverlay
           aiEnabled={aiEnabled}
           canNavigateNext={canNavigateNext}

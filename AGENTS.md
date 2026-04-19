@@ -803,6 +803,146 @@ This file is the local execution record for ChronoPic. It complements `PLAN.md` 
   `pnpm build`
 - Result: the three browse modes now feel more like one coherent browsing product surface with different lenses, rather than one primary mode plus two detached alternates.
 
+### 2026-04-19 Step 50
+
+- Added a dedicated redesign-planning step before further UI implementation work.
+- Created `DESIGN.md` as the design-direction document for the next UI/UX phase.
+- Documented the redesign around a collection-first, editorial product direction informed by the provided reference screenshots:
+  quiet sidebar,
+  premium featured-memory cards,
+  cleaner browse shell,
+  and stronger alignment across waterfall/map/timeline.
+- Updated `PLAN.md` to add a new `4.10 UI/UX Redesign Phase`.
+- Recorded the redesign phase as a constrained UI/UX effort with explicit technical guardrails:
+  preserve package boundaries,
+  keep renderer-only composition and map lifecycle out of shared UI packages,
+  and evolve the existing `shadcn` component layer rather than replacing the app architecture.
+- This step is planning/documentation only:
+  no UI implementation has landed yet for the redesign itself,
+  and no execution step should treat the redesign phase as started beyond the new design/plan documents.
+
+### 2026-04-19 Step 51
+
+- Started the first implementation pass of the new `4.10 UI/UX Redesign Phase`.
+- Kept this pass intentionally focused on shell-level composition and visual hierarchy rather than changing product behavior.
+- Updated the top chrome so `Header` is now quieter and less dashboard-like.
+- Reworked `Sidebar` toward a calmer navigation rail:
+  stronger product identity,
+  quieter sectioning,
+  lighter nav-item styling,
+  and a low-emphasis create-memory action near the bottom.
+- Reworked `RecentMemories` and `MemoryCard` so the top of the home screen now behaves more like a highlights strip:
+  larger featured cards,
+  stronger image-led presentation,
+  and a dedicated create-new tile instead of a small utility button.
+- Started restructuring the home browse shell in `PhotoHome`:
+  `Browse Library` now has a clearer editorial section heading,
+  integrated search placement,
+  and a lighter browse-mode switch presentation.
+- Re-verified the repository after this first redesign pass with:
+  `pnpm typecheck`
+  `pnpm build`
+- Result: the redesign phase has now started in code, and the home/library shell is beginning to move toward the new visual direction without changing business logic or package boundaries.
+
+### 2026-04-19 Step 52
+
+- Performed a small redesign-correction pass after reviewing wording and chrome decisions.
+- Removed the top header bar from the main home shell so the layout now relies on the sidebar and main content regions instead of splitting attention with a thin top strip.
+- Moved the notification affordance into the sidebar brand area so global chrome is consolidated into a single navigation rail.
+- Corrected product naming in the sidebar brand block from the wrong placeholder label to the actual product name:
+  `ChronoPic`.
+- Standardized redesign terminology so collection-facing copy now uses `Memory` / `Memories` instead of `Collection` / `Collections` in the redesigned home-shell surfaces.
+- Re-verified the repository after the shell/wording correction with:
+  `pnpm typecheck`
+  `pnpm build`
+- Result: the redesign direction is now more internally consistent, with quieter global chrome and corrected product terminology.
+
+### 2026-04-19 Step 53
+
+- Continued the redesign from shell-level framing into the browse surfaces themselves.
+- Reworked `FilterToolbar` so it now reads as a lighter refinement module instead of a nested dashboard panel with a second large title stack.
+- Reworked `GallerySection` so waterfall browse feels more like one open content canvas:
+  reduced duplicate section titling,
+  lighter surface framing,
+  and softer treatment for scope/selection/batch context blocks.
+- Softened the top framing of `MapBrowseSurface` and `TimelineBrowseSurface` so all three browse modes now speak a more consistent visual language instead of each behaving like a separate heavy panel.
+- Kept this pass UI-only:
+  no query/data-flow behavior changed,
+  and no package-boundary widening was introduced.
+- Re-verified the repository after the browse-surface redesign pass with:
+  `pnpm typecheck`
+  `pnpm build`
+- Result: the redesign is now moving beyond shell chrome and into the actual browsing canvases, with waterfall/map/timeline visually converging toward the same product language.
+
+### 2026-04-19 Step 54
+
+- Adjusted the browse-shell control model to better match the approved redesign direction and the provided reference screenshot.
+- Made `Browse Library` the single visible heading for waterfall browse by removing the duplicate inner gallery-title treatment.
+- Moved browse controls into one lighter shared control row:
+  browse-mode switch on the left,
+  search on the right,
+  explicit `Select` action just left of `Filter`,
+  and `Filter` itself acting as a disclosure toggle rather than an always-open block.
+- Changed the filter panel to default-collapsed behavior.
+- Removed the duplicate search field from the expanded filter surface so the shell now has one primary search entry instead of two competing search controls.
+- Reworked the expanded filter surface so it behaves more like a lightweight refinement drawer/module than a second browse page stacked above the content.
+- Re-verified the repository after the browse-control restructure with:
+  `pnpm typecheck`
+  `pnpm build`
+- Result: the browse shell is now closer to the intended reference behavior, with lighter mode switching, a single browse heading, and collapsed filtering instead of permanent heavy filter chrome.
+
+### 2026-04-19 Step 55
+
+- Continued the redesign into the card layer so the product no longer feels like a gallery of small info panels under a redesigned shell.
+- Reworked `PhotoCard` into a more image-first presentation:
+  removed the heavy white metadata footer,
+  moved identity/timestamp/media-type into the image surface,
+  and kept hover actions and selection affordances intact.
+- Finalized the main waterfall browse-shell corrections requested during review:
+  removed the redundant outer `Browse Library` heading block,
+  kept mode-switching left-aligned,
+  and retained the lighter top-row control structure with collapsed filters.
+- Re-verified the repository after the image-first card pass with:
+  `pnpm typecheck`
+  `pnpm build`
+- Result: the core UX refine pass for the redesign is now effectively complete.
+  Remaining work, if any, is further visual polish rather than unresolved browse-shell or interaction-structure issues.
+
+### 2026-04-19 Step 56
+
+- Performed a final UI-chrome interaction polish pass after runtime review exposed accidental text selection on non-editable browse surfaces.
+- Marked non-editable chrome and browse-copy surfaces as non-selectable:
+  sidebar/navigation,
+  browse-mode switcher,
+  recent-memory highlights,
+  gallery shell copy,
+  map/timeline surface framing,
+  badges,
+  labels,
+  buttons,
+  and photo cards now all opt into `select-none`.
+- Preserved text selection where it is still semantically useful:
+  form inputs and textareas explicitly retain `select-text`,
+  so editing and copy workflows are not regressed by the chrome-level polish.
+- Re-verified the repository after the selectability polish with:
+  `pnpm typecheck`
+  `pnpm build`
+- Result: incidental text highlighting in the redesigned browse UI is reduced, while real text-entry surfaces remain selectable and editable.
+
+### 2026-04-19 Step 57
+
+- Fixed a redesign regression in the browse-mode switcher where the mode labels had lost their leading icons during the visual simplification pass.
+- Restored explicit icons for all three browse modes:
+  `Waterfall`,
+  `Map`,
+  and
+  `Timeline`,
+  while keeping the lighter segmented-control treatment introduced by the redesign.
+- Re-verified the repository after the browse-mode icon fix with:
+  `pnpm typecheck`
+  `pnpm build`
+- Result: the browse-mode switcher now matches the intended visual affordance again without regressing the redesigned layout or build health.
+
 ## Next Immediate Tasks
 
 1. Workspace skeleton is implemented.
@@ -836,4 +976,8 @@ This file is the local execution record for ChronoPic. It complements `PLAN.md` 
 29. Timeline now supports multiple grouping granularities and clearer scope explanation, so the remaining browse work is primarily runtime polish rather than missing core structure.
 30. Map mode now preserves viewport context and better syncs selected place groups, so the remaining browse polish is mostly about smaller runtime affordances rather than missing state foundations.
 31. Browse modes now share stronger scope and selection context, so the remaining polish is mostly around finer discoverability and performance/runtime behavior rather than missing interaction semantics.
-32. Next: continue with smaller runtime/discoverability polish across waterfall/map/timeline, or shift to a new product phase once browse feels settled enough in actual use.
+32. The next major UI work is now explicitly the `4.10 UI/UX Redesign Phase`, guided by `DESIGN.md` rather than ad hoc visual tweaks.
+33. The redesign phase is now started in code at the shell/composition layer.
+34. Next: continue the redesign by refining the browse surfaces themselves so waterfall/map/timeline visually align with the new home-shell direction.
+35. The core redesign UX refine is now landed.
+36. Any additional work from here is optional visual polish or follow-up tweaks rather than unfinished redesign foundations.

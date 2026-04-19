@@ -45,7 +45,7 @@ export function PhotoCard({
   return (
     <div
       className={cn(
-        "group relative h-auto overflow-hidden rounded-[24px] border bg-white p-0 text-left shadow-sm transition duration-200 hover:-translate-y-0.5 hover:shadow-lg",
+        "group relative h-auto select-none overflow-hidden rounded-[28px] border bg-white p-0 text-left shadow-[0_18px_42px_-28px_rgba(15,23,42,0.24)] transition duration-200 hover:-translate-y-0.5 hover:shadow-[0_24px_52px_-30px_rgba(15,23,42,0.28)]",
         batchSelected
           ? "border-amber-500 ring-2 ring-amber-200"
           : selected
@@ -63,8 +63,9 @@ export function PhotoCard({
       role="button"
       tabIndex={0}
     >
-      <div className="relative aspect-[1.05] overflow-hidden bg-gradient-to-br from-stone-200 via-stone-100 to-amber-50">
+      <div className="relative aspect-[0.88] overflow-hidden bg-gradient-to-br from-stone-200 via-stone-100 to-amber-50">
         <MediaPreview className="transition duration-300 group-hover:scale-[1.03]" record={record} />
+        <div className="absolute inset-0 bg-gradient-to-t from-stone-950/72 via-stone-950/10 to-transparent opacity-85 transition duration-200 group-hover:opacity-100" />
         <div className="absolute left-3 top-3 z-10 flex flex-wrap gap-2">
           {onToggleBatchSelect ? (
             <button
@@ -136,21 +137,20 @@ export function PhotoCard({
           <span>Double-click to open</span>
           <MediaIcon className="h-3.5 w-3.5" />
         </div>
-      </div>
-      <div className="space-y-3 px-4 py-4">
-        <div className="space-y-1">
-          <p className="line-clamp-1 text-sm font-semibold text-stone-950">{mediaLabel(record)}</p>
-          <p className="line-clamp-2 text-xs leading-5 text-stone-500">{record.photo.path.split("/").at(-1)}</p>
-        </div>
-        <div className="flex items-center justify-between text-xs text-stone-500">
-          <span className="inline-flex items-center gap-1.5">
-            <CalendarClock className="h-3.5 w-3.5" />
-            {formatTimestamp(record.metadata.datetime)}
-          </span>
-          <span className="inline-flex items-center gap-1.5">
-            <MediaIcon className="h-3.5 w-3.5" />
-            {record.photo.mime.startsWith("video/") ? "Video" : "Image"}
-          </span>
+        <div className="absolute inset-x-4 bottom-4 z-10">
+          <div className="space-y-2 text-white">
+            <p className="line-clamp-1 text-base font-semibold tracking-tight">{mediaLabel(record)}</p>
+            <div className="flex flex-wrap items-center gap-3 text-xs text-white/82">
+              <span className="inline-flex items-center gap-1.5">
+                <CalendarClock className="h-3.5 w-3.5" />
+                {formatTimestamp(record.metadata.datetime)}
+              </span>
+              <span className="inline-flex items-center gap-1.5">
+                <MediaIcon className="h-3.5 w-3.5" />
+                {record.photo.mime.startsWith("video/") ? "Video" : "Image"}
+              </span>
+            </div>
+          </div>
         </div>
       </div>
     </div>

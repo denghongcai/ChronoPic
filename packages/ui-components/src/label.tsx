@@ -4,7 +4,7 @@ import type * as React from "react";
 
 import { cn } from "./lib/cn.js";
 
-const labelVariants = cva("text-[11px] font-semibold uppercase tracking-[0.18em] text-stone-500");
+const labelVariants = cva("select-none text-[11px] font-semibold uppercase tracking-[0.18em] text-stone-500");
 
 export function Label({
   className,

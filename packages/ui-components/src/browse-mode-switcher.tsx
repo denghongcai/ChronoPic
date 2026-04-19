@@ -1,13 +1,13 @@
 import type { BrowseMode } from "@chronopic/domain";
+import { CalendarDaysIcon, LayoutGridIcon, MapIcon } from "lucide-react";
 
-import { Badge } from "./badge.js";
 import { Button } from "./button.js";
 import { cn } from "./lib/cn.js";
 
-const browseModes: Array<{ description: string; label: string; value: BrowseMode }> = [
-  { value: "waterfall", label: "Waterfall", description: "Visual scan" },
-  { value: "map", label: "Map", description: "Places & GPS" },
-  { value: "timeline", label: "Timeline", description: "Dates & periods" },
+const browseModes: Array<{ description: string; icon: typeof LayoutGridIcon; label: string; value: BrowseMode }> = [
+  { value: "waterfall", label: "Waterfall", description: "Visual scan", icon: LayoutGridIcon },
+  { value: "map", label: "Map", description: "Places & GPS", icon: MapIcon },
+  { value: "timeline", label: "Timeline", description: "Dates & periods", icon: CalendarDaysIcon },
 ];
 
 export interface BrowseModeSwitcherProps {
@@ -20,29 +20,26 @@ export function BrowseModeSwitcher({ className, mode, onModeChange }: BrowseMode
   return (
     <div
       className={cn(
-        "flex flex-wrap items-center justify-between gap-3 rounded-[24px] border border-stone-200 bg-white px-4 py-3 shadow-sm",
+        "inline-flex flex-wrap items-center gap-1 rounded-full border border-stone-200 bg-white/88 p-1 shadow-sm",
+        "select-none",
         className
       )}
     >
-      <div>
-        <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-stone-500">Browse Mode</p>
-        <p className="mt-1 text-sm text-stone-600">
-          Switch the same result scope across visual, geographic, and temporal exploration modes.
-        </p>
-      </div>
-      <div className="flex flex-wrap items-center gap-2">
-        {browseModes.map((item) => (
+      {browseModes.map((item) => {
+        const Icon = item.icon;
+        return (
           <Button
             key={item.value}
+            className="rounded-full"
             onClick={() => onModeChange(item.value)}
             size="sm"
-            variant={mode === item.value ? "accent" : "outline"}
+            variant={mode === item.value ? "secondary" : "ghost"}
           >
+            <Icon className="h-3.5 w-3.5" />
             {item.label}
-            <Badge tone={mode === item.value ? "neutral" : "info"}>{item.description}</Badge>
           </Button>
-        ))}
-      </div>
+        );
+      })}
     </div>
   );
 }

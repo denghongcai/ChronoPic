@@ -1,8 +1,7 @@
-import { CalendarClock, ChevronRight } from "lucide-react";
+import { ChevronRight, Plus } from "lucide-react";
 
 import type { Memory } from "@chronopic/domain";
 
-import { Panel } from "./panel.js";
 import { Button } from "./button.js";
 import { Badge } from "./badge.js";
 import { MemoryCard } from "./memory-card.js";
@@ -23,22 +22,31 @@ export function RecentMemories({
   onCreateMemory,
 }: RecentMemoriesProps) {
   return (
-    <Panel className="overflow-hidden">
-      <div className="flex items-center justify-between border-b border-stone-200/70 px-5 py-4">
-        <div className="flex items-center gap-2">
-          <CalendarClock className="h-4 w-4 text-amber-500" />
-          <h3 className="font-semibold text-stone-900">Recent Memories</h3>
-          <Badge tone="neutral">{memories.length}</Badge>
+    <section className="select-none space-y-5">
+      <div className="flex items-end justify-between gap-4">
+        <div className="space-y-2">
+          <div className="flex items-center gap-2">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-stone-400">Discover</p>
+            <span className="h-1 w-1 rounded-full bg-stone-300" />
+            <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-stone-400">Highlights</p>
+          </div>
+          <div className="flex items-center gap-3">
+            <h2 className="font-['Space_Grotesk','IBM_Plex_Sans',sans-serif] text-[2.15rem] font-semibold tracking-tight text-stone-950">
+              Recent Memories
+            </h2>
+            <Badge tone="neutral">{memories.length}</Badge>
+          </div>
         </div>
         {memories.length > 0 ? (
-          <Button className="text-stone-500" onClick={onSeeAll} size="sm" variant="ghost">
+          <Button className="rounded-full px-4 text-stone-500" onClick={onSeeAll} size="sm" variant="ghost">
             See All Recent
             <ChevronRight className="h-4 w-4" />
           </Button>
         ) : null}
       </div>
+
       {memories.length === 0 ? (
-        <div className="grid min-h-[220px] place-items-center px-6 py-8 text-center">
+        <div className="grid min-h-[260px] place-items-center rounded-[36px] border border-dashed border-stone-300 bg-white/70 px-6 py-8 text-center shadow-[0_18px_42px_-30px_rgba(15,23,42,0.28)]">
           <div className="max-w-md space-y-3">
             <p className="text-lg font-semibold text-stone-900">No recent memories yet</p>
             <p className="text-sm leading-6 text-stone-500">
@@ -46,7 +54,7 @@ export function RecentMemories({
             </p>
             {onCreateMemory ? (
               <div className="pt-2">
-                <Button onClick={onCreateMemory} variant="outline">
+                <Button className="rounded-full" onClick={onCreateMemory} variant="outline">
                   Create First Memory
                 </Button>
               </div>
@@ -54,18 +62,33 @@ export function RecentMemories({
           </div>
         </div>
       ) : (
-        <div className="flex gap-4 overflow-x-auto p-5 pb-4">
-          {memories.slice(0, 6).map((memory) => (
-            <div className="w-48 shrink-0" key={memory.id}>
-              <MemoryCard
-                memory={memory}
-                onOpen={() => onOpenMemory?.(memory.id)}
-                selected={selectedMemoryId === memory.id}
-              />
-            </div>
+        <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_320px]">
+          {memories.slice(0, 2).map((memory) => (
+            <MemoryCard
+              key={memory.id}
+              memory={memory}
+              onOpen={() => onOpenMemory?.(memory.id)}
+              selected={selectedMemoryId === memory.id}
+              variant="highlight"
+            />
           ))}
+          <button
+            className="grid min-h-[220px] place-items-center rounded-[32px] border border-dashed border-stone-300 bg-white/50 text-center shadow-[0_18px_42px_-30px_rgba(15,23,42,0.2)] transition hover:-translate-y-0.5 hover:bg-white hover:shadow-[0_24px_52px_-32px_rgba(15,23,42,0.24)]"
+            onClick={() => onCreateMemory?.()}
+            type="button"
+          >
+            <div className="space-y-3">
+              <div className="mx-auto grid h-11 w-11 place-items-center rounded-full border border-stone-200 bg-white text-stone-500 shadow-sm">
+                <Plus className="h-4 w-4" />
+              </div>
+              <div className="space-y-1">
+                <p className="text-base font-semibold text-stone-900">New Memory</p>
+                <p className="text-sm text-stone-500">Create a new memory from your library.</p>
+              </div>
+            </div>
+          </button>
         </div>
       )}
-    </Panel>
+    </section>
   );
 }

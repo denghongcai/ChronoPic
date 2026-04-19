@@ -256,15 +256,12 @@ export function MapBrowseSurface({
   }
 
   return (
-    <Panel className="overflow-hidden">
-      <div className="flex items-center justify-between border-b border-stone-200/70 px-5 py-4">
-        <div>
-          <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-stone-500">Map View</p>
-          <h2 className="mt-2 font-['Space_Grotesk','IBM_Plex_Sans',sans-serif] text-2xl font-semibold tracking-tight text-stone-950">
-            Browse photos by place clusters
-          </h2>
-          <p className="mt-2 text-sm text-stone-500">
-            Pan or zoom the map to refresh the current place buckets. Click a marker or place card to move selection into the shared viewer flow.
+    <Panel className="select-none overflow-hidden">
+      <div className="flex items-end justify-between gap-4 border-b border-stone-200/70 px-5 py-4">
+        <div className="space-y-1">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-stone-400">Map View</p>
+          <p className="text-sm text-stone-500">
+            Pan or zoom to refresh place buckets. Markers, place cards, and the shared viewer all stay in the same selection flow.
           </p>
         </div>
         <div className="flex items-center gap-2">
