@@ -1,13 +1,14 @@
 import { MapPinned } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 
-import type { GeoBounds, Memory, PhotoFilter, PlaceGroup, PhotoRecord } from "@chronopic/domain";
+import type { GeoBounds, MapSettings, Memory, PhotoFilter, PlaceGroup, PhotoRecord } from "@chronopic/domain";
 import { Badge, Button, Panel, formatTimestamp, thumbnailUrl } from "@chronopic/ui-components";
 
 import { getAmapApiKey, loadAmap, type AMapNamespace } from "./amap-loader";
 
 export interface MapBrowseSurfaceProps {
   filter: PhotoFilter;
+  mapSettings: MapSettings;
   mapViewport: { centerLat: number; centerLng: number; zoom: number } | null;
   mappablePhotoCount: number;
   onOpenDetail: (photoId: string) => void;
@@ -21,6 +22,7 @@ export interface MapBrowseSurfaceProps {
 
 export function MapBrowseSurface({
   filter,
+  mapSettings,
   mapViewport,
   mappablePhotoCount,
   onOpenDetail,
@@ -38,7 +40,7 @@ export function MapBrowseSurface({
   const [activePlaceGroups, setActivePlaceGroups] = useState<PlaceGroup[]>(placeGroups);
   const [mapError, setMapError] = useState<string | null>(null);
   const [mapReady, setMapReady] = useState(false);
-  const hasApiKey = Boolean(getAmapApiKey());
+  const hasApiKey = Boolean(getAmapApiKey(mapSettings));
 
   const representativePhotos = useMemo(() => {
     const byId = new Map(photos.map((photo) => [photo.photo.id, photo]));
@@ -85,7 +87,7 @@ export function MapBrowseSurface({
 
     let disposed = false;
 
-    void loadAmap()
+    void loadAmap(mapSettings)
       .then((AMap) => {
         if (disposed || !mapContainerRef.current) {
           return;
@@ -120,7 +122,7 @@ export function MapBrowseSurface({
       mapRef.current = null;
       setMapReady(false);
     };
-  }, [hasApiKey, mapViewport, mappablePhotoCount, placeGroups]);
+  }, [hasApiKey, mapSettings, mapViewport, mappablePhotoCount, placeGroups]);
 
   useEffect(() => {
     if (!mapRef.current || !mapReady) {
@@ -161,7 +163,7 @@ export function MapBrowseSurface({
       return;
     }
 
-    void loadAmap().then((AMap) => {
+    void loadAmap(mapSettings).then((AMap) => {
       markersRef.current.forEach((marker) => marker.setMap(null));
       markersRef.current = [];
 
@@ -196,7 +198,7 @@ export function MapBrowseSurface({
         mapRef.current?.setFitView(markers);
       }
     });
-  }, [activePlaceGroups, mapReady, mapViewport, onSelectPhoto, selectedGroupId]);
+  }, [activePlaceGroups, mapReady, mapSettings, mapViewport, onSelectPhoto, selectedGroupId]);
 
   useEffect(() => {
     if (!selectedGroupId) {
@@ -234,8 +236,8 @@ export function MapBrowseSurface({
   if (!hasApiKey) {
     return (
       <MapStatePanel
-        description="Set VITE_AMAP_API_KEY in the desktop renderer environment to enable Gaode map rendering."
-        title="Map view is configured but missing an API key"
+        description="Save an AMap API key in Library Settings to enable Gaode map rendering for browse mode."
+        title="Map view is missing an API key"
         tone="warn"
       />
     );
@@ -256,15 +258,12 @@ export function MapBrowseSurface({
   }
 
   return (
-    <Panel className="overflow-hidden">
-      <div className="flex items-center justify-between border-b border-stone-200/70 px-5 py-4">
-        <div>
-          <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-stone-500">Map View</p>
-          <h2 className="mt-2 font-['Space_Grotesk','IBM_Plex_Sans',sans-serif] text-2xl font-semibold tracking-tight text-stone-950">
-            Browse photos by place clusters
-          </h2>
-          <p className="mt-2 text-sm text-stone-500">
-            Pan or zoom the map to refresh the current place buckets. Click a marker or place card to move selection into the shared viewer flow.
+    <Panel className="select-none overflow-hidden">
+      <div className="flex items-end justify-between gap-4 border-b border-stone-200/70 px-5 py-4">
+        <div className="space-y-1">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-stone-400">Map View</p>
+          <p className="text-sm text-stone-500">
+            Pan or zoom to refresh place buckets. Markers, place cards, and the shared viewer all stay in the same selection flow.
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -376,6 +375,7 @@ export function MapBrowseSurface({
                       {representative?.photo.id ? (
                         <div className="mt-3">
                           <Button
+                            asChild
                             onClick={(event) => {
                               event.stopPropagation();
                               onOpenDetail(representative.photo.id);
@@ -383,7 +383,7 @@ export function MapBrowseSurface({
                             size="sm"
                             variant="outline"
                           >
-                            Open Photo
+                            <span>Open Photo</span>
                           </Button>
                         </div>
                       ) : null}

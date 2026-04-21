@@ -25,6 +25,7 @@
     "@blocknote/react": "^0.48.1",
     "@chronopic/application": "workspace:*",
     "@chronopic/domain": "workspace:*",
+    "@chronopic/infra-config": "workspace:*",
     "@chronopic/infra-db": "workspace:*",
     "@chronopic/infra-fs": "workspace:*",
     "@chronopic/infra-image": "workspace:*",

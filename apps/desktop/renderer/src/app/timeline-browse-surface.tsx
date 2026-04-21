@@ -80,14 +80,11 @@ export function TimelineBrowseSurface({
   );
 
   return (
-    <Panel className="overflow-hidden">
-      <div className="flex items-center justify-between border-b border-stone-200/70 px-5 py-4">
-        <div>
-          <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-stone-500">Timeline</p>
-          <h2 className="mt-2 font-['Space_Grotesk','IBM_Plex_Sans',sans-serif] text-2xl font-semibold tracking-tight text-stone-950">
-            Browse by capture time
-          </h2>
-          <p className="mt-2 text-sm text-stone-500">Grouped by month first. Open any photo and continue using the shared viewer flow.</p>
+    <Panel className="select-none overflow-hidden">
+      <div className="flex flex-wrap items-end justify-between gap-4 border-b border-stone-200/70 px-5 py-4">
+        <div className="space-y-1">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-stone-400">Timeline View</p>
+          <p className="text-sm text-stone-500">Browse the current library scope chronologically and keep the same viewer and memory flows.</p>
         </div>
         <div className="flex flex-wrap items-center justify-end gap-2">
           <div className="flex items-center gap-1 rounded-full border border-stone-200 bg-stone-100/80 p-1">

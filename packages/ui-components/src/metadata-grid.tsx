@@ -47,7 +47,47 @@ export function MetadataGrid({
         label="GPS"
         value={photo.metadata.lat != null && photo.metadata.lng != null ? "Available" : "Unavailable"}
       />
-      <MetaStat icon={Sparkles} label="AI" value={aiEnabled ? photo.semantic.aiStatus : "Disabled"} />
+      <MetaStat
+        icon={Sparkles}
+        label="AI"
+        value={aiEnabled ? `${photo.semantic.aiStatus}${photo.semantic.aiModel ? ` · ${photo.semantic.aiModel}` : ""}` : "Disabled"}
+      />
+      <div className="rounded-2xl border border-stone-200 bg-stone-50/80 px-4 py-3 sm:col-span-2">
+        <div className="mb-2 inline-flex h-9 w-9 items-center justify-center rounded-xl bg-white text-stone-700 shadow-sm">
+          <Sparkles className="h-4 w-4" />
+        </div>
+        <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-stone-500">AI Insights</p>
+        <div className="mt-3 space-y-3 text-sm text-stone-700">
+          <div>
+            <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-stone-500">Generated Caption</p>
+            <p className="mt-1 text-sm leading-6 text-stone-900">{photo.semantic.generatedCaption ?? "Not generated yet"}</p>
+          </div>
+          <div>
+            <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-stone-500">Summary</p>
+            <p className="mt-1 text-sm leading-6 text-stone-900">{photo.semantic.summary ?? "Not generated yet"}</p>
+          </div>
+          <div>
+            <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-stone-500">Generated Tags</p>
+            <div className="mt-2 flex flex-wrap gap-2">
+              {photo.semantic.generatedLabels.length === 0 ? (
+                <p className="text-sm text-stone-500">No generated tags yet</p>
+              ) : (
+                photo.semantic.generatedLabels.map((label) => (
+                  <Badge key={label} tone="info">
+                    {label}
+                  </Badge>
+                ))
+              )}
+            </div>
+          </div>
+          {photo.semantic.aiError ? (
+            <div>
+              <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-rose-500">Last AI Error</p>
+              <p className="mt-1 text-sm leading-6 text-rose-600">{photo.semantic.aiError}</p>
+            </div>
+          ) : null}
+        </div>
+      </div>
       <div className="rounded-2xl border border-stone-200 bg-stone-50/80 px-4 py-3 sm:col-span-2">
         <div className="mb-2 inline-flex h-9 w-9 items-center justify-center rounded-xl bg-white text-stone-700 shadow-sm">
           <BookMarked className="h-4 w-4" />

@@ -1,4 +1,4 @@
-export type AIPipelineStatus = "disabled" | "pending" | "processing" | "complete" | "error";
+export type AIPipelineStatus = "disabled" | "pending" | "processing" | "completed" | "failed";
 
 export interface Photo {
   id: string;
@@ -26,8 +26,23 @@ export interface Semantic {
   photoId: string;
   labels: string[];
   caption: string | null;
+  generatedLabels: string[];
+  generatedCaption: string | null;
+  summary: string | null;
   embeddingRef: string | null;
   aiStatus: AIPipelineStatus;
+  aiProvider: string | null;
+  aiModel: string | null;
+  aiProcessedAt: number | null;
+  aiError: string | null;
+}
+
+export interface SemanticQueueStats {
+  disabled: number;
+  pending: number;
+  processing: number;
+  completed: number;
+  failed: number;
 }
 
 export interface IndexState {
@@ -67,6 +82,14 @@ export interface Memory {
   coverPhotoId: string | null;
   coverThumbnailPath: string | null;
   photoCount: number;
+  generatedName: string | null;
+  generatedDescription: string | null;
+  generatedLabels: string[];
+  aiStatus: AIPipelineStatus;
+  aiProvider: string | null;
+  aiModel: string | null;
+  aiProcessedAt: number | null;
+  aiError: string | null;
   source: MemorySource;
   createdAt: number;
   updatedAt: number;
@@ -137,6 +160,7 @@ export interface PhotoFilter {
   query?: string;
   mimePrefix?: string;
   tag?: string;
+  aiStatus?: AIPipelineStatus | AIPipelineStatus[];
   favorite?: boolean;
   memoryId?: string;
   indexed?: boolean;
@@ -178,6 +202,18 @@ export interface LibrarySnapshot {
 export interface AppCapabilities {
   aiEnabled: boolean;
   supportedMedia: string[];
+}
+
+export interface AISettings {
+  apiKey: string;
+  baseURL: string;
+  model: string;
+  providerName: string;
+}
+
+export interface MapSettings {
+  apiKey: string;
+  securityJsCode: string;
 }
 
 export interface UpsertPhotoPayload {

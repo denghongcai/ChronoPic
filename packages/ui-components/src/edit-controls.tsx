@@ -6,6 +6,9 @@ import { Label } from "./label.js";
 import { TagInput } from "./tag-input.js";
 
 export interface EditControlsProps {
+  aiEnabled?: boolean;
+  aiStatus?: string;
+  isEnrichingSemantic?: boolean;
   draftTags: string[];
   draftCaption: string;
   draftDatetime: string;
@@ -15,12 +18,22 @@ export interface EditControlsProps {
   onSaveTags: () => void;
   onSaveCaption: () => void;
   onSaveDatetime: () => void;
+  onEnrichSemantic?: () => void;
   onRollback: () => void;
 }
 
 export function EditControls(props: EditControlsProps) {
   return (
     <div className="grid gap-4">
+      {props.aiEnabled ? (
+        <div className="grid gap-2">
+          <Button className="w-full" disabled={props.isEnrichingSemantic} onClick={props.onEnrichSemantic} variant="outline" size="sm">
+            {props.isEnrichingSemantic ? "Generating AI Metadata..." : "Generate AI Metadata"}
+          </Button>
+          <p className="text-xs text-stone-500">AI status: {props.aiStatus ?? "disabled"}</p>
+        </div>
+      ) : null}
+
       <div className="space-y-1.5">
         <Label>Name</Label>
         <Input

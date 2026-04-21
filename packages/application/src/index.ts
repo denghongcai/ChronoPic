@@ -7,6 +7,7 @@ import type {
   PhotoRecord,
   PlaceGroup,
   PlaceGroupQuery,
+  SemanticQueueStats,
   TimelineGranularity,
   TimelineGroup,
   TimelineGroupQuery,
@@ -64,6 +65,81 @@ export class ChronoPicAppService {
     return this.db.updatePhotoCaption(photoId, caption);
   }
 
+  async enrichPhotoSemantic(photoId: string): Promise<PhotoRecord> {
+    if (!this.aiClient.isEnabled()) {
+      throw new Error("AI enrichment is not configured");
+    }
+
+    const photo = this.db.getPhoto(photoId);
+    if (!photo) {
+      throw new Error(`Photo not found: ${photoId}`);
+    }
+
+    this.db.updatePhotoSemanticEnrichment(photoId, {
+      aiStatus: "processing",
+      aiError: null,
+    });
+
+    try {
+      const analysis = await this.aiClient.analyzePhoto(photo);
+      return this.db.updatePhotoSemanticEnrichment(photoId, {
+        ...analysis,
+        aiStatus: "completed",
+        aiError: null,
+      });
+    } catch (error) {
+      const message = error instanceof Error && error.message ? error.message : "Unknown AI enrichment error";
+      return this.db.updatePhotoSemanticEnrichment(photoId, {
+        aiStatus: "failed",
+        aiError: message,
+        aiProcessedAt: Date.now(),
+      });
+    }
+  }
+
+  getSemanticQueueStats(): SemanticQueueStats {
+    return this.db.getSemanticQueueStats();
+  }
+
+  async enrichPendingSemantics(limit = 12): Promise<{
+    processed: number;
+    completed: number;
+    failed: number;
+    skipped: number;
+  }> {
+    if (!this.aiClient.isEnabled()) {
+      throw new Error("AI enrichment is not configured");
+    }
+
+    const queue = this.db.listPhotos({
+      aiStatus: ["disabled", "pending", "failed"],
+      limit,
+      offset: 0,
+      sortBy: "updatedAt",
+      sortDirection: "asc",
+    });
+
+    const summary = {
+      processed: queue.length,
+      completed: 0,
+      failed: 0,
+      skipped: 0,
+    };
+
+    for (const photo of queue) {
+      const updated = await this.enrichPhotoSemantic(photo.photo.id);
+      if (updated.semantic.aiStatus === "completed") {
+        summary.completed += 1;
+      } else if (updated.semantic.aiStatus === "failed") {
+        summary.failed += 1;
+      } else {
+        summary.skipped += 1;
+      }
+    }
+
+    return summary;
+  }
+
   updatePhotoDatetime(photoId: string, datetime: number | null): PhotoRecord {
     return this.db.updatePhotoDatetime(photoId, datetime);
   }
@@ -105,6 +181,53 @@ export class ChronoPicAppService {
 
   updateMemory(memoryId: string, updates: { name?: string; description?: string | null; coverPhotoId?: string | null }): Memory {
     return this.db.updateMemory(memoryId, updates);
+  }
+
+  async enrichMemorySemantic(memoryId: string): Promise<Memory> {
+    if (!this.aiClient.isEnabled()) {
+      throw new Error("AI enrichment is not configured");
+    }
+
+    const memory = this.db.getMemory(memoryId);
+    if (!memory) {
+      throw new Error(`Memory not found: ${memoryId}`);
+    }
+
+    const photos = this.db.listPhotosByMemory(memoryId, {
+      limit: 24,
+      offset: 0,
+      sortBy: "datetime",
+      sortDirection: "desc",
+    });
+
+    if (photos.length === 0) {
+      return this.db.updateMemorySemanticEnrichment(memoryId, {
+        aiStatus: "failed",
+        aiError: "Memory has no photos to analyze",
+        aiProcessedAt: Date.now(),
+      });
+    }
+
+    this.db.updateMemorySemanticEnrichment(memoryId, {
+      aiStatus: "processing",
+      aiError: null,
+    });
+
+    try {
+      const analysis = await this.aiClient.analyzeMemory(memory, photos);
+      return this.db.updateMemorySemanticEnrichment(memoryId, {
+        ...analysis,
+        aiStatus: "completed",
+        aiError: null,
+      });
+    } catch (error) {
+      const message = error instanceof Error && error.message ? error.message : "Unknown AI enrichment error";
+      return this.db.updateMemorySemanticEnrichment(memoryId, {
+        aiStatus: "failed",
+        aiError: message,
+        aiProcessedAt: Date.now(),
+      });
+    }
   }
 
   deleteMemory(memoryId: string): void {

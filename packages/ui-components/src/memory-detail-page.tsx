@@ -17,6 +17,7 @@ import { formatTimestamp, thumbnailUrl } from "./lib/media.js";
 export interface MemoryDetailPageProps {
   memory: Memory;
   photos: PhotoRecord[];
+  isEnrichingSemantic?: boolean;
   selectedPhotoIds?: string[];
   selectedPhotoId?: string | null;
   onSelectPhoto: (photoId: string) => void;
@@ -30,11 +31,13 @@ export interface MemoryDetailPageProps {
   onSetCover: (memoryId: string, photoId: string) => void | Promise<void>;
   onDeleteMemory: (memoryId: string) => void | Promise<void>;
   onSaveDescription: (memoryId: string, serializedDescription: string) => void | Promise<void>;
+  onEnrichSemantic?: (memoryId: string) => void | Promise<void>;
 }
 
 export function MemoryDetailPage({
   memory,
   photos,
+  isEnrichingSemantic = false,
   selectedPhotoIds = [],
   selectedPhotoId,
   onSelectPhoto,
@@ -48,6 +51,7 @@ export function MemoryDetailPage({
   onSetCover,
   onDeleteMemory,
   onSaveDescription,
+  onEnrichSemantic,
 }: MemoryDetailPageProps) {
   const coverUrl = thumbnailUrl(memory.coverThumbnailPath);
   const [editingDescription, setEditingDescription] = React.useState(false);
@@ -149,6 +153,87 @@ export function MemoryDetailPage({
                     {descriptionPreview || "Add context, story beats, and notes for this memory."}
                   </p>
                 </button>
+              </div>
+
+              <div className="space-y-3 rounded-[24px] border border-stone-200 bg-stone-50/70 px-5 py-4">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div>
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-stone-500">AI Story</p>
+                    <p className="mt-2 text-sm leading-6 text-stone-500">
+                      Generate a suggested title, story summary, and tags from the photos already inside this memory.
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Badge tone={memory.aiStatus === "completed" ? "success" : memory.aiStatus === "failed" ? "danger" : "neutral"}>
+                      {memory.aiStatus}
+                    </Badge>
+                    <Button
+                      disabled={isEnrichingSemantic || photos.length === 0}
+                      onClick={() => void onEnrichSemantic?.(memory.id)}
+                      size="sm"
+                      variant="outline"
+                    >
+                      {isEnrichingSemantic ? "Generating..." : "Generate AI Story"}
+                    </Button>
+                  </div>
+                </div>
+
+                {memory.generatedName || memory.generatedDescription || memory.generatedLabels.length > 0 ? (
+                  <div className="space-y-4 rounded-[20px] border border-stone-200 bg-white px-4 py-4 shadow-sm">
+                    {memory.generatedName ? (
+                      <div className="space-y-2">
+                        <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-stone-500">Suggested Title</p>
+                        <div className="flex flex-wrap items-center justify-between gap-3">
+                          <p className="text-lg font-semibold text-stone-950">{memory.generatedName}</p>
+                          <Button
+                            disabled={memory.generatedName === memory.name}
+                            onClick={() => void onRenameMemory(memory.id, memory.generatedName as string)}
+                            size="sm"
+                            variant="outline"
+                          >
+                            Apply Title
+                          </Button>
+                        </div>
+                      </div>
+                    ) : null}
+
+                    {memory.generatedDescription ? (
+                      <div className="space-y-2">
+                        <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-stone-500">Suggested Summary</p>
+                        <p className="text-sm leading-7 text-stone-600">{memory.generatedDescription}</p>
+                        <div>
+                          <Button
+                            disabled={memory.generatedDescription === memory.description}
+                            onClick={() => void onSaveDescription(memory.id, memory.generatedDescription as string)}
+                            size="sm"
+                            variant="outline"
+                          >
+                            Use as Description
+                          </Button>
+                        </div>
+                      </div>
+                    ) : null}
+
+                    {memory.generatedLabels.length > 0 ? (
+                      <div className="space-y-2">
+                        <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-stone-500">AI Tags</p>
+                        <div className="flex flex-wrap gap-2">
+                          {memory.generatedLabels.map((label) => (
+                            <Badge key={label} tone="neutral">
+                              {label}
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
+                    ) : null}
+                  </div>
+                ) : memory.aiStatus === "failed" ? (
+                  <p className="text-sm leading-6 text-rose-600">{memory.aiError ?? "AI story generation failed."}</p>
+                ) : (
+                  <p className="text-sm leading-6 text-stone-500">
+                    No AI story generated yet. Run it after the memory has a few photos and photo-level metadata is in place.
+                  </p>
+                )}
               </div>
             </div>
           </div>

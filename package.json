@@ -17,7 +17,11 @@
     "typecheck": "pnpm run clean && pnpm run build:packages && pnpm --filter @chronopic/desktop typecheck"
   },
   "devDependencies": {
+    "@chronopic/application": "workspace:*",
     "@chronopic/domain": "workspace:*",
+    "@chronopic/infra-config": "workspace:*",
+    "@chronopic/infra-db": "workspace:*",
+    "@chronopic/services-ai-pipeline": "workspace:*",
     "@chronopic/shared-utils": "workspace:*",
     "@playwright/test": "^1.59.1",
     "@types/better-sqlite3": "^7.6.13",

@@ -803,6 +803,456 @@ This file is the local execution record for ChronoPic. It complements `PLAN.md` 
   `pnpm build`
 - Result: the three browse modes now feel more like one coherent browsing product surface with different lenses, rather than one primary mode plus two detached alternates.
 
+### 2026-04-19 Step 50
+
+- Added a dedicated redesign-planning step before further UI implementation work.
+- Created `DESIGN.md` as the design-direction document for the next UI/UX phase.
+- Documented the redesign around a collection-first, editorial product direction informed by the provided reference screenshots:
+  quiet sidebar,
+  premium featured-memory cards,
+  cleaner browse shell,
+  and stronger alignment across waterfall/map/timeline.
+- Updated `PLAN.md` to add a new `4.10 UI/UX Redesign Phase`.
+- Recorded the redesign phase as a constrained UI/UX effort with explicit technical guardrails:
+  preserve package boundaries,
+  keep renderer-only composition and map lifecycle out of shared UI packages,
+  and evolve the existing `shadcn` component layer rather than replacing the app architecture.
+- This step is planning/documentation only:
+  no UI implementation has landed yet for the redesign itself,
+  and no execution step should treat the redesign phase as started beyond the new design/plan documents.
+
+### 2026-04-19 Step 51
+
+- Started the first implementation pass of the new `4.10 UI/UX Redesign Phase`.
+- Kept this pass intentionally focused on shell-level composition and visual hierarchy rather than changing product behavior.
+- Updated the top chrome so `Header` is now quieter and less dashboard-like.
+- Reworked `Sidebar` toward a calmer navigation rail:
+  stronger product identity,
+  quieter sectioning,
+  lighter nav-item styling,
+  and a low-emphasis create-memory action near the bottom.
+- Reworked `RecentMemories` and `MemoryCard` so the top of the home screen now behaves more like a highlights strip:
+  larger featured cards,
+  stronger image-led presentation,
+  and a dedicated create-new tile instead of a small utility button.
+- Started restructuring the home browse shell in `PhotoHome`:
+  `Browse Library` now has a clearer editorial section heading,
+  integrated search placement,
+  and a lighter browse-mode switch presentation.
+- Re-verified the repository after this first redesign pass with:
+  `pnpm typecheck`
+  `pnpm build`
+- Result: the redesign phase has now started in code, and the home/library shell is beginning to move toward the new visual direction without changing business logic or package boundaries.
+
+### 2026-04-19 Step 52
+
+- Performed a small redesign-correction pass after reviewing wording and chrome decisions.
+- Removed the top header bar from the main home shell so the layout now relies on the sidebar and main content regions instead of splitting attention with a thin top strip.
+- Moved the notification affordance into the sidebar brand area so global chrome is consolidated into a single navigation rail.
+- Corrected product naming in the sidebar brand block from the wrong placeholder label to the actual product name:
+  `ChronoPic`.
+- Standardized redesign terminology so collection-facing copy now uses `Memory` / `Memories` instead of `Collection` / `Collections` in the redesigned home-shell surfaces.
+- Re-verified the repository after the shell/wording correction with:
+  `pnpm typecheck`
+  `pnpm build`
+- Result: the redesign direction is now more internally consistent, with quieter global chrome and corrected product terminology.
+
+### 2026-04-19 Step 53
+
+- Continued the redesign from shell-level framing into the browse surfaces themselves.
+- Reworked `FilterToolbar` so it now reads as a lighter refinement module instead of a nested dashboard panel with a second large title stack.
+- Reworked `GallerySection` so waterfall browse feels more like one open content canvas:
+  reduced duplicate section titling,
+  lighter surface framing,
+  and softer treatment for scope/selection/batch context blocks.
+- Softened the top framing of `MapBrowseSurface` and `TimelineBrowseSurface` so all three browse modes now speak a more consistent visual language instead of each behaving like a separate heavy panel.
+- Kept this pass UI-only:
+  no query/data-flow behavior changed,
+  and no package-boundary widening was introduced.
+- Re-verified the repository after the browse-surface redesign pass with:
+  `pnpm typecheck`
+  `pnpm build`
+- Result: the redesign is now moving beyond shell chrome and into the actual browsing canvases, with waterfall/map/timeline visually converging toward the same product language.
+
+### 2026-04-19 Step 54
+
+- Adjusted the browse-shell control model to better match the approved redesign direction and the provided reference screenshot.
+- Made `Browse Library` the single visible heading for waterfall browse by removing the duplicate inner gallery-title treatment.
+- Moved browse controls into one lighter shared control row:
+  browse-mode switch on the left,
+  search on the right,
+  explicit `Select` action just left of `Filter`,
+  and `Filter` itself acting as a disclosure toggle rather than an always-open block.
+- Changed the filter panel to default-collapsed behavior.
+- Removed the duplicate search field from the expanded filter surface so the shell now has one primary search entry instead of two competing search controls.
+- Reworked the expanded filter surface so it behaves more like a lightweight refinement drawer/module than a second browse page stacked above the content.
+- Re-verified the repository after the browse-control restructure with:
+  `pnpm typecheck`
+  `pnpm build`
+- Result: the browse shell is now closer to the intended reference behavior, with lighter mode switching, a single browse heading, and collapsed filtering instead of permanent heavy filter chrome.
+
+### 2026-04-19 Step 55
+
+- Continued the redesign into the card layer so the product no longer feels like a gallery of small info panels under a redesigned shell.
+- Reworked `PhotoCard` into a more image-first presentation:
+  removed the heavy white metadata footer,
+  moved identity/timestamp/media-type into the image surface,
+  and kept hover actions and selection affordances intact.
+- Finalized the main waterfall browse-shell corrections requested during review:
+  removed the redundant outer `Browse Library` heading block,
+  kept mode-switching left-aligned,
+  and retained the lighter top-row control structure with collapsed filters.
+- Re-verified the repository after the image-first card pass with:
+  `pnpm typecheck`
+  `pnpm build`
+- Result: the core UX refine pass for the redesign is now effectively complete.
+  Remaining work, if any, is further visual polish rather than unresolved browse-shell or interaction-structure issues.
+
+### 2026-04-19 Step 56
+
+- Performed a final UI-chrome interaction polish pass after runtime review exposed accidental text selection on non-editable browse surfaces.
+- Marked non-editable chrome and browse-copy surfaces as non-selectable:
+  sidebar/navigation,
+  browse-mode switcher,
+  recent-memory highlights,
+  gallery shell copy,
+  map/timeline surface framing,
+  badges,
+  labels,
+  buttons,
+  and photo cards now all opt into `select-none`.
+- Preserved text selection where it is still semantically useful:
+  form inputs and textareas explicitly retain `select-text`,
+  so editing and copy workflows are not regressed by the chrome-level polish.
+- Re-verified the repository after the selectability polish with:
+  `pnpm typecheck`
+  `pnpm build`
+- Result: incidental text highlighting in the redesigned browse UI is reduced, while real text-entry surfaces remain selectable and editable.
+
+### 2026-04-19 Step 57
+
+- Fixed a redesign regression in the browse-mode switcher where the mode labels had lost their leading icons during the visual simplification pass.
+- Restored explicit icons for all three browse modes:
+  `Waterfall`,
+  `Map`,
+  and
+  `Timeline`,
+  while keeping the lighter segmented-control treatment introduced by the redesign.
+- Re-verified the repository after the browse-mode icon fix with:
+  `pnpm typecheck`
+  `pnpm build`
+- Result: the browse-mode switcher now matches the intended visual affordance again without regressing the redesigned layout or build health.
+
+### 2026-04-19 Step 58
+
+- Re-prioritized the post-redesign product roadmap after review of the now-landed memory, multi-browse, and redesign phases.
+- Explicitly moved realtime library sync / incremental watch to the end of the near-term roadmap instead of treating it as the next implementation step.
+- Updated `PLAN.md` to add and prioritize three forward-looking phases:
+  `4.11 AI and Semantic Enrichment Phase`,
+  `4.12 Search and Discovery Phase`,
+  and
+  `4.13 Realtime Library Sync and Incremental Watch Phase`.
+- Locked the intended future execution order in the plan:
+  first real AI/semantic enrichment,
+  then broader search/discovery,
+  and only after that realtime file watching/incremental sync.
+- Captured the AI phase as the next expected implementation target, including:
+  semantic data-model completion,
+  real provider integration behind the existing `AIClient` abstraction,
+  enrichment orchestration,
+  and product-surface integration that preserves the distinction between generated fields and user-authored edits.
+- This step is roadmap/planning only:
+  no new runtime behavior has landed yet beyond the updated implementation order and phase definitions.
+
+### 2026-04-20 Step 59
+
+- Started the first implementation pass of `4.11 AI and Semantic Enrichment Phase`.
+- Expanded the shared semantic model so AI-generated outputs are now stored separately from user-authored fields:
+  `generatedLabels`,
+  `generatedCaption`,
+  `summary`,
+  `aiProvider`,
+  `aiModel`,
+  `aiProcessedAt`,
+  and
+  `aiError`
+  were added alongside the existing manual `labels` / `caption` fields.
+- Updated the SQLite semantic schema and migration path to persist the new AI fields without forcing a fresh database.
+- Added `updatePhotoSemanticEnrichment` in `infra-db` and `enrichPhotoSemantic` orchestration in the application layer so one photo can move through:
+  `processing`,
+  `completed`,
+  or
+  `failed`
+  without overwriting manual edits.
+- Replaced the permanently disabled AI implementation with a real `VercelCompatibleAIClient` inside `services-ai-pipeline`, backed by:
+  `Vercel AI SDK`
+  and an OpenAI-compatible provider created via `@ai-sdk/openai-compatible`.
+- Added desktop runtime config for:
+  `CHRONOPIC_AI_API_KEY`,
+  `CHRONOPIC_AI_BASE_URL`,
+  `CHRONOPIC_AI_MODEL`,
+  and optional
+  `CHRONOPIC_AI_PROVIDER`.
+- Updated the indexer default semantic state so new records are marked `pending` when AI is configured instead of remaining permanently `disabled`.
+- Wired a minimal product-facing AI action through main/preload/renderer:
+  the viewer inspector now exposes `Generate AI Metadata`,
+  and the metadata area now displays generated caption, summary, tags, status, model, and last AI error.
+- Verified the local OpenAI-compatible test endpoint supplied by the user:
+  model discovery at `http://192.168.1.39:8888/v1/models` succeeded,
+  and `VercelCompatibleAIClient.analyzePhoto()` successfully returned structured output against
+  `unsloth/gemma-4-E4B-it-GGUF`.
+- Captured a compatibility quirk discovered during that smoke test:
+  the local endpoint returns SSE-style responses even for non-streaming requests,
+  so the provider implementation was updated to consume responses through `streamText()` rather than `generateText()`.
+- Added unit-test coverage in line with the clarified requirement that business-logic and infra packages should have tests:
+  `tests/application-ai-enrichment.test.ts`
+  covers application-layer enrichment state flow and preservation of manual fields,
+  and
+  `tests/infra-db-semantic.test.ts`
+  covers the infra semantic schema/export surface for the new AI columns.
+- Re-verified the repository after the first AI-enrichment implementation pass with:
+  `pnpm typecheck`
+  `pnpm test`
+  `pnpm build`
+- Result: the first real AI enrichment slice is landed, build-valid, test-covered at business/infra level, and confirmed against the user-provided local model endpoint.
+
+### 2026-04-20 Step 60
+
+- Continued `4.11 AI and Semantic Enrichment Phase` past single-photo manual generation into actual queue orchestration.
+- Extended `PhotoFilter` and infra query handling to understand `aiStatus`, so AI queue operations can address:
+  `pending`
+  and
+  `failed`
+  records explicitly instead of relying on renderer-local filtering only.
+- Added `getSemanticQueueStats` in the database/application stack and wired it through IPC/preload so the renderer can show a real queue summary:
+  `disabled`,
+  `pending`,
+  `processing`,
+  `completed`,
+  and
+  `failed`.
+- Added `enrichPendingSemantics(limit)` in the application layer and exposed it through main/preload as a batch queue operation.
+- Updated the renderer hook and home shell so the product now surfaces an AI queue action bar when work remains:
+  pending/failed/processing counts are visible,
+  and the user can trigger `Enrich Pending` without opening assets one by one.
+- Expanded business-layer test coverage with a new application test for batch queue processing:
+  `ChronoPicAppService enrichPendingSemantics processes pending and failed photos only`.
+- Re-verified the repository after the queue-orchestration pass with:
+  `pnpm typecheck`
+  `pnpm test`
+  `pnpm build`
+- Result: AI enrichment now has both per-photo and queue-level execution paths, the queue is visible in the desktop UI, and the business/infra test baseline has been extended accordingly.
+
+### 2026-04-20 Step 61
+
+- Continued `4.11` by making semantic enrichment more visible and controllable in the browse/search experience instead of leaving it only as a backend capability.
+- Added an explicit AI status filter to the structured filter toolbar so users can narrow the library by:
+  `AI Ready`,
+  `Needs AI`,
+  `Processing`,
+  and
+  `AI Failed`.
+- Added a semantic-search context callout in waterfall browse so query-driven browsing now explicitly communicates that search matches:
+  file path,
+  manual metadata,
+  and AI-generated captions, summaries, and tags.
+- Added direct unit-test coverage for `services-ai-pipeline` internals by extracting and exporting a narrow `./internal` surface:
+  `extractJsonObject`,
+  `normalizeLabels`,
+  and
+  `normalizeText`
+  are now covered by `tests/services-ai-pipeline.test.ts`.
+- This closes the earlier gap where business-logic and infra packages needed direct unit tests:
+  application,
+  infra-db,
+  and
+  services-ai-pipeline
+  now all have phase-relevant test coverage in the root suite.
+- Re-verified the repository after the semantic-search visibility and AI-service test pass with:
+  `pnpm typecheck`
+  `pnpm test`
+  `pnpm build`
+- Result: AI-generated metadata is now more discoverable in the product UI, and the service-layer parsing/normalization logic has regression protection alongside the already-added application/infra tests.
+
+### 2026-04-20 Step 62
+
+- Continued `4.11 AI and Semantic Enrichment Phase` from photo-only enrichment into memory-level AI synthesis.
+- Extended the `Memory` domain and SQLite schema with non-destructive generated AI fields:
+  `generatedName`,
+  `generatedDescription`,
+  `generatedLabels`,
+  plus memory-level AI status/provider/model/error metadata.
+- Added memory-schema migration support in `infra-db` and a dedicated `updateMemorySemanticEnrichment` repository path so generated memory suggestions are persisted separately from user-authored title/description.
+- Extended the `AIClient` contract with `analyzeMemory(memory, photos)` and implemented it in the Vercel-AI-backed provider as a text-only synthesis step over sampled photo semantics.
+- Added `ChronoPicAppService.enrichMemorySemantic(memoryId)`:
+  it gathers photos in the memory,
+  records `processing/completed/failed` state,
+  and preserves manual memory fields while saving generated suggestions.
+- Wired the new memory-enrichment path through Electron IPC and the preload bridge via:
+  `memories:enrichSemantic`
+  and
+  `window.chronoPic.enrichMemorySemantic(...)`.
+- Added the first memory-level AI product surface in memory detail:
+  users can now run `Generate AI Story`,
+  review suggested title/summary/tags,
+  and explicitly apply the generated title or summary without destructive overwrite.
+- Expanded test coverage again in line with the business/infra requirement:
+  `tests/application-ai-enrichment.test.ts`
+  now covers non-destructive memory enrichment behavior,
+  and
+  `tests/infra-db-semantic.test.ts`
+  now asserts the memory AI schema columns.
+- Re-verified the repository after the memory-synthesis pass with:
+  `pnpm typecheck`
+  `pnpm test`
+  `pnpm build`
+- Result: AI enrichment now spans both photo and memory surfaces, stays non-destructive for user-authored memory metadata, and remains covered by application/infra regression tests.
+
+### 2026-04-20 Step 63
+
+- Filled the product gap that kept AI effectively env-only by adding an in-app AI settings flow.
+- Added a new `@chronopic/infra-config` package to persist local desktop configuration in a package-bounded way instead of hardcoding all provider settings in Electron main.
+- Added `AISettings` to the shared domain model and implemented `ChronoPicConfigStore` for local JSON-backed storage of:
+  API key,
+  base URL,
+  model,
+  and provider name.
+- Updated Electron main/runtime so startup now reads persisted AI settings, and saving settings triggers a runtime rebuild so capability changes apply immediately without a manual app restart.
+- Added new preload / IPC methods:
+  `system:getAISettings`
+  and
+  `system:saveAISettings`.
+- Extended the `Library Settings` page with an AI configuration form:
+  provider,
+  model,
+  base URL,
+  API key,
+  current enabled/disabled state,
+  and a save action.
+- Closed a product gap after enabling AI late in the lifecycle:
+  queue processing now includes previously `disabled` photos, so an existing library can be enriched after AI is configured without forcing a full re-index first.
+- Added infra-package regression coverage for the new config package in:
+  `tests/infra-config.test.ts`.
+- Re-verified the repository after the AI-settings/configuration pass with:
+  `pnpm install`
+  `pnpm typecheck`
+  `pnpm test`
+  `pnpm build`
+- Result: AI can now be enabled and configured from the desktop product surface itself, persisted locally, applied immediately at runtime, and regression-covered at the infrastructure layer.
+
+### 2026-04-20 Step 64
+
+- Performed a follow-up fix after runtime feedback on the new AI configuration flow.
+- Hardened the `photos:enrichPendingSemantics` IPC handler so batch-enrichment responses are explicitly returned as plain serializable literals and thrown errors are normalized to clone-safe `Error(message)` values.
+- Improved queue visibility by adding a dedicated `AI Queue` section to `Library Settings`, instead of relying only on the home-page queue banner.
+- Updated queue wording in the home banner so previously disabled-but-now-eligible items are shown as `need AI` rather than the more confusing raw `disabled` label.
+- Re-verified the repository after the IPC/queue-visibility fix with:
+  `pnpm typecheck`
+  `pnpm test`
+  `pnpm build`
+- Result: the batch AI queue path is safer across Electron IPC boundaries, and queue state is now visible both in the home surface and in settings.
+
+### 2026-04-20 Step 65
+
+- Performed a second hardening pass on the batch AI queue IPC after the first clone-safety fix still reproduced in runtime testing.
+- Changed `photos:enrichPendingSemantics` so the main process no longer throws or returns structured objects across IPC for that action:
+  it now always returns a JSON string payload,
+  and preload performs local parse-and-throw on the renderer side.
+- This intentionally bypasses Electron object/error cloning for the queue action completely while preserving the same renderer-facing API shape.
+- Re-verified after the transport hardening with:
+  `pnpm typecheck`
+  `pnpm test`
+  `pnpm build`
+- Result: the queue action now uses the most conservative possible IPC transport path, reducing the remaining failure surface to stale dev runtime state or a different downstream refresh call.
+
+### 2026-04-20 Step 66
+
+- Identified the actual root cause of the persistent `An object could not be cloned` runtime error via the new debug log:
+  the `Enrich Pending` / `Enrich Queue` buttons were passing the React click event object into `handleEnrichPendingSemantics(limit = 12)` instead of calling it with no arguments.
+- This meant the renderer was attempting to send a DOM event through Electron IPC, which fails cloning before the main-process handler is even invoked.
+- Fixed both queue-action buttons to call the handler explicitly:
+  `onClick={() => void onEnrichPendingSemantics?.()}`
+  instead of handing the click event through as the first argument.
+- Re-verified after the click-handler fix with:
+  `pnpm typecheck`
+  `pnpm build`
+- Result: the persistent clone error was traced to a renderer click-binding bug rather than the AI runtime, database, or IPC payload shape.
+
+### 2026-04-20 Step 67
+
+- Performed a small follow-up UX fix on the redesigned photo cards.
+- Moved the `Double-click to open` affordance from its separate bottom floating strip into the main metadata stack so it now sits above the title instead of competing with the timestamp/media row.
+- This reduces overlap/noise in the lower image overlay and matches the intended information hierarchy more closely.
+- Re-verified after the card-overlay adjustment with:
+  `pnpm typecheck`
+  `pnpm build`
+- Result: the photo-card interaction hint is better positioned within the card’s text hierarchy and the build remains green.
+
+### 2026-04-20 Step 68
+
+- Reworked AI queue visibility to match the intended product information architecture.
+- Promoted the sidebar bell into a real notification-center entry with unread-count badge support instead of leaving it as a decorative icon.
+- Added a dedicated `notifications` page in the shared page-view model and routed the bell button to that page.
+- Moved AI queue status and queue action affordances out of the home-page banner and out of `Library Settings`.
+- Added a dedicated `NotificationCenterPanel` that now owns:
+  AI queue status,
+  the queue action button,
+  and the latest action/status summary for the current session.
+- Kept `Library Settings` focused on configuration only by removing the queue-status block from that page.
+- Re-verified after the notification-center change with:
+  `pnpm typecheck`
+  `pnpm build`
+- Result: AI queue information now lives under the sidebar notification entry, which is closer to the intended product mental model than duplicating queue state across home and settings surfaces.
+
+### 2026-04-20 Step 69
+
+- Performed a follow-up polish/fix pass on the new notification-center workflow.
+- Removed the duplicate `Recent Action` rendering on the notifications page by suppressing the global session-status banner when the dedicated notification page is active.
+- Added startup recovery for interrupted AI jobs in `infra-db` / runtime:
+  any photo or memory left in `processing` at app restart is now moved back to `pending` so the queue does not get stuck on stale in-flight state across restarts.
+- Adjusted notification-center queue copy so pure in-flight state reads as currently running, while restarted/interrupted work is recoverable into the normal queue.
+- Re-verified after the notification and queue-recovery pass with:
+  `pnpm typecheck`
+  `pnpm build`
+- Result: the notifications page no longer duplicates the recent-action surface, and AI queue state is more durable across app restarts instead of leaving stale `processing` counts behind.
+
+### 2026-04-20 Step 70
+
+- Extended persisted desktop configuration beyond AI settings so Gaode map rendering can also be enabled from `Library Settings` instead of relying on env-only renderer configuration.
+- Added `MapSettings` to the shared domain model and expanded `@chronopic/infra-config` so settings storage now persists both:
+  `ai`
+  and
+  `map`
+  sections.
+- Added new desktop IPC/preload configuration calls:
+  `system:getMapSettings`
+  and
+  `system:saveMapSettings`
+  while keeping them separate from the AI runtime-rebuild path because map rendering is renderer-owned.
+- Updated the renderer app hook to hydrate and save persisted map settings alongside AI settings.
+- Updated the settings surface so `Library Settings` now includes a dedicated `Map Rendering` section with:
+  `AMap API Key`
+  and optional
+  `Security JS Code`
+  inputs plus explicit save behavior.
+- Updated the renderer-owned AMap loader to resolve configuration from saved map settings first, with env fallback for development, and to apply `_AMapSecurityConfig` before script load when a security JS code is present.
+- Updated the map browse surface so its missing-config empty state now points the user to `Library Settings` rather than only referencing `VITE_AMAP_API_KEY`.
+- Expanded config-store unit coverage with a direct test for persisted/normalized map settings.
+- Re-verified after the map-settings implementation with:
+  `pnpm typecheck`
+  `pnpm test`
+  `pnpm build`
+- Result: both AI and Gaode map configuration are now first-class desktop settings, and map browse no longer depends solely on build-time env injection.
+
+### 2026-04-22 Step 71
+
+- Fixed an HTML nesting/runtime warning in the map browse side list where a list-item `<button>` contained a nested shared `Button` that also rendered as `<button>`.
+- Changed the inner `Open Photo` affordance to use the shared button styling with `asChild`, rendering a non-button inline element so the outer list item remains the only actual button element.
+- Re-verified after the DOM-structure fix with:
+  `pnpm typecheck`
+  `pnpm build`
+- Result: the map browse list no longer renders invalid `button > button` markup, preventing the associated hydration/runtime warning.
+
 ## Next Immediate Tasks
 
 1. Workspace skeleton is implemented.
@@ -836,4 +1286,25 @@ This file is the local execution record for ChronoPic. It complements `PLAN.md` 
 29. Timeline now supports multiple grouping granularities and clearer scope explanation, so the remaining browse work is primarily runtime polish rather than missing core structure.
 30. Map mode now preserves viewport context and better syncs selected place groups, so the remaining browse polish is mostly about smaller runtime affordances rather than missing state foundations.
 31. Browse modes now share stronger scope and selection context, so the remaining polish is mostly around finer discoverability and performance/runtime behavior rather than missing interaction semantics.
-32. Next: continue with smaller runtime/discoverability polish across waterfall/map/timeline, or shift to a new product phase once browse feels settled enough in actual use.
+32. The next major UI work is now explicitly the `4.10 UI/UX Redesign Phase`, guided by `DESIGN.md` rather than ad hoc visual tweaks.
+33. The redesign phase is now started in code at the shell/composition layer.
+34. Next: continue the redesign by refining the browse surfaces themselves so waterfall/map/timeline visually align with the new home-shell direction.
+35. The core redesign UX refine is now landed.
+36. Any additional work from here is optional visual polish or follow-up tweaks rather than unfinished redesign foundations.
+37. Realtime library sync has been intentionally deferred to the end of the next product-expansion sequence rather than being treated as the next implementation target.
+38. The next implementation phase is now `4.11 AI and Semantic Enrichment Phase`.
+39. Search and discovery strengthening should follow AI enrichment, with realtime incremental watch left for the last phase in the current roadmap.
+40. The first AI-enrichment slice is now landed: semantic storage is expanded, a real Vercel-AI-backed provider exists, and the viewer inspector can manually trigger enrichment.
+41. Business-logic and infra package unit tests are now explicitly part of the acceptance bar for this phase, and the first AI-related tests are already added at the root test layer.
+42. AI enrichment is no longer limited to one-off manual generation; queue stats and pending-batch processing are now part of the product surface.
+43. Semantic search is now user-visible through AI-status filters and explicit semantic-search context messaging, not just hidden in backend query behavior.
+44. Business-logic and infra package coverage now includes the AI service layer itself, not just application and infra-db.
+45. Memory-level AI synthesis is now landed as non-destructive suggestion storage plus explicit apply actions in memory detail.
+46. AI provider configuration is now product-visible and no longer blocked on environment variables only.
+47. The AI queue is now also visible in `Library Settings`, and the batch-enrichment IPC path is normalized for safer Electron transport.
+48. The batch queue IPC path now uses string-only transport for maximum Electron compatibility.
+49. The persistent queue clone error was actually caused by passing a React click event through IPC, and that binding bug is now fixed.
+50. The photo-card double-click hint has been repositioned into the main text stack above the title.
+51. AI queue visibility now lives in a dedicated notification-center page reached from the sidebar bell, rather than being split across home and settings.
+52. Interrupted AI work is now recovered from stale `processing` back to `pending` on app startup.
+53. Next: move into `4.12 Search and Discovery Phase` unless a smaller AI-polish task is explicitly prioritized first.

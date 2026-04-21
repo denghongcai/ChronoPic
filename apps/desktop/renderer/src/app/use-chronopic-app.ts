@@ -1,13 +1,16 @@
 import { useEffect, useMemo, useState } from "react";
 
 import type {
+  AISettings,
   AppCapabilities,
   LibrarySnapshot,
+  MapSettings,
   Memory,
   PhotoFilter,
   PhotoFilterPatch,
   PhotoRecord,
   PlaceGroup,
+  SemanticQueueStats,
   TimelineGranularity,
   TimelineGroup,
 } from "@chronopic/domain";
@@ -55,9 +58,26 @@ export function useChronoPicApp() {
     }
   });
   const [capabilities, setCapabilities] = useState<AppCapabilities>({ aiEnabled: false, supportedMedia: [] });
+  const [aiSettings, setAISettings] = useState<AISettings>({
+    apiKey: "",
+    baseURL: "",
+    model: "",
+    providerName: "openai-compatible",
+  });
+  const [mapSettings, setMapSettings] = useState<MapSettings>({
+    apiKey: "",
+    securityJsCode: "",
+  });
   const [photos, setPhotos] = useState<PhotoRecord[]>([]);
   const [placeGroups, setPlaceGroups] = useState<PlaceGroup[]>([]);
   const [timelineGroups, setTimelineGroups] = useState<TimelineGroup[]>([]);
+  const [semanticQueueStats, setSemanticQueueStats] = useState<SemanticQueueStats>({
+    disabled: 0,
+    pending: 0,
+    processing: 0,
+    completed: 0,
+    failed: 0,
+  });
   const [timelineGranularity, setTimelineGranularity] = useState<TimelineGranularity>("month");
   const [mapViewport, setMapViewport] = useState<MapViewportState | null>(null);
   const [memories, setMemories] = useState<Memory[]>([]);
@@ -68,6 +88,9 @@ export function useChronoPicApp() {
   const [draftTags, setDraftTags] = useState<string[]>([]);
   const [draftDatetime, setDraftDatetime] = useState("");
   const [draftCaption, setDraftCaption] = useState("");
+  const [isEnrichingSemantic, setIsEnrichingSemantic] = useState(false);
+  const [isEnrichingMemorySemantic, setIsEnrichingMemorySemantic] = useState(false);
+  const [isBatchEnrichingSemantic, setIsBatchEnrichingSemantic] = useState(false);
   const [isScanning, setIsScanning] = useState(false);
   const [status, setStatus] = useState<AppStatus>(idleStatus);
   const [viewerMode, setViewerMode] = useState<ViewerMode | null>(null);
@@ -174,11 +197,18 @@ export function useChronoPicApp() {
   }, [idleStatus, isScanning, status]);
 
   async function hydrate() {
-    const response = await window.chronoPic.initialize();
+    const [response, currentAISettings, currentMapSettings] = await Promise.all([
+      window.chronoPic.initialize(),
+      window.chronoPic.getAISettings(),
+      window.chronoPic.getMapSettings(),
+    ]);
     setSnapshot(response.snapshot);
     setCapabilities(response.capabilities);
+    setAISettings(currentAISettings as AISettings);
+    setMapSettings(currentMapSettings as MapSettings);
     await refreshPhotos();
     await refreshMemories();
+    await refreshSemanticQueueStats();
   }
 
   async function refreshPhotos() {
@@ -213,6 +243,11 @@ export function useChronoPicApp() {
     setTimelineGroups(nextTimelineGroups as TimelineGroup[]);
   }
 
+  async function refreshSemanticQueueStats() {
+    const nextStats = (await window.chronoPic.getSemanticQueueStats()) as SemanticQueueStats;
+    setSemanticQueueStats(nextStats);
+  }
+
   async function refreshSnapshot() {
     setSnapshot((await window.chronoPic.getSnapshot()) as LibrarySnapshot);
   }
@@ -244,11 +279,43 @@ export function useChronoPicApp() {
       await refreshMemories();
       await refreshGeospatial();
       await refreshTimeline();
+      await refreshSemanticQueueStats();
       showStatus("success", "Scan complete");
     } catch (error) {
       showStatus("error", formatErrorMessage(error, "Scan failed"));
     } finally {
       setIsScanning(false);
+    }
+  }
+
+  async function handleSaveAISettings(nextSettings: AISettings) {
+    try {
+      const response = (await window.chronoPic.saveAISettings(nextSettings)) as {
+        settings: AISettings;
+        capabilities: AppCapabilities;
+      };
+
+      setAISettings(response.settings);
+      setCapabilities(response.capabilities);
+      await refreshSemanticQueueStats();
+      showStatus(
+        response.capabilities.aiEnabled ? "success" : "warn",
+        response.capabilities.aiEnabled ? "AI settings saved and enabled" : "AI settings saved, but AI is still disabled"
+      );
+    } catch (error) {
+      showStatus("error", formatErrorMessage(error, "Failed to save AI settings"));
+      throw error;
+    }
+  }
+
+  async function handleSaveMapSettings(nextSettings: MapSettings) {
+    try {
+      const saved = (await window.chronoPic.saveMapSettings(nextSettings)) as MapSettings;
+      setMapSettings(saved);
+      showStatus("success", saved.apiKey ? "Map settings saved" : "Map settings saved, but map rendering is disabled");
+    } catch (error) {
+      showStatus("error", formatErrorMessage(error, "Failed to save map settings"));
+      throw error;
     }
   }
 
@@ -312,6 +379,33 @@ export function useChronoPicApp() {
     } catch (error) {
       showStatus("error", formatErrorMessage(error, "Failed to update memory"));
       throw error;
+    }
+  }
+
+  async function handleEnrichMemorySemantic(memoryId: string) {
+    if (!capabilities.aiEnabled) {
+      showStatus("warn", "AI enrichment is not configured");
+      return;
+    }
+
+    const memoryName = resolveMemoryName(memoryId);
+    setIsEnrichingMemorySemantic(true);
+    showStatus("info", `Generating AI summary for ${memoryName}...`);
+
+    try {
+      const updated = (await window.chronoPic.enrichMemorySemantic(memoryId)) as Memory;
+      setMemories((current) => current.map((memory) => (memory.id === updated.id ? updated : memory)));
+
+      if (updated.aiStatus === "failed") {
+        showStatus("error", updated.aiError ?? `Failed to generate AI summary for ${updated.name}`);
+        return;
+      }
+
+      showStatus("success", `Generated AI summary for ${updated.name}`);
+    } catch (error) {
+      showStatus("error", formatErrorMessage(error, "Failed to generate memory AI summary"));
+    } finally {
+      setIsEnrichingMemorySemantic(false);
     }
   }
 
@@ -523,6 +617,107 @@ export function useChronoPicApp() {
     }
   }
 
+  async function handleEnrichSemantic() {
+    if (!selectedPhotoId) {
+      return;
+    }
+
+    setIsEnrichingSemantic(true);
+    showStatus("info", "Generating AI metadata...");
+
+    try {
+      const updated = (await window.chronoPic.enrichPhotoSemantic(selectedPhotoId)) as PhotoRecord;
+      setPhotos((current) => current.map((photo) => (photo.photo.id === updated.photo.id ? updated : photo)));
+
+      if (updated.semantic.aiStatus === "failed") {
+        await refreshSemanticQueueStats();
+        showStatus("error", updated.semantic.aiError ?? "AI enrichment failed");
+        return;
+      }
+
+      await refreshSemanticQueueStats();
+      showStatus("success", "AI metadata generated");
+    } catch (error) {
+      showStatus("error", formatErrorMessage(error, "Failed to generate AI metadata"));
+    } finally {
+      setIsEnrichingSemantic(false);
+    }
+  }
+
+  async function handleEnrichPendingSemantics(limit = 12) {
+    if (!capabilities.aiEnabled) {
+      showStatus("warn", "AI enrichment is not configured");
+      return;
+    }
+
+    setIsBatchEnrichingSemantic(true);
+    showStatus("info", "Processing pending AI metadata...");
+    void window.chronoPic.debugLog(`renderer:handleEnrichPendingSemantics start limit=${limit}`);
+
+    let summary: {
+      processed: number;
+      completed: number;
+      failed: number;
+      skipped: number;
+    };
+
+    try {
+      summary = (await window.chronoPic.enrichPendingSemantics(limit)) as {
+        processed: number;
+        completed: number;
+        failed: number;
+        skipped: number;
+      };
+      void window.chronoPic.debugLog(
+        `renderer:handleEnrichPendingSemantics invoke success processed=${summary.processed} completed=${summary.completed} failed=${summary.failed} skipped=${summary.skipped}`
+      );
+    } catch (error) {
+      void window.chronoPic.debugLog(
+        `renderer:handleEnrichPendingSemantics invoke error=${
+          error instanceof Error && error.message ? error.message : "unknown"
+        }`
+      );
+      showStatus("error", formatErrorMessage(error, "Failed to process pending AI metadata"));
+      setIsBatchEnrichingSemantic(false);
+      return;
+    }
+
+    try {
+      void window.chronoPic.debugLog("renderer:handleEnrichPendingSemantics refresh start");
+      await refreshPhotos();
+      await refreshSemanticQueueStats();
+      void window.chronoPic.debugLog("renderer:handleEnrichPendingSemantics refresh success");
+    } catch (error) {
+      void window.chronoPic.debugLog(
+        `renderer:handleEnrichPendingSemantics refresh error=${
+          error instanceof Error && error.message ? error.message : "unknown"
+        }`
+      );
+      showStatus("error", formatErrorMessage(error, "AI queue processed, but library refresh failed"));
+      setIsBatchEnrichingSemantic(false);
+      return;
+    }
+
+    try {
+      if (summary.processed === 0) {
+        showStatus("warn", "No pending AI items to process");
+        return;
+      }
+
+      if (summary.failed > 0 || summary.skipped > 0) {
+        showStatus(
+          "warn",
+          `AI queue: completed ${summary.completed}, failed ${summary.failed}, skipped ${summary.skipped}`
+        );
+        return;
+      }
+
+      showStatus("success", `AI queue processed ${summary.completed} photo${summary.completed === 1 ? "" : "s"}`);
+    } finally {
+      setIsBatchEnrichingSemantic(false);
+    }
+  }
+
   async function handleRollback() {
     if (!selectedPhotoId) {
       return;
@@ -578,13 +773,18 @@ export function useChronoPicApp() {
   return {
     canNavigateNext,
     canNavigatePrevious,
+    aiSettings,
     capabilities,
     draftCaption,
     draftDatetime,
     draftTags,
     filter,
+    isBatchEnrichingSemantic,
+    isEnrichingSemantic,
+    isEnrichingMemorySemantic,
     isScanning,
     mappablePhotoCount,
+    mapSettings,
     mapViewport,
     memories,
     openViewer,
@@ -596,6 +796,7 @@ export function useChronoPicApp() {
     selectedMemory,
     selectedPhoto,
     selectedPhotoId,
+    semanticQueueStats,
     setDraftCaption,
     setDraftDatetime,
     setDraftTags,
@@ -613,9 +814,14 @@ export function useChronoPicApp() {
     handleAddSelectionToMemory,
     handleCreateMemory,
     handleDeleteMemory,
+    handleEnrichMemorySemantic,
+    handleEnrichSemantic,
+    handleEnrichPendingSemantics,
     handleRemovePhotoFromMemory,
     handleRemoveSelectionFromMemory,
     handleRollback,
+    handleSaveAISettings,
+    handleSaveMapSettings,
     handleSaveCaption,
     handleSaveDatetime,
     handleSaveTags,

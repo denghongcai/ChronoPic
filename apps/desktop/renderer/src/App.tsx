@@ -21,16 +21,23 @@ export function App() {
   return (
     <PhotoHome
       aiEnabled={app.capabilities.aiEnabled}
+      aiSettings={app.aiSettings}
+      mapSettings={app.mapSettings}
       canNavigateNext={app.canNavigateNext}
       canNavigatePrevious={app.canNavigatePrevious}
       draftCaption={app.draftCaption}
       draftDatetime={app.draftDatetime}
       draftTags={app.draftTags}
       filter={app.filter}
+      aiQueueStats={app.semanticQueueStats}
+      isBatchEnrichingSemantic={app.isBatchEnrichingSemantic}
+      isEnrichingMemorySemantic={app.isEnrichingMemorySemantic}
+      isEnrichingSemantic={app.isEnrichingSemantic}
       isScanning={app.isScanning}
       mapBrowseContent={
         <MapBrowseSurface
           filter={app.filter}
+          mapSettings={app.mapSettings}
           mapViewport={app.mapViewport}
           mappablePhotoCount={app.mappablePhotoCount}
           onOpenDetail={(photoId) => app.openViewer("detail", photoId)}
@@ -45,12 +52,17 @@ export function App() {
       mappablePhotoCount={app.mappablePhotoCount}
       memories={app.memories}
       onAddLibrary={app.handleAddLibrary}
+      onSaveAISettings={app.handleSaveAISettings}
+      onSaveMapSettings={app.handleSaveMapSettings}
+      onEnrichPendingSemantics={app.handleEnrichPendingSemantics}
       onAddPhotoToMemory={app.handleAddPhotoToMemory}
       onAddSelectionToMemory={app.handleAddSelectionToMemory}
       onClearBatchSelection={app.clearBatchSelection}
       onCloseViewer={app.closeViewer}
       onDeleteMemory={app.handleDeleteMemory}
+      onEnrichMemorySemantic={app.handleEnrichMemorySemantic}
       onDatetimeChange={app.setDraftDatetime}
+      onEnrichSemantic={app.handleEnrichSemantic}
       onFilterChange={app.patchFilter}
       onNextPhoto={() => app.selectRelativePhoto(1)}
       onOpenDetail={(photoId) => app.openViewer("detail", photoId)}
