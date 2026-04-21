@@ -1253,6 +1253,18 @@ This file is the local execution record for ChronoPic. It complements `PLAN.md` 
   `pnpm build`
 - Result: the map browse list no longer renders invalid `button > button` markup, preventing the associated hydration/runtime warning.
 
+### 2026-04-22 Step 72
+
+- Fixed a renderer crash in `PhotoHome` caused by reading `aiQueueStats.disabled` before queue stats were available during hydration or dev-runtime state transitions.
+- Relaxed the `PhotoHome` prop shape so `aiQueueStats` can be temporarily absent and added a local empty-queue fallback used by:
+  sidebar notification count
+  and
+  the notifications panel.
+- Re-verified after the queue-state hardening with:
+  `pnpm typecheck`
+  `pnpm build`
+- Result: the home shell no longer throws when AI queue stats are briefly undefined, and the notification surfaces degrade safely to zero counts until data arrives.
+
 ## Next Immediate Tasks
 
 1. Workspace skeleton is implemented.

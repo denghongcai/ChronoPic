@@ -43,6 +43,14 @@ import { SearchInput } from "./search-input.js";
 import { Sidebar } from "./sidebar.js";
 import type { ViewerMode } from "./types.js";
 
+const EMPTY_QUEUE_STATS: SemanticQueueStats = {
+  disabled: 0,
+  pending: 0,
+  processing: 0,
+  completed: 0,
+  failed: 0,
+};
+
 export interface PhotoHomeProps extends EditControlsProps {
   mapBrowseContent?: React.ReactNode;
   photos: PhotoRecord[];
@@ -64,7 +72,7 @@ export interface PhotoHomeProps extends EditControlsProps {
   aiEnabled: boolean;
   aiSettings: AISettings;
   mapSettings: MapSettings;
-  aiQueueStats: SemanticQueueStats;
+  aiQueueStats?: SemanticQueueStats;
   isBatchEnrichingSemantic?: boolean;
   isEnrichingMemorySemantic?: boolean;
   onSelectPhoto: (photoId: string) => void;
@@ -350,6 +358,7 @@ export function PhotoHome({
   const [createMemoryDialogOpen, setCreateMemoryDialogOpen] = React.useState(false);
   const [browseMode, setBrowseMode] = React.useState<BrowseMode>("waterfall");
   const [selectionMode, setSelectionMode] = React.useState(false);
+  const safeAiQueueStats = aiQueueStats ?? EMPTY_QUEUE_STATS;
 
   const recentMemories = React.useMemo(
     () => [...memories].sort((a, b) => b.updatedAt - a.updatedAt),
@@ -421,7 +430,12 @@ export function PhotoHome({
             activeItem={activeSidebarItem}
             className="w-64 shrink-0 border-r border-stone-200/70 bg-white/80 backdrop-blur-sm"
             memories={recentMemories}
-            notificationCount={aiQueueStats.disabled + aiQueueStats.pending + aiQueueStats.processing + aiQueueStats.failed}
+            notificationCount={
+              safeAiQueueStats.disabled +
+              safeAiQueueStats.pending +
+              safeAiQueueStats.processing +
+              safeAiQueueStats.failed
+            }
             onCreateMemory={() => setCreateMemoryDialogOpen(true)}
             onSelectItem={(id) => {
               if (id === "settings") {
@@ -492,7 +506,7 @@ export function PhotoHome({
                 <div className="rounded-[32px] border border-stone-200/70 bg-white p-6 shadow-sm">
                   <NotificationCenterPanel
                     aiEnabled={aiEnabled}
-                    aiQueueStats={aiQueueStats}
+                    aiQueueStats={safeAiQueueStats}
                     statusKind={statusKind}
                     statusMessage={statusMessage}
                     {...(isBatchEnrichingSemantic !== undefined ? { isBatchEnrichingSemantic } : {})}
