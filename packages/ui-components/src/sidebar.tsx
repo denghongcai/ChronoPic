@@ -14,6 +14,7 @@ export interface SidebarProps {
   memories?: Memory[];
   onSelectMemory?: (memoryId: string) => void;
   onCreateMemory?: () => void;
+  notificationCount?: number;
 }
 
 function SidebarSection({ children, title }: { children: React.ReactNode; title: string }) {
@@ -62,6 +63,7 @@ export function Sidebar({
   memories = [],
   onSelectMemory,
   onCreateMemory,
+  notificationCount = 0,
 }: SidebarProps) {
   return (
     <aside className={cn("flex select-none flex-col gap-8 overflow-y-auto px-4 py-5", className)}>
@@ -76,10 +78,21 @@ export function Sidebar({
           <p className="text-xs text-stone-400">Curate your local photo world</p>
         </div>
         <button
-          className="grid h-9 w-9 shrink-0 place-items-center rounded-full border border-stone-200 bg-white text-stone-500 shadow-sm transition hover:border-stone-300 hover:text-stone-900"
+          className={cn(
+            "relative grid h-9 w-9 shrink-0 place-items-center rounded-full border bg-white shadow-sm transition",
+            activeItem === "notifications"
+              ? "border-stone-950 bg-stone-950 text-white"
+              : "border-stone-200 text-stone-500 hover:border-stone-300 hover:text-stone-900"
+          )}
+          onClick={() => onSelectItem?.("notifications")}
           type="button"
         >
           <BellIcon className="h-4 w-4" />
+          {notificationCount > 0 ? (
+            <span className="absolute -right-1 -top-1 inline-flex min-h-5 min-w-5 items-center justify-center rounded-full bg-rose-500 px-1 text-[10px] font-semibold text-white">
+              {notificationCount > 9 ? "9+" : notificationCount}
+            </span>
+          ) : null}
         </button>
       </div>
 

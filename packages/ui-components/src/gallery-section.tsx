@@ -1,4 +1,4 @@
-import type { Memory, PhotoRecord } from "@chronopic/domain";
+import type { Memory, PhotoFilter, PhotoRecord } from "@chronopic/domain";
 
 import { AddToMemoryMenu } from "./add-to-memory-menu.js";
 import { Badge } from "./badge.js";
@@ -7,6 +7,7 @@ import { PhotoCard } from "./photo-card.js";
 
 export interface GallerySectionProps {
   photos: PhotoRecord[];
+  filter: PhotoFilter;
   activeMemory?: Memory | null;
   selectedPhotoMemories?: Memory[];
   selectedPhotoId?: string | null;
@@ -25,6 +26,7 @@ export interface GallerySectionProps {
 
 export function GallerySection({
   photos,
+  filter,
   activeMemory,
   selectedPhotoMemories = [],
   selectedPhotoId,
@@ -45,6 +47,8 @@ export function GallerySection({
   const hasStructuredFilters = Boolean(
     activeMemory
   );
+  const hasSemanticSearch = Boolean(filter.query);
+  const hasAIStatusFilter = Boolean(filter.aiStatus);
 
   const emptyTitle = activeMemory
     ? `${activeMemory.name} has no visible photos`
@@ -66,6 +70,15 @@ export function GallerySection({
               {activeMemory
                 ? `Browsing photos inside ${activeMemory.name}.`
                 : "Structured filters are narrowing the current media shelf."}
+            </p>
+          </div>
+        ) : null}
+
+        {(hasSemanticSearch || hasAIStatusFilter) && !activeMemory ? (
+          <div className="flex flex-wrap items-center gap-2 rounded-[24px] border border-violet-200 bg-violet-50/80 px-4 py-3 shadow-[0_14px_34px_-26px_rgba(109,40,217,0.18)]">
+            <Badge tone="info">Semantic Search</Badge>
+            <p className="text-sm text-violet-900">
+              Search matches path, manual metadata, and AI-generated captions, summaries, and tags.
             </p>
           </div>
         ) : null}

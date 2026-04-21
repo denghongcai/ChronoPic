@@ -9,6 +9,7 @@ export class IndexerService {
     private readonly db: ChronoPicDatabase,
     private readonly mediaFiles: MediaFileService,
     private readonly thumbnails: ThumbnailService,
+    private readonly aiEnabled = false,
     private readonly concurrency = 4
   ) {}
 
@@ -96,8 +97,15 @@ export class IndexerService {
         photoId,
         labels: [],
         caption: null,
+        generatedLabels: [],
+        generatedCaption: null,
+        summary: null,
         embeddingRef: null,
-        aiStatus: "disabled"
+        aiStatus: this.aiEnabled ? "pending" : "disabled",
+        aiProvider: null,
+        aiModel: null,
+        aiProcessedAt: null,
+        aiError: null
       },
       indexState: {
         photoId,

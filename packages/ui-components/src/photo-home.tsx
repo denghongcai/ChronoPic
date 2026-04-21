@@ -11,13 +11,16 @@ import {
 } from "lucide-react";
 
 import type {
+  AISettings,
   BrowseMode,
   LibrarySnapshot,
+  MapSettings,
   Memory,
   PlaceGroup,
   PhotoFilter,
   PhotoFilterPatch,
   PhotoRecord,
+  SemanticQueueStats,
 } from "@chronopic/domain";
 
 import { Badge } from "./badge.js";
@@ -28,6 +31,7 @@ import { CreateMemoryDialog } from "./create-memory-dialog.js";
 import type { EditControlsProps } from "./edit-controls.js";
 import { FilterToolbar } from "./filter-toolbar.js";
 import { GallerySection } from "./gallery-section.js";
+import { Input } from "./input.js";
 import { formatTimestamp } from "./lib/media.js";
 import { Label } from "./label.js";
 import { MemoryDetailPage } from "./memory-detail-page.js";
@@ -58,6 +62,11 @@ export interface PhotoHomeProps extends EditControlsProps {
   snapshot: LibrarySnapshot;
   isScanning: boolean;
   aiEnabled: boolean;
+  aiSettings: AISettings;
+  mapSettings: MapSettings;
+  aiQueueStats: SemanticQueueStats;
+  isBatchEnrichingSemantic?: boolean;
+  isEnrichingMemorySemantic?: boolean;
   onSelectPhoto: (photoId: string) => void;
   onToggleBatchSelect: (photoId: string) => void;
   onClearBatchSelection: () => void;
@@ -65,7 +74,11 @@ export interface PhotoHomeProps extends EditControlsProps {
   onFilterChange: (patch: PhotoFilterPatch) => void;
   onSearchChange: (query: string) => void;
   onAddLibrary: () => void;
+  onSaveAISettings: (settings: AISettings) => void | Promise<void>;
+  onSaveMapSettings: (settings: MapSettings) => void | Promise<void>;
   onScanAll: () => void;
+  onEnrichPendingSemantics?: () => void;
+  onEnrichMemorySemantic?: (memoryId: string) => void | Promise<void>;
   onCloseViewer: () => void;
   onPreviousPhoto: () => void;
   onNextPhoto: () => void;
@@ -205,6 +218,7 @@ function HomeView({
       {browseMode === "waterfall" ? (
         <GallerySection
           activeMemory={memories.find((memory) => memory.id === selectedMemoryId) ?? null}
+          filter={filter}
           selectedPhotoMemories={selectedPhotoMemories}
           memories={memories}
           onAddToMemory={onAddPhotoToMemory}
@@ -264,6 +278,11 @@ export function PhotoHome({
   snapshot,
   isScanning,
   aiEnabled,
+  aiSettings,
+  mapSettings,
+  aiQueueStats,
+  isBatchEnrichingSemantic,
+  isEnrichingMemorySemantic,
   onSelectPhoto,
   onToggleBatchSelect,
   onClearBatchSelection,
@@ -271,7 +290,11 @@ export function PhotoHome({
   onFilterChange,
   onSearchChange,
   onAddLibrary,
+  onSaveAISettings,
+  onSaveMapSettings,
   onScanAll,
+  onEnrichPendingSemantics,
+  onEnrichMemorySemantic,
   onCloseViewer,
   onPreviousPhoto,
   onNextPhoto,
@@ -301,6 +324,8 @@ export function PhotoHome({
   onSaveCaption,
   onSaveDatetime,
   onSaveTags,
+  isEnrichingSemantic,
+  onEnrichSemantic,
   onRollback,
 }: PhotoHomeProps) {
   const statusTone =
@@ -334,6 +359,10 @@ export function PhotoHome({
   const activeSidebarItem = React.useMemo(() => {
     if (page === "library-settings") {
       return "settings";
+    }
+
+    if (page === "notifications") {
+      return "notifications";
     }
 
     if (page === "memories") {
@@ -392,12 +421,20 @@ export function PhotoHome({
             activeItem={activeSidebarItem}
             className="w-64 shrink-0 border-r border-stone-200/70 bg-white/80 backdrop-blur-sm"
             memories={recentMemories}
+            notificationCount={aiQueueStats.disabled + aiQueueStats.pending + aiQueueStats.processing + aiQueueStats.failed}
             onCreateMemory={() => setCreateMemoryDialogOpen(true)}
             onSelectItem={(id) => {
               if (id === "settings") {
                 onClearBatchSelection();
                 setSelectionMode(false);
                 setPage("library-settings");
+                return;
+              }
+
+              if (id === "notifications") {
+                onClearBatchSelection();
+                setSelectionMode(false);
+                setPage("notifications");
                 return;
               }
 
@@ -438,15 +475,33 @@ export function PhotoHome({
               {page === "library-settings" ? (
                 <div className="rounded-[32px] border border-stone-200/70 bg-white p-6 shadow-sm">
                   <LibrarySettingsPanel
+                    aiEnabled={aiEnabled}
+                    aiSettings={aiSettings}
+                    mapSettings={mapSettings}
                     isScanning={isScanning}
                     onAddLibrary={onAddLibrary}
+                    onSaveAISettings={onSaveAISettings}
+                    onSaveMapSettings={onSaveMapSettings}
                     onScanAll={onScanAll}
                     snapshot={snapshot}
                   />
                 </div>
               ) : null}
 
-              {statusKind !== "idle" ? (
+              {page === "notifications" ? (
+                <div className="rounded-[32px] border border-stone-200/70 bg-white p-6 shadow-sm">
+                  <NotificationCenterPanel
+                    aiEnabled={aiEnabled}
+                    aiQueueStats={aiQueueStats}
+                    statusKind={statusKind}
+                    statusMessage={statusMessage}
+                    {...(isBatchEnrichingSemantic !== undefined ? { isBatchEnrichingSemantic } : {})}
+                    {...(onEnrichPendingSemantics ? { onEnrichPendingSemantics } : {})}
+                  />
+                </div>
+              ) : null}
+
+              {statusKind !== "idle" && page !== "notifications" ? (
                 <div
                   className={`mb-4 flex items-center justify-between rounded-2xl border px-4 py-3 text-sm shadow-sm ${statusShellClassName}`}
                 >
@@ -485,6 +540,8 @@ export function PhotoHome({
                   photos={photos}
                   selectedPhotoIds={selectedPhotoIds}
                   selectedPhotoId={selectedPhotoId}
+                  {...(onEnrichMemorySemantic ? { onEnrichSemantic: onEnrichMemorySemantic } : {})}
+                  {...(isEnrichingMemorySemantic !== undefined ? { isEnrichingSemantic: isEnrichingMemorySemantic } : {})}
                 />
               ) : null}
 
@@ -542,12 +599,14 @@ export function PhotoHome({
           draftCaption={draftCaption}
           draftDatetime={draftDatetime}
           draftTags={draftTags}
+          isEnrichingSemantic={isEnrichingSemantic ?? false}
           memories={recentMemories}
           mode={viewerMode}
           onAddToMemory={onAddPhotoToMemory}
           onCaptionChange={onCaptionChange}
           onClose={onCloseViewer}
           onDatetimeChange={onDatetimeChange}
+          onEnrichSemantic={onEnrichSemantic ?? (() => {})}
           onNext={onNextPhoto}
           onPrevious={onPreviousPhoto}
           onRollback={onRollback}
@@ -574,16 +633,39 @@ export function PhotoHome({
 }
 
 function LibrarySettingsPanel({
+  aiEnabled,
+  aiSettings,
+  mapSettings,
   snapshot,
   isScanning,
   onAddLibrary,
+  onSaveAISettings,
+  onSaveMapSettings,
   onScanAll,
 }: {
+  aiEnabled: boolean;
+  aiSettings: AISettings;
+  mapSettings: MapSettings;
   snapshot: LibrarySnapshot;
   isScanning: boolean;
   onAddLibrary: () => void;
+  onSaveAISettings: (settings: AISettings) => void | Promise<void>;
+  onSaveMapSettings: (settings: MapSettings) => void | Promise<void>;
   onScanAll: () => void;
 }) {
+  const [draftAISettings, setDraftAISettings] = React.useState(aiSettings);
+  const [draftMapSettings, setDraftMapSettings] = React.useState(mapSettings);
+  const [savingAISettings, setSavingAISettings] = React.useState(false);
+  const [savingMapSettings, setSavingMapSettings] = React.useState(false);
+
+  React.useEffect(() => {
+    setDraftAISettings(aiSettings);
+  }, [aiSettings]);
+
+  React.useEffect(() => {
+    setDraftMapSettings(mapSettings);
+  }, [mapSettings]);
+
   const stats = [
     { label: "Total", value: snapshot.stats.totalPhotos, icon: HardDrive },
     { label: "Indexed", value: snapshot.stats.indexedPhotos, icon: CheckCheck },
@@ -611,6 +693,134 @@ function LibrarySettingsPanel({
           {isScanning ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <FolderOpen className="h-4 w-4" />}
           {isScanning ? "Scanning..." : "Scan Library"}
         </Button>
+      </div>
+
+      <div className="space-y-3 rounded-[28px] border border-stone-200 bg-stone-50/80 p-5 shadow-sm">
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <h3 className="font-['Space_Grotesk','IBM_Plex_Sans',sans-serif] text-xl font-semibold tracking-tight text-stone-950">
+              AI Enrichment
+            </h3>
+            <p className="mt-1 text-sm leading-6 text-stone-500">
+              Configure the OpenAI-compatible endpoint used for photo and memory semantic enrichment.
+            </p>
+          </div>
+          <Badge tone={aiEnabled ? "success" : "neutral"}>{aiEnabled ? "Enabled" : "Disabled"}</Badge>
+        </div>
+
+        <div className="grid gap-4 md:grid-cols-2">
+          <div className="space-y-2">
+            <Label>Provider</Label>
+            <Input
+              onChange={(event) => setDraftAISettings((current) => ({ ...current, providerName: event.target.value }))}
+              placeholder="openai-compatible"
+              value={draftAISettings.providerName}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label>Model</Label>
+            <Input
+              onChange={(event) => setDraftAISettings((current) => ({ ...current, model: event.target.value }))}
+              placeholder="unsloth/gemma-4-E4B-it-GGUF"
+              value={draftAISettings.model}
+            />
+          </div>
+          <div className="space-y-2 md:col-span-2">
+            <Label>Base URL</Label>
+            <Input
+              onChange={(event) => setDraftAISettings((current) => ({ ...current, baseURL: event.target.value }))}
+              placeholder="http://192.168.1.39:8888/v1"
+              value={draftAISettings.baseURL}
+            />
+          </div>
+          <div className="space-y-2 md:col-span-2">
+            <Label>API Key</Label>
+            <Input
+              onChange={(event) => setDraftAISettings((current) => ({ ...current, apiKey: event.target.value }))}
+              placeholder="sk-..."
+              type="password"
+              value={draftAISettings.apiKey}
+            />
+          </div>
+        </div>
+
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <p className="text-xs leading-5 text-stone-500">
+            Save applies immediately in the desktop runtime. Leaving any required field blank disables AI.
+          </p>
+          <Button
+            disabled={savingAISettings}
+            onClick={async () => {
+              setSavingAISettings(true);
+              try {
+                await onSaveAISettings(draftAISettings);
+              } finally {
+                setSavingAISettings(false);
+              }
+            }}
+            variant="outline"
+          >
+            {savingAISettings ? "Saving..." : "Save AI Settings"}
+          </Button>
+        </div>
+
+      </div>
+
+      <div className="space-y-3 rounded-[28px] border border-stone-200 bg-stone-50/80 p-5 shadow-sm">
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <h3 className="font-['Space_Grotesk','IBM_Plex_Sans',sans-serif] text-xl font-semibold tracking-tight text-stone-950">
+              Map Rendering
+            </h3>
+            <p className="mt-1 text-sm leading-6 text-stone-500">
+              Configure the Gaode Web JS API used by ChronoPic map browse mode.
+            </p>
+          </div>
+          <Badge tone={draftMapSettings.apiKey ? "success" : "neutral"}>
+            {draftMapSettings.apiKey ? "Configured" : "Disabled"}
+          </Badge>
+        </div>
+
+        <div className="grid gap-4 md:grid-cols-2">
+          <div className="space-y-2 md:col-span-2">
+            <Label>AMap API Key</Label>
+            <Input
+              onChange={(event) => setDraftMapSettings((current) => ({ ...current, apiKey: event.target.value }))}
+              placeholder="your-amap-api-key"
+              value={draftMapSettings.apiKey}
+            />
+          </div>
+          <div className="space-y-2 md:col-span-2">
+            <Label>Security JS Code</Label>
+            <Input
+              onChange={(event) =>
+                setDraftMapSettings((current) => ({ ...current, securityJsCode: event.target.value }))
+              }
+              placeholder="optional-security-js-code"
+              value={draftMapSettings.securityJsCode}
+            />
+          </div>
+        </div>
+
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <p className="text-xs leading-5 text-stone-500">
+            Saved map settings are used by the Map browse view. Leaving the API key blank disables map rendering.
+          </p>
+          <Button
+            disabled={savingMapSettings}
+            onClick={async () => {
+              setSavingMapSettings(true);
+              try {
+                await onSaveMapSettings(draftMapSettings);
+              } finally {
+                setSavingMapSettings(false);
+              }
+            }}
+            variant="outline"
+          >
+            {savingMapSettings ? "Saving..." : "Save Map Settings"}
+          </Button>
+        </div>
       </div>
 
       <div className="grid grid-cols-4 gap-3">
@@ -655,6 +865,83 @@ function LibrarySettingsPanel({
                 Add a source folder to start indexing and generating thumbnails.
               </p>
             </div>
+          ) : null}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function NotificationCenterPanel({
+  aiEnabled,
+  aiQueueStats,
+  isBatchEnrichingSemantic,
+  onEnrichPendingSemantics,
+  statusKind,
+  statusMessage,
+}: {
+  aiEnabled: boolean;
+  aiQueueStats: SemanticQueueStats;
+  isBatchEnrichingSemantic?: boolean;
+  onEnrichPendingSemantics?: () => void;
+  statusKind: "idle" | "info" | "success" | "warn" | "error";
+  statusMessage: string;
+}) {
+  const outstanding = aiQueueStats.disabled + aiQueueStats.pending + aiQueueStats.processing + aiQueueStats.failed;
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <h2 className="font-['Space_Grotesk','IBM_Plex_Sans',sans-serif] text-2xl font-semibold tracking-tight text-stone-950">
+          Notifications
+        </h2>
+        <p className="mt-1 text-sm text-stone-500">Track AI queue activity and the latest desktop actions in one place.</p>
+      </div>
+
+      <div className="rounded-[28px] border border-stone-200 bg-stone-50/80 p-5 shadow-sm">
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div className="space-y-3">
+            <div className="flex flex-wrap items-center gap-2">
+              <Badge tone="info">AI Queue</Badge>
+              {aiQueueStats.disabled > 0 ? <Badge tone="neutral">{aiQueueStats.disabled} need AI</Badge> : null}
+              {aiQueueStats.pending > 0 ? <Badge tone="info">{aiQueueStats.pending} pending</Badge> : null}
+              {aiQueueStats.processing > 0 ? <Badge tone="info">{aiQueueStats.processing} processing</Badge> : null}
+              {aiQueueStats.failed > 0 ? <Badge tone="danger">{aiQueueStats.failed} failed</Badge> : null}
+              {aiQueueStats.completed > 0 ? <Badge tone="success">{aiQueueStats.completed} ready</Badge> : null}
+            </div>
+            <p className="text-sm leading-6 text-stone-600">
+              {aiEnabled
+                ? outstanding > 0
+                  ? aiQueueStats.processing > 0 &&
+                    aiQueueStats.disabled + aiQueueStats.pending + aiQueueStats.failed === 0
+                    ? "AI enrichment is currently running for some items."
+                    : "Outstanding AI items are waiting in the library queue."
+                  : "No outstanding AI queue items right now."
+                : "AI is currently disabled. Configure it in Settings to enable queue processing."}
+            </p>
+          </div>
+          <Button
+            disabled={!aiEnabled || outstanding === 0 || isBatchEnrichingSemantic}
+            onClick={() => void onEnrichPendingSemantics?.()}
+            variant="outline"
+          >
+            {isBatchEnrichingSemantic ? "Processing Queue..." : "Enrich Queue"}
+          </Button>
+        </div>
+      </div>
+
+      <div className="rounded-[28px] border border-stone-200 bg-white p-5 shadow-sm">
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-stone-500">Recent Action</p>
+            <p className="mt-2 text-sm leading-6 text-stone-600">
+              {statusKind === "idle" ? "No recent action recorded in this session." : statusMessage}
+            </p>
+          </div>
+          {statusKind !== "idle" ? (
+            <Badge tone={statusKind === "success" ? "success" : statusKind === "error" ? "danger" : statusKind === "info" ? "info" : "warn"}>
+              {statusKind}
+            </Badge>
           ) : null}
         </div>
       </div>

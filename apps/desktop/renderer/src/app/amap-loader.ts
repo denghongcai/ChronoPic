@@ -2,6 +2,8 @@ type ImportMetaEnvRecord = ImportMeta & {
   env?: Record<string, string | undefined>;
 };
 
+import type { MapSettings } from "@chronopic/domain";
+
 interface AMapMarker {
   on: (event: string, handler: () => void) => void;
   setMap: (map: AMapMap | null) => void;
@@ -47,21 +49,27 @@ export interface AMapNamespace {
 declare global {
   interface Window {
     AMap?: AMapNamespace;
+    _AMapSecurityConfig?: {
+      securityJsCode?: string;
+    };
   }
 }
 
 let amapPromise: Promise<AMapNamespace> | null = null;
 
-function resolveAmapApiKey(): string | null {
+function resolveMapSettings(settings?: MapSettings | null): MapSettings {
   const env = (import.meta as ImportMetaEnvRecord).env ?? {};
-  return env.VITE_AMAP_API_KEY ?? null;
+  return {
+    apiKey: settings?.apiKey?.trim() || env.VITE_AMAP_API_KEY?.trim() || "",
+    securityJsCode: settings?.securityJsCode?.trim() || env.VITE_AMAP_SECURITY_JS_CODE?.trim() || "",
+  };
 }
 
-export function getAmapApiKey(): string | null {
-  return resolveAmapApiKey();
+export function getAmapApiKey(settings?: MapSettings | null): string | null {
+  return resolveMapSettings(settings).apiKey || null;
 }
 
-export async function loadAmap(): Promise<AMapNamespace> {
+export async function loadAmap(settings?: MapSettings | null): Promise<AMapNamespace> {
   if (window.AMap) {
     return window.AMap;
   }
@@ -70,9 +78,13 @@ export async function loadAmap(): Promise<AMapNamespace> {
     return amapPromise;
   }
 
-  const apiKey = resolveAmapApiKey();
+  const { apiKey, securityJsCode } = resolveMapSettings(settings);
   if (!apiKey) {
-    throw new Error("Missing VITE_AMAP_API_KEY");
+    throw new Error("Missing AMap API key");
+  }
+
+  if (securityJsCode) {
+    window._AMapSecurityConfig = { securityJsCode };
   }
 
   amapPromise = new Promise<AMapNamespace>((resolve, reject) => {

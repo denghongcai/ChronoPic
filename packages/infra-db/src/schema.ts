@@ -36,8 +36,15 @@ CREATE TABLE IF NOT EXISTS semantic (
   photo_id TEXT PRIMARY KEY REFERENCES photos(id) ON DELETE CASCADE,
   labels TEXT NOT NULL DEFAULT '[]',
   caption TEXT,
+  generated_labels TEXT NOT NULL DEFAULT '[]',
+  generated_caption TEXT,
+  summary TEXT,
   embedding_ref TEXT,
-  ai_status TEXT NOT NULL DEFAULT 'disabled'
+  ai_status TEXT NOT NULL DEFAULT 'disabled',
+  ai_provider TEXT,
+  ai_model TEXT,
+  ai_processed_at INTEGER,
+  ai_error TEXT
 );
 
 CREATE TABLE IF NOT EXISTS index_state (
@@ -71,6 +78,14 @@ CREATE TABLE IF NOT EXISTS memories (
   name TEXT NOT NULL,
   description TEXT,
   cover_photo_id TEXT REFERENCES photos(id) ON DELETE SET NULL,
+  generated_name TEXT,
+  generated_description TEXT,
+  generated_labels TEXT NOT NULL DEFAULT '[]',
+  ai_status TEXT NOT NULL DEFAULT 'disabled',
+  ai_provider TEXT,
+  ai_model TEXT,
+  ai_processed_at INTEGER,
+  ai_error TEXT,
   source TEXT NOT NULL DEFAULT 'manual',
   created_at INTEGER NOT NULL,
   updated_at INTEGER NOT NULL

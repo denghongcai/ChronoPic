@@ -10,6 +10,10 @@ import { Label } from "./label.js";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./select.js";
 
 const ALL_VALUE = "__all__";
+const AI_READY_VALUE = "__ai_completed__";
+const AI_PENDING_VALUE = "__ai_pending__";
+const AI_FAILED_VALUE = "__ai_failed__";
+const AI_PROCESSING_VALUE = "__ai_processing__";
 
 function currentSortBy(value: PhotoFilter["sortBy"]): NonNullable<PhotoFilter["sortBy"]> {
   return value ?? "datetime";
@@ -21,6 +25,38 @@ function currentSortDirection(value: PhotoFilter["sortDirection"]): NonNullable<
 
 function readInputValue(event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>): string {
   return event.target.value;
+}
+
+function currentAIStatusValue(value: PhotoFilter["aiStatus"]): string {
+  if (Array.isArray(value)) {
+    return value[0] ?? ALL_VALUE;
+  }
+
+  return value ?? ALL_VALUE;
+}
+
+function toAIStatusFilter(value: string): PhotoFilter["aiStatus"] | undefined {
+  if (value === ALL_VALUE) {
+    return undefined;
+  }
+
+  if (value === AI_READY_VALUE) {
+    return "completed";
+  }
+
+  if (value === AI_PENDING_VALUE) {
+    return "pending";
+  }
+
+  if (value === AI_PROCESSING_VALUE) {
+    return "processing";
+  }
+
+  if (value === AI_FAILED_VALUE) {
+    return "failed";
+  }
+
+  return undefined;
 }
 
 function FilterToggle({ active, label, onClick }: { active: boolean; label: string; onClick: () => void }) {
@@ -155,6 +191,29 @@ export function FilterToolbar(props: FilterToolbarProps) {
               onClick={() => props.onChange({ hasError: props.filter.hasError ? undefined : true, offset: 0 })}
             />
           </div>
+        </div>
+        <div className="space-y-2">
+          <Label>AI</Label>
+          <Select
+            onValueChange={(value) =>
+              props.onChange({
+                aiStatus: toAIStatusFilter(value),
+                offset: 0,
+              })
+            }
+            value={currentAIStatusValue(props.filter.aiStatus)}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="All AI states" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value={ALL_VALUE}>All AI states</SelectItem>
+              <SelectItem value={AI_READY_VALUE}>AI Ready</SelectItem>
+              <SelectItem value={AI_PENDING_VALUE}>Needs AI</SelectItem>
+              <SelectItem value={AI_PROCESSING_VALUE}>Processing</SelectItem>
+              <SelectItem value={AI_FAILED_VALUE}>AI Failed</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
       </div>
     </div>

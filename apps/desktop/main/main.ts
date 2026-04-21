@@ -1,3 +1,4 @@
+import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { pathToFileURL } from "node:url";
@@ -5,7 +6,8 @@ import { pathToFileURL } from "node:url";
 import { app, BrowserWindow, dialog, ipcMain, net, protocol } from "electron";
 import type { OpenDialogOptions } from "electron";
 
-import type { PhotoFilter, PlaceGroupQuery, TimelineGroupQuery } from "@chronopic/domain";
+import type { AISettings, MapSettings, PhotoFilter, PlaceGroupQuery, TimelineGroupQuery } from "@chronopic/domain";
+import { ChronoPicConfigStore } from "@chronopic/infra-config";
 
 import { createRuntime } from "./runtime.js";
 
@@ -28,12 +30,23 @@ let mainWindow: BrowserWindow | null = null;
 let handlersRegistered = false;
 let runtimeHandle: Awaited<ReturnType<typeof createRuntime>> | null = null;
 let assetProtocolRegistered = false;
+let configStore: ChronoPicConfigStore | null = null;
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url));
 const thumbsDir = path.join(app.getPath("userData"), "chronopic", "thumbs");
+const debugLogPath = path.join(app.getPath("userData"), "chronopic", "debug.log");
+
+function appendDebugLog(message: string): void {
+  try {
+    fs.mkdirSync(path.dirname(debugLogPath), { recursive: true });
+    fs.appendFileSync(debugLogPath, `[${new Date().toISOString()}] ${message}\n`, "utf8");
+  } catch {
+    // Ignore logging failures.
+  }
+}
 
 async function createMainWindow(): Promise<void> {
-  runtimeHandle ??= await createRuntime();
+  runtimeHandle ??= await createRuntime({ aiSettings: getConfigStore().getAISettings() });
   const isDev = process.env.VITE_DEV_SERVER_URL !== undefined;
 
   await registerAssetProtocol();
@@ -58,13 +71,36 @@ async function createMainWindow(): Promise<void> {
   }
 
   if (!handlersRegistered) {
-    registerHandlers(runtimeHandle);
+    registerHandlers();
     handlersRegistered = true;
   }
 
   mainWindow.on("closed", () => {
     mainWindow = null;
   });
+}
+
+function getConfigStore(): ChronoPicConfigStore {
+  configStore ??= new ChronoPicConfigStore(path.join(app.getPath("userData"), "chronopic", "settings.json"));
+  return configStore;
+}
+
+function getRuntimeHandle(): NonNullable<typeof runtimeHandle> {
+  if (!runtimeHandle) {
+    throw new Error("Runtime is not initialized");
+  }
+
+  return runtimeHandle;
+}
+
+function toSerializable<T>(value: T): T {
+  return JSON.parse(JSON.stringify(value)) as T;
+}
+
+async function rebuildRuntime(): Promise<NonNullable<typeof runtimeHandle>> {
+  runtimeHandle?.close();
+  runtimeHandle = await createRuntime({ aiSettings: getConfigStore().getAISettings() });
+  return runtimeHandle;
 }
 
 async function registerAssetProtocol(): Promise<void> {
@@ -114,7 +150,7 @@ function isPathInside(rootPath: string, candidatePath: string): boolean {
   return relativePath !== "" && !relativePath.startsWith("..") && !path.isAbsolute(relativePath);
 }
 
-function registerHandlers(runtime: NonNullable<typeof runtimeHandle>) {
+function registerHandlers() {
   ipcMain.handle("library:pickDirectory", async () => {
     const options: OpenDialogOptions = { properties: ["openDirectory"] };
     const result = mainWindow
@@ -125,56 +161,99 @@ function registerHandlers(runtime: NonNullable<typeof runtimeHandle>) {
   });
 
   ipcMain.handle("system:initialize", async () => ({
-    snapshot: runtime.appService.initialize(),
-    capabilities: runtime.appService.getCapabilities()
+    snapshot: getRuntimeHandle().appService.initialize(),
+    capabilities: getRuntimeHandle().appService.getCapabilities()
   }));
+  ipcMain.handle("system:debugLog", async (_event, message: string) => {
+    appendDebugLog(message);
+  });
+  ipcMain.handle("system:getAISettings", async () => getConfigStore().getAISettings());
+  ipcMain.handle("system:saveAISettings", async (_event, settings: AISettings) => {
+    const saved = getConfigStore().saveAISettings(settings);
+    const runtime = await rebuildRuntime();
+    return {
+      settings: saved,
+      capabilities: runtime.appService.getCapabilities(),
+    };
+  });
+  ipcMain.handle("system:getMapSettings", async () => getConfigStore().getMapSettings());
+  ipcMain.handle("system:saveMapSettings", async (_event, settings: MapSettings) => getConfigStore().saveMapSettings(settings));
 
-  ipcMain.handle("library:add", async (_event, libraryPath: string) => runtime.appService.addLibrarySource(libraryPath));
-  ipcMain.handle("library:list", async () => runtime.appService.listLibrarySources());
-  ipcMain.handle("library:scan", async (_event, sourceId?: string) => runtime.appService.scanLibrary(sourceId));
-  ipcMain.handle("photos:list", async (_event, filter?: PhotoFilter) => runtime.appService.listPhotos(filter));
-  ipcMain.handle("photos:countMappable", async (_event, filter?: PhotoFilter) => runtime.appService.countMappablePhotos(filter));
-  ipcMain.handle("photos:listPlaceGroups", async (_event, query?: PlaceGroupQuery) => runtime.appService.listPlaceGroups(query));
+  ipcMain.handle("library:add", async (_event, libraryPath: string) => getRuntimeHandle().appService.addLibrarySource(libraryPath));
+  ipcMain.handle("library:list", async () => getRuntimeHandle().appService.listLibrarySources());
+  ipcMain.handle("library:scan", async (_event, sourceId?: string) => getRuntimeHandle().appService.scanLibrary(sourceId));
+  ipcMain.handle("photos:list", async (_event, filter?: PhotoFilter) => toSerializable(getRuntimeHandle().appService.listPhotos(filter)));
+  ipcMain.handle("photos:getSemanticQueueStats", async () => toSerializable(getRuntimeHandle().appService.getSemanticQueueStats()));
+  ipcMain.handle("photos:countMappable", async (_event, filter?: PhotoFilter) => getRuntimeHandle().appService.countMappablePhotos(filter));
+  ipcMain.handle("photos:listPlaceGroups", async (_event, query?: PlaceGroupQuery) => toSerializable(getRuntimeHandle().appService.listPlaceGroups(query)));
   ipcMain.handle("photos:listTimelineGroups", async (_event, query?: TimelineGroupQuery) =>
-    runtime.appService.listTimelineGroups(query)
+    toSerializable(getRuntimeHandle().appService.listTimelineGroups(query))
   );
-  ipcMain.handle("photos:get", async (_event, photoId: string) => runtime.appService.getPhoto(photoId));
+  ipcMain.handle("photos:get", async (_event, photoId: string) => toSerializable(getRuntimeHandle().appService.getPhoto(photoId)));
   ipcMain.handle("photos:updateTags", async (_event, photoId: string, labels: string[]) =>
-    runtime.appService.updatePhotoTags(photoId, labels)
+    getRuntimeHandle().appService.updatePhotoTags(photoId, labels)
   );
   ipcMain.handle("photos:updateCaption", async (_event, photoId: string, caption: string | null) =>
-    runtime.appService.updatePhotoCaption(photoId, caption)
+    getRuntimeHandle().appService.updatePhotoCaption(photoId, caption)
   );
+  ipcMain.handle("photos:enrichSemantic", async (_event, photoId: string) => getRuntimeHandle().appService.enrichPhotoSemantic(photoId));
+  ipcMain.handle("photos:enrichPendingSemantics", async (_event, limit?: number) => {
+    appendDebugLog(`photos:enrichPendingSemantics start limit=${String(limit ?? 12)}`);
+    try {
+      const summary = await getRuntimeHandle().appService.enrichPendingSemantics(limit);
+      appendDebugLog(`photos:enrichPendingSemantics success processed=${summary.processed} completed=${summary.completed} failed=${summary.failed} skipped=${summary.skipped}`);
+      return JSON.stringify({
+        ok: true,
+        processed: Number(summary.processed),
+        completed: Number(summary.completed),
+        failed: Number(summary.failed),
+        skipped: Number(summary.skipped),
+      });
+    } catch (error) {
+      appendDebugLog(
+        `photos:enrichPendingSemantics error message=${
+          error instanceof Error && error.message ? error.message : "unknown"
+        }`
+      );
+      return JSON.stringify({
+        ok: false,
+        message: error instanceof Error && error.message ? error.message : "Failed to process pending AI metadata",
+      });
+    }
+  });
   ipcMain.handle("photos:updateDatetime", async (_event, photoId: string, datetime: number | null) =>
-    runtime.appService.updatePhotoDatetime(photoId, datetime)
+    getRuntimeHandle().appService.updatePhotoDatetime(photoId, datetime)
   );
   ipcMain.handle("photos:toggleFavorite", async (_event, photoId: string, favorite: boolean) =>
-    runtime.appService.updatePhotoFavorite(photoId, favorite)
+    getRuntimeHandle().appService.updatePhotoFavorite(photoId, favorite)
   );
-  ipcMain.handle("photos:rollback", async (_event, photoId?: string) => runtime.appService.rollbackLatestEdit(photoId));
-  ipcMain.handle("system:snapshot", async () => runtime.appService.getSnapshot());
-  ipcMain.handle("memories:list", async () => runtime.appService.listMemories());
-  ipcMain.handle("memories:get", async (_event, memoryId: string) => runtime.appService.getMemory(memoryId));
+  ipcMain.handle("photos:rollback", async (_event, photoId?: string) => getRuntimeHandle().appService.rollbackLatestEdit(photoId));
+  ipcMain.handle("system:snapshot", async () => getRuntimeHandle().appService.getSnapshot());
+  ipcMain.handle("memories:list", async () => toSerializable(getRuntimeHandle().appService.listMemories()));
+  ipcMain.handle("memories:get", async (_event, memoryId: string) => toSerializable(getRuntimeHandle().appService.getMemory(memoryId)));
+  ipcMain.handle("memories:enrichSemantic", async (_event, memoryId: string) =>
+    getRuntimeHandle().appService.enrichMemorySemantic(memoryId)
+  );
   ipcMain.handle("memories:create", async (_event, name: string, description?: string, source?: string) =>
-    runtime.appService.createMemory(name, description, source as "manual" | "ai")
+    getRuntimeHandle().appService.createMemory(name, description, source as "manual" | "ai")
   );
   ipcMain.handle(
     "memories:update",
     async (_event, memoryId: string, updates: { name?: string; description?: string | null; coverPhotoId?: string | null }) =>
-      runtime.appService.updateMemory(memoryId, updates)
+      getRuntimeHandle().appService.updateMemory(memoryId, updates)
   );
-  ipcMain.handle("memories:delete", async (_event, memoryId: string) => runtime.appService.deleteMemory(memoryId));
+  ipcMain.handle("memories:delete", async (_event, memoryId: string) => getRuntimeHandle().appService.deleteMemory(memoryId));
   ipcMain.handle("memories:addPhoto", async (_event, memoryId: string, photoId: string) =>
-    runtime.appService.addPhotoToMemory(memoryId, photoId)
+    getRuntimeHandle().appService.addPhotoToMemory(memoryId, photoId)
   );
   ipcMain.handle("memories:removePhoto", async (_event, memoryId: string, photoId: string) =>
-    runtime.appService.removePhotoFromMemory(memoryId, photoId)
+    getRuntimeHandle().appService.removePhotoFromMemory(memoryId, photoId)
   );
   ipcMain.handle("memories:listByPhoto", async (_event, photoId: string) =>
-    runtime.appService.listMemoriesByPhoto(photoId)
+    toSerializable(getRuntimeHandle().appService.listMemoriesByPhoto(photoId))
   );
   ipcMain.handle("memories:listPhotos", async (_event, memoryId: string, filter?: PhotoFilter) =>
-    runtime.appService.listPhotosByMemory(memoryId, filter)
+    toSerializable(getRuntimeHandle().appService.listPhotosByMemory(memoryId, filter))
   );
 }
 

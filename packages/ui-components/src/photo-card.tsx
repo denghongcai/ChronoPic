@@ -133,12 +133,12 @@ export function PhotoCard({
             ) : null}
           </div>
         )}
-        <div className="absolute inset-x-3 bottom-3 flex items-center justify-between rounded-2xl bg-stone-950/62 px-3 py-2 text-[11px] font-medium tracking-[0.12em] text-stone-100 opacity-0 transition group-hover:opacity-100">
-          <span>Double-click to open</span>
-          <MediaIcon className="h-3.5 w-3.5" />
-        </div>
         <div className="absolute inset-x-4 bottom-4 z-10">
           <div className="space-y-2 text-white">
+            <div className="flex items-center justify-between text-[10px] font-medium uppercase tracking-[0.16em] text-white/78 opacity-0 transition group-hover:opacity-100">
+              <span>Double-click to open</span>
+              <MediaIcon className="h-3.5 w-3.5" />
+            </div>
             <p className="line-clamp-1 text-base font-semibold tracking-tight">{mediaLabel(record)}</p>
             <div className="flex flex-wrap items-center gap-3 text-xs text-white/82">
               <span className="inline-flex items-center gap-1.5">

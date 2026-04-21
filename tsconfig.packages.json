@@ -11,6 +11,9 @@
       "path": "./packages/infra-db"
     },
     {
+      "path": "./packages/infra-config"
+    },
+    {
       "path": "./packages/infra-fs"
     },
     {

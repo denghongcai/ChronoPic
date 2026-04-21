@@ -475,6 +475,131 @@ Current local implementation status:
 - Core behavior remains unchanged:
   the redesign work is still limited to renderer/UI composition and presentation rather than business-logic expansion.
 
+Current AI phase status:
+
+- Semantic storage is now split between user-authored and AI-generated fields.
+- A real `Vercel AI SDK` + OpenAI-compatible provider path is landed behind `services-ai-pipeline`.
+- Desktop runtime supports single-photo manual enrichment from the viewer inspector.
+- Batch enrichment orchestration is now also landed:
+  pending/failed photos can be processed through a queue action,
+  queue stats are exposed to the renderer,
+  and the home shell now surfaces an AI queue action bar when enrichment work remains.
+- Business/application and infra package test coverage has been expanded alongside the AI work.
+
+### 4.11 AI and Semantic Enrichment Phase
+
+- Promote the currently deferred AI layer into a real product capability instead of leaving semantic fields permanently disabled.
+- Keep the existing package boundaries:
+  provider integration belongs behind `services-ai-pipeline`,
+  orchestration belongs in shared/application and main-process layers,
+  and renderer/UI only consumes product-facing outputs and processing state.
+- Add a real `AIClient` implementation contract for:
+  caption generation,
+  keyword/tag suggestion,
+  and concise semantic summary generation for photos and memories.
+- Extend the enrichment pipeline so photos can transition through explicit semantic states:
+  `pending`,
+  `processing`,
+  `completed`,
+  `failed`,
+  `disabled`.
+- Persist AI-generated outputs separately from user-authored edits where possible so:
+  user captions/tags are not overwritten,
+  AI outputs remain replaceable or re-runnable,
+  and provenance is visible in the data model.
+- Use enrichment outputs to strengthen downstream product surfaces:
+  search,
+  memory creation/support,
+  browse hints,
+  and future discovery features.
+- Keep first-pass AI enrichment local-first in product semantics even if a remote provider is used:
+  the product should behave as an indexed desktop library with enrichment status,
+  not as an online-only query UI.
+
+Implementation breakdown:
+
+1. Semantic data-model completion
+- Audit and extend `Semantic` / related persistence fields so the app can store:
+  generated caption,
+  generated tags,
+  summary/scene description,
+  enrichment timestamps,
+  provider/model metadata,
+  and last-error state.
+
+2. Real AI provider integration behind the existing abstraction
+- Replace the disabled default path with a real provider-backed implementation while keeping the `AIClient` boundary stable.
+- Allow the provider to be configured via desktop/runtime config rather than leaking SDK concerns into renderer UI modules.
+- Add a product-visible configuration surface in `Library Settings` so local desktop users can set:
+  base URL,
+  model,
+  provider name,
+  and API key without relying only on process environment variables.
+- Persist those settings locally and reload the desktop runtime after save so AI capability can be enabled/disabled from the product surface itself.
+
+3. Enrichment orchestration
+- Add application/service flows to enqueue and process semantic enrichment for:
+  newly indexed photos,
+  manually re-run photos,
+  and later memory-level synthesis where needed.
+- Keep retry/error handling explicit and visible in persisted state.
+
+4. Product-surface integration
+- Surface AI-generated caption/tags/summary in photo detail and related browsing/search surfaces.
+- Extend AI synthesis to the memory surface as non-destructive suggestions:
+  generate memory title/summary/tags without overwriting user-authored name/description by default,
+  and let the renderer explicitly apply those suggestions when desired.
+- Keep user edits distinct from generated fields and avoid destructive overwrite semantics.
+
+5. Validation expectations
+- Keep `pnpm typecheck` and `pnpm build` green.
+- Verify enrichment state transitions, storage semantics, and non-destructive coexistence with user edits.
+- Add unit-test coverage for both business-logic and infrastructure packages that participate in the AI phase:
+  at minimum the application/service orchestration layer and the relevant infra package surface should gain regression tests alongside the implementation.
+
+Current landed scope:
+
+- Photo-level AI enrichment is implemented with:
+  generated caption/tags/summary,
+  queue stats,
+  batch processing,
+  and search/filter integration.
+- Memory-level AI synthesis is implemented as suggestion-only metadata:
+  generated title,
+  generated summary,
+  and generated tags are stored separately from manual memory fields and can be applied explicitly from the UI.
+- AI provider configuration is implemented in-product through `Library Settings`,
+  backed by local persisted config and runtime reload on save rather than requiring env-only startup.
+- Gaode map configuration is also implemented in-product through `Library Settings`,
+  backed by local persisted config with renderer-side fallback to env vars for development setups.
+- Map browse runtime polish continues to be allowed inside the redesign/search groundwork as long as it preserves the current shared browse shell and renderer-owned map integration boundaries.
+
+### 4.12 Search and Discovery Phase
+
+- Expand search from path/tag filtering into a broader discovery system backed by time, location, memory, and semantic enrichment data.
+- Preserve one shared browse context across waterfall/map/timeline while allowing richer search queries to drive all three views.
+- Add stronger query capabilities such as:
+  semantic text search,
+  memory-aware search,
+  place-aware search,
+  and timeline-aware discovery pivots.
+- Keep search semantics product-facing and stable:
+  renderer/UI consumes query DTOs and result projections,
+  while ranking/filter composition lives in shared/application layers.
+- Use this phase to make map/timeline/waterfall feel like coordinated discovery lenses rather than separate browsing silos.
+
+### 4.13 Realtime Library Sync and Incremental Watch Phase
+
+- Move realtime file watching and incremental sync to the final product-expansion phase rather than introducing that engineering complexity before AI/search maturity.
+- Keep manual scan as the stable fallback even after watch mode exists.
+- Add directory watching, change detection, incremental re-indexing, and clear sync-state UX only after the semantic/search layers are in place.
+
+Priority order from this point forward:
+
+1. `4.11 AI and Semantic Enrichment Phase`
+2. `4.12 Search and Discovery Phase`
+3. `4.13 Realtime Library Sync and Incremental Watch Phase`
+
 ### 5. Editing and History ✅
 
 - Support local tag edits and datetime correction in the database projection. ✅
@@ -527,6 +652,7 @@ Current local implementation status:
 - Verify memory navigation is page-based rather than only a gallery filter side effect.
 - Verify the memory detail page supports remove-photo and edit-metadata actions without breaking viewer state.
 - Verify `RecentMemories` displays memories rather than raw photo thumbnails.
+- Verify business-logic and infra packages gain direct unit-test coverage as new phases land, rather than relying only on renderer smoke tests.
 
 ### E2E Test Plan (Playwright)
 

@@ -12,6 +12,7 @@ import type {
   PhotoFilter,
   PhotoRecord,
   Semantic,
+  SemanticQueueStats,
   UpsertPhotoPayload
 } from "@chronopic/domain";
 import type { MemorySource } from "@chronopic/domain";
@@ -40,13 +41,32 @@ interface PhotoRow {
   original_datetime_text: string | null;
   labels: string;
   caption: string | null;
+  generated_labels: string;
+  generated_caption: string | null;
+  summary: string | null;
   embedding_ref: string | null;
   ai_status: Semantic["aiStatus"];
+  ai_provider: string | null;
+  ai_model: string | null;
+  ai_processed_at: number | null;
+  ai_error: string | null;
   indexed: number;
   ai_processed: number;
   error: string | null;
   last_indexed_at: number | null;
   duplicate_of: string | null;
+}
+
+function normalizeAIPipelineStatus(status: string | null | undefined): Semantic["aiStatus"] {
+  if (status === "complete") {
+    return "completed";
+  }
+
+  if (status === "error") {
+    return "failed";
+  }
+
+  return (status as Semantic["aiStatus"]) ?? "disabled";
 }
 
 function mapPhotoRow(row: PhotoRow): PhotoRecord {
@@ -75,8 +95,15 @@ function mapPhotoRow(row: PhotoRow): PhotoRecord {
       photoId: row.id,
       labels: parseStringArray(row.labels),
       caption: row.caption,
+      generatedLabels: parseStringArray(row.generated_labels),
+      generatedCaption: row.generated_caption,
+      summary: row.summary,
       embeddingRef: row.embedding_ref,
-      aiStatus: row.ai_status
+      aiStatus: normalizeAIPipelineStatus(row.ai_status),
+      aiProvider: row.ai_provider,
+      aiModel: row.ai_model,
+      aiProcessedAt: row.ai_processed_at,
+      aiError: row.ai_error
     },
     indexState: {
       photoId: row.id,
@@ -108,6 +135,14 @@ export class ChronoPicDatabase {
         name TEXT NOT NULL,
         description TEXT,
         cover_photo_id TEXT REFERENCES photos(id) ON DELETE SET NULL,
+        generated_name TEXT,
+        generated_description TEXT,
+        generated_labels TEXT NOT NULL DEFAULT '[]',
+        ai_status TEXT NOT NULL DEFAULT 'disabled',
+        ai_provider TEXT,
+        ai_model TEXT,
+        ai_processed_at INTEGER,
+        ai_error TEXT,
         source TEXT NOT NULL DEFAULT 'manual',
         created_at INTEGER NOT NULL,
         updated_at INTEGER NOT NULL
@@ -136,6 +171,55 @@ export class ChronoPicDatabase {
       .all() as Array<{ name: string }>;
     if (!memoryColumns.find((c) => c.name === "cover_photo_id")) {
       this.db.exec("ALTER TABLE memories ADD COLUMN cover_photo_id TEXT REFERENCES photos(id) ON DELETE SET NULL");
+    }
+    if (!memoryColumns.find((c) => c.name === "generated_name")) {
+      this.db.exec("ALTER TABLE memories ADD COLUMN generated_name TEXT");
+    }
+    if (!memoryColumns.find((c) => c.name === "generated_description")) {
+      this.db.exec("ALTER TABLE memories ADD COLUMN generated_description TEXT");
+    }
+    if (!memoryColumns.find((c) => c.name === "generated_labels")) {
+      this.db.exec("ALTER TABLE memories ADD COLUMN generated_labels TEXT NOT NULL DEFAULT '[]'");
+    }
+    if (!memoryColumns.find((c) => c.name === "ai_status")) {
+      this.db.exec("ALTER TABLE memories ADD COLUMN ai_status TEXT NOT NULL DEFAULT 'disabled'");
+    }
+    if (!memoryColumns.find((c) => c.name === "ai_provider")) {
+      this.db.exec("ALTER TABLE memories ADD COLUMN ai_provider TEXT");
+    }
+    if (!memoryColumns.find((c) => c.name === "ai_model")) {
+      this.db.exec("ALTER TABLE memories ADD COLUMN ai_model TEXT");
+    }
+    if (!memoryColumns.find((c) => c.name === "ai_processed_at")) {
+      this.db.exec("ALTER TABLE memories ADD COLUMN ai_processed_at INTEGER");
+    }
+    if (!memoryColumns.find((c) => c.name === "ai_error")) {
+      this.db.exec("ALTER TABLE memories ADD COLUMN ai_error TEXT");
+    }
+
+    const semanticColumns: Array<{ name: string }> = this.db
+      .prepare("PRAGMA table_info(semantic)")
+      .all() as Array<{ name: string }>;
+    if (!semanticColumns.find((c) => c.name === "generated_labels")) {
+      this.db.exec("ALTER TABLE semantic ADD COLUMN generated_labels TEXT NOT NULL DEFAULT '[]'");
+    }
+    if (!semanticColumns.find((c) => c.name === "generated_caption")) {
+      this.db.exec("ALTER TABLE semantic ADD COLUMN generated_caption TEXT");
+    }
+    if (!semanticColumns.find((c) => c.name === "summary")) {
+      this.db.exec("ALTER TABLE semantic ADD COLUMN summary TEXT");
+    }
+    if (!semanticColumns.find((c) => c.name === "ai_provider")) {
+      this.db.exec("ALTER TABLE semantic ADD COLUMN ai_provider TEXT");
+    }
+    if (!semanticColumns.find((c) => c.name === "ai_model")) {
+      this.db.exec("ALTER TABLE semantic ADD COLUMN ai_model TEXT");
+    }
+    if (!semanticColumns.find((c) => c.name === "ai_processed_at")) {
+      this.db.exec("ALTER TABLE semantic ADD COLUMN ai_processed_at INTEGER");
+    }
+    if (!semanticColumns.find((c) => c.name === "ai_error")) {
+      this.db.exec("ALTER TABLE semantic ADD COLUMN ai_error TEXT");
     }
   }
 
@@ -250,7 +334,7 @@ export class ChronoPicDatabase {
         `SELECT
           p.id, p.path, p.hash, p.size, p.mime, p.thumbnail_path, p.favorite, p.created_at, p.updated_at,
           m.datetime, m.lat, m.lng, m.camera, m.confidence, m.original_datetime_text,
-          s.labels, s.caption, s.embedding_ref, s.ai_status,
+          s.labels, s.caption, s.generated_labels, s.generated_caption, s.summary, s.embedding_ref, s.ai_status, s.ai_provider, s.ai_model, s.ai_processed_at, s.ai_error,
           i.indexed, i.ai_processed, i.error, i.last_indexed_at, i.duplicate_of
         FROM photos p
         JOIN metadata m ON m.photo_id = p.id
@@ -327,20 +411,37 @@ export class ChronoPicDatabase {
 
       this.db
         .prepare(
-          `INSERT INTO semantic (photo_id, labels, caption, embedding_ref, ai_status)
-           VALUES (?, ?, ?, ?, ?)
+          `INSERT INTO semantic (
+             photo_id, labels, caption, generated_labels, generated_caption, summary, embedding_ref, ai_status,
+             ai_provider, ai_model, ai_processed_at, ai_error
+           )
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
            ON CONFLICT(photo_id) DO UPDATE SET
              labels = excluded.labels,
              caption = excluded.caption,
+             generated_labels = excluded.generated_labels,
+             generated_caption = excluded.generated_caption,
+             summary = excluded.summary,
              embedding_ref = excluded.embedding_ref,
-             ai_status = excluded.ai_status`
+             ai_status = excluded.ai_status,
+             ai_provider = excluded.ai_provider,
+             ai_model = excluded.ai_model,
+             ai_processed_at = excluded.ai_processed_at,
+             ai_error = excluded.ai_error`
         )
         .run(
           input.semantic.photoId,
           serializeStringArray(dedupeStrings(input.semantic.labels)),
           input.semantic.caption,
+          serializeStringArray(dedupeStrings(input.semantic.generatedLabels)),
+          input.semantic.generatedCaption,
+          input.semantic.summary,
           input.semantic.embeddingRef,
-          input.semantic.aiStatus
+          normalizeAIPipelineStatus(input.semantic.aiStatus),
+          input.semantic.aiProvider,
+          input.semantic.aiModel,
+          input.semantic.aiProcessedAt,
+          input.semantic.aiError
         );
 
       this.db
@@ -373,9 +474,11 @@ export class ChronoPicDatabase {
     const params: unknown[] = [];
 
     if (resolvedFilter.query) {
-      clauses.push("(p.path LIKE ? OR s.caption LIKE ? OR s.labels LIKE ?)");
+      clauses.push(
+        "(p.path LIKE ? OR s.caption LIKE ? OR s.generated_caption LIKE ? OR s.summary LIKE ? OR s.labels LIKE ? OR s.generated_labels LIKE ?)"
+      );
       const query = `%${resolvedFilter.query}%`;
-      params.push(query, query, query);
+      params.push(query, query, query, query, query, query);
     }
 
     if (resolvedFilter.mimePrefix) {
@@ -384,8 +487,24 @@ export class ChronoPicDatabase {
     }
 
     if (resolvedFilter.tag) {
-      clauses.push("s.labels LIKE ?");
-      params.push(`%${resolvedFilter.tag}%`);
+      clauses.push("(s.labels LIKE ? OR s.generated_labels LIKE ?)");
+      params.push(`%${resolvedFilter.tag}%`, `%${resolvedFilter.tag}%`);
+    }
+
+    if (resolvedFilter.aiStatus) {
+      const statuses = Array.isArray(resolvedFilter.aiStatus) ? resolvedFilter.aiStatus : [resolvedFilter.aiStatus];
+      if (statuses.length > 0) {
+        clauses.push(`s.ai_status IN (${statuses.map(() => "?").join(", ")})`);
+        params.push(...statuses.map((status) => normalizeAIPipelineStatus(status)));
+      }
+    }
+
+    if (resolvedFilter.aiStatus) {
+      const statuses = Array.isArray(resolvedFilter.aiStatus) ? resolvedFilter.aiStatus : [resolvedFilter.aiStatus];
+      if (statuses.length > 0) {
+        clauses.push(`s.ai_status IN (${statuses.map(() => "?").join(", ")})`);
+        params.push(...statuses.map((status) => normalizeAIPipelineStatus(status)));
+      }
     }
 
     if (typeof resolvedFilter.favorite === "boolean") {
@@ -434,7 +553,7 @@ export class ChronoPicDatabase {
         `SELECT
           p.id, p.path, p.hash, p.size, p.mime, p.thumbnail_path, p.favorite, p.created_at, p.updated_at,
           m.datetime, m.lat, m.lng, m.camera, m.confidence, m.original_datetime_text,
-          s.labels, s.caption, s.embedding_ref, s.ai_status,
+          s.labels, s.caption, s.generated_labels, s.generated_caption, s.summary, s.embedding_ref, s.ai_status, s.ai_provider, s.ai_model, s.ai_processed_at, s.ai_error,
           i.indexed, i.ai_processed, i.error, i.last_indexed_at, i.duplicate_of
         FROM photos p
         JOIN metadata m ON m.photo_id = p.id
@@ -456,7 +575,7 @@ export class ChronoPicDatabase {
         `SELECT
           p.id, p.path, p.hash, p.size, p.mime, p.thumbnail_path, p.favorite, p.created_at, p.updated_at,
           m.datetime, m.lat, m.lng, m.camera, m.confidence, m.original_datetime_text,
-          s.labels, s.caption, s.embedding_ref, s.ai_status,
+          s.labels, s.caption, s.generated_labels, s.generated_caption, s.summary, s.embedding_ref, s.ai_status, s.ai_provider, s.ai_model, s.ai_processed_at, s.ai_error,
           i.indexed, i.ai_processed, i.error, i.last_indexed_at, i.duplicate_of
         FROM photos p
         JOIN metadata m ON m.photo_id = p.id
@@ -517,6 +636,66 @@ export class ChronoPicDatabase {
           "INSERT INTO edit_history (id, photo_id, field_name, previous_value, next_value, created_at, rolled_back_at) VALUES (?, ?, ?, ?, ?, ?, NULL)"
         )
         .run(createId("edit"), photoId, "caption", existing.semantic.caption, caption, now);
+    });
+
+    transaction();
+    return this.getPhoto(photoId) as PhotoRecord;
+  }
+
+  updatePhotoSemanticEnrichment(
+    photoId: string,
+    updates: Partial<
+      Pick<
+        Semantic,
+        "generatedLabels" | "generatedCaption" | "summary" | "embeddingRef" | "aiStatus" | "aiProvider" | "aiModel" | "aiProcessedAt" | "aiError"
+      >
+    >
+  ): PhotoRecord {
+    const existing = this.getPhoto(photoId);
+
+    if (!existing) {
+      throw new Error(`Photo not found: ${photoId}`);
+    }
+
+    const nextSemantic: Semantic = {
+      ...existing.semantic,
+      ...updates,
+      generatedLabels: updates.generatedLabels ? dedupeStrings(updates.generatedLabels) : existing.semantic.generatedLabels,
+      aiStatus: updates.aiStatus ? normalizeAIPipelineStatus(updates.aiStatus) : existing.semantic.aiStatus
+    };
+    const aiProcessed = nextSemantic.aiStatus === "completed";
+    const now = Date.now();
+
+    const transaction = this.db.transaction(() => {
+      this.db
+        .prepare(
+          `UPDATE semantic
+           SET generated_labels = ?,
+               generated_caption = ?,
+               summary = ?,
+               embedding_ref = ?,
+               ai_status = ?,
+               ai_provider = ?,
+               ai_model = ?,
+               ai_processed_at = ?,
+               ai_error = ?
+           WHERE photo_id = ?`
+        )
+        .run(
+          serializeStringArray(nextSemantic.generatedLabels),
+          nextSemantic.generatedCaption,
+          nextSemantic.summary,
+          nextSemantic.embeddingRef,
+          nextSemantic.aiStatus,
+          nextSemantic.aiProvider,
+          nextSemantic.aiModel,
+          nextSemantic.aiProcessedAt,
+          nextSemantic.aiError,
+          photoId
+        );
+
+      this.db.prepare("UPDATE index_state SET ai_processed = ? WHERE photo_id = ?").run(aiProcessed ? 1 : 0, photoId);
+      this.db.prepare("UPDATE photos SET updated_at = ? WHERE id = ?").run(now, photoId);
     });
 
     transaction();
@@ -659,6 +838,62 @@ export class ChronoPicDatabase {
     return this.getPhoto(photoId) as PhotoRecord;
   }
 
+  getSemanticQueueStats(): SemanticQueueStats {
+    const rows = this.db
+      .prepare(
+        `SELECT s.ai_status AS ai_status, COUNT(*) AS total
+         FROM semantic s
+         GROUP BY s.ai_status`
+      )
+      .all() as Array<{ ai_status: string; total: number }>;
+
+    const stats: SemanticQueueStats = {
+      disabled: 0,
+      pending: 0,
+      processing: 0,
+      completed: 0,
+      failed: 0,
+    };
+
+    for (const row of rows) {
+      const status = normalizeAIPipelineStatus(row.ai_status);
+      stats[status] += row.total;
+    }
+
+    return stats;
+  }
+
+  recoverInterruptedAIProcessing(): {
+    photoCount: number;
+    memoryCount: number;
+  } {
+    const now = Date.now();
+    const photoResult = this.db
+      .prepare(
+        `UPDATE semantic
+         SET ai_status = 'pending',
+             ai_error = COALESCE(ai_error, 'Recovered after app restart'),
+             ai_processed_at = COALESCE(ai_processed_at, ?)
+         WHERE ai_status = 'processing'`
+      )
+      .run(now);
+
+    const memoryResult = this.db
+      .prepare(
+        `UPDATE memories
+         SET ai_status = 'pending',
+             ai_error = COALESCE(ai_error, 'Recovered after app restart'),
+             ai_processed_at = COALESCE(ai_processed_at, ?)
+         WHERE ai_status = 'processing'`
+      )
+      .run(now);
+
+    return {
+      photoCount: photoResult.changes,
+      memoryCount: memoryResult.changes,
+    };
+  }
+
   // ─── Memory ─────────────────────────────────────────────────────────────────
 
   listMemories(): Memory[] {
@@ -669,6 +904,14 @@ export class ChronoPicDatabase {
           m.name,
           m.description,
           m.cover_photo_id,
+          m.generated_name,
+          m.generated_description,
+          m.generated_labels,
+          m.ai_status,
+          m.ai_provider,
+          m.ai_model,
+          m.ai_processed_at,
+          m.ai_error,
           m.source,
           m.created_at,
           m.updated_at,
@@ -699,6 +942,14 @@ export class ChronoPicDatabase {
       name: string;
       description: string | null;
       cover_photo_id: string | null;
+      generated_name: string | null;
+      generated_description: string | null;
+      generated_labels: string;
+      ai_status: Semantic["aiStatus"];
+      ai_provider: string | null;
+      ai_model: string | null;
+      ai_processed_at: number | null;
+      ai_error: string | null;
       cover_thumbnail_path: string | null;
       photo_count: number;
       source: MemorySource;
@@ -713,6 +964,14 @@ export class ChronoPicDatabase {
       coverPhotoId: row.cover_photo_id,
       coverThumbnailPath: row.cover_thumbnail_path,
       photoCount: row.photo_count,
+      generatedName: row.generated_name,
+      generatedDescription: row.generated_description,
+      generatedLabels: parseStringArray(row.generated_labels),
+      aiStatus: normalizeAIPipelineStatus(row.ai_status),
+      aiProvider: row.ai_provider,
+      aiModel: row.ai_model,
+      aiProcessedAt: row.ai_processed_at,
+      aiError: row.ai_error,
       source: row.source,
       createdAt: row.created_at,
       updatedAt: row.updated_at,
@@ -728,6 +987,14 @@ export class ChronoPicDatabase {
       coverPhotoId: null,
       coverThumbnailPath: null,
       photoCount: 0,
+      generatedName: null,
+      generatedDescription: null,
+      generatedLabels: [],
+      aiStatus: "disabled",
+      aiProvider: null,
+      aiModel: null,
+      aiProcessedAt: null,
+      aiError: null,
       source,
       createdAt: now,
       updatedAt: now,
@@ -769,6 +1036,62 @@ export class ChronoPicDatabase {
     return this.getMemory(memoryId) as Memory;
   }
 
+  updateMemorySemanticEnrichment(
+    memoryId: string,
+    updates: Partial<
+      Pick<
+        Memory,
+        "generatedName" | "generatedDescription" | "generatedLabels" | "aiStatus" | "aiProvider" | "aiModel" | "aiProcessedAt" | "aiError"
+      >
+    >
+  ): Memory {
+    const current = this.getMemory(memoryId);
+
+    if (!current) {
+      throw new Error(`Memory not found: ${memoryId}`);
+    }
+
+    const next = {
+      generatedName: updates.generatedName ?? current.generatedName,
+      generatedDescription: updates.generatedDescription ?? current.generatedDescription,
+      generatedLabels: updates.generatedLabels ?? current.generatedLabels,
+      aiStatus: updates.aiStatus ?? current.aiStatus,
+      aiProvider: updates.aiProvider ?? current.aiProvider,
+      aiModel: updates.aiModel ?? current.aiModel,
+      aiProcessedAt: updates.aiProcessedAt ?? current.aiProcessedAt,
+      aiError: updates.aiError ?? current.aiError,
+    };
+
+    this.db
+      .prepare(
+        `UPDATE memories
+         SET generated_name = ?,
+             generated_description = ?,
+             generated_labels = ?,
+             ai_status = ?,
+             ai_provider = ?,
+             ai_model = ?,
+             ai_processed_at = ?,
+             ai_error = ?,
+             updated_at = ?
+         WHERE id = ?`
+      )
+      .run(
+        next.generatedName,
+        next.generatedDescription,
+        serializeStringArray(next.generatedLabels),
+        next.aiStatus,
+        next.aiProvider,
+        next.aiModel,
+        next.aiProcessedAt,
+        next.aiError,
+        Date.now(),
+        memoryId
+      );
+
+    return this.getMemory(memoryId) as Memory;
+  }
+
   deleteMemory(memoryId: string): void {
     this.db.prepare("DELETE FROM memories WHERE id = ?").run(memoryId);
   }
@@ -803,6 +1126,14 @@ export class ChronoPicDatabase {
           m.name,
           m.description,
           m.cover_photo_id,
+          m.generated_name,
+          m.generated_description,
+          m.generated_labels,
+          m.ai_status,
+          m.ai_provider,
+          m.ai_model,
+          m.ai_processed_at,
+          m.ai_error,
           m.source,
           m.created_at,
           m.updated_at,
@@ -835,6 +1166,14 @@ export class ChronoPicDatabase {
       name: string;
       description: string | null;
       cover_photo_id: string | null;
+      generated_name: string | null;
+      generated_description: string | null;
+      generated_labels: string;
+      ai_status: Semantic["aiStatus"];
+      ai_provider: string | null;
+      ai_model: string | null;
+      ai_processed_at: number | null;
+      ai_error: string | null;
       cover_thumbnail_path: string | null;
       photo_count: number;
       source: MemorySource;
@@ -849,6 +1188,14 @@ export class ChronoPicDatabase {
       coverPhotoId: row.cover_photo_id,
       coverThumbnailPath: row.cover_thumbnail_path,
       photoCount: row.photo_count,
+      generatedName: row.generated_name,
+      generatedDescription: row.generated_description,
+      generatedLabels: parseStringArray(row.generated_labels),
+      aiStatus: normalizeAIPipelineStatus(row.ai_status),
+      aiProvider: row.ai_provider,
+      aiModel: row.ai_model,
+      aiProcessedAt: row.ai_processed_at,
+      aiError: row.ai_error,
       source: row.source,
       createdAt: row.created_at,
       updatedAt: row.updated_at,
@@ -865,8 +1212,17 @@ export class ChronoPicDatabase {
     const params: unknown[] = [];
 
     if (resolvedFilter.query) {
-      clauses.push("(p.path LIKE ? OR s.caption LIKE ? OR s.labels LIKE ?)");
-      params.push(`%${resolvedFilter.query}%`, `%${resolvedFilter.query}%`, `%${resolvedFilter.query}%`);
+      clauses.push(
+        "(p.path LIKE ? OR s.caption LIKE ? OR s.generated_caption LIKE ? OR s.summary LIKE ? OR s.labels LIKE ? OR s.generated_labels LIKE ?)"
+      );
+      params.push(
+        `%${resolvedFilter.query}%`,
+        `%${resolvedFilter.query}%`,
+        `%${resolvedFilter.query}%`,
+        `%${resolvedFilter.query}%`,
+        `%${resolvedFilter.query}%`,
+        `%${resolvedFilter.query}%`
+      );
     }
 
     if (resolvedFilter.mimePrefix) {
@@ -875,8 +1231,16 @@ export class ChronoPicDatabase {
     }
 
     if (resolvedFilter.tag) {
-      clauses.push("s.labels LIKE ?");
-      params.push(`%${resolvedFilter.tag}%`);
+      clauses.push("(s.labels LIKE ? OR s.generated_labels LIKE ?)");
+      params.push(`%${resolvedFilter.tag}%`, `%${resolvedFilter.tag}%`);
+    }
+
+    if (resolvedFilter.aiStatus) {
+      const statuses = Array.isArray(resolvedFilter.aiStatus) ? resolvedFilter.aiStatus : [resolvedFilter.aiStatus];
+      if (statuses.length > 0) {
+        clauses.push(`s.ai_status IN (${statuses.map(() => "?").join(", ")})`);
+        params.push(...statuses.map((status) => normalizeAIPipelineStatus(status)));
+      }
     }
 
     if (typeof resolvedFilter.favorite === "boolean") {
@@ -931,8 +1295,17 @@ export class ChronoPicDatabase {
     const params: unknown[] = [];
 
     if (resolvedFilter.query) {
-      clauses.push("(p.path LIKE ? OR s.caption LIKE ? OR s.labels LIKE ?)");
-      params.push(`%${resolvedFilter.query}%`, `%${resolvedFilter.query}%`, `%${resolvedFilter.query}%`);
+      clauses.push(
+        "(p.path LIKE ? OR s.caption LIKE ? OR s.generated_caption LIKE ? OR s.summary LIKE ? OR s.labels LIKE ? OR s.generated_labels LIKE ?)"
+      );
+      params.push(
+        `%${resolvedFilter.query}%`,
+        `%${resolvedFilter.query}%`,
+        `%${resolvedFilter.query}%`,
+        `%${resolvedFilter.query}%`,
+        `%${resolvedFilter.query}%`,
+        `%${resolvedFilter.query}%`
+      );
     }
 
     if (resolvedFilter.mimePrefix) {
@@ -941,8 +1314,8 @@ export class ChronoPicDatabase {
     }
 
     if (resolvedFilter.tag) {
-      clauses.push("s.labels LIKE ?");
-      params.push(`%${resolvedFilter.tag}%`);
+      clauses.push("(s.labels LIKE ? OR s.generated_labels LIKE ?)");
+      params.push(`%${resolvedFilter.tag}%`, `%${resolvedFilter.tag}%`);
     }
 
     if (typeof resolvedFilter.favorite === "boolean") {
