@@ -5,7 +5,7 @@ import type { Memory, PhotoRecord } from "@chronopic/domain";
 import { AddToMemoryMenu } from "./add-to-memory-menu.js";
 import { Badge } from "./badge.js";
 import { Button } from "./button.js";
-import { Dialog, DialogContent } from "./dialog.js";
+import { Dialog, DialogContent, DialogDescription, DialogTitle } from "./dialog.js";
 import { EditControls, type EditControlsProps } from "./edit-controls.js";
 import { Filmstrip } from "./filmstrip.js";
 import { IconButton } from "./icon-button.js";
@@ -44,6 +44,12 @@ export function PhotoViewerOverlay(props: PhotoViewerOverlayProps) {
     <TooltipProvider>
       <Dialog modal onOpenChange={(open) => (!open ? props.onClose() : undefined)} open>
         <DialogContent className={props.mode === "gallery" ? "bg-stone-950/96 text-stone-50" : "p-4"}>
+          <DialogTitle className="sr-only">
+            {props.mode === "gallery" ? "Gallery viewer" : "Photo detail viewer"}
+          </DialogTitle>
+          <DialogDescription className="sr-only">
+            Viewing {props.photo.photo.path.split("/").at(-1)} in {props.mode} mode.
+          </DialogDescription>
           {props.mode === "gallery" ? (
             <>
               <div className="absolute inset-x-0 top-0 z-10 flex items-center justify-between px-5 py-4">

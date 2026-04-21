@@ -1,6 +1,6 @@
 import type { LibrarySnapshot } from "@chronopic/domain";
 
-import { Dialog, DialogContent } from "./dialog.js";
+import { Dialog, DialogContent, DialogDescription, DialogTitle } from "./dialog.js";
 import { LibrarySidebar } from "./library-sidebar.js";
 
 export interface LibraryDialogProps {
@@ -23,6 +23,10 @@ export function LibraryDialog({
   return (
     <Dialog modal onOpenChange={(o) => (!o ? onClose() : undefined)} open={open}>
       <DialogContent className="max-w-2xl p-0">
+        <DialogTitle className="sr-only">Library settings</DialogTitle>
+        <DialogDescription className="sr-only">
+          Manage library folders, scan status, and indexing actions.
+        </DialogDescription>
         <LibrarySidebar
           isScanning={isScanning}
           onAddLibrary={onAddLibrary}

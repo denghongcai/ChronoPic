@@ -5,7 +5,7 @@ import type { Memory, PhotoRecord } from "@chronopic/domain";
 
 import { Badge } from "./badge.js";
 import { Button } from "./button.js";
-import { Dialog, DialogContent } from "./dialog.js";
+import { Dialog, DialogContent, DialogDescription, DialogTitle } from "./dialog.js";
 import { IconButton } from "./icon-button.js";
 import { Input } from "./input.js";
 import { getMemoryDescriptionPreview } from "./lib/memory-description.js";
@@ -80,7 +80,7 @@ export function MemoryDetailPage({
   React.useEffect(() => {
     onClearBatchSelection();
     setSelectionMode(false);
-  }, [memory.id, onClearBatchSelection]);
+  }, [memory.id]);
 
   return (
     <div className="space-y-6">
@@ -272,6 +272,10 @@ export function MemoryDetailPage({
 
       <Dialog onOpenChange={setEditingDescription} open={editingDescription}>
         <DialogContent className="flex items-center justify-center p-6">
+          <DialogTitle className="sr-only">Edit memory description</DialogTitle>
+          <DialogDescription className="sr-only">
+            Edit the rich text description for {memory.name}.
+          </DialogDescription>
           <div className="w-full max-w-4xl rounded-[28px] border border-stone-200 bg-white p-6 shadow-2xl">
             <div className="mb-5 flex items-start justify-between gap-4">
               <div>
@@ -297,6 +301,10 @@ export function MemoryDetailPage({
 
       <Dialog onOpenChange={setRenaming} open={renaming}>
         <DialogContent className="flex items-center justify-center p-6">
+          <DialogTitle className="sr-only">Rename memory</DialogTitle>
+          <DialogDescription className="sr-only">
+            Update the title for {memory.name}.
+          </DialogDescription>
           <div className="w-full max-w-xl rounded-[28px] border border-stone-200 bg-white p-6 shadow-2xl">
             <div className="mb-5 flex items-start justify-between gap-4">
               <div>
@@ -431,6 +439,10 @@ export function MemoryDetailPage({
 
       <Dialog onOpenChange={setDeleteConfirmOpen} open={deleteConfirmOpen}>
         <DialogContent className="flex items-center justify-center p-6">
+          <DialogTitle className="sr-only">Delete memory</DialogTitle>
+          <DialogDescription className="sr-only">
+            Confirm deleting the memory {memory.name} while keeping the underlying photos in the library.
+          </DialogDescription>
           <div className="w-full max-w-lg rounded-[28px] border border-stone-200 bg-white p-6 shadow-2xl">
             <div className="space-y-3">
               <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-stone-500">Delete Memory</p>
@@ -461,6 +473,10 @@ export function MemoryDetailPage({
 
       <Dialog onOpenChange={setRemoveSelectedConfirmOpen} open={removeSelectedConfirmOpen}>
         <DialogContent className="flex items-center justify-center p-6">
+          <DialogTitle className="sr-only">Remove selected photos</DialogTitle>
+          <DialogDescription className="sr-only">
+            Confirm removing the currently selected photos from {memory.name}.
+          </DialogDescription>
           <div className="w-full max-w-lg rounded-[28px] border border-stone-200 bg-white p-6 shadow-2xl">
             <div className="space-y-3">
               <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-stone-500">Remove Selected</p>
@@ -492,6 +508,10 @@ export function MemoryDetailPage({
 
       <Dialog onOpenChange={(open) => !open && setPendingRemovalPhotoId(null)} open={Boolean(pendingRemovalPhotoId)}>
         <DialogContent className="flex items-center justify-center p-6">
+          <DialogTitle className="sr-only">Remove photo from memory</DialogTitle>
+          <DialogDescription className="sr-only">
+            Confirm removing the selected photo from {memory.name}.
+          </DialogDescription>
           <div className="w-full max-w-lg rounded-[28px] border border-stone-200 bg-white p-6 shadow-2xl">
             <div className="space-y-3">
               <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-stone-500">Remove Photo</p>

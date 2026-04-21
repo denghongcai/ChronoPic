@@ -1265,6 +1265,22 @@ This file is the local execution record for ChronoPic. It complements `PLAN.md` 
   `pnpm build`
 - Result: the home shell no longer throws when AI queue stats are briefly undefined, and the notification surfaces degrade safely to zero counts until data arrives.
 
+### 2026-04-22 Step 73
+
+- Fixed the memory-description dialog crash that occurred when opening the description editor from memory detail.
+- Identified the root cause as an effect in `MemoryDetailPage` depending on `onClearBatchSelection`, which is an unstable callback prop and was retriggering state updates on every render after the dialog opened.
+- Tightened that effect so it resets selection only when `memory.id` changes, removing the infinite update loop.
+- Added missing Radix accessibility metadata to dialog surfaces that previously rendered `DialogContent` without required title/description context:
+  memory description editor,
+  rename dialog,
+  delete/remove confirmations,
+  viewer overlay,
+  and library dialog.
+- Re-verified after the dialog/effect fix with:
+  `pnpm typecheck`
+  `pnpm build`
+- Result: opening the memory description editor no longer triggers `Maximum update depth exceeded`, and the related dialog surfaces are now aligned with Radix accessibility requirements.
+
 ## Next Immediate Tasks
 
 1. Workspace skeleton is implemented.

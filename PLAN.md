@@ -574,6 +574,7 @@ Current landed scope:
   backed by local persisted config with renderer-side fallback to env vars for development setups.
 - Map browse runtime polish continues to be allowed inside the redesign/search groundwork as long as it preserves the current shared browse shell and renderer-owned map integration boundaries.
 - Shared browse/notification UI should tolerate temporarily unavailable queue state during hydration or hot reload rather than assuming AI queue stats are always present on first render.
+- Dialog-driven product surfaces should keep Radix accessibility requirements satisfied and avoid effect dependencies on unstable callback props, especially around memory editing flows.
 
 ### 4.12 Search and Discovery Phase
 
