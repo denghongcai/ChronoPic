@@ -2,11 +2,12 @@ import { MapPinned } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import type { GeoBounds, MapSettings, Memory, PhotoFilter, PlaceGroup, PhotoRecord } from "@chronopic/domain";
-import { Badge, Button, Panel, formatTimestamp, thumbnailUrl } from "@chronopic/ui-components";
+import { Badge, Button, Panel, formatTimestamp, getDiscoveryContext, getDiscoveryMatchSummary, thumbnailUrl } from "@chronopic/ui-components";
 
 import { getAmapApiKey, loadAmap, type AMapNamespace } from "./amap-loader";
 
 export interface MapBrowseSurfaceProps {
+  activeMemoryName?: string | null;
   filter: PhotoFilter;
   mapSettings: MapSettings;
   mapViewport: { centerLat: number; centerLng: number; zoom: number } | null;
@@ -21,6 +22,7 @@ export interface MapBrowseSurfaceProps {
 }
 
 export function MapBrowseSurface({
+  activeMemoryName,
   filter,
   mapSettings,
   mapViewport,
@@ -50,15 +52,13 @@ export function MapBrowseSurface({
     () => photos.find((record) => record.photo.id === selectedPhotoId) ?? null,
     [photos, selectedPhotoId]
   );
-  const hasStructuredFilters = Boolean(
-    filter.query ||
-      filter.favorite ||
-      filter.memoryId ||
-      filter.hasError ||
-      filter.indexed ||
-      filter.hasGps ||
-      filter.mimePrefix ||
-      filter.tag
+  const discoveryContext = useMemo(
+    () => getDiscoveryContext(filter, { activeMemoryName: activeMemoryName ?? null }),
+    [activeMemoryName, filter]
+  );
+  const selectedPhotoMatch = useMemo(
+    () => getDiscoveryMatchSummary(selectedPhoto, selectedPhotoMemories, filter.query),
+    [filter.query, selectedPhoto, selectedPhotoMemories]
   );
 
   const selectedGroupId = useMemo(
@@ -274,19 +274,18 @@ export function MapBrowseSurface({
       <div className="grid gap-0 xl:grid-cols-[minmax(0,1.4fr)_420px]">
         <div className="min-h-[560px] border-b border-stone-200/70 xl:border-b-0 xl:border-r xl:border-stone-200/70">
           <div className="flex h-full min-h-[560px] flex-col">
-            {hasStructuredFilters ? (
+            {discoveryContext ? (
               <div className="border-b border-stone-200/70 px-5 py-4">
-                <div className="flex flex-wrap items-center gap-2 rounded-[24px] border border-stone-200 bg-stone-50/80 px-4 py-3">
-                  <Badge tone="info">Filtered Scope</Badge>
-                  <p className="text-sm text-stone-700">
-                    {filter.memoryId
-                      ? "Map is showing GPS photos from the current memory scope."
-                      : filter.favorite
-                        ? "Map is showing favorite photos in the current result scope."
-                        : filter.query
-                          ? `Map search active: “${filter.query}”.`
-                          : "Map is reflecting the currently structured browse query."}
-                  </p>
+                <div className="space-y-3 rounded-[24px] border border-stone-200 bg-stone-50/80 px-4 py-3">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Badge tone="info">Discovery Scope</Badge>
+                    {discoveryContext.badges.map((badge) => (
+                      <Badge key={badge.label} tone={badge.tone}>
+                        {badge.label}
+                      </Badge>
+                    ))}
+                  </div>
+                  <p className="text-sm text-stone-700">{discoveryContext.description}</p>
                 </div>
               </div>
             ) : null}
@@ -320,6 +319,9 @@ export function MapBrowseSurface({
                       </Badge>
                     ))}
                   </div>
+                ) : null}
+                {selectedPhotoMatch ? (
+                  <p className="mt-3 text-sm text-sky-900">{selectedPhotoMatch.description}</p>
                 ) : null}
               </div>
             ) : null}

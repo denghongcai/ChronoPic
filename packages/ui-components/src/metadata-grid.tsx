@@ -3,6 +3,7 @@ import { BookMarked, Camera, Clock3, HardDrive, MapPinned, Sparkles } from "luci
 import type { Memory, PhotoRecord } from "@chronopic/domain";
 
 import { Badge } from "./badge.js";
+import { getDiscoveryMatchSummary } from "./lib/discovery-match.js";
 import { formatTimestamp, mediaIcon } from "./lib/media.js";
 
 function MetaStat({
@@ -29,12 +30,15 @@ export function MetadataGrid({
   photo,
   aiEnabled,
   memories = [],
+  searchQuery,
 }: {
   photo: PhotoRecord;
   aiEnabled: boolean;
   memories?: Memory[];
+  searchQuery?: string | null;
 }) {
   const MediaIcon = mediaIcon(photo.photo.mime);
+  const discoveryMatch = getDiscoveryMatchSummary(photo, memories, searchQuery);
 
   return (
     <div className="grid gap-3 sm:grid-cols-2">
@@ -52,6 +56,22 @@ export function MetadataGrid({
         label="AI"
         value={aiEnabled ? `${photo.semantic.aiStatus}${photo.semantic.aiModel ? ` · ${photo.semantic.aiModel}` : ""}` : "Disabled"}
       />
+      {discoveryMatch ? (
+        <div className="rounded-2xl border border-sky-200 bg-sky-50/80 px-4 py-3 sm:col-span-2">
+          <div className="mb-2 inline-flex h-9 w-9 items-center justify-center rounded-xl bg-white text-sky-700 shadow-sm">
+            <Sparkles className="h-4 w-4" />
+          </div>
+          <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-sky-600">Discovery Match</p>
+          <p className="mt-2 text-sm leading-6 text-sky-900">{discoveryMatch.description}</p>
+          <div className="mt-3 flex flex-wrap gap-2">
+            {discoveryMatch.labels.map((label) => (
+              <Badge key={label} tone="info">
+                {label}
+              </Badge>
+            ))}
+          </div>
+        </div>
+      ) : null}
       <div className="rounded-2xl border border-stone-200 bg-stone-50/80 px-4 py-3 sm:col-span-2">
         <div className="mb-2 inline-flex h-9 w-9 items-center justify-center rounded-xl bg-white text-stone-700 shadow-sm">
           <Sparkles className="h-4 w-4" />

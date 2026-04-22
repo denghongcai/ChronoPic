@@ -575,6 +575,8 @@ Current landed scope:
 - Map browse runtime polish continues to be allowed inside the redesign/search groundwork as long as it preserves the current shared browse shell and renderer-owned map integration boundaries.
 - Shared browse/notification UI should tolerate temporarily unavailable queue state during hydration or hot reload rather than assuming AI queue stats are always present on first render.
 - Dialog-driven product surfaces should keep Radix accessibility requirements satisfied and avoid effect dependencies on unstable callback props, especially around memory editing flows.
+- `4.12` is now started with a shared discovery-query foundation and broader text-search coverage that includes linked memory metadata in addition to photo semantic fields.
+- The renderer is now beginning to consume `DiscoveryQuery` as an explicit search-state model rather than treating free-text search as only a raw `PhotoFilter.query` mutation.
 
 ### 4.12 Search and Discovery Phase
 
@@ -589,6 +591,51 @@ Current landed scope:
   renderer/UI consumes query DTOs and result projections,
   while ranking/filter composition lives in shared/application layers.
 - Use this phase to make map/timeline/waterfall feel like coordinated discovery lenses rather than separate browsing silos.
+
+Implementation breakdown:
+
+1. Unified discovery query contract
+- Consolidate the current ad hoc browse/search filters into a clearer shared discovery query model.
+- Keep one shared query context for:
+  waterfall,
+  map,
+  timeline,
+  favorites,
+  memories,
+  and semantic search.
+- Preserve compatibility with the current `PhotoFilter`-driven list flow while making the search surface easier to evolve.
+
+2. Semantic search expansion
+- Make free-text search explicitly hit:
+  generated caption,
+  generated labels,
+  summary,
+  manual caption,
+  manual labels,
+  and relevant memory metadata.
+- Keep query behavior stable and inspectable rather than introducing opaque ranking too early.
+
+3. Place-aware and memory-aware discovery
+- Allow discovery flows to pivot more naturally across:
+  places,
+  memories,
+  and timeline groupings.
+- Keep map/timeline views driven by the same query state rather than inventing separate search models per browse mode.
+- The browse shell now includes direct discovery pivots so the current result scope can jump into:
+  `Map View`,
+  `Timeline`,
+  `Browse Memories`,
+  or the current memory detail page without rebuilding the query manually.
+
+4. Discovery UX completion
+- Improve the renderer search surface so users can understand:
+  what is being searched,
+  why a result matched,
+  and what scope is currently active.
+- Favor strong context/explanation over premature recommendation widgets.
+- The renderer now also shares discovery-context messaging across waterfall, map, and timeline so current scope and semantic-search conditions are explained consistently instead of being reimplemented per browse mode.
+- Discovery surfaces now expose match-source explanations for the selected photo and inspector so the user can see which fields or linked memory metadata caused the current result to match the active query.
+- Discovery/runtime UX must degrade safely when the Electron preload bridge is unavailable, showing a clear desktop-bridge error state instead of crashing the renderer during initial hydration.
 
 ### 4.13 Realtime Library Sync and Incremental Watch Phase
 

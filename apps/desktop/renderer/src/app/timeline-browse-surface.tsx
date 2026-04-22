@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 
 import type { Memory, PhotoFilter, PhotoRecord, TimelineGranularity, TimelineGroup } from "@chronopic/domain";
-import { AddToMemoryMenu, Badge, Button, Panel, PhotoCard } from "@chronopic/ui-components";
+import { AddToMemoryMenu, Badge, Button, Panel, PhotoCard, getDiscoveryContext, getDiscoveryMatchSummary } from "@chronopic/ui-components";
 
 interface TimelineBrowseSurfaceProps {
   filter: PhotoFilter;
@@ -68,15 +68,17 @@ export function TimelineBrowseSurface({
     () => photos.find((record) => record.photo.id === selectedPhotoId) ?? null,
     [photos, selectedPhotoId]
   );
-  const hasStructuredFilters = Boolean(
-    filter.query ||
-      filter.favorite ||
-      filter.memoryId ||
-      filter.hasError ||
-      filter.indexed ||
-      filter.hasGps ||
-      filter.mimePrefix ||
-      filter.tag
+  const activeMemoryName = useMemo(
+    () => memories.find((memory) => memory.id === filter.memoryId)?.name ?? null,
+    [filter.memoryId, memories]
+  );
+  const discoveryContext = useMemo(
+    () => getDiscoveryContext(filter, { activeMemoryName }),
+    [activeMemoryName, filter]
+  );
+  const selectedPhotoMatch = useMemo(
+    () => getDiscoveryMatchSummary(selectedPhoto, selectedPhotoMemories, filter.query),
+    [filter.query, selectedPhoto, selectedPhotoMemories]
   );
 
   return (
@@ -133,16 +135,13 @@ export function TimelineBrowseSurface({
           {undatedPhotoCount > 0 ? (
             <Badge tone="warn">{undatedPhotoCount} undated hidden</Badge>
           ) : null}
-          {hasStructuredFilters ? (
-            <Badge tone="neutral">
-              {filter.memoryId
-                ? "memory scope"
-                : filter.favorite
-                  ? "favorites"
-                  : filter.query
-                    ? "search"
-                    : "structured query"}
+          {discoveryContext?.badges.map((badge) => (
+            <Badge key={badge.label} tone={badge.tone}>
+              {badge.label}
             </Badge>
+          ))}
+          {discoveryContext ? (
+            <p className="basis-full pt-1 text-sm text-stone-600">{discoveryContext.description}</p>
           ) : null}
         </div>
 
@@ -171,6 +170,9 @@ export function TimelineBrowseSurface({
                   </Badge>
                 ))}
               </div>
+            ) : null}
+            {selectedPhotoMatch ? (
+              <p className="mt-3 text-sm text-sky-900">{selectedPhotoMatch.description}</p>
             ) : null}
           </div>
         ) : null}

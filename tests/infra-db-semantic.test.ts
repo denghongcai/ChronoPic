@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import fs from "node:fs";
 import test from "node:test";
 
 import { SCHEMA_SQL } from "@chronopic/infra-db/schema";
@@ -18,4 +19,14 @@ test("infra-db memory schema includes generated AI memory fields", () => {
   assert.match(SCHEMA_SQL, /generated_description TEXT/);
   assert.match(SCHEMA_SQL, /generated_labels TEXT NOT NULL DEFAULT '\[\]'/);
   assert.match(SCHEMA_SQL, /CREATE TABLE IF NOT EXISTS memories/);
+});
+
+test("infra-db text search implementation includes linked memory metadata", () => {
+  const source = fs.readFileSync(new URL("../packages/infra-db/src/index.ts", import.meta.url), "utf8");
+
+  assert.match(source, /mem_search\.name LIKE \?/);
+  assert.match(source, /mem_search\.description LIKE \?/);
+  assert.match(source, /mem_search\.generated_name LIKE \?/);
+  assert.match(source, /mem_search\.generated_description LIKE \?/);
+  assert.match(source, /mem_search\.generated_labels LIKE \?/);
 });

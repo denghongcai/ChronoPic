@@ -156,6 +156,24 @@ export interface TimelineGroupQuery {
   limitGroups?: number;
 }
 
+export interface DiscoveryQuery {
+  text?: string;
+  mimePrefix?: string;
+  tag?: string;
+  aiStatus?: AIPipelineStatus | AIPipelineStatus[];
+  favorite?: boolean;
+  memoryId?: string;
+  indexed?: boolean;
+  hasError?: boolean;
+  hasGps?: boolean;
+  fromDatetime?: number;
+  toDatetime?: number;
+  sortBy?: "datetime" | "updatedAt" | "path";
+  sortDirection?: "asc" | "desc";
+  limit?: number;
+  offset?: number;
+}
+
 export interface PhotoFilter {
   query?: string;
   mimePrefix?: string;
@@ -176,6 +194,10 @@ export interface PhotoFilter {
 
 export type PhotoFilterPatch = {
   [Key in keyof PhotoFilter]?: PhotoFilter[Key] | undefined;
+};
+
+export type DiscoveryQueryPatch = {
+  [Key in keyof DiscoveryQuery]?: DiscoveryQuery[Key] | undefined;
 };
 
 export interface IndexerStats {
@@ -227,6 +249,50 @@ export interface PhotoEditInput {
   photoId: string;
   labels?: string[];
   datetime?: number | null;
+}
+
+export function discoveryQueryToPhotoFilter(query: DiscoveryQuery = {}): PhotoFilter {
+  const filter: PhotoFilter = {};
+
+  if (query.text !== undefined) filter.query = query.text;
+  if (query.mimePrefix !== undefined) filter.mimePrefix = query.mimePrefix;
+  if (query.tag !== undefined) filter.tag = query.tag;
+  if (query.aiStatus !== undefined) filter.aiStatus = query.aiStatus;
+  if (query.favorite !== undefined) filter.favorite = query.favorite;
+  if (query.memoryId !== undefined) filter.memoryId = query.memoryId;
+  if (query.indexed !== undefined) filter.indexed = query.indexed;
+  if (query.hasError !== undefined) filter.hasError = query.hasError;
+  if (query.hasGps !== undefined) filter.hasGps = query.hasGps;
+  if (query.fromDatetime !== undefined) filter.fromDatetime = query.fromDatetime;
+  if (query.toDatetime !== undefined) filter.toDatetime = query.toDatetime;
+  if (query.sortBy !== undefined) filter.sortBy = query.sortBy;
+  if (query.sortDirection !== undefined) filter.sortDirection = query.sortDirection;
+  if (query.limit !== undefined) filter.limit = query.limit;
+  if (query.offset !== undefined) filter.offset = query.offset;
+
+  return filter;
+}
+
+export function photoFilterToDiscoveryQuery(filter: PhotoFilter = {}): DiscoveryQuery {
+  const query: DiscoveryQuery = {};
+
+  if (filter.query !== undefined) query.text = filter.query;
+  if (filter.mimePrefix !== undefined) query.mimePrefix = filter.mimePrefix;
+  if (filter.tag !== undefined) query.tag = filter.tag;
+  if (filter.aiStatus !== undefined) query.aiStatus = filter.aiStatus;
+  if (filter.favorite !== undefined) query.favorite = filter.favorite;
+  if (filter.memoryId !== undefined) query.memoryId = filter.memoryId;
+  if (filter.indexed !== undefined) query.indexed = filter.indexed;
+  if (filter.hasError !== undefined) query.hasError = filter.hasError;
+  if (filter.hasGps !== undefined) query.hasGps = filter.hasGps;
+  if (filter.fromDatetime !== undefined) query.fromDatetime = filter.fromDatetime;
+  if (filter.toDatetime !== undefined) query.toDatetime = filter.toDatetime;
+  if (filter.sortBy !== undefined) query.sortBy = filter.sortBy;
+  if (filter.sortDirection !== undefined) query.sortDirection = filter.sortDirection;
+  if (filter.limit !== undefined) query.limit = filter.limit;
+  if (filter.offset !== undefined) query.offset = filter.offset;
+
+  return query;
 }
 
 export const DEFAULT_FILTER: Required<Pick<PhotoFilter, "limit" | "offset" | "sortBy" | "sortDirection">> = {

@@ -13,6 +13,7 @@ const api: ChronoPicBridge = {
   addLibrarySource: (libraryPath: string) => ipcRenderer.invoke("library:add", libraryPath),
   listLibrarySources: () => ipcRenderer.invoke("library:list"),
   scanLibrary: (sourceId?: string) => ipcRenderer.invoke("library:scan", sourceId),
+  listPhotosForDiscovery: (query) => ipcRenderer.invoke("photos:listForDiscovery", query),
   listPhotos: (filter) => ipcRenderer.invoke("photos:list", filter),
   getSemanticQueueStats: () => ipcRenderer.invoke("photos:getSemanticQueueStats"),
   countMappablePhotos: (filter) => ipcRenderer.invoke("photos:countMappable", filter),

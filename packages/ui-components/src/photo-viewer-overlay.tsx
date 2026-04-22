@@ -30,6 +30,7 @@ export interface PhotoViewerOverlayProps extends EditControlsProps {
   onSelectPhoto: (photoId: string) => void;
   onSwitchMode: (mode: ViewerMode) => void;
   onAddToMemory: (memoryId: string, photoId: string) => void;
+  searchQuery?: string | null;
 }
 
 export function PhotoViewerOverlay(props: PhotoViewerOverlayProps) {
@@ -239,7 +240,12 @@ export function PhotoViewerOverlay(props: PhotoViewerOverlayProps) {
                     </Badge>
                   </div>
                   <div className="grid gap-5 p-5">
-                    <MetadataGrid aiEnabled={props.aiEnabled} memories={props.photoMemories} photo={props.photo} />
+                    <MetadataGrid
+                      aiEnabled={props.aiEnabled}
+                      memories={props.photoMemories}
+                      photo={props.photo}
+                      searchQuery={props.searchQuery ?? null}
+                    />
                     <EditControls
                       aiEnabled={props.aiEnabled}
                       aiStatus={props.photo.semantic.aiStatus}

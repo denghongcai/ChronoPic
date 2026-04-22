@@ -411,3 +411,39 @@ test("ChronoPicAppService enrichMemorySemantic stores generated fields without o
   assert.deepEqual(enriched.generatedLabels, ["coast", "weekend", "travel"]);
   assert.equal(enriched.aiStatus, "completed");
 });
+
+test("ChronoPicAppService listPhotosForDiscovery maps discovery text to photo query filters", () => {
+  let receivedFilter: Record<string, unknown> | undefined;
+  const fakeDb = {
+    listPhotos(filter?: Record<string, unknown>) {
+      receivedFilter = filter;
+      return [];
+    },
+  };
+
+  const service = new ChronoPicAppService(fakeDb as never, stubIndexer as never, {
+    isEnabled: () => false,
+  } as never);
+
+  service.listPhotosForDiscovery({
+    text: "misty forest",
+    memoryId: "memory-1",
+    favorite: true,
+    hasGps: true,
+    sortBy: "updatedAt",
+    sortDirection: "asc",
+    limit: 24,
+    offset: 12,
+  });
+
+  assert.deepEqual(receivedFilter, {
+    query: "misty forest",
+    favorite: true,
+    memoryId: "memory-1",
+    hasGps: true,
+    sortBy: "updatedAt",
+    sortDirection: "asc",
+    limit: 24,
+    offset: 12,
+  });
+});

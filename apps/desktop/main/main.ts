@@ -6,7 +6,7 @@ import { pathToFileURL } from "node:url";
 import { app, BrowserWindow, dialog, ipcMain, net, protocol } from "electron";
 import type { OpenDialogOptions } from "electron";
 
-import type { AISettings, MapSettings, PhotoFilter, PlaceGroupQuery, TimelineGroupQuery } from "@chronopic/domain";
+import type { AISettings, DiscoveryQuery, MapSettings, PhotoFilter, PlaceGroupQuery, TimelineGroupQuery } from "@chronopic/domain";
 import { ChronoPicConfigStore } from "@chronopic/infra-config";
 
 import { createRuntime } from "./runtime.js";
@@ -182,6 +182,9 @@ function registerHandlers() {
   ipcMain.handle("library:add", async (_event, libraryPath: string) => getRuntimeHandle().appService.addLibrarySource(libraryPath));
   ipcMain.handle("library:list", async () => getRuntimeHandle().appService.listLibrarySources());
   ipcMain.handle("library:scan", async (_event, sourceId?: string) => getRuntimeHandle().appService.scanLibrary(sourceId));
+  ipcMain.handle("photos:listForDiscovery", async (_event, query?: DiscoveryQuery) =>
+    toSerializable(getRuntimeHandle().appService.listPhotosForDiscovery(query))
+  );
   ipcMain.handle("photos:list", async (_event, filter?: PhotoFilter) => toSerializable(getRuntimeHandle().appService.listPhotos(filter)));
   ipcMain.handle("photos:getSemanticQueueStats", async () => toSerializable(getRuntimeHandle().appService.getSemanticQueueStats()));
   ipcMain.handle("photos:countMappable", async (_event, filter?: PhotoFilter) => getRuntimeHandle().appService.countMappablePhotos(filter));

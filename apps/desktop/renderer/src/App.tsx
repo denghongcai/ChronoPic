@@ -36,6 +36,7 @@ export function App() {
       isScanning={app.isScanning}
       mapBrowseContent={
         <MapBrowseSurface
+          activeMemoryName={app.selectedMemory?.name ?? null}
           filter={app.filter}
           mapSettings={app.mapSettings}
           mapViewport={app.mapViewport}
@@ -73,7 +74,7 @@ export function App() {
       onSaveDatetime={app.handleSaveDatetime}
       onSaveTags={app.handleSaveTags}
       onScanAll={app.handleScanAll}
-      onSearchChange={(query) => app.patchFilter({ query: query || undefined, offset: 0 })}
+      onSearchChange={(query) => app.patchDiscoveryQuery({ text: query || undefined, offset: 0 })}
       onSelectAllPhotos={() => app.patchFilter({ favorite: undefined, memoryId: undefined, offset: 0 })}
       onSelectFavorites={() => app.patchFilter({ favorite: true, memoryId: undefined, offset: 0 })}
       onSelectMemories={() => app.patchFilter({ favorite: undefined, memoryId: undefined, offset: 0 })}
@@ -90,7 +91,7 @@ export function App() {
       onUpdateMemory={app.handleUpdateMemory}
       placeGroups={app.placeGroups}
       photos={app.photos}
-      searchQuery={app.filter.query ?? ""}
+      searchQuery={app.discoveryQuery.text ?? ""}
       statusKind={app.status.kind}
       statusMessage={app.status.message}
       selectedPhotoIds={app.selectedPhotoIds}

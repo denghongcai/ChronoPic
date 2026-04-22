@@ -1,8 +1,14 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
+import {
+  discoveryQueryToPhotoFilter,
+  photoFilterToDiscoveryQuery,
+} from "@chronopic/domain";
 import type {
   AISettings,
   AppCapabilities,
+  DiscoveryQuery,
+  DiscoveryQueryPatch,
   LibrarySnapshot,
   MapSettings,
   Memory,
@@ -94,12 +100,14 @@ export function useChronoPicApp() {
   const [isScanning, setIsScanning] = useState(false);
   const [status, setStatus] = useState<AppStatus>(idleStatus);
   const [viewerMode, setViewerMode] = useState<ViewerMode | null>(null);
-  const [filter, setFilter] = useState<PhotoFilter>({
+  const bridgeWarningShownRef = useRef(false);
+  const [discoveryQuery, setDiscoveryQuery] = useState<DiscoveryQuery>({
     limit: 120,
     offset: 0,
     sortBy: "datetime",
     sortDirection: "desc"
   });
+  const filter = useMemo(() => discoveryQueryToPhotoFilter(discoveryQuery), [discoveryQuery]);
 
   const selectedPhoto = useMemo(
     () => photos.find((photo) => photo.photo.id === selectedPhotoId) ?? null,
@@ -115,6 +123,7 @@ export function useChronoPicApp() {
   );
   const canNavigatePrevious = selectedPhotoIndex > 0;
   const canNavigateNext = selectedPhotoIndex >= 0 && selectedPhotoIndex < photos.length - 1;
+  const bridge = (window as Window & { chronoPic?: Window["chronoPic"] }).chronoPic;
 
   function resolveMemoryName(memoryId: string): string {
     return memories.find((memory) => memory.id === memoryId)?.name ?? "memory";
@@ -132,15 +141,49 @@ export function useChronoPicApp() {
     return fallback;
   }
 
+  function requireBridge(): Window["chronoPic"] | null {
+    if (bridge) {
+      return bridge;
+    }
+
+    if (!bridgeWarningShownRef.current) {
+      bridgeWarningShownRef.current = true;
+      setStatus({
+        kind: "error",
+        message: "Desktop bridge unavailable. Restart the app or check preload startup.",
+      });
+    }
+
+    return null;
+  }
+
   function patchFilter(patch: PhotoFilterPatch) {
-    setFilter((current) => {
-      const next: PhotoFilter = { ...current };
+    setDiscoveryQuery((current) => {
+      const next: PhotoFilter = { ...discoveryQueryToPhotoFilter(current) };
 
       for (const [key, value] of Object.entries(patch) as Array<[keyof PhotoFilterPatch, PhotoFilterPatch[keyof PhotoFilterPatch]]>) {
         if (value === undefined) {
           delete next[key as keyof PhotoFilter];
         } else {
           next[key as keyof PhotoFilter] = value as never;
+        }
+      }
+
+      return photoFilterToDiscoveryQuery(next);
+    });
+  }
+
+  function patchDiscoveryQuery(patch: DiscoveryQueryPatch) {
+    setDiscoveryQuery((current) => {
+      const next: DiscoveryQuery = { ...current };
+
+      for (const [key, value] of Object.entries(patch) as Array<
+        [keyof DiscoveryQueryPatch, DiscoveryQueryPatch[keyof DiscoveryQueryPatch]]
+      >) {
+        if (value === undefined) {
+          delete next[key as keyof DiscoveryQuery];
+        } else {
+          next[key as keyof DiscoveryQuery] = value as never;
         }
       }
 
@@ -154,7 +197,7 @@ export function useChronoPicApp() {
 
   useEffect(() => {
     void refreshPhotos();
-  }, [filter]);
+  }, [discoveryQuery]);
 
   useEffect(() => {
     void refreshGeospatial();
@@ -197,10 +240,15 @@ export function useChronoPicApp() {
   }, [idleStatus, isScanning, status]);
 
   async function hydrate() {
+    const activeBridge = requireBridge();
+    if (!activeBridge) {
+      return;
+    }
+
     const [response, currentAISettings, currentMapSettings] = await Promise.all([
-      window.chronoPic.initialize(),
-      window.chronoPic.getAISettings(),
-      window.chronoPic.getMapSettings(),
+      activeBridge.initialize(),
+      activeBridge.getAISettings(),
+      activeBridge.getMapSettings(),
     ]);
     setSnapshot(response.snapshot);
     setCapabilities(response.capabilities);
@@ -212,7 +260,12 @@ export function useChronoPicApp() {
   }
 
   async function refreshPhotos() {
-    const nextPhotos = (await window.chronoPic.listPhotos(filter)) as PhotoRecord[];
+    const activeBridge = requireBridge();
+    if (!activeBridge) {
+      return;
+    }
+
+    const nextPhotos = (await activeBridge.listPhotosForDiscovery(discoveryQuery)) as PhotoRecord[];
     setPhotos(nextPhotos);
     setSelectedPhotoId((current) => {
       if (nextPhotos.length === 0) {
@@ -224,9 +277,14 @@ export function useChronoPicApp() {
   }
 
   async function refreshGeospatial() {
+    const activeBridge = requireBridge();
+    if (!activeBridge) {
+      return;
+    }
+
     const [nextMappableCount, nextPlaceGroups] = await Promise.all([
-      window.chronoPic.countMappablePhotos(filter),
-      window.chronoPic.listPlaceGroups({ filter, limit: 200, precision: 2 }),
+      activeBridge.countMappablePhotos(filter),
+      activeBridge.listPlaceGroups({ filter, limit: 200, precision: 2 }),
     ]);
 
     setMappablePhotoCount(nextMappableCount as number);
@@ -234,7 +292,12 @@ export function useChronoPicApp() {
   }
 
   async function refreshTimeline() {
-    const nextTimelineGroups = await window.chronoPic.listTimelineGroups({
+    const activeBridge = requireBridge();
+    if (!activeBridge) {
+      return;
+    }
+
+    const nextTimelineGroups = await activeBridge.listTimelineGroups({
       filter,
       granularity: timelineGranularity,
       limitGroups: 48,
@@ -244,23 +307,38 @@ export function useChronoPicApp() {
   }
 
   async function refreshSemanticQueueStats() {
-    const nextStats = (await window.chronoPic.getSemanticQueueStats()) as SemanticQueueStats;
+    const activeBridge = requireBridge();
+    if (!activeBridge) {
+      return;
+    }
+
+    const nextStats = (await activeBridge.getSemanticQueueStats()) as SemanticQueueStats;
     setSemanticQueueStats(nextStats);
   }
 
   async function refreshSnapshot() {
-    setSnapshot((await window.chronoPic.getSnapshot()) as LibrarySnapshot);
+    const activeBridge = requireBridge();
+    if (!activeBridge) {
+      return;
+    }
+
+    setSnapshot((await activeBridge.getSnapshot()) as LibrarySnapshot);
   }
 
   async function handleAddLibrary() {
+    const activeBridge = requireBridge();
+    if (!activeBridge) {
+      return;
+    }
+
     try {
-      const libraryPath = await window.chronoPic.pickLibraryDirectory();
+      const libraryPath = await activeBridge.pickLibraryDirectory();
 
       if (!libraryPath) {
         return;
       }
 
-      await window.chronoPic.addLibrarySource(libraryPath);
+      await activeBridge.addLibrarySource(libraryPath);
       await refreshSnapshot();
       showStatus("success", `Added library: ${libraryPath}`);
     } catch (error) {
@@ -269,11 +347,16 @@ export function useChronoPicApp() {
   }
 
   async function handleScanAll() {
+    const activeBridge = requireBridge();
+    if (!activeBridge) {
+      return;
+    }
+
     setIsScanning(true);
     showStatus("info", "Scanning libraries...");
 
     try {
-      await window.chronoPic.scanLibrary();
+      await activeBridge.scanLibrary();
       await refreshSnapshot();
       await refreshPhotos();
       await refreshMemories();
@@ -289,8 +372,13 @@ export function useChronoPicApp() {
   }
 
   async function handleSaveAISettings(nextSettings: AISettings) {
+    const activeBridge = requireBridge();
+    if (!activeBridge) {
+      throw new Error("Desktop bridge unavailable");
+    }
+
     try {
-      const response = (await window.chronoPic.saveAISettings(nextSettings)) as {
+      const response = (await activeBridge.saveAISettings(nextSettings)) as {
         settings: AISettings;
         capabilities: AppCapabilities;
       };
@@ -309,8 +397,13 @@ export function useChronoPicApp() {
   }
 
   async function handleSaveMapSettings(nextSettings: MapSettings) {
+    const activeBridge = requireBridge();
+    if (!activeBridge) {
+      throw new Error("Desktop bridge unavailable");
+    }
+
     try {
-      const saved = (await window.chronoPic.saveMapSettings(nextSettings)) as MapSettings;
+      const saved = (await activeBridge.saveMapSettings(nextSettings)) as MapSettings;
       setMapSettings(saved);
       showStatus("success", saved.apiKey ? "Map settings saved" : "Map settings saved, but map rendering is disabled");
     } catch (error) {
@@ -320,7 +413,12 @@ export function useChronoPicApp() {
   }
 
   async function refreshMemories() {
-    const nextMemories = (await window.chronoPic.listMemories()) as Memory[];
+    const activeBridge = requireBridge();
+    if (!activeBridge) {
+      return;
+    }
+
+    const nextMemories = (await activeBridge.listMemories()) as Memory[];
     setMemories(nextMemories);
   }
 
@@ -330,7 +428,13 @@ export function useChronoPicApp() {
       return;
     }
 
-    const nextMemories = (await window.chronoPic.listMemoriesByPhoto(selectedPhotoId)) as Memory[];
+    const activeBridge = requireBridge();
+    if (!activeBridge) {
+      setSelectedPhotoMemories([]);
+      return;
+    }
+
+    const nextMemories = (await activeBridge.listMemoriesByPhoto(selectedPhotoId)) as Memory[];
     setSelectedPhotoMemories(nextMemories);
   }
 
@@ -775,6 +879,7 @@ export function useChronoPicApp() {
     canNavigatePrevious,
     aiSettings,
     capabilities,
+    discoveryQuery,
     draftCaption,
     draftDatetime,
     draftTags,
@@ -788,6 +893,7 @@ export function useChronoPicApp() {
     mapViewport,
     memories,
     openViewer,
+    patchDiscoveryQuery,
     patchFilter,
     placeGroups,
     photos,

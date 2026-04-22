@@ -116,6 +116,34 @@ function mapPhotoRow(row: PhotoRow): PhotoRecord {
   };
 }
 
+function pushTextSearchClause(clauses: string[], params: unknown[], query: string) {
+  clauses.push(
+    `(
+      p.path LIKE ?
+      OR s.caption LIKE ?
+      OR s.generated_caption LIKE ?
+      OR s.summary LIKE ?
+      OR s.labels LIKE ?
+      OR s.generated_labels LIKE ?
+      OR EXISTS (
+        SELECT 1
+        FROM memory_photos mp_search
+        JOIN memories mem_search ON mem_search.id = mp_search.memory_id
+        WHERE mp_search.photo_id = p.id
+          AND (
+            mem_search.name LIKE ?
+            OR mem_search.description LIKE ?
+            OR mem_search.generated_name LIKE ?
+            OR mem_search.generated_description LIKE ?
+            OR mem_search.generated_labels LIKE ?
+          )
+      )
+    )`
+  );
+
+  params.push(query, query, query, query, query, query, query, query, query, query, query);
+}
+
 export class ChronoPicDatabase {
   private readonly db: SqliteConnection;
 
@@ -474,11 +502,8 @@ export class ChronoPicDatabase {
     const params: unknown[] = [];
 
     if (resolvedFilter.query) {
-      clauses.push(
-        "(p.path LIKE ? OR s.caption LIKE ? OR s.generated_caption LIKE ? OR s.summary LIKE ? OR s.labels LIKE ? OR s.generated_labels LIKE ?)"
-      );
       const query = `%${resolvedFilter.query}%`;
-      params.push(query, query, query, query, query, query);
+      pushTextSearchClause(clauses, params, query);
     }
 
     if (resolvedFilter.mimePrefix) {
@@ -489,14 +514,6 @@ export class ChronoPicDatabase {
     if (resolvedFilter.tag) {
       clauses.push("(s.labels LIKE ? OR s.generated_labels LIKE ?)");
       params.push(`%${resolvedFilter.tag}%`, `%${resolvedFilter.tag}%`);
-    }
-
-    if (resolvedFilter.aiStatus) {
-      const statuses = Array.isArray(resolvedFilter.aiStatus) ? resolvedFilter.aiStatus : [resolvedFilter.aiStatus];
-      if (statuses.length > 0) {
-        clauses.push(`s.ai_status IN (${statuses.map(() => "?").join(", ")})`);
-        params.push(...statuses.map((status) => normalizeAIPipelineStatus(status)));
-      }
     }
 
     if (resolvedFilter.aiStatus) {
@@ -1212,17 +1229,7 @@ export class ChronoPicDatabase {
     const params: unknown[] = [];
 
     if (resolvedFilter.query) {
-      clauses.push(
-        "(p.path LIKE ? OR s.caption LIKE ? OR s.generated_caption LIKE ? OR s.summary LIKE ? OR s.labels LIKE ? OR s.generated_labels LIKE ?)"
-      );
-      params.push(
-        `%${resolvedFilter.query}%`,
-        `%${resolvedFilter.query}%`,
-        `%${resolvedFilter.query}%`,
-        `%${resolvedFilter.query}%`,
-        `%${resolvedFilter.query}%`,
-        `%${resolvedFilter.query}%`
-      );
+      pushTextSearchClause(clauses, params, `%${resolvedFilter.query}%`);
     }
 
     if (resolvedFilter.mimePrefix) {
@@ -1295,17 +1302,7 @@ export class ChronoPicDatabase {
     const params: unknown[] = [];
 
     if (resolvedFilter.query) {
-      clauses.push(
-        "(p.path LIKE ? OR s.caption LIKE ? OR s.generated_caption LIKE ? OR s.summary LIKE ? OR s.labels LIKE ? OR s.generated_labels LIKE ?)"
-      );
-      params.push(
-        `%${resolvedFilter.query}%`,
-        `%${resolvedFilter.query}%`,
-        `%${resolvedFilter.query}%`,
-        `%${resolvedFilter.query}%`,
-        `%${resolvedFilter.query}%`,
-        `%${resolvedFilter.query}%`
-      );
+      pushTextSearchClause(clauses, params, `%${resolvedFilter.query}%`);
     }
 
     if (resolvedFilter.mimePrefix) {

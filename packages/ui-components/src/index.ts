@@ -1,6 +1,7 @@
 export type { ViewerMode } from "./types.js";
 
 export { Badge } from "./badge.js";
+export type { BadgeTone } from "./badge.js";
 export { Button, buttonVariants } from "./button.js";
 export { TagInput } from "./tag-input.js";
 export type { TagInputProps } from "./tag-input.js";
@@ -35,6 +36,10 @@ export type { AddToMemoryMenuProps } from "./add-to-memory-menu.js";
 export { HomeStats } from "./home-stats.js";
 export type { HomeStatsProps } from "./home-stats.js";
 export { Label } from "./label.js";
+export { getDiscoveryContext } from "./lib/discovery-context.js";
+export type { DiscoveryContext, DiscoveryContextBadge } from "./lib/discovery-context.js";
+export { getDiscoveryMatchSummary } from "./lib/discovery-match.js";
+export type { DiscoveryMatchSummary } from "./lib/discovery-match.js";
 export { MediaPreview, formatTimestamp, mediaIcon, mediaLabel, mediaUrl, thumbnailUrl } from "./lib/media.js";
 export { Panel } from "./panel.js";
 export { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./select.js";

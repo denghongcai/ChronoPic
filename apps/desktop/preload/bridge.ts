@@ -1,6 +1,7 @@
 import type {
   AISettings,
   AppCapabilities,
+  DiscoveryQuery,
   LibrarySnapshot,
   Memory,
   MemorySource,
@@ -25,6 +26,7 @@ export interface ChronoPicBridge {
   addLibrarySource: (libraryPath: string) => Promise<unknown>;
   listLibrarySources: () => Promise<unknown>;
   scanLibrary: (sourceId?: string) => Promise<unknown>;
+  listPhotosForDiscovery: (query?: DiscoveryQuery) => Promise<PhotoRecord[]>;
   listPhotos: (filter?: PhotoFilter) => Promise<PhotoRecord[]>;
   getSemanticQueueStats: () => Promise<SemanticQueueStats>;
   countMappablePhotos: (filter?: PhotoFilter) => Promise<number>;

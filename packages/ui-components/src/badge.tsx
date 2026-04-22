@@ -19,6 +19,8 @@ const badgeVariants = cva("inline-flex select-none items-center gap-1 rounded-fu
   }
 });
 
+export type BadgeTone = NonNullable<VariantProps<typeof badgeVariants>["tone"]>;
+
 export function Badge({
   className,
   tone,

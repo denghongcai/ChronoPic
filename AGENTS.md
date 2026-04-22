@@ -1281,6 +1281,169 @@ This file is the local execution record for ChronoPic. It complements `PLAN.md` 
   `pnpm build`
 - Result: opening the memory description editor no longer triggers `Maximum update depth exceeded`, and the related dialog surfaces are now aligned with Radix accessibility requirements.
 
+### 2026-04-22 Step 74
+
+- Re-read `PLAN.md` after the recent AI/settings/runtime stabilization work to determine the next product phase rather than continuing with unplanned UI fixes.
+- Confirmed that the next planned phase is now `4.12 Search and Discovery Phase`, because:
+  `4.11 AI and Semantic Enrichment` is materially landed,
+  and `4.13 Realtime Library Sync and Incremental Watch` remains intentionally deferred.
+- Expanded `PLAN.md` with a more concrete implementation breakdown for `4.12`:
+  unified discovery query contract,
+  semantic search expansion,
+  place/memory-aware discovery pivots,
+  and final discovery UX completion.
+- Next: begin `4.12` with the shared discovery query/search foundation rather than starting from isolated renderer polish.
+
+### 2026-04-22 Step 75
+
+- Started `4.12 Search and Discovery Phase` with the first shared/query-layer slice instead of jumping straight to renderer-only search polish.
+- Added a shared `DiscoveryQuery` contract in `@chronopic/domain`, plus conversion helpers between:
+  `DiscoveryQuery`
+  and
+  the current `PhotoFilter`
+  so the app can evolve toward a clearer search model without breaking the existing browse pipeline.
+- Added `ChronoPicAppService.listPhotosForDiscovery()` as the first application-layer entrypoint for the new discovery contract while keeping the underlying database query flow compatible with the current product surface.
+- Expanded infra-db free-text search so `query` now matches linked memory metadata in addition to the existing photo fields:
+  memory name,
+  memory description,
+  AI-generated memory title,
+  AI-generated memory description,
+  and AI-generated memory labels.
+- Applied the same broader text-search clause to:
+  `listPhotos`,
+  `countMappablePhotos`,
+  and
+  `listPlaceGroups`
+  so waterfall, map, and timeline can benefit from the expanded search coverage through the shared filter path.
+- Removed a duplicated `aiStatus` SQL clause in `listPhotos` while touching the discovery query logic.
+- Added regression coverage for:
+  discovery-query/filter mapping in `tests/domain.test.ts`,
+  application-layer discovery filter delegation in `tests/application-ai-enrichment.test.ts`,
+  and infra search implementation coverage for memory-aware text matching in `tests/infra-db-semantic.test.ts`.
+- Re-verified after the first `4.12` slice with:
+  `pnpm typecheck`
+  `pnpm test`
+  `pnpm build`
+- Result: `4.12` is now concretely started, and free-text discovery already reaches beyond photo-only fields into memory metadata while remaining compatible with the current multi-browse shell.
+
+### 2026-04-22 Step 76
+
+- Continued the second `4.12` slice by wiring the renderer onto the new discovery-query semantics instead of leaving the new contract unused behind the application layer.
+- Added a dedicated renderer-side `discoveryQuery` state in `useChronoPicApp` and derived the existing `PhotoFilter` from it via the new shared conversion helpers.
+- Kept the current product surfaces compatible by preserving `patchFilter()` for existing filter controls, but now implemented it by round-tripping through:
+  `DiscoveryQuery -> PhotoFilter -> DiscoveryQuery`
+  so filter UI and discovery UI share one search-state source of truth.
+- Added `patchDiscoveryQuery()` for direct semantic/discovery-style updates and switched the primary free-text search input to update:
+  `DiscoveryQuery.text`
+  rather than mutating `PhotoFilter.query` directly.
+- Added a new desktop IPC/preload route:
+  `photos:listForDiscovery`
+  and updated photo refresh in the renderer to fetch through `ChronoPicAppService.listPhotosForDiscovery()`.
+- Re-verified after the renderer/query-state integration with:
+  `pnpm typecheck`
+  `pnpm test`
+  `pnpm build`
+- Result: the app is no longer treating search as only an incidental filter-field mutation; renderer state now explicitly models discovery query semantics while remaining compatible with the existing browse/filter surfaces.
+
+### 2026-04-22 Step 77
+
+- Continued `4.12` with the first shared discovery-context UX slice so waterfall, map, and timeline stop hard-coding separate scope/search explanation rules.
+- Added a shared `getDiscoveryContext()` helper in `@chronopic/ui-components` that derives consistent discovery badges and explanatory copy from the active:
+  memory scope,
+  favorites scope,
+  free-text search,
+  tag/media/GPS/date filters,
+  and AI pipeline-status filters.
+- Updated `GallerySection` to replace its split memory/semantic banners with a single unified discovery-scope surface driven by the shared helper.
+- Updated `MapBrowseSurface` to consume the shared discovery-context helper and display the current scope/search conditions with the same badge and description model used by waterfall view.
+- Updated `TimelineBrowseSurface` so its timeline-scope summary now includes the same shared discovery-context badges and explanation rather than a one-off label heuristic.
+- Passed the active memory name into map discovery rendering from the renderer shell so map mode can explain memory-scoped browsing as clearly as waterfall/timeline.
+- Re-verified after the shared discovery-context pass with:
+  `pnpm typecheck`
+  `pnpm test`
+  `pnpm build`
+- Result: `4.12` now has a shared explanation layer for current discovery scope across all three browse modes, making search/discovery behavior easier to understand before adding deeper discovery pivots.
+
+### 2026-04-23 Step 78
+
+- Continued `4.12` with the first place-aware / memory-aware pivot slice so discovery is no longer only explanatory copy.
+- Added a browse-shell `Discovery Pivots` strip in `PhotoHome` that summarizes the current result count and active search text, then offers direct transitions into:
+  `Map View`,
+  `Timeline`,
+  `Browse Memories`,
+  or the currently scoped memory detail page when applicable.
+- Kept these pivots query-preserving by reusing the existing browse mode and memory selection handlers instead of inventing parallel routing or search state.
+- Used current result characteristics to gate pivots intentionally:
+  map pivot only appears when the scope contains GPS-bearing photos,
+  timeline pivot only appears when the scope contains dated photos,
+  and memory pivots reflect whether the current scope is already attached to a specific memory or only to the broader memories collection.
+- Re-verified after the pivot pass with:
+  `pnpm typecheck`
+  `pnpm test`
+  `pnpm build`
+- Result: `4.12` now supports both shared discovery-context explanation and direct cross-surface pivots, so search/discovery can move between waterfall, map, timeline, and memories without forcing the user to reconstruct scope manually.
+
+### 2026-04-23 Step 79
+
+- Continued `4.12` with the first explicit match-explanation slice so discovery no longer stops at scope/context banners.
+- Added a shared `getDiscoveryMatchSummary()` helper in `@chronopic/ui-components` that inspects the selected photo plus its linked memories and reports which fields matched the active free-text query:
+  filename,
+  manual caption/tags,
+  AI caption/summary/tags,
+  memory title/description,
+  and AI-generated memory metadata.
+- Updated `GallerySection`, `MapBrowseSurface`, and `TimelineBrowseSurface` so the selected-photo state now includes a concrete “matched in …” explanation whenever a discovery text query is active.
+- Updated the viewer inspector `MetadataGrid` so detail view now has a dedicated `Discovery Match` card that surfaces the same per-result explanation inside the focused inspection workflow.
+- Threaded the active search text through `PhotoHome` into `PhotoViewerOverlay` so the focused viewer can explain match origin without inventing a second search state.
+- Added a root regression test in `tests/discovery-ui.test.ts` to verify the new match-summary helper reports AI-photo and AI-memory hit sources correctly.
+- Re-verified after the match-explanation pass with:
+  `pnpm typecheck`
+  `pnpm test`
+  `pnpm build`
+- Result: `4.12` now explains both the current discovery scope and the concrete match origin for selected results, making the search/discovery UX substantially more inspectable before moving on to the next product phase.
+
+### 2026-04-23 Step 80
+
+- Investigated a renderer startup crash where `useChronoPicApp` tried to call:
+  `initialize`,
+  `listPhotosForDiscovery`,
+  `countMappablePhotos`,
+  and
+  `listTimelineGroups`
+  while `window.chronoPic` was still unavailable.
+- Added an explicit renderer-side bridge guard in `useChronoPicApp` so initial hydration and the core refresh paths now no-op safely when the Electron preload bridge is missing instead of throwing repeated `Cannot read properties of undefined` errors.
+- Added a single-shot user-facing error status for the missing-bridge case:
+  `Desktop bridge unavailable. Restart the app or check preload startup.`
+  so the failure mode is visible without flooding the UI with repeated messages.
+- Applied the same guarded bridge access to the highest-frequency startup/runtime entrypoints:
+  hydrate,
+  photo refresh,
+  geospatial refresh,
+  timeline refresh,
+  snapshot refresh,
+  semantic queue refresh,
+  memory refresh,
+  selected-photo-memory refresh,
+  add-library,
+  scan,
+  and settings-save actions.
+- Re-verified after the bridge-availability hardening with:
+  `pnpm typecheck`
+  `pnpm test`
+  `pnpm build`
+- Result: preload/bridge failures now degrade into a stable renderer error state instead of crashing the app during initial discovery hydration.
+
+### 2026-04-23 Step 81
+
+- Removed two redundant discovery-explanation surfaces from the waterfall browse flow after runtime review:
+  the browse-shell `Discovery Pivots` strip,
+  and the generic “Scan the current library scope visually…” helper line above the gallery.
+- Kept the stronger shared `Discovery Scope` and selected-photo/match-explanation surfaces, so the discovery UX now relies on the more concrete context blocks instead of stacking multiple layers of generic explanation.
+- Re-verified after the discovery-UX de-duplication with:
+  `pnpm typecheck`
+  `pnpm build`
+- Result: the browse header is lighter and less repetitive, while the more meaningful discovery context remains intact.
+
 ## Next Immediate Tasks
 
 1. Workspace skeleton is implemented.

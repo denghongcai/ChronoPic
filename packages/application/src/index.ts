@@ -1,4 +1,5 @@
 import type {
+  DiscoveryQuery,
   IndexerStats,
   LibrarySnapshot,
   Memory,
@@ -50,6 +51,28 @@ export class ChronoPicAppService {
   }
 
   listPhotos(filter?: PhotoFilter): PhotoRecord[] {
+    return this.db.listPhotos(filter);
+  }
+
+  listPhotosForDiscovery(query: DiscoveryQuery = {}): PhotoRecord[] {
+    const filter: PhotoFilter = {};
+
+    if (query.text !== undefined) filter.query = query.text;
+    if (query.mimePrefix !== undefined) filter.mimePrefix = query.mimePrefix;
+    if (query.tag !== undefined) filter.tag = query.tag;
+    if (query.aiStatus !== undefined) filter.aiStatus = query.aiStatus;
+    if (query.favorite !== undefined) filter.favorite = query.favorite;
+    if (query.memoryId !== undefined) filter.memoryId = query.memoryId;
+    if (query.indexed !== undefined) filter.indexed = query.indexed;
+    if (query.hasError !== undefined) filter.hasError = query.hasError;
+    if (query.hasGps !== undefined) filter.hasGps = query.hasGps;
+    if (query.fromDatetime !== undefined) filter.fromDatetime = query.fromDatetime;
+    if (query.toDatetime !== undefined) filter.toDatetime = query.toDatetime;
+    if (query.sortBy !== undefined) filter.sortBy = query.sortBy;
+    if (query.sortDirection !== undefined) filter.sortDirection = query.sortDirection;
+    if (query.limit !== undefined) filter.limit = query.limit;
+    if (query.offset !== undefined) filter.offset = query.offset;
+
     return this.db.listPhotos(filter);
   }
 

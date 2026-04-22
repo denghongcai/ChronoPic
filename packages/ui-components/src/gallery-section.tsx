@@ -3,6 +3,8 @@ import type { Memory, PhotoFilter, PhotoRecord } from "@chronopic/domain";
 import { AddToMemoryMenu } from "./add-to-memory-menu.js";
 import { Badge } from "./badge.js";
 import { Button } from "./button.js";
+import { getDiscoveryContext } from "./lib/discovery-context.js";
+import { getDiscoveryMatchSummary } from "./lib/discovery-match.js";
 import { PhotoCard } from "./photo-card.js";
 
 export interface GallerySectionProps {
@@ -44,11 +46,11 @@ export function GallerySection({
 }: GallerySectionProps) {
   const hasBatchSelection = selectedPhotoIds.length > 0;
   const isSelecting = selectionMode || hasBatchSelection;
-  const hasStructuredFilters = Boolean(
-    activeMemory
-  );
-  const hasSemanticSearch = Boolean(filter.query);
-  const hasAIStatusFilter = Boolean(filter.aiStatus);
+  const discoveryContext = getDiscoveryContext(filter, {
+    activeMemoryName: activeMemory?.name ?? null,
+  });
+  const selectedPhoto = photos.find((record) => record.photo.id === selectedPhotoId) ?? null;
+  const selectedPhotoMatch = getDiscoveryMatchSummary(selectedPhoto, selectedPhotoMemories, filter.query);
 
   const emptyTitle = activeMemory
     ? `${activeMemory.name} has no visible photos`
@@ -60,26 +62,18 @@ export function GallerySection({
 
   return (
     <section className="select-none space-y-5">
-      <p className="text-sm text-stone-500">Scan the current library scope visually. Click to inspect, double-click or press Enter to open detail.</p>
-
       <div className="space-y-4">
-        {activeMemory || hasStructuredFilters ? (
-          <div className="flex flex-wrap items-center gap-2 rounded-[24px] border border-stone-200 bg-white/70 px-4 py-3 shadow-[0_14px_34px_-26px_rgba(15,23,42,0.2)]">
-            <Badge tone={activeMemory ? "info" : "neutral"}>{activeMemory ? "Memory Scope" : "Filtered View"}</Badge>
-            <p className="text-sm text-stone-700">
-              {activeMemory
-                ? `Browsing photos inside ${activeMemory.name}.`
-                : "Structured filters are narrowing the current media shelf."}
-            </p>
-          </div>
-        ) : null}
-
-        {(hasSemanticSearch || hasAIStatusFilter) && !activeMemory ? (
-          <div className="flex flex-wrap items-center gap-2 rounded-[24px] border border-violet-200 bg-violet-50/80 px-4 py-3 shadow-[0_14px_34px_-26px_rgba(109,40,217,0.18)]">
-            <Badge tone="info">Semantic Search</Badge>
-            <p className="text-sm text-violet-900">
-              Search matches path, manual metadata, and AI-generated captions, summaries, and tags.
-            </p>
+        {discoveryContext ? (
+          <div className="space-y-3 rounded-[24px] border border-stone-200 bg-white/70 px-4 py-3 shadow-[0_14px_34px_-26px_rgba(15,23,42,0.2)]">
+            <div className="flex flex-wrap items-center gap-2">
+              <Badge tone="info">Discovery Scope</Badge>
+              {discoveryContext.badges.map((badge) => (
+                <Badge key={badge.label} tone={badge.tone}>
+                  {badge.label}
+                </Badge>
+              ))}
+            </div>
+            <p className="text-sm text-stone-700">{discoveryContext.description}</p>
           </div>
         ) : null}
 
@@ -100,6 +94,9 @@ export function GallerySection({
                   ))}
                 </>
               )}
+              {selectedPhotoMatch ? (
+                <p className="basis-full text-sm text-sky-900">{selectedPhotoMatch.description}</p>
+              ) : null}
             </div>
           </div>
         ) : null}

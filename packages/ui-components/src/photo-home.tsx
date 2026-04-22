@@ -172,7 +172,6 @@ function HomeView({
   onSelectionModeChange: (active: boolean) => void;
 }) {
   const [filtersOpen, setFiltersOpen] = React.useState(false);
-
   return (
     <div className="space-y-6">
       <RecentMemories
@@ -633,6 +632,7 @@ export function PhotoHome({
           photo={viewerPhoto}
           photoMemories={selectedPhotoMemories}
           photos={photos}
+          searchQuery={searchQuery}
           selectedPhotoId={selectedPhotoId}
         />
 
