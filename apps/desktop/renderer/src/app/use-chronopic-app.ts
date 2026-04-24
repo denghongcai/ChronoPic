@@ -367,7 +367,14 @@ export function useChronoPicApp() {
       await refreshGeospatial();
       await refreshTimeline();
       await refreshSemanticQueueStats();
-      showStatus("success", "Scan complete");
+      const nextCandidates = (await activeBridge.generateMemoryCandidates(12)) as MemoryCandidate[];
+      setMemoryCandidates(nextCandidates);
+      showStatus(
+        "success",
+        nextCandidates.length > 0
+          ? `Scan complete. ${nextCandidates.length} suggested memor${nextCandidates.length === 1 ? "y is" : "ies are"} ready.`
+          : "Scan complete. No new suggested memories."
+      );
     } catch (error) {
       showStatus("error", formatErrorMessage(error, "Scan failed"));
     } finally {

@@ -455,7 +455,8 @@ export function PhotoHome({
               safeAiQueueStats.disabled +
               safeAiQueueStats.pending +
               safeAiQueueStats.processing +
-              safeAiQueueStats.failed
+              safeAiQueueStats.failed +
+              memoryCandidates.length
             }
             onCreateMemory={() => setCreateMemoryDialogOpen(true)}
             onSelectItem={(id) => {
@@ -528,10 +529,13 @@ export function PhotoHome({
                   <NotificationCenterPanel
                     aiEnabled={aiEnabled}
                     aiQueueStats={safeAiQueueStats}
+                    memoryCandidateCount={memoryCandidates.length}
                     statusKind={statusKind}
                     statusMessage={statusMessage}
                     {...(isBatchEnrichingSemantic !== undefined ? { isBatchEnrichingSemantic } : {})}
                     {...(onEnrichPendingSemantics ? { onEnrichPendingSemantics } : {})}
+                    {...(isGeneratingMemoryCandidates !== undefined ? { isGeneratingMemoryCandidates } : {})}
+                    onGenerateMemoryCandidates={onGenerateMemoryCandidates}
                   />
                 </div>
               ) : null}
@@ -920,14 +924,20 @@ function LibrarySettingsPanel({
 function NotificationCenterPanel({
   aiEnabled,
   aiQueueStats,
+  memoryCandidateCount,
+  isGeneratingMemoryCandidates,
   isBatchEnrichingSemantic,
+  onGenerateMemoryCandidates,
   onEnrichPendingSemantics,
   statusKind,
   statusMessage,
 }: {
   aiEnabled: boolean;
   aiQueueStats: SemanticQueueStats;
+  memoryCandidateCount: number;
+  isGeneratingMemoryCandidates?: boolean;
   isBatchEnrichingSemantic?: boolean;
+  onGenerateMemoryCandidates?: () => void;
   onEnrichPendingSemantics?: () => void;
   statusKind: "idle" | "info" | "success" | "warn" | "error";
   statusMessage: string;
@@ -971,6 +981,29 @@ function NotificationCenterPanel({
             variant="outline"
           >
             {isBatchEnrichingSemantic ? "Processing Queue..." : "Enrich Queue"}
+          </Button>
+        </div>
+      </div>
+
+      <div className="rounded-[28px] border border-stone-200 bg-stone-50/80 p-5 shadow-sm">
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div className="space-y-3">
+            <div className="flex flex-wrap items-center gap-2">
+              <Badge tone="info">Memory Candidates</Badge>
+              {memoryCandidateCount > 0 ? <Badge tone="warn">{memoryCandidateCount} ready</Badge> : <Badge tone="neutral">0 ready</Badge>}
+            </div>
+            <p className="text-sm leading-6 text-stone-600">
+              {memoryCandidateCount > 0
+                ? `${memoryCandidateCount} suggested memor${memoryCandidateCount === 1 ? "y is" : "ies are"} waiting for review in Memories.`
+                : "No suggested memories are waiting right now. Scan or refresh suggestions to find new candidates."}
+            </p>
+          </div>
+          <Button
+            disabled={isGeneratingMemoryCandidates}
+            onClick={() => void onGenerateMemoryCandidates?.()}
+            variant="outline"
+          >
+            {isGeneratingMemoryCandidates ? "Refreshing..." : "Refresh Suggestions"}
           </Button>
         </div>
       </div>

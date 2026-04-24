@@ -1586,6 +1586,29 @@ This file is the local execution record for ChronoPic. It complements `PLAN.md` 
   `pnpm build`
 - Result: AI Memory Auto-Grouping is landed and build-valid as a reviewable candidate workflow.
 
+### 2026-04-24 Step 88
+
+- Added `4.16 Memory Candidate Queue and Notifications Phase` to `PLAN.md`.
+- Locked the product behavior:
+  scan-triggered candidate generation may create reviewable pending suggestions,
+  but it must not create accepted memories without explicit user confirmation.
+- Planned the implementation around:
+  scan-triggered candidate refresh,
+  sidebar notification count integration,
+  Notifications page candidate visibility,
+  and a clear pending-candidate affordance on the Memories page.
+- Implemented the renderer follow-up:
+  `Scan Library` now refreshes memory candidates,
+  scan completion reports suggested-memory readiness,
+  sidebar notification count includes pending candidates,
+  Notifications includes a Memory Candidates card with refresh action,
+  and Memories shows the pending-candidate ready message.
+- Verified the first pass with:
+  `pnpm typecheck`
+  `pnpm test`
+  `pnpm build`
+- Result: Memory Candidate Queue and Notifications is landed and build-valid.
+
 ## Next Immediate Tasks
 
 1. Workspace skeleton is implemented.
@@ -1645,3 +1668,4 @@ This file is the local execution record for ChronoPic. It complements `PLAN.md` 
 55. Advanced Discovery now has a visible result: browse exposes compact actionable pivots without adding another large explanatory panel.
 56. The next planned product-expansion phase is now `4.15 AI Memory Auto-Grouping Phase`, focused on reviewable AI-proposed memories from place/time/semantic/person-like signals.
 57. AI Memory Auto-Grouping is now implemented as a reviewable candidate workflow rather than silent memory creation.
+58. The active follow-up phase is `4.16 Memory Candidate Queue and Notifications Phase`.

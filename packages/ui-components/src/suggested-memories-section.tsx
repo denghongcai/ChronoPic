@@ -36,7 +36,9 @@ export function SuggestedMemoriesSection({
             AI-assisted grouping candidates
           </h2>
           <p className="mt-2 text-sm text-stone-500">
-            Review place, timeline, and semantic groups before they become editable memories.
+            {candidates.length > 0
+              ? `${candidates.length} suggested memor${candidates.length === 1 ? "y is" : "ies are"} ready for review.`
+              : "Review place, timeline, and semantic groups before they become editable memories."}
           </p>
         </div>
         <div className="flex items-center gap-2">

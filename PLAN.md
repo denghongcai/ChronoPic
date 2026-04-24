@@ -794,6 +794,46 @@ Current landed scope:
   service-level candidate generation from place/time/semantic signals,
   and accept/reject persistence boundaries.
 
+### 4.16 Memory Candidate Queue and Notifications Phase
+
+- Close the feedback loop for AI memory candidates so users know when candidate memories are ready to review.
+- Keep the same confirmation rule from `4.15`:
+  automatic candidate generation may create pending suggestions,
+  but it must never create accepted memories without user action.
+- Trigger candidate refresh after user-driven library scans so newly indexed photos can surface as suggestions without requiring the user to discover the Generate button manually.
+- Surface pending candidate count in:
+  the sidebar notification badge,
+  the Notifications page,
+  and the Memories page.
+- Keep candidate notifications separate from photo AI enrichment:
+  photo AI queue handles metadata generation,
+  memory candidate queue handles reviewable memory proposals.
+
+Implementation breakdown:
+
+1. Scan-triggered candidate refresh
+- After `Scan Library` completes, generate or refresh memory candidates.
+- Refresh candidate state in the renderer after scan, acceptance, rejection, and manual generation.
+- The scan flow should report candidate availability in the status message without implying memories were automatically created.
+
+2. Notification integration
+- Include pending memory-candidate count in the sidebar notification badge.
+- Add a Notifications card that explains how many suggested memories are waiting for review.
+- Provide a direct action from Notifications to refresh/generate suggestions.
+
+3. Memories page readiness
+- Show a clear `X suggested memories ready` affordance above or inside the Suggested Memories surface.
+- Preserve the existing review UI and explicit accept/reject semantics.
+
+Current landed scope:
+
+- `Scan Library` now refreshes memory candidates after the scan finishes.
+- Scan completion status now tells the user whether suggested memories are ready.
+- Sidebar notification badge now includes pending memory candidates in addition to the photo AI queue.
+- Notifications page now has a dedicated `Memory Candidates` card with pending count and a refresh action.
+- Memories page now displays `X suggested memories are ready for review` inside the Suggested Memories surface.
+- Candidate generation still only creates pending review items; accepted memories are created only through explicit user acceptance.
+
 Priority order from this point forward:
 
 1. `4.11 AI and Semantic Enrichment Phase`
@@ -801,6 +841,7 @@ Priority order from this point forward:
 3. `4.13 Memory Authoring and Storytelling Phase`
 4. `4.14 Advanced Discovery Phase`
 5. `4.15 AI Memory Auto-Grouping Phase`
+6. `4.16 Memory Candidate Queue and Notifications Phase`
 
 ### 5. Editing and History ✅
 
