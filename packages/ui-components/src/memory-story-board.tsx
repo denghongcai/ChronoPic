@@ -3,7 +3,6 @@ import { CalendarDays, MapPin, Sparkles } from "lucide-react";
 import type { MemoryStorySection } from "./lib/memory-story.js";
 import { thumbnailUrl } from "./lib/media.js";
 import { Badge } from "./badge.js";
-import { Button } from "./button.js";
 import { Panel } from "./panel.js";
 
 export interface MemoryStoryBoardProps {
@@ -78,11 +77,6 @@ export function MemoryStoryBoard({ sections, onOpenSection }: MemoryStoryBoardPr
                     </Badge>
                   ) : null}
                 </div>
-                {canOpen ? (
-                  <Button asChild className="pointer-events-none w-full" size="sm" variant="outline">
-                    <span>Open chapter lead</span>
-                  </Button>
-                ) : null}
               </div>
             </button>
           );

@@ -3,7 +3,6 @@ import type { Memory, PhotoFilter, PhotoRecord } from "@chronopic/domain";
 import { AddToMemoryMenu } from "./add-to-memory-menu.js";
 import { Badge } from "./badge.js";
 import { Button } from "./button.js";
-import { getDiscoveryContext } from "./lib/discovery-context.js";
 import { getDiscoveryMatchSummary } from "./lib/discovery-match.js";
 import { PhotoCard } from "./photo-card.js";
 
@@ -46,9 +45,6 @@ export function GallerySection({
 }: GallerySectionProps) {
   const hasBatchSelection = selectedPhotoIds.length > 0;
   const isSelecting = selectionMode || hasBatchSelection;
-  const discoveryContext = getDiscoveryContext(filter, {
-    activeMemoryName: activeMemory?.name ?? null,
-  });
   const selectedPhoto = photos.find((record) => record.photo.id === selectedPhotoId) ?? null;
   const selectedPhotoMatch = getDiscoveryMatchSummary(selectedPhoto, selectedPhotoMemories, filter.query);
 
@@ -63,20 +59,6 @@ export function GallerySection({
   return (
     <section className="select-none space-y-5">
       <div className="space-y-4">
-        {discoveryContext ? (
-          <div className="space-y-3 rounded-[24px] border border-stone-200 bg-white/70 px-4 py-3 shadow-[0_14px_34px_-26px_rgba(15,23,42,0.2)]">
-            <div className="flex flex-wrap items-center gap-2">
-              <Badge tone="info">Discovery Scope</Badge>
-              {discoveryContext.badges.map((badge) => (
-                <Badge key={badge.label} tone={badge.tone}>
-                  {badge.label}
-                </Badge>
-              ))}
-            </div>
-            <p className="text-sm text-stone-700">{discoveryContext.description}</p>
-          </div>
-        ) : null}
-
         {!isSelecting && selectedPhotoId ? (
           <div className="rounded-[24px] border border-sky-200 bg-sky-50/80 px-4 py-3 shadow-[0_14px_34px_-26px_rgba(14,116,144,0.25)]">
             <div className="flex flex-wrap items-center gap-2">

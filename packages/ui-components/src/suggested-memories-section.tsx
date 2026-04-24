@@ -26,6 +26,7 @@ export function SuggestedMemoriesSection({
 }: SuggestedMemoriesSectionProps) {
   const [draftTitles, setDraftTitles] = React.useState<Record<string, string>>({});
   const [removedPhotoIds, setRemovedPhotoIds] = React.useState<Record<string, string[]>>({});
+  const [expandedPhotoControls, setExpandedPhotoControls] = React.useState<Record<string, boolean>>({});
 
   return (
     <Panel className="overflow-hidden">
@@ -36,13 +37,13 @@ export function SuggestedMemoriesSection({
             AI-assisted grouping candidates
           </h2>
           <p className="mt-2 text-sm text-stone-500">
-            {candidates.length > 0
-              ? `${candidates.length} suggested memor${candidates.length === 1 ? "y is" : "ies are"} ready for review.`
-              : "Review place, timeline, and semantic groups before they become editable memories."}
+            Review suggested groups before they become editable memories.
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <Badge tone="neutral">{candidates.length} pending</Badge>
+          <Badge tone={candidates.length > 0 ? "warn" : "neutral"}>
+            {candidates.length > 0 ? `${candidates.length} ready` : "0 ready"}
+          </Badge>
           <Button disabled={isGenerating} onClick={() => void onGenerate()} variant="accent">
             <Sparkles className="h-4 w-4" />
             {isGenerating ? "Generating..." : "Generate"}
@@ -67,6 +68,7 @@ export function SuggestedMemoriesSection({
               const removed = new Set(removedPhotoIds[candidate.id] ?? []);
               const retainedPhotoIds = candidate.photoIds.filter((photoId) => !removed.has(photoId));
               const draftTitle = draftTitles[candidate.id] ?? candidate.title;
+              const photoControlsOpen = expandedPhotoControls[candidate.id] ?? false;
 
               return (
                 <article className="overflow-hidden rounded-[28px] border border-stone-200 bg-white shadow-sm" key={candidate.id}>
@@ -97,33 +99,47 @@ export function SuggestedMemoriesSection({
                           </Badge>
                         ))}
                       </div>
-                      <div className="flex flex-wrap gap-2">
-                        {candidate.photoIds.slice(0, 10).map((photoId, index) => {
-                          const isRemoved = removed.has(photoId);
+                      <div className="flex flex-col gap-2">
+                        <Button
+                          className="w-fit"
+                          onClick={() =>
+                            setExpandedPhotoControls((current) => ({ ...current, [candidate.id]: !photoControlsOpen }))
+                          }
+                          size="sm"
+                          variant="ghost"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                          {photoControlsOpen ? "Hide photo controls" : "Adjust photos"}
+                        </Button>
+                        {photoControlsOpen ? (
+                          <div className="flex flex-wrap gap-2">
+                            {candidate.photoIds.slice(0, 10).map((photoId, index) => {
+                              const isRemoved = removed.has(photoId);
 
-                          return (
-                            <Button
-                              className={isRemoved ? "line-through opacity-50" : ""}
-                              key={photoId}
-                              onClick={() => {
-                                setRemovedPhotoIds((current) => {
-                                  const next = new Set(current[candidate.id] ?? []);
-                                  if (next.has(photoId)) {
-                                    next.delete(photoId);
-                                  } else {
-                                    next.add(photoId);
-                                  }
-                                  return { ...current, [candidate.id]: [...next] };
-                                });
-                              }}
-                              size="sm"
-                              variant="outline"
-                            >
-                              <Trash2 className="h-3.5 w-3.5" />
-                              Photo {index + 1}
-                            </Button>
-                          );
-                        })}
+                              return (
+                                <Button
+                                  className={isRemoved ? "line-through opacity-50" : ""}
+                                  key={photoId}
+                                  onClick={() => {
+                                    setRemovedPhotoIds((current) => {
+                                      const next = new Set(current[candidate.id] ?? []);
+                                      if (next.has(photoId)) {
+                                        next.delete(photoId);
+                                      } else {
+                                        next.add(photoId);
+                                      }
+                                      return { ...current, [candidate.id]: [...next] };
+                                    });
+                                  }}
+                                  size="sm"
+                                  variant="outline"
+                                >
+                                  Photo {index + 1}
+                                </Button>
+                              );
+                            })}
+                          </div>
+                        ) : null}
                       </div>
                       <div className="mt-auto flex justify-end gap-2">
                         <Button onClick={() => void onReject(candidate.id)} size="sm" variant="ghost">

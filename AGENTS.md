@@ -1609,6 +1609,22 @@ This file is the local execution record for ChronoPic. It complements `PLAN.md` 
   `pnpm build`
 - Result: Memory Candidate Queue and Notifications is landed and build-valid.
 
+### 2026-04-24 Step 89
+
+- Created branch `ux-simplify-surfaces` for a focused UI/UX simplification pass.
+- Removed redundant information and duplicate affordances:
+  the gallery no longer renders the large `Discovery Scope` explanation panel,
+  discovery chips now focus on cross-view and memory pivots instead of duplicating filter controls,
+  the memory story board no longer shows a secondary `Open chapter lead` button inside an already-clickable card,
+  Notifications no longer renders `Recent Action` as a full card,
+  and Suggested Memories now has a single ready-count badge instead of duplicate count text.
+- Reduced candidate-card noise by hiding per-photo removal controls behind an explicit `Adjust photos` action.
+- Verified the first pass with:
+  `pnpm typecheck`
+  `pnpm test`
+  `pnpm build`
+- Result: the UX simplification pass is landed on `ux-simplify-surfaces` and build-valid.
+
 ## Next Immediate Tasks
 
 1. Workspace skeleton is implemented.
@@ -1669,3 +1685,4 @@ This file is the local execution record for ChronoPic. It complements `PLAN.md` 
 56. The next planned product-expansion phase is now `4.15 AI Memory Auto-Grouping Phase`, focused on reviewable AI-proposed memories from place/time/semantic/person-like signals.
 57. AI Memory Auto-Grouping is now implemented as a reviewable candidate workflow rather than silent memory creation.
 58. The active follow-up phase is `4.16 Memory Candidate Queue and Notifications Phase`.
+59. Active branch `ux-simplify-surfaces` is refining UI surfaces to reduce duplicate status text and repeated controls.

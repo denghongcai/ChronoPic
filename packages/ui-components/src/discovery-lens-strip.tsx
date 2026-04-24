@@ -49,7 +49,9 @@ export function DiscoveryLensStrip({
   onFilterChange,
   onOpenMemory,
 }: DiscoveryLensStripProps) {
-  const suggestions = buildDiscoverySuggestions({ filter, memories, photos, placeGroups });
+  const suggestions = buildDiscoverySuggestions({ filter, memories, photos, placeGroups }).filter(
+    (suggestion) => suggestion.kind === "memory" || suggestion.kind === "mode"
+  );
 
   if (suggestions.length === 0) {
     return null;

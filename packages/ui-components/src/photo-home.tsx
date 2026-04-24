@@ -950,7 +950,7 @@ function NotificationCenterPanel({
         <h2 className="font-['Space_Grotesk','IBM_Plex_Sans',sans-serif] text-2xl font-semibold tracking-tight text-stone-950">
           Notifications
         </h2>
-        <p className="mt-1 text-sm text-stone-500">Track AI queue activity and the latest desktop actions in one place.</p>
+        <p className="mt-1 text-sm text-stone-500">Review pending AI metadata and suggested memories.</p>
       </div>
 
       <div className="rounded-[28px] border border-stone-200 bg-stone-50/80 p-5 shadow-sm">
@@ -1008,21 +1008,9 @@ function NotificationCenterPanel({
         </div>
       </div>
 
-      <div className="rounded-[28px] border border-stone-200 bg-white p-5 shadow-sm">
-        <div className="flex items-center justify-between gap-3">
-          <div>
-            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-stone-500">Recent Action</p>
-            <p className="mt-2 text-sm leading-6 text-stone-600">
-              {statusKind === "idle" ? "No recent action recorded in this session." : statusMessage}
-            </p>
-          </div>
-          {statusKind !== "idle" ? (
-            <Badge tone={statusKind === "success" ? "success" : statusKind === "error" ? "danger" : statusKind === "info" ? "info" : "warn"}>
-              {statusKind}
-            </Badge>
-          ) : null}
-        </div>
-      </div>
+      {statusKind !== "idle" ? (
+        <p className="text-sm text-stone-500">Latest action: {statusMessage}</p>
+      ) : null}
     </div>
   );
 }
