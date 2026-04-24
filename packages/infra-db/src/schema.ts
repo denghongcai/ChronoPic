@@ -53,7 +53,9 @@ CREATE TABLE IF NOT EXISTS index_state (
   ai_processed INTEGER NOT NULL DEFAULT 0,
   error TEXT,
   last_indexed_at INTEGER,
-  duplicate_of TEXT REFERENCES photos(id)
+  duplicate_of TEXT REFERENCES photos(id),
+  source_updated_at INTEGER,
+  missing_at INTEGER
 );
 
 CREATE TABLE IF NOT EXISTS edit_history (

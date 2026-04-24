@@ -52,6 +52,8 @@ export interface IndexState {
   error: string | null;
   lastIndexedAt: number | null;
   duplicateOf: string | null;
+  sourceUpdatedAt: number | null;
+  missingAt: number | null;
 }
 
 export interface LibrarySource {

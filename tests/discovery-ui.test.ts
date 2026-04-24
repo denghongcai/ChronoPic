@@ -49,6 +49,8 @@ function makePhotoRecord(): PhotoRecord {
       error: null,
       lastIndexedAt: now,
       duplicateOf: null,
+      sourceUpdatedAt: now,
+      missingAt: null,
     },
   };
 }

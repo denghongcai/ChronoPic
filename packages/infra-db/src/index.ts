@@ -1,3 +1,5 @@
+import path from "node:path";
+
 import Database from "better-sqlite3";
 
 import type {
@@ -55,6 +57,8 @@ interface PhotoRow {
   error: string | null;
   last_indexed_at: number | null;
   duplicate_of: string | null;
+  source_updated_at: number | null;
+  missing_at: number | null;
 }
 
 function normalizeAIPipelineStatus(status: string | null | undefined): Semantic["aiStatus"] {
@@ -111,7 +115,9 @@ function mapPhotoRow(row: PhotoRow): PhotoRecord {
       aiProcessed: Boolean(row.ai_processed),
       error: row.error,
       lastIndexedAt: row.last_indexed_at,
-      duplicateOf: row.duplicate_of
+      duplicateOf: row.duplicate_of,
+      sourceUpdatedAt: row.source_updated_at,
+      missingAt: row.missing_at,
     }
   };
 }
@@ -249,6 +255,16 @@ export class ChronoPicDatabase {
     if (!semanticColumns.find((c) => c.name === "ai_error")) {
       this.db.exec("ALTER TABLE semantic ADD COLUMN ai_error TEXT");
     }
+
+    const indexStateColumns: Array<{ name: string }> = this.db
+      .prepare("PRAGMA table_info(index_state)")
+      .all() as Array<{ name: string }>;
+    if (!indexStateColumns.find((c) => c.name === "source_updated_at")) {
+      this.db.exec("ALTER TABLE index_state ADD COLUMN source_updated_at INTEGER");
+    }
+    if (!indexStateColumns.find((c) => c.name === "missing_at")) {
+      this.db.exec("ALTER TABLE index_state ADD COLUMN missing_at INTEGER");
+    }
   }
 
   close(): void {
@@ -363,7 +379,7 @@ export class ChronoPicDatabase {
           p.id, p.path, p.hash, p.size, p.mime, p.thumbnail_path, p.favorite, p.created_at, p.updated_at,
           m.datetime, m.lat, m.lng, m.camera, m.confidence, m.original_datetime_text,
           s.labels, s.caption, s.generated_labels, s.generated_caption, s.summary, s.embedding_ref, s.ai_status, s.ai_provider, s.ai_model, s.ai_processed_at, s.ai_error,
-          i.indexed, i.ai_processed, i.error, i.last_indexed_at, i.duplicate_of
+          i.indexed, i.ai_processed, i.error, i.last_indexed_at, i.duplicate_of, i.source_updated_at, i.missing_at
         FROM photos p
         JOIN metadata m ON m.photo_id = p.id
         JOIN semantic s ON s.photo_id = p.id
@@ -378,7 +394,7 @@ export class ChronoPicDatabase {
   findPrimaryPhotoIdByHash(hash: string, currentPhotoId?: string): string | null {
     const row = this.db
       .prepare(
-        "SELECT p.id FROM photos p JOIN index_state i ON i.photo_id = p.id WHERE p.hash = ? AND i.duplicate_of IS NULL ORDER BY p.created_at ASC"
+        "SELECT p.id FROM photos p JOIN index_state i ON i.photo_id = p.id WHERE p.hash = ? AND i.duplicate_of IS NULL AND i.missing_at IS NULL ORDER BY p.created_at ASC"
       )
       .get(hash) as { id: string } | undefined;
 
@@ -387,6 +403,71 @@ export class ChronoPicDatabase {
     }
 
     return row.id === currentPhotoId ? null : row.id;
+  }
+
+  listTrackedPhotosInSource(rootPath: string): Array<{
+    path: string;
+    size: number;
+    sourceUpdatedAt: number | null;
+    missingAt: number | null;
+  }> {
+    const normalizedRoot = normalizeAbsolutePath(rootPath);
+    const nestedPattern = `${normalizedRoot}${path.sep}%`;
+
+    const rows = this.db
+      .prepare(
+        `SELECT p.path, p.size, i.source_updated_at, i.missing_at
+         FROM photos p
+         JOIN index_state i ON i.photo_id = p.id
+         WHERE p.path = ? OR p.path LIKE ?`
+      )
+      .all(normalizedRoot, nestedPattern) as Array<{
+      path: string;
+      size: number;
+      source_updated_at: number | null;
+      missing_at: number | null;
+    }>;
+
+    return rows.map((row) => ({
+      path: row.path,
+      size: row.size,
+      sourceUpdatedAt: row.source_updated_at,
+      missingAt: row.missing_at,
+    }));
+  }
+
+  markPhotosMissing(photoPaths: string[]): number {
+    if (photoPaths.length === 0) {
+      return 0;
+    }
+
+    const now = Date.now();
+    const normalizedPaths = photoPaths.map((photoPath) => normalizeAbsolutePath(photoPath));
+    const placeholders = normalizedPaths.map(() => "?").join(", ");
+    const updateIndexResult = this.db
+      .prepare(
+        `UPDATE index_state
+         SET indexed = 0,
+             error = 'Missing from disk',
+             last_indexed_at = ?,
+             missing_at = ?
+         WHERE photo_id IN (
+           SELECT id
+           FROM photos
+           WHERE path IN (${placeholders})
+         )`
+      )
+      .run(now, now, ...normalizedPaths);
+
+    this.db
+      .prepare(
+        `UPDATE photos
+         SET updated_at = ?
+         WHERE path IN (${placeholders})`
+      )
+      .run(now, ...normalizedPaths);
+
+    return updateIndexResult.changes;
   }
 
   upsertPhotoRecord(payload: UpsertPhotoPayload): void {
@@ -474,14 +555,16 @@ export class ChronoPicDatabase {
 
       this.db
         .prepare(
-          `INSERT INTO index_state (photo_id, indexed, ai_processed, error, last_indexed_at, duplicate_of)
-           VALUES (?, ?, ?, ?, ?, ?)
+          `INSERT INTO index_state (photo_id, indexed, ai_processed, error, last_indexed_at, duplicate_of, source_updated_at, missing_at)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?)
            ON CONFLICT(photo_id) DO UPDATE SET
              indexed = excluded.indexed,
              ai_processed = excluded.ai_processed,
              error = excluded.error,
              last_indexed_at = excluded.last_indexed_at,
-             duplicate_of = excluded.duplicate_of`
+             duplicate_of = excluded.duplicate_of,
+             source_updated_at = excluded.source_updated_at,
+             missing_at = excluded.missing_at`
         )
         .run(
           input.indexState.photoId,
@@ -489,7 +572,9 @@ export class ChronoPicDatabase {
           input.indexState.aiProcessed ? 1 : 0,
           input.indexState.error,
           input.indexState.lastIndexedAt,
-          input.indexState.duplicateOf
+          input.indexState.duplicateOf,
+          input.indexState.sourceUpdatedAt,
+          input.indexState.missingAt
         );
     });
 
@@ -498,7 +583,7 @@ export class ChronoPicDatabase {
 
   listPhotos(filter: PhotoFilter = {}): PhotoRecord[] {
     const resolvedFilter = { ...DEFAULT_FILTER, ...filter };
-    const clauses: string[] = [];
+    const clauses: string[] = ["i.missing_at IS NULL"];
     const params: unknown[] = [];
 
     if (resolvedFilter.query) {
@@ -571,7 +656,7 @@ export class ChronoPicDatabase {
           p.id, p.path, p.hash, p.size, p.mime, p.thumbnail_path, p.favorite, p.created_at, p.updated_at,
           m.datetime, m.lat, m.lng, m.camera, m.confidence, m.original_datetime_text,
           s.labels, s.caption, s.generated_labels, s.generated_caption, s.summary, s.embedding_ref, s.ai_status, s.ai_provider, s.ai_model, s.ai_processed_at, s.ai_error,
-          i.indexed, i.ai_processed, i.error, i.last_indexed_at, i.duplicate_of
+          i.indexed, i.ai_processed, i.error, i.last_indexed_at, i.duplicate_of, i.source_updated_at, i.missing_at
         FROM photos p
         JOIN metadata m ON m.photo_id = p.id
         JOIN semantic s ON s.photo_id = p.id
@@ -593,7 +678,7 @@ export class ChronoPicDatabase {
           p.id, p.path, p.hash, p.size, p.mime, p.thumbnail_path, p.favorite, p.created_at, p.updated_at,
           m.datetime, m.lat, m.lng, m.camera, m.confidence, m.original_datetime_text,
           s.labels, s.caption, s.generated_labels, s.generated_caption, s.summary, s.embedding_ref, s.ai_status, s.ai_provider, s.ai_model, s.ai_processed_at, s.ai_error,
-          i.indexed, i.ai_processed, i.error, i.last_indexed_at, i.duplicate_of
+          i.indexed, i.ai_processed, i.error, i.last_indexed_at, i.duplicate_of, i.source_updated_at, i.missing_at
         FROM photos p
         JOIN metadata m ON m.photo_id = p.id
         JOIN semantic s ON s.photo_id = p.id
@@ -823,10 +908,10 @@ export class ChronoPicDatabase {
     const stats = this.db
       .prepare(
         `SELECT
-          COUNT(*) AS totalPhotos,
-          SUM(CASE WHEN indexed = 1 THEN 1 ELSE 0 END) AS indexedPhotos,
-          SUM(CASE WHEN error IS NOT NULL THEN 1 ELSE 0 END) AS erroredPhotos,
-          SUM(CASE WHEN duplicate_of IS NOT NULL THEN 1 ELSE 0 END) AS duplicatePhotos
+          COUNT(CASE WHEN missing_at IS NULL THEN 1 END) AS totalPhotos,
+          SUM(CASE WHEN indexed = 1 AND missing_at IS NULL THEN 1 ELSE 0 END) AS indexedPhotos,
+          SUM(CASE WHEN error IS NOT NULL AND missing_at IS NULL THEN 1 ELSE 0 END) AS erroredPhotos,
+          SUM(CASE WHEN duplicate_of IS NOT NULL AND missing_at IS NULL THEN 1 ELSE 0 END) AS duplicatePhotos
         FROM index_state`
       )
       .get() as {
@@ -1225,7 +1310,7 @@ export class ChronoPicDatabase {
 
   countMappablePhotos(filter: PhotoFilter = {}): number {
     const resolvedFilter = { ...DEFAULT_FILTER, ...filter };
-    const clauses: string[] = ["m.lat IS NOT NULL", "m.lng IS NOT NULL"];
+    const clauses: string[] = ["m.lat IS NOT NULL", "m.lng IS NOT NULL", "i.missing_at IS NULL"];
     const params: unknown[] = [];
 
     if (resolvedFilter.query) {
@@ -1298,7 +1383,7 @@ export class ChronoPicDatabase {
     const resolvedFilter = { ...DEFAULT_FILTER, ...(query.filter ?? {}) };
     const precision = Math.min(Math.max(query.precision ?? 2, 0), 6);
     const limit = query.limit ?? 200;
-    const clauses: string[] = ["m.lat IS NOT NULL", "m.lng IS NOT NULL"];
+    const clauses: string[] = ["m.lat IS NOT NULL", "m.lng IS NOT NULL", "i.missing_at IS NULL"];
     const params: unknown[] = [];
 
     if (resolvedFilter.query) {

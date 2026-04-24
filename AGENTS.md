@@ -1444,6 +1444,63 @@ This file is the local execution record for ChronoPic. It complements `PLAN.md` 
   `pnpm build`
 - Result: the browse header is lighter and less repetitive, while the more meaningful discovery context remains intact.
 
+### 2026-04-23 Step 82
+
+- Updated the local roadmap to remove the deferred realtime watch/sync phase entirely rather than leaving it as a future implementation target.
+- Locked manual `Scan Library` in `PLAN.md` as the explicit long-term library sync model instead of a temporary fallback before directory watching.
+- This means the current committed roadmap now ends with:
+  `4.11 AI and Semantic Enrichment`
+  and
+  `4.12 Search and Discovery`,
+  with no remaining planned watcher/incremental-sync phase after them.
+
+### 2026-04-23 Step 83
+
+- Refined the plan after clarifying that “no realtime watch” does not mean “no incremental scan semantics”.
+- Updated `PLAN.md` so manual `Scan Library` is now explicitly expected to support incremental reconciliation:
+  new files should be ingested,
+  deleted files should be marked inactive or removed from the local projection,
+  and modified files should be reprocessed using `mtime` / `size` / `hash` change detection instead of forcing a full rebuild.
+- This keeps the product position clear:
+  no automatic watcher,
+  but manual scan remains a smart incremental sync operation rather than a naive full re-import.
+
+### 2026-04-23 Step 84
+
+- Implemented the first real incremental manual-scan pass in the indexing pipeline instead of leaving `Scan Library` as a full reprocess of every file.
+- Extended index-state persistence with:
+  `source_updated_at`
+  and
+  `missing_at`
+  so the app can remember the last seen file mtime and whether a tracked file has disappeared from disk.
+- Updated the SQLite schema/migration path and row mapping in `@chronopic/infra-db`, and added:
+  `listTrackedPhotosInSource()`
+  plus
+  `markPhotosMissing()`
+  to support source-root reconciliation during a manual scan.
+- Updated repository query behavior so photos marked missing are excluded from:
+  photo lists,
+  snapshot counts,
+  map counts,
+  and place-group queries,
+  while still keeping their records available for restoration if the same path reappears later.
+- Updated `IndexerService.scanLibrary()` so a manual scan now:
+  marks tracked-but-missing files as unavailable,
+  skips unchanged files based on stored size + source mtime + mime,
+  and fully reprocesses only new or changed files through:
+  describe -> hash -> metadata -> thumbnail -> upsert.
+- Preserved existing semantic/favorite state across reprocessing and stopped re-scan from unnecessarily resetting `aiProcessed` on unchanged surviving records.
+- Added regression coverage in `tests/indexer-incremental.test.ts` for:
+  unchanged-file skipping,
+  modified-file reprocessing,
+  and missing-file marking.
+- Extended infra schema regression tests to cover the new incremental-scan columns and the new `missing` filtering semantics.
+- Re-verified after the incremental manual-scan implementation with:
+  `pnpm typecheck`
+  `pnpm test`
+  `pnpm build`
+- Result: the product still avoids realtime watching, but manual `Scan Library` is now a true incremental reconciliation step rather than a naive full rebuild.
+
 ## Next Immediate Tasks
 
 1. Workspace skeleton is implemented.

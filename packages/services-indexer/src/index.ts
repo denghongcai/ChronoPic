@@ -20,6 +20,11 @@ export class IndexerService {
   async scanLibrary(source: LibrarySource): Promise<IndexerStats> {
     const startedAt = Date.now();
     const files = await this.mediaFiles.scanDirectory(source.path);
+    const trackedPhotos = this.db.listTrackedPhotosInSource(source.path);
+    const scannedPaths = new Set(files);
+    const missingPaths = trackedPhotos
+      .filter((record) => record.missingAt == null && !scannedPaths.has(record.path))
+      .map((record) => record.path);
     const stats: IndexerStats = {
       discovered: files.length,
       processed: 0,
@@ -31,10 +36,20 @@ export class IndexerService {
       finishedAt: null
     };
 
+    if (missingPaths.length > 0) {
+      this.db.markPhotosMissing(missingPaths);
+    }
+
     await runWithConcurrency(files, this.concurrency, async (filePath) => {
       try {
         const record = await this.indexFile(filePath);
         stats.processed += 1;
+
+        if (!record) {
+          stats.skipped += 1;
+          return;
+        }
+
         stats.imported += 1;
 
         if (record.indexState.duplicateOf) {
@@ -62,9 +77,19 @@ export class IndexerService {
     return results;
   }
 
-  private async indexFile(filePath: string): Promise<PhotoRecord> {
+  private async indexFile(filePath: string): Promise<PhotoRecord | null> {
     const existing = this.db.findPhotoByPath(filePath);
     const descriptor = await this.mediaFiles.describeFile(filePath);
+    if (
+      existing &&
+      existing.indexState.missingAt == null &&
+      existing.photo.size === descriptor.size &&
+      existing.indexState.sourceUpdatedAt === descriptor.updatedAt &&
+      existing.photo.mime === descriptor.mime
+    ) {
+      return null;
+    }
+
     const hash = await this.mediaFiles.computeHash(filePath);
     const metadata = await this.mediaFiles.extractMetadata(filePath, descriptor.updatedAt);
     const duplicateOf = this.db.findPrimaryPhotoIdByHash(hash, existing?.photo.id);
@@ -110,10 +135,12 @@ export class IndexerService {
       indexState: {
         photoId,
         indexed: true,
-        aiProcessed: false,
+        aiProcessed: existing?.indexState.aiProcessed ?? false,
         error: null,
         lastIndexedAt: timestamp,
-        duplicateOf
+        duplicateOf,
+        sourceUpdatedAt: descriptor.updatedAt,
+        missingAt: null,
       }
     };
 
@@ -137,7 +164,8 @@ export class IndexerService {
       indexState: {
         ...existing.indexState,
         error: ensureErrorMessage(error),
-        lastIndexedAt: Date.now()
+        lastIndexedAt: Date.now(),
+        missingAt: null,
       }
     });
   }

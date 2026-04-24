@@ -637,17 +637,10 @@ Implementation breakdown:
 - Discovery surfaces now expose match-source explanations for the selected photo and inspector so the user can see which fields or linked memory metadata caused the current result to match the active query.
 - Discovery/runtime UX must degrade safely when the Electron preload bridge is unavailable, showing a clear desktop-bridge error state instead of crashing the renderer during initial hydration.
 
-### 4.13 Realtime Library Sync and Incremental Watch Phase
-
-- Move realtime file watching and incremental sync to the final product-expansion phase rather than introducing that engineering complexity before AI/search maturity.
-- Keep manual scan as the stable fallback even after watch mode exists.
-- Add directory watching, change detection, incremental re-indexing, and clear sync-state UX only after the semantic/search layers are in place.
-
 Priority order from this point forward:
 
 1. `4.11 AI and Semantic Enrichment Phase`
 2. `4.12 Search and Discovery Phase`
-3. `4.13 Realtime Library Sync and Incremental Watch Phase`
 
 ### 5. Editing and History ✅
 
@@ -721,7 +714,15 @@ Priority order from this point forward:
 - The repository has no existing implementation and can be structured freely.
 - The first pass targets desktop only.
 - Real AI providers, OCR, vector search, cloud sync, and EXIF writeback remain out of scope.
-- File watching will not be shipped in the first pass; manual rescan is sufficient.
+- Realtime file watching is intentionally out of scope for this product line; manual `Scan Library` remains the explicit and permanent sync mechanism.
+- Manual `Scan Library` still needs incremental scan semantics:
+  newly added files should enter the normal ingest pipeline,
+  missing files should be marked inactive or removed from the local projection,
+  and modified files should be reprocessed based on `mtime` / `size` / `hash` change detection rather than forcing a full rebuild every time.
+- Incremental manual-scan semantics are now landed in code:
+  existing unchanged files are skipped,
+  files missing from disk are marked unavailable and excluded from browse/snapshot queries,
+  and changed files are reprocessed with fresh hash/metadata/thumbnail output.
 - The `shadcn/ui` phase is a renderer-only refactor and must not widen package boundaries or bypass existing application-layer APIs.
 - The detail/gallery viewing phase should reuse the current photo list query model and active-record data flow instead of introducing a second parallel retrieval path unless runtime validation shows that the existing list payload is insufficient.
 - The UI structure phase is a code-organization refactor first; it should preserve behavior unless a specific follow-up UX change is explicitly planned.

@@ -14,6 +14,11 @@ test("infra-db semantic schema includes generated AI fields and provider metadat
   assert.match(SCHEMA_SQL, /ai_error TEXT/);
 });
 
+test("infra-db index schema includes source mtime tracking and missing-state columns", () => {
+  assert.match(SCHEMA_SQL, /source_updated_at INTEGER/);
+  assert.match(SCHEMA_SQL, /missing_at INTEGER/);
+});
+
 test("infra-db memory schema includes generated AI memory fields", () => {
   assert.match(SCHEMA_SQL, /generated_name TEXT/);
   assert.match(SCHEMA_SQL, /generated_description TEXT/);
@@ -29,4 +34,5 @@ test("infra-db text search implementation includes linked memory metadata", () =
   assert.match(source, /mem_search\.generated_name LIKE \?/);
   assert.match(source, /mem_search\.generated_description LIKE \?/);
   assert.match(source, /mem_search\.generated_labels LIKE \?/);
+  assert.match(source, /i\.missing_at IS NULL/);
 });
