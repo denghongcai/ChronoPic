@@ -26,6 +26,15 @@ test("infra-db memory schema includes generated AI memory fields", () => {
   assert.match(SCHEMA_SQL, /CREATE TABLE IF NOT EXISTS memories/);
 });
 
+test("infra-db schema includes reviewable AI memory candidates", () => {
+  assert.match(SCHEMA_SQL, /CREATE TABLE IF NOT EXISTS memory_candidates/);
+  assert.match(SCHEMA_SQL, /signature TEXT NOT NULL UNIQUE/);
+  assert.match(SCHEMA_SQL, /reason TEXT NOT NULL/);
+  assert.match(SCHEMA_SQL, /confidence REAL NOT NULL/);
+  assert.match(SCHEMA_SQL, /status TEXT NOT NULL DEFAULT 'pending'/);
+  assert.match(SCHEMA_SQL, /accepted_memory_id TEXT REFERENCES memories/);
+});
+
 test("infra-db text search implementation includes linked memory metadata", () => {
   const source = fs.readFileSync(new URL("../packages/infra-db/src/index.ts", import.meta.url), "utf8");
 

@@ -101,4 +101,23 @@ CREATE TABLE IF NOT EXISTS memory_photos (
 );
 
 CREATE INDEX IF NOT EXISTS idx_memory_photos_photo ON memory_photos(photo_id);
+
+CREATE TABLE IF NOT EXISTS memory_candidates (
+  id TEXT PRIMARY KEY,
+  signature TEXT NOT NULL UNIQUE,
+  title TEXT NOT NULL,
+  description TEXT,
+  reason TEXT NOT NULL,
+  confidence REAL NOT NULL,
+  source TEXT NOT NULL,
+  status TEXT NOT NULL DEFAULT 'pending',
+  photo_ids TEXT NOT NULL DEFAULT '[]',
+  cover_photo_id TEXT REFERENCES photos(id) ON DELETE SET NULL,
+  generated_labels TEXT NOT NULL DEFAULT '[]',
+  accepted_memory_id TEXT REFERENCES memories(id) ON DELETE SET NULL,
+  created_at INTEGER NOT NULL,
+  updated_at INTEGER NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_memory_candidates_status ON memory_candidates(status, updated_at DESC);
 `;

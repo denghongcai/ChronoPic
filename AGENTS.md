@@ -1501,6 +1501,91 @@ This file is the local execution record for ChronoPic. It complements `PLAN.md` 
   `pnpm build`
 - Result: the product still avoids realtime watching, but manual `Scan Library` is now a true incremental reconciliation step rather than a naive full rebuild.
 
+### 2026-04-24 Step 85
+
+- Added the planned `4.13 Memory Authoring and Storytelling Phase` and `4.14 Advanced Discovery Phase` to `PLAN.md` before continuing implementation.
+- Implemented the product-facing authoring/storytelling pass for memory detail:
+  memory photos are now grouped into deterministic chronological story chapters,
+  each chapter exposes a representative cover,
+  photo count,
+  mapped-photo count,
+  and AI-ready count,
+  and clicking a chapter lead opens the existing focused detail viewer.
+- Implemented the product-facing advanced-discovery pass in the shared browse shell:
+  a compact `Discover` pivot row now derives actionable suggestions from the current visible scope,
+  including GPS, favorites, AI readiness, map/timeline switches, top labels, and memory pivots.
+- Added shared helper coverage for:
+  `buildMemoryStorySections()`
+  and
+  `buildDiscoverySuggestions()`.
+- Verified the implementation with:
+  `pnpm typecheck`
+  `pnpm test`
+  `pnpm build`
+- Result: Memory Authoring and Storytelling now has a visible chaptered story surface, Advanced Discovery now has compact actionable pivots, and the workspace remains typecheck/test/build clean.
+
+### 2026-04-24 Step 86
+
+- Added a new `4.15 AI Memory Auto-Grouping Phase` to `PLAN.md`.
+- Defined the product scope for AI-generated memory candidates:
+  ChronoPic should be able to propose memories from similar places,
+  nearby timelines,
+  semantic tags/captions/summaries,
+  and future person clusters when a real person-recognition signal exists.
+- Locked the key product constraint:
+  generated groups are candidates, not automatic accepted memories.
+- Defined the expected candidate review loop:
+  title,
+  reason,
+  confidence,
+  cover,
+  photo preview,
+  accept,
+  reject,
+  edit title,
+  and remove photos before acceptance.
+- Updated the test plan to require candidate/accepted-memory separation and explicit user acceptance semantics.
+- Next: implement this phase after the current uncommitted story/discovery work is either committed or consciously carried forward.
+
+### 2026-04-24 Step 87
+
+- Implemented the `4.15 AI Memory Auto-Grouping Phase` end to end.
+- Added domain types for:
+  `MemoryCandidate`,
+  candidate source/status,
+  candidate input,
+  and candidate acceptance input.
+- Added SQLite persistence for reviewable memory candidates with:
+  stable signatures,
+  reason,
+  confidence,
+  source,
+  status,
+  photo IDs,
+  generated labels,
+  cover linkage,
+  and accepted-memory linkage.
+- Added application service methods for:
+  listing pending candidates,
+  generating candidates,
+  accepting candidates into normal memories,
+  and rejecting candidates.
+- Implemented deterministic candidate generation from:
+  GPS/place clusters,
+  monthly timeline clusters,
+  and manual/AI semantic labels.
+- Wired the new flow through Electron IPC and preload.
+- Added a `Suggested Memories` panel to the Memories page so candidates can be generated, reviewed, title-edited, photo-pruned, accepted, or rejected.
+- Added regression tests for:
+  candidate schema,
+  candidate generation from place/time/semantic signals,
+  and accept/reject persistence boundaries.
+- Verified during implementation with:
+  `pnpm test`
+  `pnpm typecheck`
+  `pnpm build`
+- Result: AI Memory Auto-Grouping is landed and build-valid as a reviewable candidate workflow.
+
 ## Next Immediate Tasks
 
 1. Workspace skeleton is implemented.
@@ -1556,3 +1641,7 @@ This file is the local execution record for ChronoPic. It complements `PLAN.md` 
 51. AI queue visibility now lives in a dedicated notification-center page reached from the sidebar bell, rather than being split across home and settings.
 52. Interrupted AI work is now recovered from stale `processing` back to `pending` on app startup.
 53. Next: move into `4.12 Search and Discovery Phase` unless a smaller AI-polish task is explicitly prioritized first.
+54. Memory Authoring and Storytelling now has a visible result: memory detail includes deterministic story chapters derived from current memory photos.
+55. Advanced Discovery now has a visible result: browse exposes compact actionable pivots without adding another large explanatory panel.
+56. The next planned product-expansion phase is now `4.15 AI Memory Auto-Grouping Phase`, focused on reviewable AI-proposed memories from place/time/semantic/person-like signals.
+57. AI Memory Auto-Grouping is now implemented as a reviewable candidate workflow rather than silent memory creation.

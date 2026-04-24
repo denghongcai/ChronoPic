@@ -77,6 +77,10 @@ export interface EditHistory {
 
 export type MemorySource = "manual" | "ai";
 
+export type MemoryCandidateSource = "place" | "time" | "semantic" | "person" | "mixed";
+
+export type MemoryCandidateStatus = "pending" | "accepted" | "rejected";
+
 export interface Memory {
   id: string;
   name: string;
@@ -101,6 +105,42 @@ export interface MemoryPhoto {
   memoryId: string;
   photoId: string;
   addedAt: number;
+}
+
+export interface MemoryCandidate {
+  id: string;
+  signature: string;
+  title: string;
+  description: string | null;
+  reason: string;
+  confidence: number;
+  source: MemoryCandidateSource;
+  status: MemoryCandidateStatus;
+  photoIds: string[];
+  coverPhotoId: string | null;
+  coverThumbnailPath: string | null;
+  generatedLabels: string[];
+  acceptedMemoryId: string | null;
+  createdAt: number;
+  updatedAt: number;
+}
+
+export interface MemoryCandidateInput {
+  signature: string;
+  title: string;
+  description?: string | null;
+  reason: string;
+  confidence: number;
+  source: MemoryCandidateSource;
+  photoIds: string[];
+  coverPhotoId?: string | null;
+  generatedLabels?: string[];
+}
+
+export interface AcceptMemoryCandidateInput {
+  name?: string;
+  description?: string | null;
+  photoIds?: string[];
 }
 
 export interface PhotoRecord {

@@ -3,6 +3,9 @@ import type {
   IndexerStats,
   LibrarySnapshot,
   Memory,
+  AcceptMemoryCandidateInput,
+  MemoryCandidate,
+  MemoryCandidateInput,
   MemorySource,
   PhotoFilter,
   PhotoRecord,
@@ -273,6 +276,45 @@ export class ChronoPicAppService {
     return this.db.listMemoriesByPhoto(photoId);
   }
 
+  listMemoryCandidates(): MemoryCandidate[] {
+    return this.db.listMemoryCandidates("pending");
+  }
+
+  generateMemoryCandidates(limit = 12): MemoryCandidate[] {
+    const photos = this.db.listPhotos({
+      limit: 600,
+      offset: 0,
+      sortBy: "datetime",
+      sortDirection: "desc",
+    });
+    const existingPhotoSets = this.db
+      .listMemories()
+      .map((memory) => this.db.listPhotosByMemory(memory.id, { limit: 500, offset: 0 }).map((record) => record.photo.id).sort().join("|"))
+      .filter(Boolean);
+    const existingSignatures = new Set(existingPhotoSets);
+    const candidates = buildMemoryCandidateInputs(photos)
+      .filter((candidate) => !existingSignatures.has([...candidate.photoIds].sort().join("|")))
+      .slice(0, limit);
+    const saved: MemoryCandidate[] = [];
+
+    for (const candidate of candidates) {
+      const result = this.db.upsertMemoryCandidate(candidate);
+      if (result) {
+        saved.push(result);
+      }
+    }
+
+    return this.db.listMemoryCandidates("pending").slice(0, limit);
+  }
+
+  acceptMemoryCandidate(candidateId: string, input: AcceptMemoryCandidateInput = {}): Memory {
+    return this.db.acceptMemoryCandidate(candidateId, input);
+  }
+
+  rejectMemoryCandidate(candidateId: string): MemoryCandidate {
+    return this.db.rejectMemoryCandidate(candidateId);
+  }
+
   countMappablePhotos(filter?: PhotoFilter): number {
     return this.db.countMappablePhotos(filter);
   }
@@ -326,6 +368,150 @@ export class ChronoPicAppService {
     const ordered = Array.from(groups.values()).sort((left, right) => (right.toDatetime ?? 0) - (left.toDatetime ?? 0));
     return typeof limitGroups === "number" ? ordered.slice(0, limitGroups) : ordered;
   }
+}
+
+function buildMemoryCandidateInputs(photos: PhotoRecord[]): MemoryCandidateInput[] {
+  const byPlace = new Map<string, PhotoRecord[]>();
+  const byMonth = new Map<string, PhotoRecord[]>();
+  const byLabel = new Map<string, PhotoRecord[]>();
+
+  for (const record of photos) {
+    if (record.metadata.lat != null && record.metadata.lng != null) {
+      const key = `${record.metadata.lat.toFixed(1)},${record.metadata.lng.toFixed(1)}`;
+      byPlace.set(key, [...(byPlace.get(key) ?? []), record]);
+    }
+
+    const datetime = record.metadata.datetime;
+    if (datetime != null) {
+      const date = new Date(datetime);
+      const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
+      byMonth.set(key, [...(byMonth.get(key) ?? []), record]);
+    }
+
+    const labels = new Set([...record.semantic.labels, ...record.semantic.generatedLabels]);
+    for (const label of labels) {
+      const normalized = label.trim().toLowerCase();
+      if (normalized.length < 3) {
+        continue;
+      }
+      byLabel.set(normalized, [...(byLabel.get(normalized) ?? []), record]);
+    }
+  }
+
+  const candidates: MemoryCandidateInput[] = [];
+
+  for (const [key, group] of byPlace) {
+    const records = uniqueRecords(group);
+    if (records.length < 3) {
+      continue;
+    }
+    const [lat, lng] = key.split(",");
+    candidates.push(makeCandidate({
+      records,
+      source: "place",
+      title: `Around ${lat}, ${lng}`,
+      reason: `These photos cluster around the same GPS area (${lat}, ${lng}).`,
+      confidence: Math.min(0.92, 0.68 + records.length * 0.03),
+      labels: ["place", "mapped"],
+      signaturePrefix: `place:${key}`,
+    }));
+  }
+
+  for (const [key, group] of byMonth) {
+    const records = uniqueRecords(group);
+    if (records.length < 4) {
+      continue;
+    }
+    const [year, month] = key.split("-");
+    const date = new Date(Number(year), Number(month) - 1, 1);
+    const label = new Intl.DateTimeFormat("en", { month: "long", year: "numeric" }).format(date);
+    candidates.push(makeCandidate({
+      records,
+      source: "time",
+      title: label,
+      reason: `These photos were captured in the same month and can form a timeline memory.`,
+      confidence: Math.min(0.86, 0.58 + records.length * 0.025),
+      labels: ["timeline", key],
+      signaturePrefix: `time:${key}`,
+    }));
+  }
+
+  for (const [label, group] of byLabel) {
+    const records = uniqueRecords(group);
+    if (records.length < 3) {
+      continue;
+    }
+    candidates.push(makeCandidate({
+      records,
+      source: "semantic",
+      title: titleCase(label),
+      reason: `These photos share the "${label}" semantic label from manual or AI metadata.`,
+      confidence: Math.min(0.9, 0.62 + records.length * 0.03),
+      labels: [label, "semantic"],
+      signaturePrefix: `semantic:${label}`,
+    }));
+  }
+
+  return candidates.sort((left, right) => right.confidence - left.confidence || right.photoIds.length - left.photoIds.length);
+}
+
+function uniqueRecords(records: PhotoRecord[]): PhotoRecord[] {
+  const seen = new Set<string>();
+  const unique: PhotoRecord[] = [];
+  for (const record of records) {
+    if (seen.has(record.photo.id)) {
+      continue;
+    }
+    seen.add(record.photo.id);
+    unique.push(record);
+  }
+  return unique;
+}
+
+function makeCandidate({
+  records,
+  source,
+  title,
+  reason,
+  confidence,
+  labels,
+  signaturePrefix,
+}: {
+  records: PhotoRecord[];
+  source: MemoryCandidateInput["source"];
+  title: string;
+  reason: string;
+  confidence: number;
+  labels: string[];
+  signaturePrefix: string;
+}): MemoryCandidateInput {
+  const sorted = [...records].sort((left, right) => {
+    const leftTime = left.metadata.datetime ?? left.photo.updatedAt;
+    const rightTime = right.metadata.datetime ?? right.photo.updatedAt;
+    return leftTime - rightTime;
+  });
+  const photoIds = sorted.map((record) => record.photo.id);
+  const cover = sorted.find((record) => record.photo.thumbnailPath != null) ?? sorted[0];
+
+  return {
+    signature: `${signaturePrefix}:${photoIds.slice().sort().join("|")}`,
+    title,
+    description: null,
+    reason,
+    confidence,
+    source,
+    photoIds,
+    coverPhotoId: cover?.photo.id ?? photoIds[0] ?? null,
+    generatedLabels: labels,
+  };
+}
+
+function titleCase(value: string): string {
+  return value
+    .split(/[\s_-]+/)
+    .filter(Boolean)
+    .map((part) => `${part[0]?.toUpperCase() ?? ""}${part.slice(1)}`)
+    .join(" ");
 }
 
 function toTimelineKey(date: Date, granularity: TimelineGranularity): string {

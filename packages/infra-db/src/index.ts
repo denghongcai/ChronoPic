@@ -7,6 +7,10 @@ import type {
   LibrarySource,
   LibrarySnapshot,
   Memory,
+  AcceptMemoryCandidateInput,
+  MemoryCandidate,
+  MemoryCandidateInput,
+  MemoryCandidateStatus,
   MemoryPhoto,
   Metadata,
   PlaceGroup,
@@ -17,7 +21,7 @@ import type {
   SemanticQueueStats,
   UpsertPhotoPayload
 } from "@chronopic/domain";
-import type { MemorySource } from "@chronopic/domain";
+import type { MemoryCandidateSource, MemorySource } from "@chronopic/domain";
 import { DEFAULT_FILTER } from "@chronopic/domain";
 import { createId, dedupeStrings, normalizeAbsolutePath, parseStringArray, serializeStringArray } from "@chronopic/shared-utils";
 
@@ -59,6 +63,24 @@ interface PhotoRow {
   duplicate_of: string | null;
   source_updated_at: number | null;
   missing_at: number | null;
+}
+
+interface MemoryCandidateRow {
+  id: string;
+  signature: string;
+  title: string;
+  description: string | null;
+  reason: string;
+  confidence: number;
+  source: MemoryCandidateSource;
+  status: MemoryCandidateStatus;
+  photo_ids: string;
+  cover_photo_id: string | null;
+  cover_thumbnail_path: string | null;
+  generated_labels: string;
+  accepted_memory_id: string | null;
+  created_at: number;
+  updated_at: number;
 }
 
 function normalizeAIPipelineStatus(status: string | null | undefined): Semantic["aiStatus"] {
@@ -119,6 +141,26 @@ function mapPhotoRow(row: PhotoRow): PhotoRecord {
       sourceUpdatedAt: row.source_updated_at,
       missingAt: row.missing_at,
     }
+  };
+}
+
+function mapMemoryCandidateRow(row: MemoryCandidateRow): MemoryCandidate {
+  return {
+    id: row.id,
+    signature: row.signature,
+    title: row.title,
+    description: row.description,
+    reason: row.reason,
+    confidence: row.confidence,
+    source: row.source,
+    status: row.status,
+    photoIds: parseStringArray(row.photo_ids),
+    coverPhotoId: row.cover_photo_id,
+    coverThumbnailPath: row.cover_thumbnail_path,
+    generatedLabels: parseStringArray(row.generated_labels),
+    acceptedMemoryId: row.accepted_memory_id,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
   };
 }
 
@@ -190,6 +232,25 @@ export class ChronoPicDatabase {
       );
 
       CREATE INDEX IF NOT EXISTS idx_memory_photos_photo ON memory_photos(photo_id);
+
+      CREATE TABLE IF NOT EXISTS memory_candidates (
+        id TEXT PRIMARY KEY,
+        signature TEXT NOT NULL UNIQUE,
+        title TEXT NOT NULL,
+        description TEXT,
+        reason TEXT NOT NULL,
+        confidence REAL NOT NULL,
+        source TEXT NOT NULL,
+        status TEXT NOT NULL DEFAULT 'pending',
+        photo_ids TEXT NOT NULL DEFAULT '[]',
+        cover_photo_id TEXT REFERENCES photos(id) ON DELETE SET NULL,
+        generated_labels TEXT NOT NULL DEFAULT '[]',
+        accepted_memory_id TEXT REFERENCES memories(id) ON DELETE SET NULL,
+        created_at INTEGER NOT NULL,
+        updated_at INTEGER NOT NULL
+      );
+
+      CREATE INDEX IF NOT EXISTS idx_memory_candidates_status ON memory_candidates(status, updated_at DESC);
     `);
 
     // Migrate photos table: add favorite column if missing
@@ -1306,6 +1367,207 @@ export class ChronoPicDatabase {
 
   listPhotosByMemory(memoryId: string, filter: PhotoFilter = {}): PhotoRecord[] {
     return this.listPhotos({ ...filter, memoryId });
+  }
+
+  listMemoryCandidates(status: MemoryCandidateStatus = "pending"): MemoryCandidate[] {
+    const rows = this.db
+      .prepare(
+        `SELECT
+          c.id,
+          c.signature,
+          c.title,
+          c.description,
+          c.reason,
+          c.confidence,
+          c.source,
+          c.status,
+          c.photo_ids,
+          c.cover_photo_id,
+          p.thumbnail_path AS cover_thumbnail_path,
+          c.generated_labels,
+          c.accepted_memory_id,
+          c.created_at,
+          c.updated_at
+        FROM memory_candidates c
+        LEFT JOIN photos p ON p.id = c.cover_photo_id
+        WHERE c.status = ?
+        ORDER BY c.confidence DESC, c.updated_at DESC`
+      )
+      .all(status) as MemoryCandidateRow[];
+
+    return rows.map(mapMemoryCandidateRow);
+  }
+
+  upsertMemoryCandidate(input: MemoryCandidateInput): MemoryCandidate | null {
+    const existing = this.db
+      .prepare(
+        `SELECT
+          c.id,
+          c.signature,
+          c.title,
+          c.description,
+          c.reason,
+          c.confidence,
+          c.source,
+          c.status,
+          c.photo_ids,
+          c.cover_photo_id,
+          p.thumbnail_path AS cover_thumbnail_path,
+          c.generated_labels,
+          c.accepted_memory_id,
+          c.created_at,
+          c.updated_at
+        FROM memory_candidates c
+        LEFT JOIN photos p ON p.id = c.cover_photo_id
+        WHERE c.signature = ?`
+      )
+      .get(input.signature) as MemoryCandidateRow | undefined;
+
+    const now = Date.now();
+    const normalizedPhotoIds = dedupeStrings(input.photoIds).sort();
+
+    if (existing) {
+      if (existing.status !== "pending") {
+        return null;
+      }
+
+      this.db
+        .prepare(
+          `UPDATE memory_candidates
+           SET title = ?,
+               description = ?,
+               reason = ?,
+               confidence = ?,
+               source = ?,
+               photo_ids = ?,
+               cover_photo_id = ?,
+               generated_labels = ?,
+               updated_at = ?
+           WHERE id = ?`
+        )
+        .run(
+          input.title,
+          input.description ?? null,
+          input.reason,
+          input.confidence,
+          input.source,
+          serializeStringArray(normalizedPhotoIds),
+          input.coverPhotoId ?? normalizedPhotoIds[0] ?? null,
+          serializeStringArray(input.generatedLabels ?? []),
+          now,
+          existing.id
+        );
+
+      return this.getMemoryCandidate(existing.id);
+    }
+
+    const id = createId("mc");
+    this.db
+      .prepare(
+        `INSERT INTO memory_candidates (
+          id,
+          signature,
+          title,
+          description,
+          reason,
+          confidence,
+          source,
+          status,
+          photo_ids,
+          cover_photo_id,
+          generated_labels,
+          accepted_memory_id,
+          created_at,
+          updated_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, 'pending', ?, ?, ?, NULL, ?, ?)`
+      )
+      .run(
+        id,
+        input.signature,
+        input.title,
+        input.description ?? null,
+        input.reason,
+        input.confidence,
+        input.source,
+        serializeStringArray(normalizedPhotoIds),
+        input.coverPhotoId ?? normalizedPhotoIds[0] ?? null,
+        serializeStringArray(input.generatedLabels ?? []),
+        now,
+        now
+      );
+
+    return this.getMemoryCandidate(id);
+  }
+
+  getMemoryCandidate(candidateId: string): MemoryCandidate | null {
+    const row = this.db
+      .prepare(
+        `SELECT
+          c.id,
+          c.signature,
+          c.title,
+          c.description,
+          c.reason,
+          c.confidence,
+          c.source,
+          c.status,
+          c.photo_ids,
+          c.cover_photo_id,
+          p.thumbnail_path AS cover_thumbnail_path,
+          c.generated_labels,
+          c.accepted_memory_id,
+          c.created_at,
+          c.updated_at
+        FROM memory_candidates c
+        LEFT JOIN photos p ON p.id = c.cover_photo_id
+        WHERE c.id = ?`
+      )
+      .get(candidateId) as MemoryCandidateRow | undefined;
+
+    return row ? mapMemoryCandidateRow(row) : null;
+  }
+
+  rejectMemoryCandidate(candidateId: string): MemoryCandidate {
+    const now = Date.now();
+    this.db.prepare("UPDATE memory_candidates SET status = 'rejected', updated_at = ? WHERE id = ?").run(now, candidateId);
+    const candidate = this.getMemoryCandidate(candidateId);
+    if (!candidate) {
+      throw new Error(`Memory candidate not found: ${candidateId}`);
+    }
+    return candidate;
+  }
+
+  acceptMemoryCandidate(candidateId: string, input: AcceptMemoryCandidateInput = {}): Memory {
+    const candidate = this.getMemoryCandidate(candidateId);
+    if (!candidate) {
+      throw new Error(`Memory candidate not found: ${candidateId}`);
+    }
+    if (candidate.status !== "pending") {
+      throw new Error(`Memory candidate is not pending: ${candidateId}`);
+    }
+
+    const photoIds = dedupeStrings(input.photoIds ?? candidate.photoIds).filter((photoId) => candidate.photoIds.includes(photoId));
+    if (photoIds.length === 0) {
+      throw new Error("Cannot accept an empty memory candidate");
+    }
+
+    const memory = this.createMemory(input.name?.trim() || candidate.title, input.description ?? candidate.description, "ai");
+    const addPhoto = this.db.prepare("INSERT OR IGNORE INTO memory_photos (memory_id, photo_id, added_at) VALUES (?, ?, ?)");
+    const now = Date.now();
+    const transaction = this.db.transaction(() => {
+      for (const photoId of photoIds) {
+        addPhoto.run(memory.id, photoId, now);
+      }
+      this.db
+        .prepare("UPDATE memories SET cover_photo_id = ?, updated_at = ? WHERE id = ?")
+        .run(photoIds.includes(candidate.coverPhotoId ?? "") ? candidate.coverPhotoId : photoIds[0], now, memory.id);
+      this.db
+        .prepare("UPDATE memory_candidates SET status = 'accepted', accepted_memory_id = ?, updated_at = ? WHERE id = ?")
+        .run(memory.id, now, candidateId);
+    });
+    transaction();
+
+    return this.getMemory(memory.id) as Memory;
   }
 
   countMappablePhotos(filter: PhotoFilter = {}): number {

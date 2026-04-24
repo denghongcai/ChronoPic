@@ -12,6 +12,7 @@ import type {
   LibrarySnapshot,
   MapSettings,
   Memory,
+  MemoryCandidate,
   PhotoFilter,
   PhotoFilterPatch,
   PhotoRecord,
@@ -87,6 +88,7 @@ export function useChronoPicApp() {
   const [timelineGranularity, setTimelineGranularity] = useState<TimelineGranularity>("month");
   const [mapViewport, setMapViewport] = useState<MapViewportState | null>(null);
   const [memories, setMemories] = useState<Memory[]>([]);
+  const [memoryCandidates, setMemoryCandidates] = useState<MemoryCandidate[]>([]);
   const [mappablePhotoCount, setMappablePhotoCount] = useState(0);
   const [selectedPhotoMemories, setSelectedPhotoMemories] = useState<Memory[]>([]);
   const [selectedPhotoIds, setSelectedPhotoIds] = useState<string[]>([]);
@@ -96,6 +98,7 @@ export function useChronoPicApp() {
   const [draftCaption, setDraftCaption] = useState("");
   const [isEnrichingSemantic, setIsEnrichingSemantic] = useState(false);
   const [isEnrichingMemorySemantic, setIsEnrichingMemorySemantic] = useState(false);
+  const [isGeneratingMemoryCandidates, setIsGeneratingMemoryCandidates] = useState(false);
   const [isBatchEnrichingSemantic, setIsBatchEnrichingSemantic] = useState(false);
   const [isScanning, setIsScanning] = useState(false);
   const [status, setStatus] = useState<AppStatus>(idleStatus);
@@ -256,6 +259,7 @@ export function useChronoPicApp() {
     setMapSettings(currentMapSettings as MapSettings);
     await refreshPhotos();
     await refreshMemories();
+    await refreshMemoryCandidates();
     await refreshSemanticQueueStats();
   }
 
@@ -422,6 +426,16 @@ export function useChronoPicApp() {
     setMemories(nextMemories);
   }
 
+  async function refreshMemoryCandidates() {
+    const activeBridge = requireBridge();
+    if (!activeBridge) {
+      return;
+    }
+
+    const nextCandidates = (await activeBridge.listMemoryCandidates()) as MemoryCandidate[];
+    setMemoryCandidates(nextCandidates);
+  }
+
   async function refreshSelectedPhotoMemories() {
     if (!selectedPhotoId) {
       setSelectedPhotoMemories([]);
@@ -445,6 +459,43 @@ export function useChronoPicApp() {
       showStatus("success", `Created memory: ${name}`);
     } catch (error) {
       showStatus("error", formatErrorMessage(error, "Failed to create memory"));
+      throw error;
+    }
+  }
+
+  async function handleGenerateMemoryCandidates() {
+    setIsGeneratingMemoryCandidates(true);
+    showStatus("info", "Generating suggested memories...");
+    try {
+      const nextCandidates = (await window.chronoPic.generateMemoryCandidates(12)) as MemoryCandidate[];
+      setMemoryCandidates(nextCandidates);
+      showStatus("success", `Generated ${nextCandidates.length} suggested memor${nextCandidates.length === 1 ? "y" : "ies"}`);
+    } catch (error) {
+      showStatus("error", formatErrorMessage(error, "Failed to generate suggested memories"));
+    } finally {
+      setIsGeneratingMemoryCandidates(false);
+    }
+  }
+
+  async function handleAcceptMemoryCandidate(candidateId: string, input?: { name?: string; photoIds?: string[] }) {
+    try {
+      const accepted = (await window.chronoPic.acceptMemoryCandidate(candidateId, input)) as Memory;
+      await refreshMemories();
+      await refreshMemoryCandidates();
+      showStatus("success", `Created memory: ${accepted.name}`);
+    } catch (error) {
+      showStatus("error", formatErrorMessage(error, "Failed to accept suggested memory"));
+      throw error;
+    }
+  }
+
+  async function handleRejectMemoryCandidate(candidateId: string) {
+    try {
+      await window.chronoPic.rejectMemoryCandidate(candidateId);
+      setMemoryCandidates((current) => current.filter((candidate) => candidate.id !== candidateId));
+      showStatus("success", "Rejected suggested memory");
+    } catch (error) {
+      showStatus("error", formatErrorMessage(error, "Failed to reject suggested memory"));
       throw error;
     }
   }
@@ -887,11 +938,13 @@ export function useChronoPicApp() {
     isBatchEnrichingSemantic,
     isEnrichingSemantic,
     isEnrichingMemorySemantic,
+    isGeneratingMemoryCandidates,
     isScanning,
     mappablePhotoCount,
     mapSettings,
     mapViewport,
     memories,
+    memoryCandidates,
     openViewer,
     patchDiscoveryQuery,
     patchFilter,
@@ -918,11 +971,14 @@ export function useChronoPicApp() {
     handleAddLibrary,
     handleAddPhotoToMemory,
     handleAddSelectionToMemory,
+    handleAcceptMemoryCandidate,
     handleCreateMemory,
     handleDeleteMemory,
     handleEnrichMemorySemantic,
     handleEnrichSemantic,
     handleEnrichPendingSemantics,
+    handleGenerateMemoryCandidates,
+    handleRejectMemoryCandidate,
     handleRemovePhotoFromMemory,
     handleRemoveSelectionFromMemory,
     handleRollback,

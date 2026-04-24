@@ -16,6 +16,7 @@ import type {
   LibrarySnapshot,
   MapSettings,
   Memory,
+  MemoryCandidate,
   PlaceGroup,
   PhotoFilter,
   PhotoFilterPatch,
@@ -28,6 +29,7 @@ import { BrowseModePlaceholder } from "./browse-mode-placeholder.js";
 import { BrowseModeSwitcher } from "./browse-mode-switcher.js";
 import { Button } from "./button.js";
 import { CreateMemoryDialog } from "./create-memory-dialog.js";
+import { DiscoveryLensStrip } from "./discovery-lens-strip.js";
 import type { EditControlsProps } from "./edit-controls.js";
 import { FilterToolbar } from "./filter-toolbar.js";
 import { GallerySection } from "./gallery-section.js";
@@ -41,6 +43,7 @@ import { PhotoViewerOverlay } from "./photo-viewer-overlay.js";
 import { RecentMemories } from "./recent-memories.js";
 import { SearchInput } from "./search-input.js";
 import { Sidebar } from "./sidebar.js";
+import { SuggestedMemoriesSection } from "./suggested-memories-section.js";
 import type { ViewerMode } from "./types.js";
 
 const EMPTY_QUEUE_STATS: SemanticQueueStats = {
@@ -56,6 +59,7 @@ export interface PhotoHomeProps extends EditControlsProps {
   photos: PhotoRecord[];
   placeGroups: PlaceGroup[];
   memories: Memory[];
+  memoryCandidates: MemoryCandidate[];
   mappablePhotoCount: number;
   selectedPhotoMemories: Memory[];
   selectedPhotoIds: string[];
@@ -75,6 +79,7 @@ export interface PhotoHomeProps extends EditControlsProps {
   aiQueueStats?: SemanticQueueStats;
   isBatchEnrichingSemantic?: boolean;
   isEnrichingMemorySemantic?: boolean;
+  isGeneratingMemoryCandidates?: boolean;
   onSelectPhoto: (photoId: string) => void;
   onToggleBatchSelect: (photoId: string) => void;
   onClearBatchSelection: () => void;
@@ -97,6 +102,9 @@ export interface PhotoHomeProps extends EditControlsProps {
   onSelectFavorites: () => void;
   onSelectMemories: () => void;
   onConfirmCreateMemory: (name: string) => void | Promise<void>;
+  onGenerateMemoryCandidates: () => void | Promise<void>;
+  onAcceptMemoryCandidate: (candidateId: string, input?: { name?: string; photoIds?: string[] }) => void | Promise<void>;
+  onRejectMemoryCandidate: (candidateId: string) => void | Promise<void>;
   onUpdateMemory: (
     memoryId: string,
     updates: { name?: string; description?: string | null; coverPhotoId?: string | null }
@@ -221,6 +229,15 @@ function HomeView({
           </div>
         </div>
         {filtersOpen ? <FilterToolbar filter={filter} onChange={onFilterChange} /> : null}
+        <DiscoveryLensStrip
+          filter={filter}
+          memories={memories}
+          onBrowseModeChange={onBrowseModeChange}
+          onFilterChange={onFilterChange}
+          onOpenMemory={onOpenMemory}
+          photos={photos}
+          placeGroups={placeGroups}
+        />
       </section>
       {browseMode === "waterfall" ? (
         <GallerySection
@@ -270,6 +287,7 @@ export function PhotoHome({
   photos,
   placeGroups,
   memories,
+  memoryCandidates,
   mappablePhotoCount,
   mapBrowseContent,
   selectedPhotoMemories,
@@ -290,6 +308,7 @@ export function PhotoHome({
   aiQueueStats,
   isBatchEnrichingSemantic,
   isEnrichingMemorySemantic,
+  isGeneratingMemoryCandidates,
   onSelectPhoto,
   onToggleBatchSelect,
   onClearBatchSelection,
@@ -312,6 +331,9 @@ export function PhotoHome({
   onSelectFavorites,
   onSelectMemories,
   onConfirmCreateMemory,
+  onGenerateMemoryCandidates,
+  onAcceptMemoryCandidate,
+  onRejectMemoryCandidate,
   onUpdateMemory,
   onAddPhotoToMemory,
   onAddSelectionToMemory,
@@ -524,12 +546,21 @@ export function PhotoHome({
               ) : null}
 
               {page === "memories" ? (
-                <MemoryListSection
-                  memories={recentMemories}
-                  onCreateMemory={() => setCreateMemoryDialogOpen(true)}
-                  onOpenMemory={openMemoryDetail}
-                  selectedMemoryId={selectedMemory?.id ?? null}
-                />
+                <div className="space-y-6">
+                  <SuggestedMemoriesSection
+                    candidates={memoryCandidates}
+                    isGenerating={isGeneratingMemoryCandidates ?? false}
+                    onAccept={onAcceptMemoryCandidate}
+                    onGenerate={onGenerateMemoryCandidates}
+                    onReject={onRejectMemoryCandidate}
+                  />
+                  <MemoryListSection
+                    memories={recentMemories}
+                    onCreateMemory={() => setCreateMemoryDialogOpen(true)}
+                    onOpenMemory={openMemoryDetail}
+                    selectedMemoryId={selectedMemory?.id ?? null}
+                  />
+                </div>
               ) : null}
 
               {page === "memory-detail" && selectedMemory ? (

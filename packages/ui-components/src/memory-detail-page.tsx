@@ -9,7 +9,9 @@ import { Dialog, DialogContent, DialogDescription, DialogTitle } from "./dialog.
 import { IconButton } from "./icon-button.js";
 import { Input } from "./input.js";
 import { getMemoryDescriptionPreview } from "./lib/memory-description.js";
+import { buildMemoryStorySections } from "./lib/memory-story.js";
 import { MemoryDescriptionEditor } from "./memory-description-editor.js";
+import { MemoryStoryBoard } from "./memory-story-board.js";
 import { Panel } from "./panel.js";
 import { PhotoCard } from "./photo-card.js";
 import { formatTimestamp, thumbnailUrl } from "./lib/media.js";
@@ -72,6 +74,7 @@ export function MemoryDetailPage({
     () => photos.find((record) => record.photo.id === pendingRemovalPhotoId) ?? null,
     [pendingRemovalPhotoId, photos]
   );
+  const storySections = React.useMemo(() => buildMemoryStorySections(photos), [photos]);
 
   React.useEffect(() => {
     setDraftName(memory.name);
@@ -239,6 +242,14 @@ export function MemoryDetailPage({
           </div>
         </div>
       </Panel>
+
+      <MemoryStoryBoard
+        onOpenSection={(photoId) => {
+          onSelectPhoto(photoId);
+          onOpenDetail(photoId);
+        }}
+        sections={storySections}
+      />
 
       <Panel className="overflow-hidden">
         <div className="flex items-center justify-between border-b border-stone-200/70 px-5 py-4">

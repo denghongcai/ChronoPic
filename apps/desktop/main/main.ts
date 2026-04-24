@@ -258,6 +258,18 @@ function registerHandlers() {
   ipcMain.handle("memories:listPhotos", async (_event, memoryId: string, filter?: PhotoFilter) =>
     toSerializable(getRuntimeHandle().appService.listPhotosByMemory(memoryId, filter))
   );
+  ipcMain.handle("memoryCandidates:list", async () => toSerializable(getRuntimeHandle().appService.listMemoryCandidates()));
+  ipcMain.handle("memoryCandidates:generate", async (_event, limit?: number) =>
+    toSerializable(getRuntimeHandle().appService.generateMemoryCandidates(limit))
+  );
+  ipcMain.handle(
+    "memoryCandidates:accept",
+    async (_event, candidateId: string, input?: { name?: string; description?: string | null; photoIds?: string[] }) =>
+      toSerializable(getRuntimeHandle().appService.acceptMemoryCandidate(candidateId, input))
+  );
+  ipcMain.handle("memoryCandidates:reject", async (_event, candidateId: string) =>
+    toSerializable(getRuntimeHandle().appService.rejectMemoryCandidate(candidateId))
+  );
 }
 
 app.whenReady().then(createMainWindow);

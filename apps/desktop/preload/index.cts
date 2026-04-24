@@ -55,6 +55,11 @@ const api: ChronoPicBridge = {
     ipcRenderer.invoke("memories:removePhoto", memoryId, photoId),
   listMemoriesByPhoto: (photoId: string) => ipcRenderer.invoke("memories:listByPhoto", photoId),
   listPhotosByMemory: (memoryId: string, filter) => ipcRenderer.invoke("memories:listPhotos", memoryId, filter),
+  listMemoryCandidates: () => ipcRenderer.invoke("memoryCandidates:list"),
+  generateMemoryCandidates: (limit?: number) => ipcRenderer.invoke("memoryCandidates:generate", limit),
+  acceptMemoryCandidate: (candidateId: string, input?: { name?: string; description?: string | null; photoIds?: string[] }) =>
+    ipcRenderer.invoke("memoryCandidates:accept", candidateId, input),
+  rejectMemoryCandidate: (candidateId: string) => ipcRenderer.invoke("memoryCandidates:reject", candidateId),
 };
 
 contextBridge.exposeInMainWorld("chronoPic", api);

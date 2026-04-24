@@ -33,6 +33,7 @@ export function App() {
       isBatchEnrichingSemantic={app.isBatchEnrichingSemantic}
       isEnrichingMemorySemantic={app.isEnrichingMemorySemantic}
       isEnrichingSemantic={app.isEnrichingSemantic}
+      isGeneratingMemoryCandidates={app.isGeneratingMemoryCandidates}
       isScanning={app.isScanning}
       mapBrowseContent={
         <MapBrowseSurface
@@ -51,6 +52,7 @@ export function App() {
         />
       }
       mappablePhotoCount={app.mappablePhotoCount}
+      memoryCandidates={app.memoryCandidates}
       memories={app.memories}
       onAddLibrary={app.handleAddLibrary}
       onSaveAISettings={app.handleSaveAISettings}
@@ -58,6 +60,7 @@ export function App() {
       onEnrichPendingSemantics={app.handleEnrichPendingSemantics}
       onAddPhotoToMemory={app.handleAddPhotoToMemory}
       onAddSelectionToMemory={app.handleAddSelectionToMemory}
+      onAcceptMemoryCandidate={app.handleAcceptMemoryCandidate}
       onClearBatchSelection={app.clearBatchSelection}
       onCloseViewer={app.closeViewer}
       onDeleteMemory={app.handleDeleteMemory}
@@ -65,11 +68,13 @@ export function App() {
       onDatetimeChange={app.setDraftDatetime}
       onEnrichSemantic={app.handleEnrichSemantic}
       onFilterChange={app.patchFilter}
+      onGenerateMemoryCandidates={app.handleGenerateMemoryCandidates}
       onNextPhoto={() => app.selectRelativePhoto(1)}
       onOpenDetail={(photoId) => app.openViewer("detail", photoId)}
       onPreviousPhoto={() => app.selectRelativePhoto(-1)}
       onRemovePhotoFromMemory={app.handleRemovePhotoFromMemory}
       onRemoveSelectionFromMemory={app.handleRemoveSelectionFromMemory}
+      onRejectMemoryCandidate={app.handleRejectMemoryCandidate}
       onRollback={app.handleRollback}
       onSaveDatetime={app.handleSaveDatetime}
       onSaveTags={app.handleSaveTags}

@@ -4,6 +4,8 @@ import type {
   DiscoveryQuery,
   LibrarySnapshot,
   Memory,
+  AcceptMemoryCandidateInput,
+  MemoryCandidate,
   MemorySource,
   MapSettings,
   PhotoFilter,
@@ -51,4 +53,8 @@ export interface ChronoPicBridge {
   removePhotoFromMemory: (memoryId: string, photoId: string) => Promise<void>;
   listMemoriesByPhoto: (photoId: string) => Promise<Memory[]>;
   listPhotosByMemory: (memoryId: string, filter?: PhotoFilter) => Promise<PhotoRecord[]>;
+  listMemoryCandidates: () => Promise<MemoryCandidate[]>;
+  generateMemoryCandidates: (limit?: number) => Promise<MemoryCandidate[]>;
+  acceptMemoryCandidate: (candidateId: string, input?: AcceptMemoryCandidateInput) => Promise<Memory>;
+  rejectMemoryCandidate: (candidateId: string) => Promise<MemoryCandidate>;
 }

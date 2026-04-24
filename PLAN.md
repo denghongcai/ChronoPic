@@ -637,10 +637,170 @@ Implementation breakdown:
 - Discovery surfaces now expose match-source explanations for the selected photo and inspector so the user can see which fields or linked memory metadata caused the current result to match the active query.
 - Discovery/runtime UX must degrade safely when the Electron preload bridge is unavailable, showing a clear desktop-bridge error state instead of crashing the renderer during initial hydration.
 
+### 4.13 Memory Authoring and Storytelling Phase
+
+- Turn memories from static containers into authoring surfaces that help users shape a narrative.
+- Keep manual authoring as the source of truth:
+  generated title/summary/tags remain suggestions until explicitly applied,
+  and manual description editing stays BlockNote-backed.
+- Add a story outline derived from the memory's current photos so the detail page exposes:
+  chronological chapters,
+  chapter cover images,
+  photo counts,
+  GPS availability,
+  and AI-readiness signals.
+- Keep this pass deterministic and local:
+  no new remote model call is required to view the story outline,
+  and no new database ordering model is introduced before the product proves the authoring flow needs manual chapter editing.
+
+Current landed scope:
+
+- `MemoryDetailPage` now includes a `Story Outline` section between the memory hero and management controls.
+- `buildMemoryStorySections()` groups memory photos into chronological chapters using photo datetime first and photo update time as fallback ordering.
+- Each chapter has a representative thumbnail, date range, photo count, mapped-photo count, and AI-ready count.
+- Clicking a chapter lead opens the existing focused detail viewer for that representative photo, preserving the current viewer/gallery flow instead of introducing a parallel story player before the chapter model needs dedicated playback controls.
+- Regression coverage now verifies chapter grouping and section metrics.
+
+### 4.14 Advanced Discovery Phase
+
+- Make discovery more action-oriented without reintroducing noisy explanatory chrome.
+- Keep one shared browse query model across waterfall, map, and timeline.
+- Add lightweight discovery pivots that can move the current scope toward:
+  favorites,
+  mapped photos,
+  AI-ready / needs-AI subsets,
+  top tags,
+  map view,
+  timeline view,
+  and existing memories.
+- Keep suggestions deterministic and inspectable:
+  suggestions are derived from visible records, place groups, memories, and the current filter,
+  not from opaque recommendation ranking.
+
+Current landed scope:
+
+- `DiscoveryLensStrip` now renders a compact `Discover` chip row under the browse controls.
+- `buildDiscoverySuggestions()` derives actionable pivots from the current result scope.
+- Suggestion actions patch the existing `PhotoFilter`, switch the existing `BrowseMode`, or open the existing memory detail route.
+- Regression coverage verifies GPS, favorites, map, tag, and memory suggestions.
+
+### 4.15 AI Memory Auto-Grouping Phase
+
+- Add an explicit AI-assisted memory creation flow that can propose new memories from the local photo library.
+- The product goal is to let ChronoPic discover coherent memory candidates without requiring the user to manually select every photo first.
+- Candidate grouping should use available local signals in layers:
+  GPS proximity and place clusters,
+  timeline proximity,
+  AI-generated captions/summaries/tags,
+  manually edited captions/tags,
+  and future face/person signals when a dedicated person-recognition pipeline exists.
+- Similar people should be treated as a future-capable grouping dimension, but the first implementation must not pretend to recognize identities unless the underlying model/pipeline actually emits person clusters.
+- Proposed memories must be reviewable before they become real memories:
+  show candidate title,
+  reason for grouping,
+  confidence,
+  representative cover,
+  photo count,
+  and included photos.
+- Generated memories should preserve the current memory semantics:
+  AI suggestions are non-destructive,
+  user-created/accepted memories remain editable,
+  and users can reject or adjust candidates before saving.
+- The first implementation should avoid opaque magic:
+  persist candidate/proposal state separately from accepted memories,
+  expose why a group was suggested,
+  and avoid silently adding photos to existing memories unless explicitly accepted.
+
+Implementation breakdown:
+
+1. Candidate model and persistence
+- Add a memory-candidate projection distinct from accepted `Memory`.
+- Track candidate source signals such as:
+  `place`,
+  `time`,
+  `semantic`,
+  `person`,
+  and `mixed`.
+- Store candidate confidence, reason text, representative photo, suggested title/description/tags, and ordered photo IDs.
+- Keep rejected/accepted candidate state so the app does not repeatedly propose the same group.
+
+2. Grouping service
+- Add a business/service-layer generator that can create candidates from:
+  place groups,
+  timeline groups,
+  semantic labels/summaries,
+  and AI model synthesis.
+- Start with deterministic pre-clustering from GPS/time/semantic tags before invoking the multimodal model for naming and explanation.
+- Use the Vercel AI SDK provider already configured in `4.11` for candidate naming/summary, not a separate model integration path.
+
+3. Review and accept UI
+- Add a `Suggested Memories` surface under Memories.
+- Each candidate should show:
+  cover,
+  title,
+  grouping reason,
+  confidence,
+  and a preview strip.
+- User actions:
+  accept as memory,
+  reject,
+  edit title before accept,
+  remove photos from candidate before accept,
+  and open candidate detail.
+
+4. Acceptance semantics
+- Accepting a candidate creates a normal editable `Memory` and links its photos through the existing memory-photo relationship.
+- Rejected candidates remain suppressed unless the underlying photo set materially changes.
+- Existing memories should be considered during grouping so the generator avoids duplicating a user-curated memory unless explicitly requested.
+
+Current landed scope:
+
+- Added a persisted `memory_candidates` projection separate from accepted `memories`.
+- Candidate records now store:
+  stable signature,
+  title,
+  description,
+  reason,
+  confidence,
+  source signal,
+  status,
+  photo IDs,
+  cover photo,
+  generated labels,
+  and accepted-memory linkage.
+- Added deterministic candidate generation in the application layer from:
+  GPS/place proximity,
+  month/time grouping,
+  and manual/AI semantic labels.
+- Existing accepted memories are considered during candidate generation so exact duplicate photo sets are not proposed again.
+- Added IPC/preload/renderer wiring for:
+  listing candidates,
+  generating candidates,
+  accepting a candidate as a real editable memory,
+  and rejecting a candidate.
+- Memories page now includes a `Suggested Memories` review panel with:
+  generate action,
+  editable candidate title,
+  reason/confidence display,
+  labels,
+  cover,
+  photo-count preview,
+  per-candidate photo removal before acceptance,
+  accept,
+  and reject.
+- Accepted candidates create normal `Memory` records with source `ai` and existing `memory_photos` links.
+- Regression coverage now verifies:
+  schema support for candidates,
+  service-level candidate generation from place/time/semantic signals,
+  and accept/reject persistence boundaries.
+
 Priority order from this point forward:
 
 1. `4.11 AI and Semantic Enrichment Phase`
 2. `4.12 Search and Discovery Phase`
+3. `4.13 Memory Authoring and Storytelling Phase`
+4. `4.14 Advanced Discovery Phase`
+5. `4.15 AI Memory Auto-Grouping Phase`
 
 ### 5. Editing and History ✅
 
@@ -675,6 +835,9 @@ Priority order from this point forward:
   and arrow keys move between adjacent assets.
 - Verify the gallery mode supports immersive browsing without breaking the current filter/query context.
 - Verify detail view preserves tag editing, datetime editing, and rollback for the active asset.
+- Verify memory story sections group photos chronologically and expose deterministic metrics without requiring remote AI.
+- Verify advanced discovery suggestions produce actionable filter, browse-mode, tag, GPS, favorites, and memory pivots from the current scope.
+- Verify AI memory auto-grouping keeps candidates separate from accepted memories, records grouping reasons/confidence, and requires explicit user acceptance before creating editable memories.
 - Verify the structural split does not change runtime behavior:
   the same key UI flows should remain functional after files are decomposed.
 - Verify package exports remain deliberate and build/runtime resolution still matches the public package surface after the split.
