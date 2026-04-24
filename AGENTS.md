@@ -1625,6 +1625,41 @@ This file is the local execution record for ChronoPic. It complements `PLAN.md` 
   `pnpm build`
 - Result: the UX simplification pass is landed on `ux-simplify-surfaces` and build-valid.
 
+### 2026-04-24 Step 90
+
+- Reviewed Memory detail AI Story presentation and agreed that default AI Story exposure made AI suggestions feel like primary memory content.
+- Moved the AI Story panel out of the default Memory detail body.
+- Added a compact `AI Suggestions` sparkles icon action in the memory header.
+- Added a dedicated dialog for AI suggestions:
+  status,
+  generate action,
+  suggested title,
+  suggested summary,
+  generated tags,
+  and explicit apply controls now live inside the dialog.
+- Preserved the existing rule that generated content is never applied automatically.
+- Verified the refactor with:
+  `pnpm typecheck`
+  `pnpm test`
+  `pnpm build`
+- Result: Memory detail now keeps AI suggestions behind an explicit action and remains build-valid.
+
+### 2026-04-24 Step 91
+
+- Replaced the Memory description editor from BlockNote to a simpler Tiptap editor.
+- Removed BlockNote runtime dependencies and the BlockNote stylesheet import from the desktop renderer.
+- Added explicit Tiptap dependencies to `@chronopic/ui-components`.
+- Kept the existing description persistence API unchanged:
+  descriptions are still stored as a string,
+  legacy BlockNote JSON is converted into simple paragraph HTML when opened,
+  and existing preview logic now supports both old BlockNote JSON and new Tiptap HTML.
+- Implemented a minimal Tiptap schema for plain paragraph editing to keep the UI simple and avoid command-heavy markdown chrome.
+- Verified the replacement with:
+  `pnpm typecheck`
+  `pnpm test`
+  `pnpm build`
+- Result: Memory description editing now uses Tiptap, BlockNote is removed, and the production renderer bundle is materially smaller.
+
 ## Next Immediate Tasks
 
 1. Workspace skeleton is implemented.
@@ -1686,3 +1721,5 @@ This file is the local execution record for ChronoPic. It complements `PLAN.md` 
 57. AI Memory Auto-Grouping is now implemented as a reviewable candidate workflow rather than silent memory creation.
 58. The active follow-up phase is `4.16 Memory Candidate Queue and Notifications Phase`.
 59. Active branch `ux-simplify-surfaces` is refining UI surfaces to reduce duplicate status text and repeated controls.
+60. Memory detail AI suggestions are now being moved from default page content into an explicit compact action/dialog.
+61. Memory description editing is being simplified from BlockNote to Tiptap.

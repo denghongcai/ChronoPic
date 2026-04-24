@@ -1,5 +1,5 @@
 import * as React from "react";
-import { CalendarClock, ImageUp, PencilLine, SquarePen, Trash2 } from "lucide-react";
+import { CalendarClock, ImageUp, PencilLine, Sparkles, SquarePen, Trash2, X } from "lucide-react";
 
 import type { Memory, PhotoRecord } from "@chronopic/domain";
 
@@ -8,7 +8,7 @@ import { Button } from "./button.js";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "./dialog.js";
 import { IconButton } from "./icon-button.js";
 import { Input } from "./input.js";
-import { getMemoryDescriptionPreview } from "./lib/memory-description.js";
+import { getMemoryDescriptionHtml, hasMemoryDescription } from "./lib/memory-description.js";
 import { buildMemoryStorySections } from "./lib/memory-story.js";
 import { MemoryDescriptionEditor } from "./memory-description-editor.js";
 import { MemoryStoryBoard } from "./memory-story-board.js";
@@ -57,13 +57,15 @@ export function MemoryDetailPage({
 }: MemoryDetailPageProps) {
   const coverUrl = thumbnailUrl(memory.coverThumbnailPath);
   const [editingDescription, setEditingDescription] = React.useState(false);
+  const [aiSuggestionsOpen, setAiSuggestionsOpen] = React.useState(false);
   const [renaming, setRenaming] = React.useState(false);
   const [selectionMode, setSelectionMode] = React.useState(false);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = React.useState(false);
   const [removeSelectedConfirmOpen, setRemoveSelectedConfirmOpen] = React.useState(false);
   const [pendingRemovalPhotoId, setPendingRemovalPhotoId] = React.useState<string | null>(null);
   const [draftName, setDraftName] = React.useState(memory.name);
-  const descriptionPreview = getMemoryDescriptionPreview(memory.description);
+  const descriptionHtml = getMemoryDescriptionHtml(memory.description);
+  const hasDescription = hasMemoryDescription(memory.description);
   const hasBatchSelection = selectedPhotoIds.length > 0;
   const isSelecting = selectionMode || hasBatchSelection;
   const selectedRecord = React.useMemo(
@@ -125,6 +127,13 @@ export function MemoryDetailPage({
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
+                  <IconButton
+                    icon={<Sparkles className="h-4 w-4" />}
+                    label="AI Suggestions"
+                    onClick={() => setAiSuggestionsOpen(true)}
+                    size="sm"
+                    variant="ghost"
+                  />
                   <Button onClick={() => setRenaming(true)} size="sm" variant="outline">
                     <SquarePen className="h-4 w-4" />
                     Rename
@@ -152,96 +161,130 @@ export function MemoryDetailPage({
                   onClick={() => setEditingDescription(true)}
                   type="button"
                 >
-                  <p className="text-sm leading-7 text-stone-600">
-                    {descriptionPreview || "Add context, story beats, and notes for this memory."}
-                  </p>
+                  {hasDescription ? (
+                    <div
+                      className="prose-memory text-sm leading-7 text-stone-600"
+                      dangerouslySetInnerHTML={{ __html: descriptionHtml }}
+                    />
+                  ) : (
+                    <p className="text-sm leading-7 text-stone-600">Add context, story beats, and notes for this memory.</p>
+                  )}
                 </button>
               </div>
 
-              <div className="space-y-3 rounded-[24px] border border-stone-200 bg-stone-50/70 px-5 py-4">
-                <div className="flex flex-wrap items-center justify-between gap-3">
-                  <div>
-                    <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-stone-500">AI Story</p>
-                    <p className="mt-2 text-sm leading-6 text-stone-500">
-                      Generate a suggested title, story summary, and tags from the photos already inside this memory.
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Badge tone={memory.aiStatus === "completed" ? "success" : memory.aiStatus === "failed" ? "danger" : "neutral"}>
-                      {memory.aiStatus}
-                    </Badge>
-                    <Button
-                      disabled={isEnrichingSemantic || photos.length === 0}
-                      onClick={() => void onEnrichSemantic?.(memory.id)}
-                      size="sm"
-                      variant="outline"
-                    >
-                      {isEnrichingSemantic ? "Generating..." : "Generate AI Story"}
-                    </Button>
-                  </div>
-                </div>
-
-                {memory.generatedName || memory.generatedDescription || memory.generatedLabels.length > 0 ? (
-                  <div className="space-y-4 rounded-[20px] border border-stone-200 bg-white px-4 py-4 shadow-sm">
-                    {memory.generatedName ? (
-                      <div className="space-y-2">
-                        <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-stone-500">Suggested Title</p>
-                        <div className="flex flex-wrap items-center justify-between gap-3">
-                          <p className="text-lg font-semibold text-stone-950">{memory.generatedName}</p>
-                          <Button
-                            disabled={memory.generatedName === memory.name}
-                            onClick={() => void onRenameMemory(memory.id, memory.generatedName as string)}
-                            size="sm"
-                            variant="outline"
-                          >
-                            Apply Title
-                          </Button>
-                        </div>
-                      </div>
-                    ) : null}
-
-                    {memory.generatedDescription ? (
-                      <div className="space-y-2">
-                        <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-stone-500">Suggested Summary</p>
-                        <p className="text-sm leading-7 text-stone-600">{memory.generatedDescription}</p>
-                        <div>
-                          <Button
-                            disabled={memory.generatedDescription === memory.description}
-                            onClick={() => void onSaveDescription(memory.id, memory.generatedDescription as string)}
-                            size="sm"
-                            variant="outline"
-                          >
-                            Use as Description
-                          </Button>
-                        </div>
-                      </div>
-                    ) : null}
-
-                    {memory.generatedLabels.length > 0 ? (
-                      <div className="space-y-2">
-                        <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-stone-500">AI Tags</p>
-                        <div className="flex flex-wrap gap-2">
-                          {memory.generatedLabels.map((label) => (
-                            <Badge key={label} tone="neutral">
-                              {label}
-                            </Badge>
-                          ))}
-                        </div>
-                      </div>
-                    ) : null}
-                  </div>
-                ) : memory.aiStatus === "failed" ? (
-                  <p className="text-sm leading-6 text-rose-600">{memory.aiError ?? "AI story generation failed."}</p>
-                ) : (
-                  <p className="text-sm leading-6 text-stone-500">
-                    No AI story generated yet. Run it after the memory has a few photos and photo-level metadata is in place.
-                  </p>
-                )}
-              </div>
             </div>
           </div>
         </div>
       </Panel>
+
+      <Dialog onOpenChange={setAiSuggestionsOpen} open={aiSuggestionsOpen}>
+        <DialogContent className="flex items-center justify-center p-6">
+          <DialogTitle className="sr-only">AI suggestions for {memory.name}</DialogTitle>
+          <DialogDescription className="sr-only">
+            Generate and apply optional AI suggestions for this memory title, description, and tags.
+          </DialogDescription>
+          <div className="relative w-full max-w-3xl rounded-[28px] border border-stone-200 bg-white p-6 shadow-2xl">
+            <IconButton
+              className="absolute right-4 top-4"
+              icon={<X className="h-4 w-4" />}
+              label="Close AI suggestions"
+              onClick={() => setAiSuggestionsOpen(false)}
+              size="sm"
+              variant="ghost"
+            />
+            <div className="mb-5 pr-12">
+              <div className="flex flex-wrap items-center gap-2">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-stone-500">AI Suggestions</p>
+                <Badge tone={memory.aiStatus === "completed" ? "success" : memory.aiStatus === "failed" ? "danger" : "neutral"}>
+                  {memory.aiStatus}
+                </Badge>
+              </div>
+              <div>
+                <h2 className="mt-2 font-['Space_Grotesk','IBM_Plex_Sans',sans-serif] text-2xl font-semibold tracking-tight text-stone-950">
+                  {memory.name}
+                </h2>
+                <p className="mt-2 max-w-xl text-sm leading-6 text-stone-500">
+                  Generate optional title and description suggestions. Nothing is applied until you choose it.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-4">
+              <div className="flex flex-wrap items-center justify-between gap-3 rounded-[20px] border border-stone-200 bg-stone-50/70 px-4 py-3">
+                <p className="text-sm leading-6 text-stone-600">
+                  Suggestions use the photos already inside this memory.
+                </p>
+                <Button
+                  disabled={isEnrichingSemantic || photos.length === 0}
+                  onClick={() => void onEnrichSemantic?.(memory.id)}
+                  size="sm"
+                  variant="outline"
+                >
+                  <Sparkles className="h-4 w-4" />
+                  {isEnrichingSemantic ? "Generating..." : "Generate Suggestions"}
+                </Button>
+              </div>
+
+              {memory.generatedName || memory.generatedDescription || memory.generatedLabels.length > 0 ? (
+                <div className="space-y-4 rounded-[20px] border border-stone-200 bg-white px-4 py-4 shadow-sm">
+                  {memory.generatedName ? (
+                    <div className="space-y-2">
+                      <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-stone-500">Suggested Title</p>
+                      <div className="flex flex-wrap items-center justify-between gap-3">
+                        <p className="text-lg font-semibold text-stone-950">{memory.generatedName}</p>
+                        <Button
+                          disabled={memory.generatedName === memory.name}
+                          onClick={() => void onRenameMemory(memory.id, memory.generatedName as string)}
+                          size="sm"
+                          variant="outline"
+                        >
+                          Apply Title
+                        </Button>
+                      </div>
+                    </div>
+                  ) : null}
+
+                  {memory.generatedDescription ? (
+                    <div className="space-y-2">
+                      <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-stone-500">Suggested Summary</p>
+                      <p className="text-sm leading-7 text-stone-600">{memory.generatedDescription}</p>
+                      <div>
+                        <Button
+                          disabled={memory.generatedDescription === memory.description}
+                          onClick={() => void onSaveDescription(memory.id, memory.generatedDescription as string)}
+                          size="sm"
+                          variant="outline"
+                        >
+                          Use as Description
+                        </Button>
+                      </div>
+                    </div>
+                  ) : null}
+
+                  {memory.generatedLabels.length > 0 ? (
+                    <div className="space-y-2">
+                      <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-stone-500">AI Tags</p>
+                      <div className="flex flex-wrap gap-2">
+                        {memory.generatedLabels.map((label) => (
+                          <Badge key={label} tone="neutral">
+                            {label}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                  ) : null}
+                </div>
+              ) : memory.aiStatus === "failed" ? (
+                <p className="text-sm leading-6 text-rose-600">{memory.aiError ?? "AI story generation failed."}</p>
+              ) : (
+                <p className="text-sm leading-6 text-stone-500">
+                  No suggestions generated yet.
+                </p>
+              )}
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       <MemoryStoryBoard
         onOpenSection={(photoId) => {

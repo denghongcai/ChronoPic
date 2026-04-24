@@ -1,5 +1,3 @@
-import type { PartialBlock } from "@blocknote/core";
-
 function extractTextFromContent(content: unknown): string {
   if (typeof content === "string") {
     return content;
@@ -24,21 +22,68 @@ function extractTextFromContent(content: unknown): string {
     .join(" ");
 }
 
-export function defaultMemoryBlocks(): PartialBlock[] {
-  return [{ type: "paragraph", content: "" }];
+function escapeHtml(value: string): string {
+  return value
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
 }
 
-export function parseMemoryBlocks(value: string | null): PartialBlock[] {
+function stripHtml(value: string): string {
+  return value
+    .replace(/<br\s*\/?>/gi, " ")
+    .replace(/<\/p>/gi, " ")
+    .replace(/<[^>]+>/g, "")
+    .replace(/&nbsp;/g, " ")
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"')
+    .replace(/&#039;/g, "'");
+}
+
+function sanitizeDescriptionHtml(value: string): string {
+  return value
+    .replace(/<script[\s\S]*?>[\s\S]*?<\/script>/gi, "")
+    .replace(/<style[\s\S]*?>[\s\S]*?<\/style>/gi, "")
+    .replace(/\son\w+="[^"]*"/gi, "")
+    .replace(/\son\w+='[^']*'/gi, "")
+    .replace(/\s(href|src)="javascript:[^"]*"/gi, "")
+    .replace(/\s(href|src)='javascript:[^']*'/gi, "");
+}
+
+function isHtml(value: string): boolean {
+  return /<\/?[a-z][\s\S]*>/i.test(value);
+}
+
+export function getMemoryDescriptionHtml(value: string | null): string {
   if (!value) {
-    return defaultMemoryBlocks();
+    return "<p></p>";
   }
 
   try {
-    const parsed = JSON.parse(value) as PartialBlock[];
-    return Array.isArray(parsed) && parsed.length > 0 ? parsed : defaultMemoryBlocks();
+    const parsed = JSON.parse(value) as Array<{ content?: unknown }>;
+    if (Array.isArray(parsed)) {
+      const paragraphs = parsed.map((block) => extractTextFromContent(block?.content).trim());
+      return paragraphs.length > 0
+        ? paragraphs.map((paragraph) => `<p>${escapeHtml(paragraph)}</p>`).join("")
+        : "<p></p>";
+    }
   } catch {
-    return [{ type: "paragraph", content: value }];
+    // Non-JSON values are either saved HTML from Tiptap or legacy plain text.
   }
+
+  if (isHtml(value)) {
+    return sanitizeDescriptionHtml(value);
+  }
+
+  return `<p>${escapeHtml(value)}</p>`;
+}
+
+export function hasMemoryDescription(value: string | null): boolean {
+  return getMemoryDescriptionPreview(value).length > 0;
 }
 
 export function getMemoryDescriptionPreview(value: string | null): string {
@@ -58,6 +103,6 @@ export function getMemoryDescriptionPreview(value: string | null): string {
       .replace(/\s+/g, " ")
       .trim();
   } catch {
-    return value.trim();
+    return stripHtml(value).replace(/\s+/g, " ").trim();
   }
 }
