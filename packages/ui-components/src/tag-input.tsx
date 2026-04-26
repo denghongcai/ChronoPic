@@ -2,8 +2,8 @@ import { X } from "lucide-react";
 import * as React from "react";
 
 import { Badge } from "./badge.js";
+import { useI18n } from "./i18n-provider.js";
 import { cn } from "./lib/cn.js";
-import { Input } from "./input.js";
 
 export interface TagInputProps {
   value: string[];
@@ -13,6 +13,7 @@ export interface TagInputProps {
 }
 
 export function TagInput({ value, onChange, placeholder = "Add tag...", className }: TagInputProps) {
+  const { t } = useI18n();
   const [inputValue, setInputValue] = React.useState("");
 
   function removeTag(index: number) {
@@ -50,7 +51,7 @@ export function TagInput({ value, onChange, placeholder = "Add tag...", classNam
             className="ml-0.5 flex h-3.5 w-3.5 items-center justify-center rounded-full text-stone-500 hover:bg-stone-200 hover:text-stone-700"
             onClick={() => removeTag(i)}
             type="button"
-            aria-label={`Remove ${tag}`}
+            aria-label={t("common.removeTag", { tag })}
           >
             <X className="h-2.5 w-2.5" />
           </button>

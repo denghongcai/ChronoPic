@@ -3,6 +3,7 @@ import { AlertTriangle, CheckCheck, Database, Layers3, ShieldCheck, Sparkles } f
 
 import type { AppCapabilities, LibrarySnapshot } from "@chronopic/domain";
 
+import { useI18n } from "./i18n-provider.js";
 import { Panel } from "./panel.js";
 
 export interface HomeStatsProps {
@@ -13,35 +14,34 @@ export interface HomeStatsProps {
 }
 
 export function HomeStats({ snapshot, capabilities, statusMessage, isScanning }: HomeStatsProps) {
+  const { t } = useI18n();
+
   return (
     <Panel className="overflow-hidden">
       <div className="grid gap-8 px-7 py-7 lg:grid-cols-[minmax(0,1fr)_360px] lg:px-9 lg:py-9">
         <div className="space-y-4">
           <div className="inline-flex items-center rounded-full border border-amber-300/50 bg-amber-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.28em] text-amber-700">
-            ChronoPic Desktop
+            {t("home.heroBadge")}
           </div>
           <div className="space-y-3">
             <h1 className="max-w-3xl font-['Space_Grotesk','IBM_Plex_Sans',sans-serif] text-4xl font-semibold tracking-tight text-stone-950 lg:text-5xl">
-              Local-first album workspace with cleaner timelines and safer indexing.
+              {t("home.heroTitle")}
             </h1>
-            <p className="max-w-2xl text-sm leading-7 text-stone-600 lg:text-base">
-              Browse local media, fix timeline metadata, review duplicates, and keep the AI layer deferred without
-              weakening the core desktop experience.
-            </p>
+            <p className="max-w-2xl text-sm leading-7 text-stone-600 lg:text-base">{t("home.heroDescription")}</p>
           </div>
         </div>
         <div className="grid gap-3 self-start">
           <div className="grid gap-3 sm:grid-cols-2">
-            <StatusTile icon={Layers3} label="Library Sources" tone="amber" value={String(snapshot.sources.length)} />
-            <StatusTile icon={Database} label="Indexed Photos" tone="blue" value={String(snapshot.stats.indexedPhotos)} />
+            <StatusTile icon={Layers3} label={t("home.librarySources")} tone="amber" value={String(snapshot.sources.length)} />
+            <StatusTile icon={Database} label={t("home.indexedPhotos")} tone="blue" value={String(snapshot.stats.indexedPhotos)} />
           </div>
           <div className="grid gap-3 sm:grid-cols-2">
-            <StatusTile icon={ShieldCheck} label="Status" tone="stone" value={isScanning ? "Scanning..." : statusMessage} />
+            <StatusTile icon={ShieldCheck} label={t("home.status")} tone="stone" value={isScanning ? t("actions.scanning") : statusMessage} />
             <StatusTile
               icon={Sparkles}
-              label="AI Pipeline"
+              label={t("home.aiPipeline")}
               tone="emerald"
-              value={capabilities.aiEnabled ? "Enabled" : "Deferred"}
+              value={capabilities.aiEnabled ? t("settings.ai.enabled") : t("home.aiDeferred")}
             />
           </div>
         </div>

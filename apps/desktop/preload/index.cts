@@ -9,6 +9,8 @@ const api: ChronoPicBridge = {
   saveAISettings: (settings) => ipcRenderer.invoke("system:saveAISettings", settings),
   getMapSettings: () => ipcRenderer.invoke("system:getMapSettings"),
   saveMapSettings: (settings) => ipcRenderer.invoke("system:saveMapSettings", settings),
+  getLocaleSettings: () => ipcRenderer.invoke("system:getLocaleSettings"),
+  saveLocaleSettings: (settings) => ipcRenderer.invoke("system:saveLocaleSettings", settings),
   pickLibraryDirectory: () => ipcRenderer.invoke("library:pickDirectory"),
   addLibrarySource: (libraryPath: string) => ipcRenderer.invoke("library:add", libraryPath),
   listLibrarySources: () => ipcRenderer.invoke("library:list"),
@@ -22,9 +24,10 @@ const api: ChronoPicBridge = {
   getPhoto: (photoId: string) => ipcRenderer.invoke("photos:get", photoId),
   updatePhotoTags: (photoId: string, labels: string[]) => ipcRenderer.invoke("photos:updateTags", photoId, labels),
   updatePhotoCaption: (photoId: string, caption: string | null) => ipcRenderer.invoke("photos:updateCaption", photoId, caption),
-  enrichPhotoSemantic: (photoId: string) => ipcRenderer.invoke("photos:enrichSemantic", photoId),
-  enrichPendingSemantics: async (limit?: number) => {
-    const response = await ipcRenderer.invoke("photos:enrichPendingSemantics", limit);
+  enrichPhotoSemantic: (photoId: string, context?: { outputLocale?: string | null }) =>
+    ipcRenderer.invoke("photos:enrichSemantic", photoId, context),
+  enrichPendingSemantics: async (limit?: number, context?: { outputLocale?: string | null }) => {
+    const response = await ipcRenderer.invoke("photos:enrichPendingSemantics", limit, context);
     const parsed = typeof response === "string" ? JSON.parse(response) : response;
     if (parsed && typeof parsed === "object" && "ok" in parsed && parsed.ok === false) {
       throw new Error(typeof parsed.message === "string" ? parsed.message : "Failed to process pending AI metadata");
@@ -44,7 +47,8 @@ const api: ChronoPicBridge = {
   getSnapshot: () => ipcRenderer.invoke("system:snapshot"),
   listMemories: () => ipcRenderer.invoke("memories:list"),
   getMemory: (memoryId: string) => ipcRenderer.invoke("memories:get", memoryId),
-  enrichMemorySemantic: (memoryId: string) => ipcRenderer.invoke("memories:enrichSemantic", memoryId),
+  enrichMemorySemantic: (memoryId: string, context?: { name?: string | null; description?: string | null }) =>
+    ipcRenderer.invoke("memories:enrichSemantic", memoryId, context),
   createMemory: (name: string, description?: string, source?: "manual" | "ai") =>
     ipcRenderer.invoke("memories:create", name, description, source),
   updateMemory: (memoryId: string, updates: { name?: string; description?: string | null; coverPhotoId?: string | null }) =>

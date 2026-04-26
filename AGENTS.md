@@ -1609,6 +1609,179 @@ This file is the local execution record for ChronoPic. It complements `PLAN.md` 
   `pnpm build`
 - Result: Memory Candidate Queue and Notifications is landed and build-valid.
 
+### 2026-04-24 Step 89
+
+- Created branch `ux-simplify-surfaces` for a focused UI/UX simplification pass.
+- Removed redundant information and duplicate affordances:
+  the gallery no longer renders the large `Discovery Scope` explanation panel,
+  discovery chips now focus on cross-view and memory pivots instead of duplicating filter controls,
+  the memory story board no longer shows a secondary `Open chapter lead` button inside an already-clickable card,
+  Notifications no longer renders `Recent Action` as a full card,
+  and Suggested Memories now has a single ready-count badge instead of duplicate count text.
+- Reduced candidate-card noise by hiding per-photo removal controls behind an explicit `Adjust photos` action.
+- Verified the first pass with:
+  `pnpm typecheck`
+  `pnpm test`
+  `pnpm build`
+- Result: the UX simplification pass is landed on `ux-simplify-surfaces` and build-valid.
+
+### 2026-04-24 Step 90
+
+- Reviewed Memory detail AI Story presentation and agreed that default AI Story exposure made AI suggestions feel like primary memory content.
+- Moved the AI Story panel out of the default Memory detail body.
+- Added a compact `AI Suggestions` sparkles icon action in the memory header.
+- Added a dedicated dialog for AI suggestions:
+  status,
+  generate action,
+  suggested title,
+  suggested summary,
+  generated tags,
+  and explicit apply controls now live inside the dialog.
+- Preserved the existing rule that generated content is never applied automatically.
+- Verified the refactor with:
+  `pnpm typecheck`
+  `pnpm test`
+  `pnpm build`
+- Result: Memory detail now keeps AI suggestions behind an explicit action and remains build-valid.
+
+### 2026-04-24 Step 91
+
+- Replaced the Memory description editor from BlockNote to a simpler Tiptap editor.
+- Removed BlockNote runtime dependencies and the BlockNote stylesheet import from the desktop renderer.
+- Added explicit Tiptap dependencies to `@chronopic/ui-components`.
+- Kept the existing description persistence API unchanged:
+  descriptions are still stored as a string,
+  legacy BlockNote JSON is converted into simple paragraph HTML when opened,
+  and existing preview logic now supports both old BlockNote JSON and new Tiptap HTML.
+- Implemented a minimal Tiptap schema for plain paragraph editing to keep the UI simple and avoid command-heavy markdown chrome.
+- Verified the replacement with:
+  `pnpm typecheck`
+  `pnpm test`
+  `pnpm build`
+- Result: Memory description editing now uses Tiptap, BlockNote is removed, and the production renderer bundle is materially smaller.
+
+### 2026-04-26 Step 92
+
+- Reviewed the memory description pipeline and removed the mixed-format model.
+- Changed the description contract to raw Markdown source only:
+  existing stored values are treated as Markdown as-is,
+  no legacy BlockNote JSON or Tiptap HTML compatibility conversion is attempted,
+  and the database/API continue to store the same `description` string field.
+- Replaced the Tiptap editor with `@uiw/react-md-editor`.
+- Updated the memory detail read view to render Markdown through the same editor package's Markdown preview instead of injecting saved HTML.
+- Simplified memory-description preview extraction so cards strip common Markdown markers for compact text only.
+- Added the explicit renderer CSS imports and package dependencies required by the Markdown editor/preview.
+- Used lazy loading for the editor and preview components so importing `@chronopic/ui-components` in Node-based tests does not eagerly load browser CSS from `@uiw`.
+- Verified the replacement with:
+  `pnpm typecheck`
+  `pnpm test`
+  `pnpm build`
+- Result: Memory description editing and display now have one canonical Markdown-source format and the workspace remains build-valid.
+
+### 2026-04-26 Step 93
+
+- Refined Memory title and description editing interaction.
+- Removed the redundant `Rename` button from Memory detail; clicking the title now opens the title editor directly.
+- Removed the redundant `Edit Description` button; clicking the description surface remains the only edit entry point.
+- Added magic-button AI actions inside both edit dialogs:
+  empty title/description drafts show generate-oriented copy,
+  existing drafts show optimize-oriented copy,
+  and both actions reuse the existing `onEnrichSemantic(memory.id)` memory suggestion pipeline.
+- Kept AI suggestions non-destructive:
+  generated title/description values appear as suggestions,
+  choosing `Use suggestion` only fills the local draft,
+  and the user still has to save before the Memory is updated.
+- Converted `MemoryDescriptionEditor` into a controlled Markdown editor so suggestion-filled drafts and manually typed drafts share the same dirty/save behavior.
+- Verified the interaction update with:
+  `pnpm typecheck`
+  `pnpm test`
+  `pnpm build`
+- Result: Memory title/description editing is less button-heavy and AI generation/optimization is available at the point of authoring without silently overwriting user content.
+
+### 2026-04-26 Step 94
+
+- Reviewed the Memory AI optimize path after observing that optimize behaved like a fresh generation.
+- Found that the edit-dialog magic buttons only called `enrichMemorySemantic(memory.id)`, so the backend prompt used the last saved Memory title/description and could not see unsaved editor drafts.
+- Added a `MemoryAIContext` override object to the AI service interface and app-service `enrichMemorySemantic` path.
+- Threaded the context through Electron IPC, preload bridge, renderer hook, `PhotoHome`, and `MemoryDetailPage`.
+- Updated title optimize to pass the current title draft as `context.name`.
+- Updated description optimize to pass the current Markdown draft as `context.description`.
+- Updated the memory AI prompt so non-empty working drafts are explicitly treated as optimization inputs whose intent and concrete details must be preserved.
+- Added regression coverage asserting that `ChronoPicAppService.enrichMemorySemantic()` forwards draft context to `AIClient.analyzeMemory()` without overwriting manual Memory fields.
+- Verified the fix with:
+  `pnpm typecheck`
+  `pnpm test`
+  `pnpm build`
+- Result: Memory AI optimize now has access to the user's current unsaved title/description draft instead of regenerating solely from persisted Memory data.
+
+### 2026-04-26 Step 95
+
+- Added `4.17 Internationalization and AI Output Locale Phase` to `PLAN.md` before implementation.
+- Locked the i18n approach around a new `@chronopic/i18n` package with typed locale IDs, typed translation keys, fallback/interpolation, and date/count formatting helpers.
+- Planned persisted desktop settings for both UI locale and AI output locale, with AI output defaulting to the UI language unless explicitly configured.
+- Planned React integration through `I18nProvider` / `useI18n()` in `@chronopic/ui-components` while keeping persistence in the desktop/config layer.
+- Planned prompt-level AI output locale support so generated names, descriptions, labels, captions, summaries, and memory suggestions can follow the configured output language.
+- Planned lightweight E2E coverage for switching to Simplified Chinese and verifying Sidebar, Header/Search, and Memory Detail key text.
+- Next: implement `@chronopic/i18n`, config persistence, provider wiring, critical UI translations, AI output locale threading, and tests.
+
+### 2026-04-26 Step 96
+
+- Implemented the `4.17 Internationalization and AI Output Locale Phase`.
+- Added `@chronopic/i18n` as a strict workspace package with typed locale IDs, typed translation keys, English/Simplified Chinese dictionaries, fallback interpolation, locale normalization, AI output-locale resolution, and formatting helpers.
+- Added persisted desktop language settings through `@chronopic/infra-config`, Electron main IPC, preload bridge APIs, and renderer app state:
+  `locale`
+  and `aiOutputLocale`.
+- Wired the renderer through `I18nProvider` / `useI18n()` from `@chronopic/ui-components`.
+- Added Library Settings controls for UI language and AI output language using the existing Radix-backed `Select` component.
+- Translated the first critical UI path:
+  Sidebar,
+  browse mode switcher,
+  search placeholder,
+  memory creation dialog,
+  memory detail,
+  and language/settings surfaces.
+- Threaded resolved AI output locale through photo semantic enrichment, pending queue enrichment, and memory semantic enrichment prompts.
+- Added unit coverage for i18n dictionary completeness, interpolation, normalization, count formatting, and AI output-locale resolution.
+- Extended application AI tests to verify photo and pending queue enrichment receive the output-locale context.
+- Added lightweight Electron E2E coverage in `tests/e2e/i18n.spec.ts` for switching to Chinese and checking Sidebar/Header/Memory Detail key text.
+- Verified:
+  `pnpm typecheck`
+  `pnpm test`
+  `pnpm build`
+  `pnpm exec playwright test -c tests/e2e/playwright.config.ts i18n.spec.ts`
+- Result: the i18n phase is landed and build-valid. The E2E spec is present and follows the existing dev-renderer prerequisite on `http://localhost:5173`.
+
+### 2026-04-26 Step 97
+
+- Performed a follow-up i18n coverage audit after reviewing the renderer and shared UI surfaces for remaining hard-coded English.
+- Confirmed the first i18n pass was incomplete beyond the initial critical path.
+- Expanded translation coverage across:
+  filter toolbar,
+  photo cards,
+  add-to-memory menu,
+  viewer overlays,
+  memory cards/list/recent memories,
+  suggested memories,
+  memory description editor,
+  edit controls,
+  metadata inspector,
+  memory story board,
+  notification center,
+  map browse surface,
+  timeline browse surface,
+  gallery selected/batch states,
+  photo grid,
+  and detail panel.
+- Added the required English and Simplified Chinese translation keys to `@chronopic/i18n` while keeping dictionary-completeness tests active.
+- Re-verified:
+  `pnpm typecheck`
+  `pnpm test`
+  `pnpm build`
+- Remaining known i18n debt:
+  transient `showStatus(...)` messages in `use-chronopic-app.ts` are still stored as English strings,
+  and a few legacy/exported-but-currently-unused components still contain English fallback copy.
+  The main rendered product surfaces now have much broader locale coverage, but status/toast localization should be the next i18n cleanup if full polish is required.
+
 ## Next Immediate Tasks
 
 1. Workspace skeleton is implemented.
@@ -1620,7 +1793,7 @@ This file is the local execution record for ChronoPic. It complements `PLAN.md` 
 7. The first renderer/UI structural split is landed and verified at typecheck/build level.
 8. The home-page layout, favorites, memories, edit UX, and memory list/detail productization phases have all landed in code.
 9. Sidebar navigation and gallery-section composition are now aligned more closely with the current plan.
-10. Memory description editing now uses `BlockNote`, and the desktop build/typecheck pipeline remains green with the new dependency surface.
+10. Memory description editing now uses raw Markdown source with `@uiw/react-md-editor`, and the desktop build/typecheck pipeline remains green with the new dependency surface.
 11. Viewer ergonomics have received a focused polish pass and remain build-valid.
 12. The real `shadcn/ui` / Radix-backed adoption pass is landed for `Select`, dialogs, and the base shared control layer.
 13. The app now exposes visible add/remove memory actions in gallery, viewer, and memory-detail flows, but deeper lifecycle polish is still pending.
@@ -1669,3 +1842,51 @@ This file is the local execution record for ChronoPic. It complements `PLAN.md` 
 56. The next planned product-expansion phase is now `4.15 AI Memory Auto-Grouping Phase`, focused on reviewable AI-proposed memories from place/time/semantic/person-like signals.
 57. AI Memory Auto-Grouping is now implemented as a reviewable candidate workflow rather than silent memory creation.
 58. The active follow-up phase is `4.16 Memory Candidate Queue and Notifications Phase`.
+59. Active branch `ux-simplify-surfaces` is refining UI surfaces to reduce duplicate status text and repeated controls.
+60. Memory detail AI suggestions are now being moved from default page content into an explicit compact action/dialog.
+61. Memory description editing is now standardized on raw Markdown source and `@uiw/react-md-editor`.
+62. Memory title and description now expose AI generate/optimize actions inside their edit dialogs, while direct title/description clicks replace separate rename/edit buttons.
+63. Memory AI optimize now passes unsaved title/description drafts through to the AI prompt as working context.
+64. The `4.17 Internationalization and AI Output Locale Phase` is now landed and has received a follow-up coverage pass across the main visible UI surfaces.
+65. Transient app status/toast messages, discovery helper labels/descriptions, match summaries, browse fallback placeholders, legacy library dialog/sidebar copy, and remaining settings labels have now been converted to locale-backed strings.
+66. The remaining hardcoded renderer scan hits are deliberate technical constants/placeholders rather than user-facing untranslated UI copy.
+
+### 2026-04-26 Step 98
+
+- Performed a full follow-up i18n coverage audit after the initial internationalization implementation.
+- Moved `use-chronopic-app.ts` status/toast feedback onto locale keys, including library scan, AI settings, map settings, memory CRUD, batch add/remove, semantic enrichment, AI queue processing, and edit rollback messages.
+- Threaded the active translator into pure discovery helper functions so discovery context badges, discovery suggestions, and search-match summaries localize correctly instead of returning English from library helpers.
+- Localized remaining fallback/legacy UI surfaces:
+  `Header`,
+  `LibraryDialog`,
+  `LibrarySidebar`,
+  `BrowseModePlaceholder`,
+  map/settings labels,
+  source last-scan labels,
+  and photo-card secondary action fallback copy.
+- Re-ran the hardcoded UI string scan; remaining hits are technical constants/placeholders only:
+  route ids,
+  status tone ids,
+  translation-key ids,
+  the AMap missing-key error code,
+  and AI provider/model/API example placeholders.
+- Re-verified:
+  `pnpm typecheck`
+  `pnpm test`
+  `pnpm build`
+
+### 2026-04-26 Step 99
+
+- Performed an additional stricter i18n scan after the user called out `Select` / `Filter` style omissions.
+- Fixed the remaining visible browse toolbar hardcoded text:
+  the waterfall `Select` / `Done` toggle and `Filter` button now use action translation keys.
+- Localized remaining exported/fallback UI copy:
+  `HomeStats` hero copy, status tile labels, AI enabled/deferred state,
+  `TagInput` remove aria-label,
+  AI settings input placeholders,
+  and the memory delete icon label.
+- Re-ran a focused visible-string scan for text nodes, labels, placeholders, aria-labels, and titles; remaining matches are TypeScript function signatures only.
+- Re-verified:
+  `pnpm typecheck`
+  `pnpm test`
+  `pnpm build`

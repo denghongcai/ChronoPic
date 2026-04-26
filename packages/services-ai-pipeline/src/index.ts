@@ -28,10 +28,20 @@ export interface MemoryAIAnalysis {
   aiError: string | null;
 }
 
+export interface MemoryAIContext {
+  name?: string | null;
+  description?: string | null;
+  outputLocale?: string | null;
+}
+
+export interface PhotoAIContext {
+  outputLocale?: string | null;
+}
+
 export interface AIClient {
   isEnabled(): boolean;
-  analyzePhoto(photo: PhotoRecord): Promise<AIAnalysis>;
-  analyzeMemory(memory: Memory, photos: PhotoRecord[]): Promise<MemoryAIAnalysis>;
+  analyzePhoto(photo: PhotoRecord, context?: PhotoAIContext): Promise<AIAnalysis>;
+  analyzeMemory(memory: Memory, photos: PhotoRecord[], context?: MemoryAIContext): Promise<MemoryAIAnalysis>;
 }
 
 export interface VercelCompatibleAIClientOptions {
@@ -67,7 +77,11 @@ async function resolvePhotoInput(photo: PhotoRecord): Promise<FileInput | null> 
   }
 }
 
-function buildAnalysisPrompt(photo: PhotoRecord): string {
+function describeOutputLocale(locale: string | null | undefined): string {
+  return locale === "zh-CN" ? "Simplified Chinese (zh-CN)" : "English (en-US)";
+}
+
+function buildAnalysisPrompt(photo: PhotoRecord, context: PhotoAIContext = {}): string {
   const datetime = photo.metadata.datetime ? new Date(photo.metadata.datetime).toISOString() : "unknown";
   const gps =
     photo.metadata.lat != null && photo.metadata.lng != null
@@ -86,6 +100,7 @@ function buildAnalysisPrompt(photo: PhotoRecord): string {
     "- Do not include reasoning, think tags, markdown explanation, or any text outside the JSON object.",
     "- Use the visual content as the primary source of truth.",
     "- If the image is ambiguous, stay conservative.",
+    `Output language for caption, summary, and labels: ${describeOutputLocale(context.outputLocale)}.`,
     `Known metadata: mime=${photo.photo.mime}; datetime=${datetime}; gps=${gps}; path=${path.basename(photo.photo.path)}.`,
   ].join("\n");
 }
@@ -121,7 +136,11 @@ export class DisabledAIClient implements AIClient {
   }
 }
 
-function buildMemoryAnalysisPrompt(memory: Memory, photos: PhotoRecord[]): string {
+function buildMemoryAnalysisPrompt(memory: Memory, photos: PhotoRecord[], context: MemoryAIContext = {}): string {
+  const workingName = context.name === undefined ? memory.name : context.name;
+  const workingDescription = context.description === undefined ? memory.description : context.description;
+  const hasWorkingName = Boolean(workingName?.trim());
+  const hasWorkingDescription = Boolean(workingDescription?.trim());
   const sampleLines = photos.slice(0, 12).map((photo, index) => {
     const date = photo.metadata.datetime ? new Date(photo.metadata.datetime).toISOString().slice(0, 10) : "unknown-date";
     const gps = photo.metadata.lat != null && photo.metadata.lng != null ? `${photo.metadata.lat},${photo.metadata.lng}` : "unknown-gps";
@@ -137,13 +156,20 @@ function buildMemoryAnalysisPrompt(memory: Memory, photos: PhotoRecord[]): strin
     "JSON shape:",
     '{ "title": string | null, "description": string | null, "labels": string[] }',
     "Rules:",
-    "- title: short evocative memory title, max 6 words.",
-    "- description: 1 to 3 sentences, concise but specific, describing the trip/story/theme across the photos.",
+    hasWorkingName
+      ? "- title: optimize the current working title while preserving its intent; max 6 words."
+      : "- title: generate a short evocative memory title, max 6 words.",
+    hasWorkingDescription
+      ? "- description: optimize the current working description while preserving its user-provided intent and concrete details."
+      : "- description: generate 1 to 3 sentences, concise but specific, describing the trip/story/theme across the photos.",
     "- labels: 3 to 8 lowercase tags describing the whole memory.",
     "- Use the provided photo summaries as the source of truth. Do not invent people, places, or events not supported by the inputs.",
     "- Do not output markdown, bullets, or explanatory text outside the JSON object.",
-    `Existing memory name: ${memory.name}.`,
-    `Existing description: ${memory.description ?? "none"}.`,
+    `Output language for title, description, and labels: ${describeOutputLocale(context.outputLocale)}.`,
+    `Saved memory name: ${memory.name}.`,
+    `Saved description: ${memory.description ?? "none"}.`,
+    `Current working title draft: ${workingName?.trim() || "none"}.`,
+    `Current working description draft: ${workingDescription?.trim() || "none"}.`,
     "Photo sample set:",
     ...sampleLines,
   ].join("\n");
@@ -171,7 +197,7 @@ export class VercelCompatibleAIClient implements AIClient {
     return true;
   }
 
-  async analyzePhoto(photo: PhotoRecord): Promise<AIAnalysis> {
+  async analyzePhoto(photo: PhotoRecord, context?: PhotoAIContext): Promise<AIAnalysis> {
     const fileInput = await resolvePhotoInput(photo);
     const result = streamText({
       model: this.model,
@@ -179,7 +205,7 @@ export class VercelCompatibleAIClient implements AIClient {
         {
           role: "user",
           content: [
-            { type: "text", text: buildAnalysisPrompt(photo) },
+            { type: "text", text: buildAnalysisPrompt(photo, context) },
             ...(fileInput
               ? [
                   {
@@ -215,7 +241,7 @@ export class VercelCompatibleAIClient implements AIClient {
     };
   }
 
-  async analyzeMemory(memory: Memory, photos: PhotoRecord[]): Promise<MemoryAIAnalysis> {
+  async analyzeMemory(memory: Memory, photos: PhotoRecord[], context?: MemoryAIContext): Promise<MemoryAIAnalysis> {
     const result = streamText({
       model: this.model,
       messages: [
@@ -224,7 +250,7 @@ export class VercelCompatibleAIClient implements AIClient {
           content: [
             {
               type: "text",
-              text: buildMemoryAnalysisPrompt(memory, photos),
+              text: buildMemoryAnalysisPrompt(memory, photos, context),
             },
           ],
         },

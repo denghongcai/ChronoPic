@@ -1,44 +1,22 @@
-import type { PartialBlock } from "@blocknote/core";
-
-function extractTextFromContent(content: unknown): string {
-  if (typeof content === "string") {
-    return content;
-  }
-
-  if (!Array.isArray(content)) {
-    return "";
-  }
-
-  return content
-    .map((item) => {
-      if (typeof item === "string") {
-        return item;
-      }
-
-      if (item && typeof item === "object" && "text" in item && typeof item.text === "string") {
-        return item.text;
-      }
-
-      return "";
-    })
-    .join(" ");
+function stripMarkdown(value: string): string {
+  return value
+    .replace(/```[\s\S]*?```/g, " ")
+    .replace(/`([^`]+)`/g, "$1")
+    .replace(/!\[[^\]]*]\([^)]*\)/g, " ")
+    .replace(/\[([^\]]+)]\([^)]*\)/g, "$1")
+    .replace(/^#{1,6}\s+/gm, "")
+    .replace(/^>\s?/gm, "")
+    .replace(/^[-*+]\s+/gm, "")
+    .replace(/^\d+\.\s+/gm, "")
+    .replace(/[*_~>#-]+/g, " ");
 }
 
-export function defaultMemoryBlocks(): PartialBlock[] {
-  return [{ type: "paragraph", content: "" }];
+export function getMemoryDescriptionMarkdown(value: string | null): string {
+  return value ?? "";
 }
 
-export function parseMemoryBlocks(value: string | null): PartialBlock[] {
-  if (!value) {
-    return defaultMemoryBlocks();
-  }
-
-  try {
-    const parsed = JSON.parse(value) as PartialBlock[];
-    return Array.isArray(parsed) && parsed.length > 0 ? parsed : defaultMemoryBlocks();
-  } catch {
-    return [{ type: "paragraph", content: value }];
-  }
+export function hasMemoryDescription(value: string | null): boolean {
+  return getMemoryDescriptionPreview(value).length > 0;
 }
 
 export function getMemoryDescriptionPreview(value: string | null): string {
@@ -46,18 +24,5 @@ export function getMemoryDescriptionPreview(value: string | null): string {
     return "";
   }
 
-  try {
-    const parsed = JSON.parse(value) as Array<{ content?: unknown }>;
-    if (!Array.isArray(parsed)) {
-      return "";
-    }
-
-    return parsed
-      .map((block) => extractTextFromContent(block?.content))
-      .join(" ")
-      .replace(/\s+/g, " ")
-      .trim();
-  } catch {
-    return value.trim();
-  }
+  return stripMarkdown(value).replace(/\s+/g, " ").trim();
 }

@@ -1,5 +1,5 @@
-@import "@blocknote/react/style.css";
 @import "tailwindcss";
+@import "@uiw/react-markdown-preview/markdown.css";
 @source "../../../../packages/ui-components/src";
 
 :root {
@@ -41,6 +41,22 @@
   img {
     display: block;
     max-width: 100%;
+  }
+
+  .prose-memory .wmde-markdown {
+    background: transparent;
+    color: inherit;
+    font-family: inherit;
+    font-size: inherit;
+    line-height: inherit;
+  }
+
+  .prose-memory .wmde-markdown p {
+    margin: 0 0 0.75rem;
+  }
+
+  .prose-memory .wmde-markdown p:last-child {
+    margin-bottom: 0;
   }
 
   ::selection {

@@ -4,6 +4,7 @@ import { BellIcon, BookOpenIcon, Clock3Icon, CogIcon, ImageIcon, PlusIcon, Spark
 import type { Memory } from "@chronopic/domain";
 
 import { Button } from "./button.js";
+import { useI18n } from "./i18n-provider.js";
 import { cn } from "./lib/cn.js";
 import { Label } from "./label.js";
 
@@ -65,17 +66,19 @@ export function Sidebar({
   onCreateMemory,
   notificationCount = 0,
 }: SidebarProps) {
+  const { t } = useI18n();
+
   return (
     <aside className={cn("flex select-none flex-col gap-8 overflow-y-auto px-4 py-5", className)}>
       <div className="flex items-center gap-3 px-3">
         <div className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-amber-400 to-orange-500 text-sm font-bold text-white shadow-sm">
-          L
+          C
         </div>
         <div className="min-w-0 flex-1">
           <p className="font-['Space_Grotesk','IBM_Plex_Sans',sans-serif] text-base font-semibold tracking-tight text-stone-950">
             ChronoPic
           </p>
-          <p className="text-xs text-stone-400">Curate your local photo world</p>
+          <p className="text-xs text-stone-400">{t("sidebar.subtitle")}</p>
         </div>
         <button
           className={cn(
@@ -96,35 +99,35 @@ export function Sidebar({
         </button>
       </div>
 
-      <SidebarSection title="Library">
+      <SidebarSection title={t("sidebar.library")}>
         <SidebarItem
           active={activeItem === "all"}
           icon={ImageIcon}
-          label="All Photos"
+          label={t("sidebar.allPhotos")}
           onClick={() => onSelectItem?.("all")}
         />
         <SidebarItem
           active={activeItem === "favorites"}
           icon={StarIcon}
-          label="Favorites"
+          label={t("sidebar.favorites")}
           onClick={() => onSelectItem?.("favorites")}
         />
         <SidebarItem
           icon={Clock3Icon}
-          label="Recent"
+          label={t("sidebar.recent")}
           onClick={() => onSelectItem?.("recent")}
         />
         <SidebarItem
           active={activeItem === "settings"}
           icon={CogIcon}
-          label="Settings"
+          label={t("sidebar.settings")}
           onClick={() => onSelectItem?.("settings")}
         />
       </SidebarSection>
 
-      <SidebarSection title="Memories">
+      <SidebarSection title={t("sidebar.memories")}>
         {memories.length === 0 ? (
-          <p className="px-3 py-1 text-xs text-stone-400">No memories yet</p>
+          <p className="px-3 py-1 text-xs text-stone-400">{t("memories.emptyTitle")}</p>
         ) : (
           memories.map((memory) => (
             <SidebarItem
@@ -141,7 +144,7 @@ export function Sidebar({
       <div className="mt-auto pt-4">
         <Button className="w-full rounded-2xl" onClick={onCreateMemory} size="sm" variant="outline">
           <PlusIcon className="h-4 w-4" />
-          Create Memory
+          {t("sidebar.createMemory")}
         </Button>
       </div>
     </aside>

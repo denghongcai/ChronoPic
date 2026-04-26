@@ -3,7 +3,7 @@ import { CalendarDays, MapPin, Sparkles } from "lucide-react";
 import type { MemoryStorySection } from "./lib/memory-story.js";
 import { thumbnailUrl } from "./lib/media.js";
 import { Badge } from "./badge.js";
-import { Button } from "./button.js";
+import { useI18n } from "./i18n-provider.js";
 import { Panel } from "./panel.js";
 
 export interface MemoryStoryBoardProps {
@@ -12,6 +12,8 @@ export interface MemoryStoryBoardProps {
 }
 
 export function MemoryStoryBoard({ sections, onOpenSection }: MemoryStoryBoardProps) {
+  const { t } = useI18n();
+
   if (sections.length === 0) {
     return null;
   }
@@ -20,12 +22,12 @@ export function MemoryStoryBoard({ sections, onOpenSection }: MemoryStoryBoardPr
     <Panel className="overflow-hidden">
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-stone-200/70 px-5 py-4">
         <div>
-          <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-stone-500">Story Outline</p>
+          <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-stone-500">{t("story.outline")}</p>
           <h2 className="mt-2 font-['Space_Grotesk','IBM_Plex_Sans',sans-serif] text-2xl font-semibold tracking-tight text-stone-950">
-            Chapters inside this memory
+            {t("story.chaptersTitle")}
           </h2>
         </div>
-        <Badge tone="neutral">{sections.length} chapters</Badge>
+        <Badge tone="neutral">{t("story.chapters", { count: sections.length })}</Badge>
       </div>
       <div className="grid gap-4 p-5 lg:grid-cols-3">
         {sections.map((section, index) => {
@@ -55,8 +57,8 @@ export function MemoryStoryBoard({ sections, onOpenSection }: MemoryStoryBoardPr
               </div>
               <div className="space-y-3 p-4">
                 <div className="flex items-center justify-between gap-3">
-                  <Badge tone="info">Chapter {index + 1}</Badge>
-                  <span className="text-xs font-medium text-stone-400">{section.photoCount} photos</span>
+                  <Badge tone="info">{t("story.chapterIndex", { index: index + 1 })}</Badge>
+                  <span className="text-xs font-medium text-stone-400">{t("memory.detail.photos", { count: section.photoCount })}</span>
                 </div>
                 <div>
                   <h3 className="font-['Space_Grotesk','IBM_Plex_Sans',sans-serif] text-lg font-semibold tracking-tight text-stone-950">
@@ -68,7 +70,7 @@ export function MemoryStoryBoard({ sections, onOpenSection }: MemoryStoryBoardPr
                   {section.gpsCount > 0 ? (
                     <Badge tone="neutral">
                       <MapPin className="h-3 w-3" />
-                      {section.gpsCount} mapped
+                      {t("story.mapped", { count: section.gpsCount })}
                     </Badge>
                   ) : null}
                   {section.aiReadyCount > 0 ? (
@@ -78,11 +80,6 @@ export function MemoryStoryBoard({ sections, onOpenSection }: MemoryStoryBoardPr
                     </Badge>
                   ) : null}
                 </div>
-                {canOpen ? (
-                  <Button asChild className="pointer-events-none w-full" size="sm" variant="outline">
-                    <span>Open chapter lead</span>
-                  </Button>
-                ) : null}
               </div>
             </button>
           );

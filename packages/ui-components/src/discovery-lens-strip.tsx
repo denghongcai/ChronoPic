@@ -4,6 +4,7 @@ import type { BrowseMode, Memory, PhotoFilter, PhotoFilterPatch, PhotoRecord, Pl
 
 import { Badge } from "./badge.js";
 import { Button } from "./button.js";
+import { useI18n } from "./i18n-provider.js";
 import { buildDiscoverySuggestions, type DiscoverySuggestion } from "./lib/discovery-suggestions.js";
 
 export interface DiscoveryLensStripProps {
@@ -49,7 +50,10 @@ export function DiscoveryLensStrip({
   onFilterChange,
   onOpenMemory,
 }: DiscoveryLensStripProps) {
-  const suggestions = buildDiscoverySuggestions({ filter, memories, photos, placeGroups });
+  const { t } = useI18n();
+  const suggestions = buildDiscoverySuggestions({ filter, memories, photos, placeGroups, t }).filter(
+    (suggestion) => suggestion.kind === "memory" || suggestion.kind === "mode"
+  );
 
   if (suggestions.length === 0) {
     return null;
@@ -57,7 +61,7 @@ export function DiscoveryLensStrip({
 
   return (
     <div className="flex select-none flex-wrap items-center gap-2">
-      <Badge tone="neutral">Discover</Badge>
+      <Badge tone="neutral">{t("discovery.discover")}</Badge>
       {suggestions.map((suggestion) => {
         const Icon = getSuggestionIcon(suggestion);
 

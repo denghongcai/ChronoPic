@@ -642,7 +642,7 @@ Implementation breakdown:
 - Turn memories from static containers into authoring surfaces that help users shape a narrative.
 - Keep manual authoring as the source of truth:
   generated title/summary/tags remain suggestions until explicitly applied,
-  and manual description editing stays BlockNote-backed.
+  and manual description editing stores Markdown source directly before rendering it in the detail view.
 - Add a story outline derived from the memory's current photos so the detail page exposes:
   chronological chapters,
   chapter cover images,
@@ -660,6 +660,15 @@ Current landed scope:
 - Each chapter has a representative thumbnail, date range, photo count, mapped-photo count, and AI-ready count.
 - Clicking a chapter lead opens the existing focused detail viewer for that representative photo, preserving the current viewer/gallery flow instead of introducing a parallel story player before the chapter model needs dedicated playback controls.
 - Regression coverage now verifies chapter grouping and section metrics.
+- Memory descriptions now use a Markdown-source contract:
+  the database stores the raw Markdown string,
+  `@uiw/react-md-editor` edits that same Markdown string,
+  and the read view renders Markdown instead of displaying source text or persisting HTML.
+- Memory title and description editing now use direct-manipulation entry points:
+  clicking the title opens the title editor,
+  clicking the description surface opens the Markdown editor,
+  and each editor exposes a magic action that reuses the existing memory AI suggestion pipeline to generate empty content or optimize existing drafts before the user explicitly saves.
+- AI optimize actions now pass the current unsaved editor draft into the memory AI pipeline as prompt context, so optimizing a title or description refines the user's current text instead of regenerating only from the last saved memory data.
 
 ### 4.14 Advanced Discovery Phase
 
@@ -842,6 +851,60 @@ Priority order from this point forward:
 4. `4.14 Advanced Discovery Phase`
 5. `4.15 AI Memory Auto-Grouping Phase`
 6. `4.16 Memory Candidate Queue and Notifications Phase`
+7. `4.17 Internationalization and AI Output Locale Phase` ✅
+
+### 4.17 Internationalization and AI Output Locale Phase ✅
+
+- Add first-class i18n rather than continuing to hard-code UI strings in renderer and UI components. ✅
+- Introduce `@chronopic/i18n` as a strict package-boundary friendly TypeScript package: ✅
+  typed locale IDs,
+  typed translation keys,
+  English and Simplified Chinese resource files,
+  fallback behavior,
+  interpolation,
+  and shared date/count formatting helpers.
+- Persist language settings in desktop configuration: ✅
+  `locale` controls the UI language,
+  `aiOutputLocale` controls generated AI content language,
+  and `aiOutputLocale` defaults to following the UI locale unless explicitly changed.
+- Add a Language section to Library Settings so users can switch UI language and AI output language without restarting the app. ✅
+- Wire React UI through an `I18nProvider` / `useI18n()` API owned by `@chronopic/ui-components`, while keeping persistence and runtime settings in the desktop app/config layers. ✅
+- Translate the initial critical path first: ✅
+  Sidebar,
+  Header/Search,
+  Library Settings language controls,
+  Notifications,
+  Memory list/detail,
+  and the main browse mode controls.
+- Extend AI semantic enrichment prompts to accept an output locale and require `generatedName`, `generatedDescription`, labels, captions, summaries, and memory suggestions to be emitted in that locale. ✅
+- Keep AI suggestions non-destructive: ✅
+  locale changes affect future generated suggestions only,
+  and generated content remains suggestions until explicitly applied.
+- Add lightweight E2E coverage for language switching: ✅
+  switch to Simplified Chinese in settings,
+  verify Sidebar key text changes,
+  verify Header/Search key text changes,
+  open Memory Detail,
+  and verify Memory Detail key text changes.
+- Add unit coverage for translation key completeness, interpolation, fallback behavior, and locale normalization. ✅
+
+Current landed scope:
+
+- `@chronopic/i18n` is a standalone workspace package with typed locales, typed keys, fallback interpolation, locale normalization, AI output-locale resolution, and date/count helpers.
+- Desktop config now persists `locale` and `aiOutputLocale`; main/preload expose `system:getLocaleSettings` and `system:saveLocaleSettings`.
+- The renderer is wrapped in `I18nProvider`, and Library Settings exposes UI language plus AI output language controls.
+- The initial visible path is translated across Sidebar, browse mode switcher, search placeholder, memory creation, memory detail, and language/settings surfaces.
+- Photo AI enrichment, pending AI queue enrichment, and memory AI enrichment now pass the resolved output locale into prompt construction.
+- Unit coverage is added in `tests/i18n.test.ts`, and app-service tests verify photo and pending AI output-locale context is forwarded.
+- Lightweight Electron E2E coverage is added in `tests/e2e/i18n.spec.ts`; it expects the dev renderer to be available on `http://localhost:5173`, matching the existing E2E smoke-test model.
+- Follow-up coverage audit expanded translations beyond the initial path to include filter toolbar, photo cards, add-to-memory menu, viewer overlays, memory list/recent/detail/story/suggestions, metadata/edit controls, notifications, map, timeline, gallery, photo grid, detail panel, discovery helper text, transient app status/toast messages, and legacy exported fallback components.
+- A stricter second audit explicitly covered browse toolbar controls such as `Select` / `Filter`, `TagInput` accessibility labels, AI settings placeholders, exported `HomeStats` fallback copy, and the remaining memory delete icon label.
+- The remaining renderer scan hits are technical constants/placeholders rather than untranslated user-facing UI copy:
+  timeline translation keys,
+  browse/router state ids,
+  status severity ids,
+  an AMap technical error code,
+  and AI provider/model/API example placeholders.
 
 ### 5. Editing and History ✅
 
@@ -899,6 +962,7 @@ Priority order from this point forward:
 - Verify the memory detail page supports remove-photo and edit-metadata actions without breaking viewer state.
 - Verify `RecentMemories` displays memories rather than raw photo thumbnails.
 - Verify business-logic and infra packages gain direct unit-test coverage as new phases land, rather than relying only on renderer smoke tests.
+- Verify i18n dictionary completeness, interpolation, locale normalization, persisted language settings, AI output-locale threading, and the Chinese switch smoke path for Sidebar/Header/Memory Detail.
 
 ### E2E Test Plan (Playwright)
 

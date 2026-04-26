@@ -2,12 +2,13 @@ import type { BrowseMode } from "@chronopic/domain";
 import { CalendarDaysIcon, LayoutGridIcon, MapIcon } from "lucide-react";
 
 import { Button } from "./button.js";
+import { useI18n } from "./i18n-provider.js";
 import { cn } from "./lib/cn.js";
 
-const browseModes: Array<{ description: string; icon: typeof LayoutGridIcon; label: string; value: BrowseMode }> = [
-  { value: "waterfall", label: "Waterfall", description: "Visual scan", icon: LayoutGridIcon },
-  { value: "map", label: "Map", description: "Places & GPS", icon: MapIcon },
-  { value: "timeline", label: "Timeline", description: "Dates & periods", icon: CalendarDaysIcon },
+const browseModes: Array<{ icon: typeof LayoutGridIcon; labelKey: "browse.mode.waterfall" | "browse.mode.map" | "browse.mode.timeline"; value: BrowseMode }> = [
+  { value: "waterfall", labelKey: "browse.mode.waterfall", icon: LayoutGridIcon },
+  { value: "map", labelKey: "browse.mode.map", icon: MapIcon },
+  { value: "timeline", labelKey: "browse.mode.timeline", icon: CalendarDaysIcon },
 ];
 
 export interface BrowseModeSwitcherProps {
@@ -17,6 +18,8 @@ export interface BrowseModeSwitcherProps {
 }
 
 export function BrowseModeSwitcher({ className, mode, onModeChange }: BrowseModeSwitcherProps) {
+  const { t } = useI18n();
+
   return (
     <div
       className={cn(
@@ -36,7 +39,7 @@ export function BrowseModeSwitcher({ className, mode, onModeChange }: BrowseMode
             variant={mode === item.value ? "secondary" : "ghost"}
           >
             <Icon className="h-3.5 w-3.5" />
-            {item.label}
+            {t(item.labelKey)}
           </Button>
         );
       })}

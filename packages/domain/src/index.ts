@@ -280,6 +280,14 @@ export interface MapSettings {
   securityJsCode: string;
 }
 
+export type Locale = "en-US" | "zh-CN";
+export type AIOutputLocale = Locale | "follow-ui";
+
+export interface LocaleSettings {
+  locale: Locale;
+  aiOutputLocale: AIOutputLocale;
+}
+
 export interface UpsertPhotoPayload {
   photo: Photo;
   metadata: Metadata;

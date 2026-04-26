@@ -10,6 +10,7 @@ import type {
   DiscoveryQuery,
   DiscoveryQueryPatch,
   LibrarySnapshot,
+  LocaleSettings,
   MapSettings,
   Memory,
   MemoryCandidate,
@@ -22,6 +23,7 @@ import type {
   TimelineGroup,
 } from "@chronopic/domain";
 import type { ViewerMode } from "@chronopic/ui-components";
+import { createTranslator, defaultLocaleSettings, resolveAIOutputLocale } from "@chronopic/i18n";
 
 type StatusKind = "idle" | "info" | "success" | "warn" | "error";
 
@@ -54,7 +56,6 @@ function parseTags(input: string): string[] {
 }
 
 export function useChronoPicApp() {
-  const idleStatus: AppStatus = { kind: "idle", message: "Idle" };
   const [snapshot, setSnapshot] = useState<LibrarySnapshot>({
     sources: [],
     stats: {
@@ -75,6 +76,9 @@ export function useChronoPicApp() {
     apiKey: "",
     securityJsCode: "",
   });
+  const [localeSettings, setLocaleSettings] = useState<LocaleSettings>(defaultLocaleSettings);
+  const t = useMemo(() => createTranslator(localeSettings.locale), [localeSettings.locale]);
+  const idleStatus = useMemo<AppStatus>(() => ({ kind: "idle", message: t("status.idle") }), [t]);
   const [photos, setPhotos] = useState<PhotoRecord[]>([]);
   const [placeGroups, setPlaceGroups] = useState<PlaceGroup[]>([]);
   const [timelineGroups, setTimelineGroups] = useState<TimelineGroup[]>([]);
@@ -129,7 +133,7 @@ export function useChronoPicApp() {
   const bridge = (window as Window & { chronoPic?: Window["chronoPic"] }).chronoPic;
 
   function resolveMemoryName(memoryId: string): string {
-    return memories.find((memory) => memory.id === memoryId)?.name ?? "memory";
+    return memories.find((memory) => memory.id === memoryId)?.name ?? t("sidebar.memories");
   }
 
   function showStatus(kind: Exclude<StatusKind, "idle">, message: string) {
@@ -153,7 +157,7 @@ export function useChronoPicApp() {
       bridgeWarningShownRef.current = true;
       setStatus({
         kind: "error",
-        message: "Desktop bridge unavailable. Restart the app or check preload startup.",
+        message: t("status.bridgeUnavailable"),
       });
     }
 
@@ -248,15 +252,17 @@ export function useChronoPicApp() {
       return;
     }
 
-    const [response, currentAISettings, currentMapSettings] = await Promise.all([
+    const [response, currentAISettings, currentMapSettings, currentLocaleSettings] = await Promise.all([
       activeBridge.initialize(),
       activeBridge.getAISettings(),
       activeBridge.getMapSettings(),
+      activeBridge.getLocaleSettings(),
     ]);
     setSnapshot(response.snapshot);
     setCapabilities(response.capabilities);
     setAISettings(currentAISettings as AISettings);
     setMapSettings(currentMapSettings as MapSettings);
+    setLocaleSettings(currentLocaleSettings as LocaleSettings);
     await refreshPhotos();
     await refreshMemories();
     await refreshMemoryCandidates();
@@ -344,9 +350,9 @@ export function useChronoPicApp() {
 
       await activeBridge.addLibrarySource(libraryPath);
       await refreshSnapshot();
-      showStatus("success", `Added library: ${libraryPath}`);
+      showStatus("success", t("status.addedLibrary", { path: libraryPath }));
     } catch (error) {
-      showStatus("error", formatErrorMessage(error, "Failed to add library"));
+      showStatus("error", formatErrorMessage(error, t("status.failedAddLibrary")));
     }
   }
 
@@ -357,7 +363,7 @@ export function useChronoPicApp() {
     }
 
     setIsScanning(true);
-    showStatus("info", "Scanning libraries...");
+    showStatus("info", t("status.scanningLibraries"));
 
     try {
       await activeBridge.scanLibrary();
@@ -372,11 +378,11 @@ export function useChronoPicApp() {
       showStatus(
         "success",
         nextCandidates.length > 0
-          ? `Scan complete. ${nextCandidates.length} suggested memor${nextCandidates.length === 1 ? "y is" : "ies are"} ready.`
-          : "Scan complete. No new suggested memories."
+          ? t("status.scanCompleteWithSuggestions", { count: nextCandidates.length })
+          : t("status.scanCompleteNoSuggestions")
       );
     } catch (error) {
-      showStatus("error", formatErrorMessage(error, "Scan failed"));
+      showStatus("error", formatErrorMessage(error, t("status.scanFailed")));
     } finally {
       setIsScanning(false);
     }
@@ -385,7 +391,7 @@ export function useChronoPicApp() {
   async function handleSaveAISettings(nextSettings: AISettings) {
     const activeBridge = requireBridge();
     if (!activeBridge) {
-      throw new Error("Desktop bridge unavailable");
+      throw new Error(t("status.bridgeUnavailable"));
     }
 
     try {
@@ -399,10 +405,10 @@ export function useChronoPicApp() {
       await refreshSemanticQueueStats();
       showStatus(
         response.capabilities.aiEnabled ? "success" : "warn",
-        response.capabilities.aiEnabled ? "AI settings saved and enabled" : "AI settings saved, but AI is still disabled"
+        response.capabilities.aiEnabled ? t("status.aiSettingsEnabled") : t("status.aiSettingsDisabled")
       );
     } catch (error) {
-      showStatus("error", formatErrorMessage(error, "Failed to save AI settings"));
+      showStatus("error", formatErrorMessage(error, t("status.failedSaveAiSettings")));
       throw error;
     }
   }
@@ -410,16 +416,31 @@ export function useChronoPicApp() {
   async function handleSaveMapSettings(nextSettings: MapSettings) {
     const activeBridge = requireBridge();
     if (!activeBridge) {
-      throw new Error("Desktop bridge unavailable");
+      throw new Error(t("status.bridgeUnavailable"));
     }
 
     try {
       const saved = (await activeBridge.saveMapSettings(nextSettings)) as MapSettings;
       setMapSettings(saved);
-      showStatus("success", saved.apiKey ? "Map settings saved" : "Map settings saved, but map rendering is disabled");
+      showStatus("success", saved.apiKey ? t("status.mapSettingsSaved") : t("status.mapSettingsSavedDisabled"));
     } catch (error) {
-      showStatus("error", formatErrorMessage(error, "Failed to save map settings"));
+      showStatus("error", formatErrorMessage(error, t("status.failedSaveMapSettings")));
       throw error;
+    }
+  }
+
+  async function handleSaveLocaleSettings(nextSettings: LocaleSettings) {
+    const activeBridge = requireBridge();
+    if (!activeBridge) {
+      return;
+    }
+
+    try {
+      const saved = (await activeBridge.saveLocaleSettings(nextSettings)) as LocaleSettings;
+      setLocaleSettings(saved);
+      showStatus("success", t("status.languageSettingsSaved"));
+    } catch (error) {
+      showStatus("error", formatErrorMessage(error, t("status.failedSaveLanguageSettings")));
     }
   }
 
@@ -463,22 +484,22 @@ export function useChronoPicApp() {
     try {
       const created = (await window.chronoPic.createMemory(name, description, "manual")) as Memory;
       setMemories((current) => [...current, created]);
-      showStatus("success", `Created memory: ${name}`);
+      showStatus("success", t("status.createdMemory", { name }));
     } catch (error) {
-      showStatus("error", formatErrorMessage(error, "Failed to create memory"));
+      showStatus("error", formatErrorMessage(error, t("status.failedCreateMemory")));
       throw error;
     }
   }
 
   async function handleGenerateMemoryCandidates() {
     setIsGeneratingMemoryCandidates(true);
-    showStatus("info", "Generating suggested memories...");
+    showStatus("info", t("status.generatingSuggestedMemories"));
     try {
       const nextCandidates = (await window.chronoPic.generateMemoryCandidates(12)) as MemoryCandidate[];
       setMemoryCandidates(nextCandidates);
-      showStatus("success", `Generated ${nextCandidates.length} suggested memor${nextCandidates.length === 1 ? "y" : "ies"}`);
+      showStatus("success", t("status.generatedSuggestedMemories", { count: nextCandidates.length }));
     } catch (error) {
-      showStatus("error", formatErrorMessage(error, "Failed to generate suggested memories"));
+      showStatus("error", formatErrorMessage(error, t("status.failedGenerateSuggestedMemories")));
     } finally {
       setIsGeneratingMemoryCandidates(false);
     }
@@ -489,9 +510,9 @@ export function useChronoPicApp() {
       const accepted = (await window.chronoPic.acceptMemoryCandidate(candidateId, input)) as Memory;
       await refreshMemories();
       await refreshMemoryCandidates();
-      showStatus("success", `Created memory: ${accepted.name}`);
+      showStatus("success", t("status.createdMemory", { name: accepted.name }));
     } catch (error) {
-      showStatus("error", formatErrorMessage(error, "Failed to accept suggested memory"));
+      showStatus("error", formatErrorMessage(error, t("status.failedAcceptSuggestedMemory")));
       throw error;
     }
   }
@@ -500,9 +521,9 @@ export function useChronoPicApp() {
     try {
       await window.chronoPic.rejectMemoryCandidate(candidateId);
       setMemoryCandidates((current) => current.filter((candidate) => candidate.id !== candidateId));
-      showStatus("success", "Rejected suggested memory");
+      showStatus("success", t("status.rejectedSuggestedMemory"));
     } catch (error) {
-      showStatus("error", formatErrorMessage(error, "Failed to reject suggested memory"));
+      showStatus("error", formatErrorMessage(error, t("status.failedRejectSuggestedMemory")));
       throw error;
     }
   }
@@ -512,9 +533,9 @@ export function useChronoPicApp() {
     try {
       await window.chronoPic.deleteMemory(memoryId);
       setMemories((current) => current.filter((m) => m.id !== memoryId));
-      showStatus("success", `Deleted memory: ${memoryName}`);
+      showStatus("success", t("status.deletedMemory", { name: memoryName }));
     } catch (error) {
-      showStatus("error", formatErrorMessage(error, "Failed to delete memory"));
+      showStatus("error", formatErrorMessage(error, t("status.failedDeleteMemory")));
       throw error;
     }
   }
@@ -528,44 +549,47 @@ export function useChronoPicApp() {
       setMemories((current) => current.map((memory) => (memory.id === updated.id ? updated : memory)));
 
       if (Object.prototype.hasOwnProperty.call(updates, "name") && updates.name) {
-        showStatus("success", `Renamed memory to ${updated.name}`);
+        showStatus("success", t("status.renamedMemory", { name: updated.name }));
       } else if (Object.prototype.hasOwnProperty.call(updates, "description")) {
-        showStatus("success", `Saved description for ${updated.name}`);
+        showStatus("success", t("status.savedDescription", { name: updated.name }));
       } else if (Object.prototype.hasOwnProperty.call(updates, "coverPhotoId")) {
-        showStatus("success", `Updated cover for ${updated.name}`);
+        showStatus("success", t("status.updatedCover", { name: updated.name }));
       } else {
-        showStatus("success", `Updated memory: ${updated.name}`);
+        showStatus("success", t("status.updatedMemory", { name: updated.name }));
       }
 
       return updated;
     } catch (error) {
-      showStatus("error", formatErrorMessage(error, "Failed to update memory"));
+      showStatus("error", formatErrorMessage(error, t("status.failedUpdateMemory")));
       throw error;
     }
   }
 
-  async function handleEnrichMemorySemantic(memoryId: string) {
+  async function handleEnrichMemorySemantic(memoryId: string, context?: { name?: string | null; description?: string | null }) {
     if (!capabilities.aiEnabled) {
-      showStatus("warn", "AI enrichment is not configured");
+      showStatus("warn", t("status.aiNotConfigured"));
       return;
     }
 
     const memoryName = resolveMemoryName(memoryId);
     setIsEnrichingMemorySemantic(true);
-    showStatus("info", `Generating AI summary for ${memoryName}...`);
+    showStatus("info", t("status.generatingAiSummary", { name: memoryName }));
 
     try {
-      const updated = (await window.chronoPic.enrichMemorySemantic(memoryId)) as Memory;
+      const updated = (await window.chronoPic.enrichMemorySemantic(memoryId, {
+        ...context,
+        outputLocale: resolveAIOutputLocale(localeSettings),
+      })) as Memory;
       setMemories((current) => current.map((memory) => (memory.id === updated.id ? updated : memory)));
 
       if (updated.aiStatus === "failed") {
-        showStatus("error", updated.aiError ?? `Failed to generate AI summary for ${updated.name}`);
+        showStatus("error", updated.aiError ?? t("status.failedAiSummaryFor", { name: updated.name }));
         return;
       }
 
-      showStatus("success", `Generated AI summary for ${updated.name}`);
+      showStatus("success", t("status.generatedAiSummary", { name: updated.name }));
     } catch (error) {
-      showStatus("error", formatErrorMessage(error, "Failed to generate memory AI summary"));
+      showStatus("error", formatErrorMessage(error, t("status.failedMemoryAiSummary")));
     } finally {
       setIsEnrichingMemorySemantic(false);
     }
@@ -576,7 +600,7 @@ export function useChronoPicApp() {
     try {
       const memberships = (await window.chronoPic.listMemoriesByPhoto(photoId)) as Memory[];
       if (memberships.some((memory) => memory.id === memoryId)) {
-        showStatus("warn", `Photo is already in ${memoryName}`);
+        showStatus("warn", t("status.photoAlreadyInMemory", { name: memoryName }));
         return;
       }
 
@@ -585,16 +609,16 @@ export function useChronoPicApp() {
       if (filter.memoryId === memoryId) {
         await refreshPhotos();
       }
-      showStatus("success", `Added photo to ${memoryName}`);
+      showStatus("success", t("status.addedPhotoToMemory", { name: memoryName }));
     } catch (error) {
-      showStatus("error", formatErrorMessage(error, "Failed to add photo to memory"));
+      showStatus("error", formatErrorMessage(error, t("status.failedAddPhotoToMemory")));
     }
   }
 
   async function handleAddSelectionToMemory(memoryId: string, photoIds: string[]) {
     const uniquePhotoIds = Array.from(new Set(photoIds));
     if (uniquePhotoIds.length === 0) {
-      showStatus("warn", "Select at least one photo first");
+      showStatus("warn", t("status.selectAtLeastOne"));
       return;
     }
 
@@ -629,32 +653,32 @@ export function useChronoPicApp() {
 
     const segments = [];
     if (addedCount > 0) {
-      segments.push(`added ${addedCount}`);
+      segments.push(t("status.addedShort", { count: addedCount }));
     }
     if (alreadyPresentCount > 0) {
-      segments.push(`${alreadyPresentCount} already there`);
+      segments.push(t("status.alreadyThereShort", { count: alreadyPresentCount }));
     }
     if (failedCount > 0) {
-      segments.push(`${failedCount} failed`);
+      segments.push(t("status.failedShort", { count: failedCount }));
     }
 
     if (addedCount === 0 && alreadyPresentCount > 0 && failedCount === 0) {
-      showStatus("warn", `No changes in ${memoryName}: ${alreadyPresentCount} already there`);
+      showStatus("warn", t("status.noChangesAlreadyThere", { name: memoryName, count: alreadyPresentCount }));
       return;
     }
 
     if (failedCount > 0 || alreadyPresentCount > 0) {
-      showStatus("warn", `${memoryName}: ${segments.join(", ")}`);
+      showStatus("warn", t("status.memoryBatchSummary", { name: memoryName, summary: segments.join(", ") }));
       return;
     }
 
-    showStatus("success", `Added ${addedCount} photo${addedCount === 1 ? "" : "s"} to ${memoryName}`);
+    showStatus("success", t("status.addedPhotosToMemory", { count: addedCount, name: memoryName }));
   }
 
   async function handleRemoveSelectionFromMemory(memoryId: string, photoIds: string[]) {
     const uniquePhotoIds = Array.from(new Set(photoIds));
     if (uniquePhotoIds.length === 0) {
-      showStatus("warn", "Select at least one photo first");
+      showStatus("warn", t("status.selectAtLeastOne"));
       return;
     }
 
@@ -689,26 +713,26 @@ export function useChronoPicApp() {
 
     const segments = [];
     if (removedCount > 0) {
-      segments.push(`removed ${removedCount}`);
+      segments.push(t("status.removedShort", { count: removedCount }));
     }
     if (missingCount > 0) {
-      segments.push(`${missingCount} already absent`);
+      segments.push(t("status.alreadyAbsentShort", { count: missingCount }));
     }
     if (failedCount > 0) {
-      segments.push(`${failedCount} failed`);
+      segments.push(t("status.failedShort", { count: failedCount }));
     }
 
     if (removedCount === 0 && missingCount > 0 && failedCount === 0) {
-      showStatus("warn", `No changes in ${memoryName}: ${missingCount} already absent`);
+      showStatus("warn", t("status.noChangesAlreadyAbsent", { name: memoryName, count: missingCount }));
       return;
     }
 
     if (failedCount > 0 || missingCount > 0) {
-      showStatus("warn", `${memoryName}: ${segments.join(", ")}`);
+      showStatus("warn", t("status.memoryBatchSummary", { name: memoryName, summary: segments.join(", ") }));
       return;
     }
 
-    showStatus("success", `Removed ${removedCount} photo${removedCount === 1 ? "" : "s"} from ${memoryName}`);
+    showStatus("success", t("status.removedPhotosFromMemory", { count: removedCount, name: memoryName }));
   }
 
   async function handleRemovePhotoFromMemory(memoryId: string, photoId: string) {
@@ -716,7 +740,7 @@ export function useChronoPicApp() {
     try {
       const memberships = (await window.chronoPic.listMemoriesByPhoto(photoId)) as Memory[];
       if (!memberships.some((memory) => memory.id === memoryId)) {
-        showStatus("warn", `Photo is no longer in ${memoryName}`);
+        showStatus("warn", t("status.photoNoLongerInMemory", { name: memoryName }));
         return;
       }
 
@@ -725,9 +749,9 @@ export function useChronoPicApp() {
       if (filter.memoryId === memoryId) {
         await refreshPhotos();
       }
-      showStatus("success", `Removed photo from ${memoryName}`);
+      showStatus("success", t("status.removedPhotoFromMemory", { name: memoryName }));
     } catch (error) {
-      showStatus("error", formatErrorMessage(error, "Failed to remove photo from memory"));
+      showStatus("error", formatErrorMessage(error, t("status.failedRemovePhotoFromMemory")));
     }
   }
 
@@ -744,9 +768,9 @@ export function useChronoPicApp() {
     try {
       const updated = (await window.chronoPic.updatePhotoTags(selectedPhotoId, draftTags)) as PhotoRecord;
       setPhotos((current) => current.map((photo) => (photo.photo.id === updated.photo.id ? updated : photo)));
-      showStatus("success", "Tags updated");
+      showStatus("success", t("status.tagsUpdated"));
     } catch (error) {
-      showStatus("error", formatErrorMessage(error, "Failed to update tags"));
+      showStatus("error", formatErrorMessage(error, t("status.failedUpdateTags")));
     }
   }
 
@@ -758,9 +782,9 @@ export function useChronoPicApp() {
     try {
       const updated = (await window.chronoPic.updatePhotoCaption(selectedPhotoId, draftCaption || null)) as PhotoRecord;
       setPhotos((current) => current.map((photo) => (photo.photo.id === updated.photo.id ? updated : photo)));
-      showStatus("success", "Caption updated");
+      showStatus("success", t("status.captionUpdated"));
     } catch (error) {
-      showStatus("error", formatErrorMessage(error, "Failed to update caption"));
+      showStatus("error", formatErrorMessage(error, t("status.failedUpdateCaption")));
     }
   }
 
@@ -773,9 +797,9 @@ export function useChronoPicApp() {
       const timestamp = draftDatetime ? new Date(draftDatetime).getTime() : null;
       const updated = (await window.chronoPic.updatePhotoDatetime(selectedPhotoId, timestamp)) as PhotoRecord;
       setPhotos((current) => current.map((photo) => (photo.photo.id === updated.photo.id ? updated : photo)));
-      showStatus("success", "Datetime updated");
+      showStatus("success", t("status.datetimeUpdated"));
     } catch (error) {
-      showStatus("error", formatErrorMessage(error, "Failed to update datetime"));
+      showStatus("error", formatErrorMessage(error, t("status.failedUpdateDatetime")));
     }
   }
 
@@ -785,22 +809,24 @@ export function useChronoPicApp() {
     }
 
     setIsEnrichingSemantic(true);
-    showStatus("info", "Generating AI metadata...");
+    showStatus("info", t("status.generatingAiMetadata"));
 
     try {
-      const updated = (await window.chronoPic.enrichPhotoSemantic(selectedPhotoId)) as PhotoRecord;
+      const updated = (await window.chronoPic.enrichPhotoSemantic(selectedPhotoId, {
+        outputLocale: resolveAIOutputLocale(localeSettings),
+      })) as PhotoRecord;
       setPhotos((current) => current.map((photo) => (photo.photo.id === updated.photo.id ? updated : photo)));
 
       if (updated.semantic.aiStatus === "failed") {
         await refreshSemanticQueueStats();
-        showStatus("error", updated.semantic.aiError ?? "AI enrichment failed");
+        showStatus("error", updated.semantic.aiError ?? t("status.aiEnrichmentFailed"));
         return;
       }
 
       await refreshSemanticQueueStats();
-      showStatus("success", "AI metadata generated");
+      showStatus("success", t("status.aiMetadataGenerated"));
     } catch (error) {
-      showStatus("error", formatErrorMessage(error, "Failed to generate AI metadata"));
+      showStatus("error", formatErrorMessage(error, t("status.failedGenerateAiMetadata")));
     } finally {
       setIsEnrichingSemantic(false);
     }
@@ -808,12 +834,12 @@ export function useChronoPicApp() {
 
   async function handleEnrichPendingSemantics(limit = 12) {
     if (!capabilities.aiEnabled) {
-      showStatus("warn", "AI enrichment is not configured");
+      showStatus("warn", t("status.aiNotConfigured"));
       return;
     }
 
     setIsBatchEnrichingSemantic(true);
-    showStatus("info", "Processing pending AI metadata...");
+    showStatus("info", t("status.processingPendingAi"));
     void window.chronoPic.debugLog(`renderer:handleEnrichPendingSemantics start limit=${limit}`);
 
     let summary: {
@@ -824,7 +850,9 @@ export function useChronoPicApp() {
     };
 
     try {
-      summary = (await window.chronoPic.enrichPendingSemantics(limit)) as {
+      summary = (await window.chronoPic.enrichPendingSemantics(limit, {
+        outputLocale: resolveAIOutputLocale(localeSettings),
+      })) as {
         processed: number;
         completed: number;
         failed: number;
@@ -839,7 +867,7 @@ export function useChronoPicApp() {
           error instanceof Error && error.message ? error.message : "unknown"
         }`
       );
-      showStatus("error", formatErrorMessage(error, "Failed to process pending AI metadata"));
+      showStatus("error", formatErrorMessage(error, t("status.failedProcessPendingAi")));
       setIsBatchEnrichingSemantic(false);
       return;
     }
@@ -855,26 +883,30 @@ export function useChronoPicApp() {
           error instanceof Error && error.message ? error.message : "unknown"
         }`
       );
-      showStatus("error", formatErrorMessage(error, "AI queue processed, but library refresh failed"));
+      showStatus("error", formatErrorMessage(error, t("status.aiQueueRefreshFailed")));
       setIsBatchEnrichingSemantic(false);
       return;
     }
 
     try {
       if (summary.processed === 0) {
-        showStatus("warn", "No pending AI items to process");
+        showStatus("warn", t("status.noPendingAi"));
         return;
       }
 
       if (summary.failed > 0 || summary.skipped > 0) {
         showStatus(
           "warn",
-          `AI queue: completed ${summary.completed}, failed ${summary.failed}, skipped ${summary.skipped}`
+          t("status.aiQueueFailuresDetailed", {
+            completed: summary.completed,
+            failed: summary.failed,
+            skipped: summary.skipped,
+          })
         );
         return;
       }
 
-      showStatus("success", `AI queue processed ${summary.completed} photo${summary.completed === 1 ? "" : "s"}`);
+      showStatus("success", t("status.aiQueueProcessed", { count: summary.completed }));
     } finally {
       setIsBatchEnrichingSemantic(false);
     }
@@ -888,12 +920,12 @@ export function useChronoPicApp() {
     const updated = (await window.chronoPic.rollbackLatestEdit(selectedPhotoId)) as PhotoRecord | null;
 
     if (!updated) {
-      showStatus("warn", "No edit to roll back");
+      showStatus("warn", t("status.noEditToRollback"));
       return;
     }
 
     setPhotos((current) => current.map((photo) => (photo.photo.id === updated.photo.id ? updated : photo)));
-    showStatus("success", "Rolled back latest edit");
+    showStatus("success", t("status.rolledBackLatest"));
   }
 
   function openViewer(mode: ViewerMode, photoId?: string) {
@@ -947,6 +979,7 @@ export function useChronoPicApp() {
     isEnrichingMemorySemantic,
     isGeneratingMemoryCandidates,
     isScanning,
+    localeSettings,
     mappablePhotoCount,
     mapSettings,
     mapViewport,
@@ -990,6 +1023,7 @@ export function useChronoPicApp() {
     handleRemoveSelectionFromMemory,
     handleRollback,
     handleSaveAISettings,
+    handleSaveLocaleSettings,
     handleSaveMapSettings,
     handleSaveCaption,
     handleSaveDatetime,

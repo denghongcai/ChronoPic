@@ -17,6 +17,9 @@
   "references": [
     {
       "path": "../domain"
+    },
+    {
+      "path": "../i18n"
     }
   ]
 }

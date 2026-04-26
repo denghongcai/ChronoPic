@@ -8,13 +8,14 @@ test.describe("ChronoPic Smoke Tests (Electron)", () => {
       args: ["apps/desktop/dist/main/main.js"],
       env: {
         ...process.env,
+        ELECTRON_DISABLE_SANDBOX: "1",
         VITE_DEV_SERVER_URL: "http://localhost:5173",
       },
     });
   });
 
   test.afterAll(async () => {
-    await electronApp.close();
+    await electronApp?.close();
   });
 
   test("app window opens without renderer JS errors", async ({ page }) => {

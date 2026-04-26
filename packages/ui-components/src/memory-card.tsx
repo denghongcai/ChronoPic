@@ -4,6 +4,7 @@ import type { Memory } from "@chronopic/domain";
 
 import { Badge } from "./badge.js";
 import { Button } from "./button.js";
+import { useI18n } from "./i18n-provider.js";
 import { formatTimestamp, thumbnailUrl } from "./lib/media.js";
 import { getMemoryDescriptionPreview } from "./lib/memory-description.js";
 import { cn } from "./lib/cn.js";
@@ -16,6 +17,7 @@ export interface MemoryCardProps {
 }
 
 export function MemoryCard({ memory, selected = false, onOpen, variant = "default" }: MemoryCardProps) {
+  const { t } = useI18n();
   const coverUrl = thumbnailUrl(memory.coverThumbnailPath);
   const descriptionPreview = getMemoryDescriptionPreview(memory.description);
   const isHighlight = variant === "highlight";
@@ -48,8 +50,8 @@ export function MemoryCard({ memory, selected = false, onOpen, variant = "defaul
         )}
         <div className="absolute inset-0 bg-gradient-to-t from-stone-950/65 via-stone-950/10 to-stone-950/0" />
         <div className="absolute left-4 top-4 flex items-center gap-2">
-          <Badge tone="neutral">{memory.photoCount} photos</Badge>
-          {memory.coverPhotoId ? <Badge tone="info">Custom Cover</Badge> : null}
+          <Badge tone="neutral">{t("memory.detail.photos", { count: memory.photoCount })}</Badge>
+          {memory.coverPhotoId ? <Badge tone="info">{t("memories.customCover")}</Badge> : null}
         </div>
         {isHighlight ? (
           <div className="absolute bottom-0 left-0 right-0 p-5 text-white">
@@ -60,7 +62,7 @@ export function MemoryCard({ memory, selected = false, onOpen, variant = "defaul
               <div className="flex flex-wrap items-center gap-3 text-xs text-white/80">
                 <span className="inline-flex items-center gap-1.5">
                   <CalendarClock className="h-3.5 w-3.5" />
-                  Updated {formatTimestamp(memory.updatedAt)}
+                  {t("common.updated", { time: formatTimestamp(memory.updatedAt) })}
                 </span>
                 <span className="inline-flex items-center gap-1.5">
                   <ImageIcon className="h-3.5 w-3.5" />
@@ -76,7 +78,7 @@ export function MemoryCard({ memory, selected = false, onOpen, variant = "defaul
           <div className="space-y-1">
             <p className="line-clamp-1 text-base font-semibold text-stone-950">{memory.name}</p>
             <p className="line-clamp-2 min-h-10 text-sm leading-5 text-stone-500">
-              {descriptionPreview || "No description yet"}
+              {descriptionPreview || t("memories.noDescription")}
             </p>
           </div>
           <div className="flex items-center justify-between text-xs text-stone-500">

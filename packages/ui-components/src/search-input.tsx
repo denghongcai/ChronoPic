@@ -1,6 +1,7 @@
 import { Search } from "lucide-react";
 
 import { Input } from "./input.js";
+import { useI18n } from "./i18n-provider.js";
 import { cn } from "./lib/cn.js";
 
 export interface SearchInputProps {
@@ -12,17 +13,19 @@ export interface SearchInputProps {
 
 export function SearchInput({
   className,
-  placeholder = "Search photos, places, people...",
+  placeholder,
   value,
   onValueChange,
 }: SearchInputProps) {
+  const { t } = useI18n();
+
   return (
     <div className={cn("relative", className)}>
       <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-stone-400" />
       <Input
         className="pl-9"
         onChange={(e) => onValueChange?.(e.target.value)}
-        placeholder={placeholder}
+        placeholder={placeholder ?? t("header.searchPlaceholder")}
         type="search"
         value={value ?? ""}
       />
