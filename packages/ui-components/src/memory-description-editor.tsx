@@ -1,81 +1,65 @@
-import { Node } from "@tiptap/core";
-import { EditorContent, useEditor } from "@tiptap/react";
 import * as React from "react";
 
 import { Button } from "./button.js";
 import { Label } from "./label.js";
 import { cn } from "./lib/cn.js";
-import { getMemoryDescriptionHtml } from "./lib/memory-description.js";
+import { getMemoryDescriptionMarkdown } from "./lib/memory-description.js";
 
-const DocumentNode = Node.create({
-  name: "doc",
-  topNode: true,
-  content: "block+",
-});
+type MarkdownEditorComponent = React.ComponentType<{
+  autoFocus?: boolean;
+  height?: number;
+  onChange?: (value?: string) => void;
+  preview?: "live" | "edit" | "preview";
+  textareaProps?: React.TextareaHTMLAttributes<HTMLTextAreaElement>;
+  value?: string;
+}>;
 
-const ParagraphNode = Node.create({
-  name: "paragraph",
-  group: "block",
-  content: "text*",
-  parseHTML() {
-    return [{ tag: "p" }];
-  },
-  renderHTML({ HTMLAttributes }) {
-    return ["p", HTMLAttributes, 0];
-  },
-});
-
-const TextNode = Node.create({
-  name: "text",
-  group: "inline",
+const MarkdownEditor = React.lazy(async () => {
+  const module = await import("@uiw/react-md-editor");
+  return { default: module.default as unknown as MarkdownEditorComponent };
 });
 
 export interface MemoryDescriptionEditorProps {
+  dirty?: boolean;
   value: string | null;
-  onSave: (serializedBlocks: string) => void;
+  onChange: (markdown: string) => void;
+  onSave: (markdown: string) => void;
 }
 
-export function MemoryDescriptionEditor({ value, onSave }: MemoryDescriptionEditorProps) {
-  const [isDirty, setIsDirty] = React.useState(false);
-  const initialHtml = React.useMemo(() => getMemoryDescriptionHtml(value), [value]);
-  const editor = useEditor(
-    {
-      extensions: [DocumentNode, ParagraphNode, TextNode],
-      content: initialHtml,
-      editorProps: {
-        attributes: {
-          class: "min-h-40 px-4 py-3 text-sm leading-7 text-stone-700 outline-none",
-        },
-      },
-      onUpdate: () => setIsDirty(true),
-    },
-    [initialHtml]
-  );
-
-  React.useEffect(() => {
-    setIsDirty(false);
-  }, [value]);
+export function MemoryDescriptionEditor({ dirty = false, value, onChange, onSave }: MemoryDescriptionEditorProps) {
+  const markdown = getMemoryDescriptionMarkdown(value);
 
   function handleSave() {
-    if (!editor) {
-      return;
-    }
-
-    const serialized = editor.getHTML();
-    onSave(serialized);
-    setIsDirty(false);
+    onSave(markdown);
   }
 
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
         <Label>Description</Label>
-        <Button disabled={!isDirty} onClick={handleSave} size="sm" variant="accent">
+        <Button disabled={!dirty} onClick={handleSave} size="sm" variant="accent">
           Save Description
         </Button>
       </div>
-      <div className={cn("overflow-hidden rounded-[24px] border border-stone-200 bg-white shadow-sm")}>
-        {editor ? <EditorContent editor={editor} /> : null}
+      <div
+        className={cn("overflow-hidden rounded-[24px] border border-stone-200 bg-white shadow-sm")}
+        data-color-mode="light"
+      >
+        <React.Suspense fallback={<div className="min-h-40 px-4 py-3 text-sm text-stone-500">Loading editor...</div>}>
+          <MarkdownEditor
+            autoFocus
+            height={360}
+            onChange={(nextValue) => {
+              const markdown = nextValue ?? "";
+              onChange(markdown);
+            }}
+            preview="live"
+            textareaProps={{
+              placeholder: "Write this memory in Markdown...",
+            }}
+            value={markdown}
+          />
+        </React.Suspense>
       </div>
     </div>
   );

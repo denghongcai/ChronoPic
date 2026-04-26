@@ -1660,6 +1660,60 @@ This file is the local execution record for ChronoPic. It complements `PLAN.md` 
   `pnpm build`
 - Result: Memory description editing now uses Tiptap, BlockNote is removed, and the production renderer bundle is materially smaller.
 
+### 2026-04-26 Step 92
+
+- Reviewed the memory description pipeline and removed the mixed-format model.
+- Changed the description contract to raw Markdown source only:
+  existing stored values are treated as Markdown as-is,
+  no legacy BlockNote JSON or Tiptap HTML compatibility conversion is attempted,
+  and the database/API continue to store the same `description` string field.
+- Replaced the Tiptap editor with `@uiw/react-md-editor`.
+- Updated the memory detail read view to render Markdown through the same editor package's Markdown preview instead of injecting saved HTML.
+- Simplified memory-description preview extraction so cards strip common Markdown markers for compact text only.
+- Added the explicit renderer CSS imports and package dependencies required by the Markdown editor/preview.
+- Used lazy loading for the editor and preview components so importing `@chronopic/ui-components` in Node-based tests does not eagerly load browser CSS from `@uiw`.
+- Verified the replacement with:
+  `pnpm typecheck`
+  `pnpm test`
+  `pnpm build`
+- Result: Memory description editing and display now have one canonical Markdown-source format and the workspace remains build-valid.
+
+### 2026-04-26 Step 93
+
+- Refined Memory title and description editing interaction.
+- Removed the redundant `Rename` button from Memory detail; clicking the title now opens the title editor directly.
+- Removed the redundant `Edit Description` button; clicking the description surface remains the only edit entry point.
+- Added magic-button AI actions inside both edit dialogs:
+  empty title/description drafts show generate-oriented copy,
+  existing drafts show optimize-oriented copy,
+  and both actions reuse the existing `onEnrichSemantic(memory.id)` memory suggestion pipeline.
+- Kept AI suggestions non-destructive:
+  generated title/description values appear as suggestions,
+  choosing `Use suggestion` only fills the local draft,
+  and the user still has to save before the Memory is updated.
+- Converted `MemoryDescriptionEditor` into a controlled Markdown editor so suggestion-filled drafts and manually typed drafts share the same dirty/save behavior.
+- Verified the interaction update with:
+  `pnpm typecheck`
+  `pnpm test`
+  `pnpm build`
+- Result: Memory title/description editing is less button-heavy and AI generation/optimization is available at the point of authoring without silently overwriting user content.
+
+### 2026-04-26 Step 94
+
+- Reviewed the Memory AI optimize path after observing that optimize behaved like a fresh generation.
+- Found that the edit-dialog magic buttons only called `enrichMemorySemantic(memory.id)`, so the backend prompt used the last saved Memory title/description and could not see unsaved editor drafts.
+- Added a `MemoryAIContext` override object to the AI service interface and app-service `enrichMemorySemantic` path.
+- Threaded the context through Electron IPC, preload bridge, renderer hook, `PhotoHome`, and `MemoryDetailPage`.
+- Updated title optimize to pass the current title draft as `context.name`.
+- Updated description optimize to pass the current Markdown draft as `context.description`.
+- Updated the memory AI prompt so non-empty working drafts are explicitly treated as optimization inputs whose intent and concrete details must be preserved.
+- Added regression coverage asserting that `ChronoPicAppService.enrichMemorySemantic()` forwards draft context to `AIClient.analyzeMemory()` without overwriting manual Memory fields.
+- Verified the fix with:
+  `pnpm typecheck`
+  `pnpm test`
+  `pnpm build`
+- Result: Memory AI optimize now has access to the user's current unsaved title/description draft instead of regenerating solely from persisted Memory data.
+
 ## Next Immediate Tasks
 
 1. Workspace skeleton is implemented.
@@ -1671,7 +1725,7 @@ This file is the local execution record for ChronoPic. It complements `PLAN.md` 
 7. The first renderer/UI structural split is landed and verified at typecheck/build level.
 8. The home-page layout, favorites, memories, edit UX, and memory list/detail productization phases have all landed in code.
 9. Sidebar navigation and gallery-section composition are now aligned more closely with the current plan.
-10. Memory description editing now uses `BlockNote`, and the desktop build/typecheck pipeline remains green with the new dependency surface.
+10. Memory description editing now uses raw Markdown source with `@uiw/react-md-editor`, and the desktop build/typecheck pipeline remains green with the new dependency surface.
 11. Viewer ergonomics have received a focused polish pass and remain build-valid.
 12. The real `shadcn/ui` / Radix-backed adoption pass is landed for `Select`, dialogs, and the base shared control layer.
 13. The app now exposes visible add/remove memory actions in gallery, viewer, and memory-detail flows, but deeper lifecycle polish is still pending.
@@ -1722,4 +1776,6 @@ This file is the local execution record for ChronoPic. It complements `PLAN.md` 
 58. The active follow-up phase is `4.16 Memory Candidate Queue and Notifications Phase`.
 59. Active branch `ux-simplify-surfaces` is refining UI surfaces to reduce duplicate status text and repeated controls.
 60. Memory detail AI suggestions are now being moved from default page content into an explicit compact action/dialog.
-61. Memory description editing is being simplified from BlockNote to Tiptap.
+61. Memory description editing is now standardized on raw Markdown source and `@uiw/react-md-editor`.
+62. Memory title and description now expose AI generate/optimize actions inside their edit dialogs, while direct title/description clicks replace separate rename/edit buttons.
+63. Memory AI optimize now passes unsaved title/description drafts through to the AI prompt as working context.

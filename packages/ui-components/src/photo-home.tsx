@@ -91,7 +91,10 @@ export interface PhotoHomeProps extends EditControlsProps {
   onSaveMapSettings: (settings: MapSettings) => void | Promise<void>;
   onScanAll: () => void;
   onEnrichPendingSemantics?: () => void;
-  onEnrichMemorySemantic?: (memoryId: string) => void | Promise<void>;
+  onEnrichMemorySemantic?: (
+    memoryId: string,
+    context?: { name?: string | null; description?: string | null }
+  ) => void | Promise<void>;
   onCloseViewer: () => void;
   onPreviousPhoto: () => void;
   onNextPhoto: () => void;

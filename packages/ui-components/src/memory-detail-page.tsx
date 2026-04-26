@@ -1,5 +1,5 @@
 import * as React from "react";
-import { CalendarClock, ImageUp, PencilLine, Sparkles, SquarePen, Trash2, X } from "lucide-react";
+import { CalendarClock, ImageUp, PencilLine, Sparkles, Trash2, X } from "lucide-react";
 
 import type { Memory, PhotoRecord } from "@chronopic/domain";
 
@@ -8,13 +8,19 @@ import { Button } from "./button.js";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "./dialog.js";
 import { IconButton } from "./icon-button.js";
 import { Input } from "./input.js";
-import { getMemoryDescriptionHtml, hasMemoryDescription } from "./lib/memory-description.js";
+import { getMemoryDescriptionMarkdown, hasMemoryDescription } from "./lib/memory-description.js";
 import { buildMemoryStorySections } from "./lib/memory-story.js";
 import { MemoryDescriptionEditor } from "./memory-description-editor.js";
 import { MemoryStoryBoard } from "./memory-story-board.js";
 import { Panel } from "./panel.js";
 import { PhotoCard } from "./photo-card.js";
 import { formatTimestamp, thumbnailUrl } from "./lib/media.js";
+
+const MarkdownPreview = React.lazy(async () => {
+  const module = await import("@uiw/react-md-editor");
+  const editor = module.default as unknown as { Markdown: React.ComponentType<{ source?: string }> };
+  return { default: editor.Markdown };
+});
 
 export interface MemoryDetailPageProps {
   memory: Memory;
@@ -33,7 +39,10 @@ export interface MemoryDetailPageProps {
   onSetCover: (memoryId: string, photoId: string) => void | Promise<void>;
   onDeleteMemory: (memoryId: string) => void | Promise<void>;
   onSaveDescription: (memoryId: string, serializedDescription: string) => void | Promise<void>;
-  onEnrichSemantic?: (memoryId: string) => void | Promise<void>;
+  onEnrichSemantic?: (
+    memoryId: string,
+    context?: { name?: string | null; description?: string | null }
+  ) => void | Promise<void>;
 }
 
 export function MemoryDetailPage({
@@ -54,18 +63,19 @@ export function MemoryDetailPage({
   onDeleteMemory,
   onSaveDescription,
   onEnrichSemantic,
-}: MemoryDetailPageProps) {
-  const coverUrl = thumbnailUrl(memory.coverThumbnailPath);
-  const [editingDescription, setEditingDescription] = React.useState(false);
-  const [aiSuggestionsOpen, setAiSuggestionsOpen] = React.useState(false);
-  const [renaming, setRenaming] = React.useState(false);
+	}: MemoryDetailPageProps) {
+	  const coverUrl = thumbnailUrl(memory.coverThumbnailPath);
+	  const descriptionMarkdown = getMemoryDescriptionMarkdown(memory.description);
+	  const [editingDescription, setEditingDescription] = React.useState(false);
+	  const [aiSuggestionsOpen, setAiSuggestionsOpen] = React.useState(false);
+	  const [renaming, setRenaming] = React.useState(false);
   const [selectionMode, setSelectionMode] = React.useState(false);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = React.useState(false);
   const [removeSelectedConfirmOpen, setRemoveSelectedConfirmOpen] = React.useState(false);
-  const [pendingRemovalPhotoId, setPendingRemovalPhotoId] = React.useState<string | null>(null);
-  const [draftName, setDraftName] = React.useState(memory.name);
-  const descriptionHtml = getMemoryDescriptionHtml(memory.description);
-  const hasDescription = hasMemoryDescription(memory.description);
+	  const [pendingRemovalPhotoId, setPendingRemovalPhotoId] = React.useState<string | null>(null);
+	  const [draftName, setDraftName] = React.useState(memory.name);
+	  const [draftDescription, setDraftDescription] = React.useState(descriptionMarkdown);
+	  const hasDescription = hasMemoryDescription(memory.description);
   const hasBatchSelection = selectedPhotoIds.length > 0;
   const isSelecting = selectionMode || hasBatchSelection;
   const selectedRecord = React.useMemo(
@@ -81,6 +91,10 @@ export function MemoryDetailPage({
   React.useEffect(() => {
     setDraftName(memory.name);
   }, [memory.name]);
+
+  React.useEffect(() => {
+    setDraftDescription(descriptionMarkdown);
+  }, [descriptionMarkdown]);
 
   React.useEffect(() => {
     onClearBatchSelection();
@@ -112,9 +126,13 @@ export function MemoryDetailPage({
                   </div>
                   <div>
                     <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-stone-500">Memory Detail</p>
-                    <h1 className="mt-2 font-['Space_Grotesk','IBM_Plex_Sans',sans-serif] text-4xl font-semibold tracking-tight text-stone-950">
+                    <button
+                      className="mt-2 block rounded-[18px] text-left font-['Space_Grotesk','IBM_Plex_Sans',sans-serif] text-4xl font-semibold tracking-tight text-stone-950 transition hover:text-amber-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300"
+                      onClick={() => setRenaming(true)}
+                      type="button"
+                    >
                       {memory.name}
-                    </h1>
+                    </button>
                     <p className="mt-3 inline-flex items-center gap-2 text-sm text-stone-500">
                       <CalendarClock className="h-4 w-4" />
                       Updated {formatTimestamp(memory.updatedAt)}
@@ -134,10 +152,6 @@ export function MemoryDetailPage({
                     size="sm"
                     variant="ghost"
                   />
-                  <Button onClick={() => setRenaming(true)} size="sm" variant="outline">
-                    <SquarePen className="h-4 w-4" />
-                    Rename
-                  </Button>
                   <IconButton
                     icon={<Trash2 className="h-4 w-4" />}
                     label="Delete Memory"
@@ -149,23 +163,18 @@ export function MemoryDetailPage({
               </div>
 
               <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-stone-500">Description</p>
-                  <Button onClick={() => setEditingDescription(true)} size="sm" variant="outline">
-                    <SquarePen className="h-4 w-4" />
-                    Edit Description
-                  </Button>
-                </div>
+                <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-stone-500">Description</p>
                 <button
                   className="w-full rounded-[24px] border border-stone-200 bg-white px-5 py-4 text-left shadow-sm transition hover:border-stone-300 hover:bg-stone-50"
                   onClick={() => setEditingDescription(true)}
                   type="button"
                 >
                   {hasDescription ? (
-                    <div
-                      className="prose-memory text-sm leading-7 text-stone-600"
-                      dangerouslySetInnerHTML={{ __html: descriptionHtml }}
-                    />
+                    <div className="prose-memory text-sm leading-7 text-stone-600" data-color-mode="light">
+                      <React.Suspense fallback={<p>{descriptionMarkdown}</p>}>
+                        <MarkdownPreview source={descriptionMarkdown} />
+                      </React.Suspense>
+                    </div>
                   ) : (
                     <p className="text-sm leading-7 text-stone-600">Add context, story beats, and notes for this memory.</p>
                   )}
@@ -215,7 +224,7 @@ export function MemoryDetailPage({
                   Suggestions use the photos already inside this memory.
                 </p>
                 <Button
-                  disabled={isEnrichingSemantic || photos.length === 0}
+                  disabled={!onEnrichSemantic || isEnrichingSemantic || photos.length === 0}
                   onClick={() => void onEnrichSemantic?.(memory.id)}
                   size="sm"
                   variant="outline"
@@ -333,7 +342,7 @@ export function MemoryDetailPage({
           <div className="w-full max-w-4xl rounded-[28px] border border-stone-200 bg-white p-6 shadow-2xl">
             <div className="mb-5 flex items-start justify-between gap-4">
               <div>
-                <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-stone-500">Edit Description</p>
+                <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-stone-500">Description</p>
                 <h2 className="mt-2 font-['Space_Grotesk','IBM_Plex_Sans',sans-serif] text-2xl font-semibold tracking-tight text-stone-950">
                   {memory.name}
                 </h2>
@@ -342,12 +351,39 @@ export function MemoryDetailPage({
                 Close
               </Button>
             </div>
-            <MemoryDescriptionEditor
+            <div className="mb-4 rounded-[20px] border border-stone-200 bg-stone-50/70 px-4 py-3">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <p className="text-sm leading-6 text-stone-600">
+                  {draftDescription.trim() ? "Use AI to refine the current description draft." : "Use AI to generate a starting description from this memory."}
+                </p>
+                <Button
+	                  disabled={!onEnrichSemantic || isEnrichingSemantic || photos.length === 0}
+                  onClick={() => void onEnrichSemantic?.(memory.id, { description: draftDescription })}
+                  size="sm"
+                  variant="outline"
+                >
+                  <Sparkles className="h-4 w-4" />
+                  {isEnrichingSemantic ? "Generating..." : draftDescription.trim() ? "Optimize Description" : "Generate Description"}
+                </Button>
+              </div>
+              {memory.generatedDescription ? (
+                <div className="mt-3 space-y-2 rounded-[16px] border border-stone-200 bg-white p-3">
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-stone-500">AI suggestion</p>
+                  <p className="text-sm leading-6 text-stone-600">{memory.generatedDescription}</p>
+                  <Button onClick={() => setDraftDescription(memory.generatedDescription ?? "")} size="sm" variant="outline">
+                    Use suggestion
+                  </Button>
+                </div>
+              ) : null}
+            </div>
+	            <MemoryDescriptionEditor
+	              dirty={draftDescription !== descriptionMarkdown}
+	              onChange={setDraftDescription}
               onSave={async (serializedDescription) => {
                 await onSaveDescription(memory.id, serializedDescription);
                 setEditingDescription(false);
               }}
-              value={memory.description}
+              value={draftDescription}
             />
           </div>
         </DialogContent>
@@ -355,14 +391,14 @@ export function MemoryDetailPage({
 
       <Dialog onOpenChange={setRenaming} open={renaming}>
         <DialogContent className="flex items-center justify-center p-6">
-          <DialogTitle className="sr-only">Rename memory</DialogTitle>
+          <DialogTitle className="sr-only">Edit memory title</DialogTitle>
           <DialogDescription className="sr-only">
             Update the title for {memory.name}.
           </DialogDescription>
           <div className="w-full max-w-xl rounded-[28px] border border-stone-200 bg-white p-6 shadow-2xl">
             <div className="mb-5 flex items-start justify-between gap-4">
               <div>
-                <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-stone-500">Rename Memory</p>
+                <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-stone-500">Title</p>
                 <h2 className="mt-2 font-['Space_Grotesk','IBM_Plex_Sans',sans-serif] text-2xl font-semibold tracking-tight text-stone-950">
                   Update title
                 </h2>
@@ -372,6 +408,33 @@ export function MemoryDetailPage({
               </Button>
             </div>
             <div className="space-y-4">
+              <div className="rounded-[20px] border border-stone-200 bg-stone-50/70 px-4 py-3">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <p className="text-sm leading-6 text-stone-600">
+                    {draftName.trim() ? "Use AI to refine the current title draft." : "Use AI to generate a title from this memory."}
+                  </p>
+                  <Button
+                    disabled={!onEnrichSemantic || isEnrichingSemantic || photos.length === 0}
+                    onClick={() => void onEnrichSemantic?.(memory.id, { name: draftName })}
+                    size="sm"
+                    variant="outline"
+                  >
+                    <Sparkles className="h-4 w-4" />
+                    {isEnrichingSemantic ? "Generating..." : draftName.trim() ? "Optimize Title" : "Generate Title"}
+                  </Button>
+                </div>
+                {memory.generatedName ? (
+                  <div className="mt-3 flex flex-wrap items-center justify-between gap-3 rounded-[16px] border border-stone-200 bg-white p-3">
+                    <div>
+                      <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-stone-500">AI suggestion</p>
+                      <p className="mt-1 text-base font-semibold text-stone-950">{memory.generatedName}</p>
+                    </div>
+                    <Button onClick={() => setDraftName(memory.generatedName ?? "")} size="sm" variant="outline">
+                      Use suggestion
+                    </Button>
+                  </div>
+                ) : null}
+              </div>
               <div className="space-y-2">
                 <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-stone-500">Memory Name</p>
                 <Input

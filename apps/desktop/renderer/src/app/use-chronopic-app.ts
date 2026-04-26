@@ -544,7 +544,7 @@ export function useChronoPicApp() {
     }
   }
 
-  async function handleEnrichMemorySemantic(memoryId: string) {
+  async function handleEnrichMemorySemantic(memoryId: string, context?: { name?: string | null; description?: string | null }) {
     if (!capabilities.aiEnabled) {
       showStatus("warn", "AI enrichment is not configured");
       return;
@@ -555,7 +555,7 @@ export function useChronoPicApp() {
     showStatus("info", `Generating AI summary for ${memoryName}...`);
 
     try {
-      const updated = (await window.chronoPic.enrichMemorySemantic(memoryId)) as Memory;
+      const updated = (await window.chronoPic.enrichMemorySemantic(memoryId, context)) as Memory;
       setMemories((current) => current.map((memory) => (memory.id === updated.id ? updated : memory)));
 
       if (updated.aiStatus === "failed") {

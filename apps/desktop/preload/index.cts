@@ -44,7 +44,8 @@ const api: ChronoPicBridge = {
   getSnapshot: () => ipcRenderer.invoke("system:snapshot"),
   listMemories: () => ipcRenderer.invoke("memories:list"),
   getMemory: (memoryId: string) => ipcRenderer.invoke("memories:get", memoryId),
-  enrichMemorySemantic: (memoryId: string) => ipcRenderer.invoke("memories:enrichSemantic", memoryId),
+  enrichMemorySemantic: (memoryId: string, context?: { name?: string | null; description?: string | null }) =>
+    ipcRenderer.invoke("memories:enrichSemantic", memoryId, context),
   createMemory: (name: string, description?: string, source?: "manual" | "ai") =>
     ipcRenderer.invoke("memories:create", name, description, source),
   updateMemory: (memoryId: string, updates: { name?: string; description?: string | null; coverPhotoId?: string | null }) =>

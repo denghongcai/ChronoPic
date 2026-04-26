@@ -17,7 +17,7 @@ import type {
   TimelineGroupQuery,
 } from "@chronopic/domain";
 import type { ChronoPicDatabase } from "@chronopic/infra-db";
-import type { AIClient } from "@chronopic/services-ai-pipeline";
+import type { AIClient, MemoryAIContext } from "@chronopic/services-ai-pipeline";
 import type { IndexerService } from "@chronopic/services-indexer";
 
 export class ChronoPicAppService {
@@ -209,7 +209,7 @@ export class ChronoPicAppService {
     return this.db.updateMemory(memoryId, updates);
   }
 
-  async enrichMemorySemantic(memoryId: string): Promise<Memory> {
+  async enrichMemorySemantic(memoryId: string, context?: MemoryAIContext): Promise<Memory> {
     if (!this.aiClient.isEnabled()) {
       throw new Error("AI enrichment is not configured");
     }
@@ -240,7 +240,7 @@ export class ChronoPicAppService {
     });
 
     try {
-      const analysis = await this.aiClient.analyzeMemory(memory, photos);
+      const analysis = await this.aiClient.analyzeMemory(memory, photos, context);
       return this.db.updateMemorySemanticEnrichment(memoryId, {
         ...analysis,
         aiStatus: "completed",

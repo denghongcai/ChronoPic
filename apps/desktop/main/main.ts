@@ -234,8 +234,8 @@ function registerHandlers() {
   ipcMain.handle("system:snapshot", async () => getRuntimeHandle().appService.getSnapshot());
   ipcMain.handle("memories:list", async () => toSerializable(getRuntimeHandle().appService.listMemories()));
   ipcMain.handle("memories:get", async (_event, memoryId: string) => toSerializable(getRuntimeHandle().appService.getMemory(memoryId)));
-  ipcMain.handle("memories:enrichSemantic", async (_event, memoryId: string) =>
-    getRuntimeHandle().appService.enrichMemorySemantic(memoryId)
+  ipcMain.handle("memories:enrichSemantic", async (_event, memoryId: string, context?: { name?: string | null; description?: string | null }) =>
+    getRuntimeHandle().appService.enrichMemorySemantic(memoryId, context)
   );
   ipcMain.handle("memories:create", async (_event, name: string, description?: string, source?: string) =>
     getRuntimeHandle().appService.createMemory(name, description, source as "manual" | "ai")

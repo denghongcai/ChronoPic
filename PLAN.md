@@ -642,7 +642,7 @@ Implementation breakdown:
 - Turn memories from static containers into authoring surfaces that help users shape a narrative.
 - Keep manual authoring as the source of truth:
   generated title/summary/tags remain suggestions until explicitly applied,
-  and manual description editing stays BlockNote-backed.
+  and manual description editing stores Markdown source directly before rendering it in the detail view.
 - Add a story outline derived from the memory's current photos so the detail page exposes:
   chronological chapters,
   chapter cover images,
@@ -660,6 +660,15 @@ Current landed scope:
 - Each chapter has a representative thumbnail, date range, photo count, mapped-photo count, and AI-ready count.
 - Clicking a chapter lead opens the existing focused detail viewer for that representative photo, preserving the current viewer/gallery flow instead of introducing a parallel story player before the chapter model needs dedicated playback controls.
 - Regression coverage now verifies chapter grouping and section metrics.
+- Memory descriptions now use a Markdown-source contract:
+  the database stores the raw Markdown string,
+  `@uiw/react-md-editor` edits that same Markdown string,
+  and the read view renders Markdown instead of displaying source text or persisting HTML.
+- Memory title and description editing now use direct-manipulation entry points:
+  clicking the title opens the title editor,
+  clicking the description surface opens the Markdown editor,
+  and each editor exposes a magic action that reuses the existing memory AI suggestion pipeline to generate empty content or optimize existing drafts before the user explicitly saves.
+- AI optimize actions now pass the current unsaved editor draft into the memory AI pipeline as prompt context, so optimizing a title or description refines the user's current text instead of regenerating only from the last saved memory data.
 
 ### 4.14 Advanced Discovery Phase
 

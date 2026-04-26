@@ -30,6 +30,7 @@
     "@chronopic/services-ai-pipeline": "workspace:*",
     "@chronopic/services-indexer": "workspace:*",
     "@chronopic/ui-components": "workspace:*",
+    "@uiw/react-markdown-preview": "^5.2.0",
     "lucide-react": "^1.8.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",

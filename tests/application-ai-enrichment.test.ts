@@ -355,6 +355,7 @@ test("ChronoPicAppService enrichPendingSemantics processes pending and failed ph
 
 test("ChronoPicAppService enrichMemorySemantic stores generated fields without overwriting manual title or description", async () => {
   let storedMemory = makeMemory();
+  let receivedMemoryContext: unknown;
   const photoRecords = [makePhotoRecord(), { ...makePhotoRecord(), photo: { ...makePhotoRecord().photo, id: "photo-2", path: "/tmp/coast.jpg" } }];
 
   const fakeDb = {
@@ -389,22 +390,32 @@ test("ChronoPicAppService enrichMemorySemantic stores generated fields without o
       analyzePhoto: async () => {
         throw new Error("unused");
       },
-      analyzeMemory: async () => ({
-        generatedName: "Misty Coastal Weekend",
-        generatedDescription: "A calm set of shoreline and travel photos with soft light and a reflective mood.",
-        generatedLabels: ["coast", "weekend", "travel"],
-        aiProvider: "openai-compatible",
-        aiModel: "model-a",
-        aiProcessedAt: 456,
-        aiError: null,
-      }),
+      analyzeMemory: async (_memory, _photos, context) => {
+        receivedMemoryContext = context;
+        return {
+          generatedName: "Misty Coastal Weekend",
+          generatedDescription: "A calm set of shoreline and travel photos with soft light and a reflective mood.",
+          generatedLabels: ["coast", "weekend", "travel"],
+          aiProvider: "openai-compatible",
+          aiModel: "model-a",
+          aiProcessedAt: 456,
+          aiError: null,
+        };
+      },
     }
   );
 
-  const enriched = await service.enrichMemorySemantic("memory-1");
+  const enriched = await service.enrichMemorySemantic("memory-1", {
+    name: "My edited title draft",
+    description: "My edited description draft",
+  });
 
   assert.equal(enriched.name, "Weekend Trip");
   assert.equal(enriched.description, "Manual notes");
+  assert.deepEqual(receivedMemoryContext, {
+    name: "My edited title draft",
+    description: "My edited description draft",
+  });
   assert.equal(enriched.generatedName, "Misty Coastal Weekend");
   assert.equal(
     enriched.generatedDescription,
