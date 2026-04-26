@@ -5,6 +5,7 @@ import type { MemoryCandidate } from "@chronopic/domain";
 
 import { Badge } from "./badge.js";
 import { Button } from "./button.js";
+import { useI18n } from "./i18n-provider.js";
 import { Input } from "./input.js";
 import { thumbnailUrl } from "./lib/media.js";
 import { Panel } from "./panel.js";
@@ -24,6 +25,7 @@ export function SuggestedMemoriesSection({
   onAccept,
   onReject,
 }: SuggestedMemoriesSectionProps) {
+  const { t } = useI18n();
   const [draftTitles, setDraftTitles] = React.useState<Record<string, string>>({});
   const [removedPhotoIds, setRemovedPhotoIds] = React.useState<Record<string, string[]>>({});
   const [expandedPhotoControls, setExpandedPhotoControls] = React.useState<Record<string, boolean>>({});
@@ -32,21 +34,21 @@ export function SuggestedMemoriesSection({
     <Panel className="overflow-hidden">
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-stone-200/70 px-5 py-4">
         <div>
-          <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-stone-500">Suggested Memories</p>
+          <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-stone-500">{t("memories.suggestedTitle")}</p>
           <h2 className="mt-2 font-['Space_Grotesk','IBM_Plex_Sans',sans-serif] text-2xl font-semibold tracking-tight text-stone-950">
-            AI-assisted grouping candidates
+            {t("memories.suggestedHeading")}
           </h2>
           <p className="mt-2 text-sm text-stone-500">
-            Review suggested groups before they become editable memories.
+            {t("memories.suggestedDescription")}
           </p>
         </div>
         <div className="flex items-center gap-2">
           <Badge tone={candidates.length > 0 ? "warn" : "neutral"}>
-            {candidates.length > 0 ? `${candidates.length} ready` : "0 ready"}
+            {t("memories.ready", { count: candidates.length })}
           </Badge>
           <Button disabled={isGenerating} onClick={() => void onGenerate()} variant="accent">
             <Sparkles className="h-4 w-4" />
-            {isGenerating ? "Generating..." : "Generate"}
+            {isGenerating ? t("memories.generating") : t("memories.generate")}
           </Button>
         </div>
       </div>
@@ -55,9 +57,9 @@ export function SuggestedMemoriesSection({
           <div className="grid min-h-[220px] place-items-center rounded-[24px] border border-dashed border-stone-300 bg-stone-50/70 px-6 text-center">
             <div className="max-w-md space-y-3">
               <Lightbulb className="mx-auto h-8 w-8 text-stone-400" />
-              <h3 className="text-lg font-semibold text-stone-900">No pending suggestions</h3>
+              <h3 className="text-lg font-semibold text-stone-900">{t("memories.noPendingSuggestions")}</h3>
               <p className="text-sm leading-6 text-stone-500">
-                Generate candidates after scanning or AI-enriching photos. Suggestions stay separate until accepted.
+                {t("memories.noPendingSuggestionsDescription")}
               </p>
             </div>
           </div>
@@ -83,7 +85,7 @@ export function SuggestedMemoriesSection({
                     <div className="flex flex-col gap-4 p-4">
                       <div className="space-y-2">
                         <Input
-                          aria-label="Suggested memory title"
+                          aria-label={t("memories.suggestedTitleAria")}
                           onChange={(event) =>
                             setDraftTitles((current) => ({ ...current, [candidate.id]: event.target.value }))
                           }
@@ -92,7 +94,7 @@ export function SuggestedMemoriesSection({
                         <p className="text-sm leading-6 text-stone-500">{candidate.reason}</p>
                       </div>
                       <div className="flex flex-wrap gap-2">
-                        <Badge tone="neutral">{retainedPhotoIds.length} photos</Badge>
+                        <Badge tone="neutral">{t("memory.detail.photos", { count: retainedPhotoIds.length })}</Badge>
                         {candidate.generatedLabels.map((label) => (
                           <Badge key={label} tone="neutral">
                             {label}
@@ -109,7 +111,7 @@ export function SuggestedMemoriesSection({
                           variant="ghost"
                         >
                           <Trash2 className="h-3.5 w-3.5" />
-                          {photoControlsOpen ? "Hide photo controls" : "Adjust photos"}
+                          {photoControlsOpen ? t("memories.hidePhotoControls") : t("memories.adjustPhotos")}
                         </Button>
                         {photoControlsOpen ? (
                           <div className="flex flex-wrap gap-2">
@@ -134,7 +136,7 @@ export function SuggestedMemoriesSection({
                                   size="sm"
                                   variant="outline"
                                 >
-                                  Photo {index + 1}
+                                  {t("memories.photoIndex", { index: index + 1 })}
                                 </Button>
                               );
                             })}
@@ -144,7 +146,7 @@ export function SuggestedMemoriesSection({
                       <div className="mt-auto flex justify-end gap-2">
                         <Button onClick={() => void onReject(candidate.id)} size="sm" variant="ghost">
                           <X className="h-4 w-4" />
-                          Reject
+                          {t("memories.reject")}
                         </Button>
                         <Button
                           disabled={!draftTitle.trim() || retainedPhotoIds.length === 0}
@@ -153,7 +155,7 @@ export function SuggestedMemoriesSection({
                           variant="accent"
                         >
                           <Check className="h-4 w-4" />
-                          Accept Memory
+                          {t("memories.acceptMemory")}
                         </Button>
                       </div>
                     </div>

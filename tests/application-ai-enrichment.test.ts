@@ -97,6 +97,7 @@ function makeMemory(): Memory {
 test("ChronoPicAppService enrichPhotoSemantic keeps manual fields while storing generated AI fields", async () => {
   const original = makePhotoRecord();
   let stored = structuredClone(original);
+  let receivedPhotoContext: unknown;
 
   const fakeDb = {
     getPhoto(photoId: string) {
@@ -134,21 +135,25 @@ test("ChronoPicAppService enrichPhotoSemantic keeps manual fields while storing 
     stubIndexer as never,
     {
       isEnabled: () => true,
-      analyzePhoto: async () => ({
-        generatedLabels: ["forest", "mist", "trees"],
-        generatedCaption: "Misty forest path",
-        summary: "A soft, misty forest scene with layered pine trees.",
-        embeddingRef: null,
-        aiProvider: "openai-compatible",
-        aiModel: "qwen2.5-vl",
-        aiProcessedAt: 123456789,
-        aiError: null,
-      }),
+      analyzePhoto: async (_photo, context) => {
+        receivedPhotoContext = context;
+        return {
+          generatedLabels: ["forest", "mist", "trees"],
+          generatedCaption: "Misty forest path",
+          summary: "A soft, misty forest scene with layered pine trees.",
+          embeddingRef: null,
+          aiProvider: "openai-compatible",
+          aiModel: "qwen2.5-vl",
+          aiProcessedAt: 123456789,
+          aiError: null,
+        };
+      },
     }
   );
 
-  const enriched = await service.enrichPhotoSemantic("photo-1");
+  const enriched = await service.enrichPhotoSemantic("photo-1", { outputLocale: "zh-CN" });
 
+  assert.deepEqual(receivedPhotoContext, { outputLocale: "zh-CN" });
   assert.deepEqual(enriched.semantic.labels, ["manual-tag"]);
   assert.equal(enriched.semantic.caption, "Manual caption");
   assert.deepEqual(enriched.semantic.generatedLabels, ["forest", "mist", "trees"]);
@@ -315,12 +320,15 @@ test("ChronoPicAppService enrichPendingSemantics processes pending and failed ph
     },
   };
 
+  const seenContexts: unknown[] = [];
+
   const service = new ChronoPicAppService(
     fakeDb as never,
     stubIndexer as never,
     {
       isEnabled: () => true,
-      analyzePhoto: async (photo) => {
+      analyzePhoto: async (photo, context) => {
+        seenContexts.push(context);
         if (photo.photo.id === "failed-1") {
           throw new Error("retry failed");
         }
@@ -339,8 +347,9 @@ test("ChronoPicAppService enrichPendingSemantics processes pending and failed ph
     }
   );
 
-  const summary = await service.enrichPendingSemantics(10);
+  const summary = await service.enrichPendingSemantics(10, { outputLocale: "en-US" });
 
+  assert.deepEqual(seenContexts, [{ outputLocale: "en-US" }, { outputLocale: "en-US" }, { outputLocale: "en-US" }]);
   assert.deepEqual(summary, {
     processed: 3,
     completed: 2,

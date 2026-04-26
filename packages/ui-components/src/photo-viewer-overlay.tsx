@@ -9,6 +9,7 @@ import { Dialog, DialogContent, DialogDescription, DialogTitle } from "./dialog.
 import { EditControls, type EditControlsProps } from "./edit-controls.js";
 import { Filmstrip } from "./filmstrip.js";
 import { IconButton } from "./icon-button.js";
+import { useI18n } from "./i18n-provider.js";
 import { formatTimestamp, MediaPreview } from "./lib/media.js";
 import { MetadataGrid } from "./metadata-grid.js";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "./tooltip.js";
@@ -34,39 +35,42 @@ export interface PhotoViewerOverlayProps extends EditControlsProps {
 }
 
 export function PhotoViewerOverlay(props: PhotoViewerOverlayProps) {
+  const { t } = useI18n();
+
   if (!props.mode || !props.photo) {
     return null;
   }
 
   const activeIndex = props.photos.findIndex((record) => record.photo.id === props.selectedPhotoId);
-  const indexLabel = activeIndex >= 0 ? `${activeIndex + 1} / ${props.photos.length}` : `${props.photos.length} items`;
+  const fileName = props.photo.photo.path.split("/").at(-1) ?? "Photo";
+  const indexLabel = activeIndex >= 0 ? `${activeIndex + 1} / ${props.photos.length}` : t("common.items", { count: props.photos.length });
 
   return (
     <TooltipProvider>
       <Dialog modal onOpenChange={(open) => (!open ? props.onClose() : undefined)} open>
         <DialogContent className={props.mode === "gallery" ? "bg-stone-950/96 text-stone-50" : "p-4"}>
           <DialogTitle className="sr-only">
-            {props.mode === "gallery" ? "Gallery viewer" : "Photo detail viewer"}
+            {props.mode === "gallery" ? t("viewer.galleryTitle") : t("viewer.detailTitle")}
           </DialogTitle>
           <DialogDescription className="sr-only">
-            Viewing {props.photo.photo.path.split("/").at(-1)} in {props.mode} mode.
+            {t("viewer.description", { name: fileName, mode: props.mode })}
           </DialogDescription>
           {props.mode === "gallery" ? (
             <>
               <div className="absolute inset-x-0 top-0 z-10 flex items-center justify-between px-5 py-4">
                 <div className="flex items-center gap-3">
                   <Badge className="border-stone-700 bg-stone-900/80 text-stone-200" tone="dark">
-                    Gallery View
+                    {t("viewer.galleryView")}
                   </Badge>
                   <span className="text-sm text-stone-300">{indexLabel}</span>
                 </div>
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <Button className="border-stone-700 bg-stone-900/80 text-stone-100 hover:bg-stone-800" onClick={() => props.onSwitchMode("detail")} variant="ghost">
-                      Detail View
+                      {t("viewer.detailView")}
                     </Button>
                   </TooltipTrigger>
-                  <TooltipContent>Switch to detail view (D)</TooltipContent>
+                  <TooltipContent>{t("viewer.switchToDetail")}</TooltipContent>
                 </Tooltip>
               </div>
 
@@ -79,14 +83,14 @@ export function PhotoViewerOverlay(props: PhotoViewerOverlayProps) {
                           className="rounded-full"
                           disabled={!props.canNavigatePrevious}
                           icon={<ArrowLeft className="h-5 w-5" />}
-                          label="Previous photo"
+                          label={t("actions.previousPhoto")}
                           onClick={props.onPrevious}
                           size="lg"
                           tone="dark"
                         />
                       </div>
                     </TooltipTrigger>
-                    <TooltipContent>Previous (←)</TooltipContent>
+                    <TooltipContent>{t("viewer.previousTooltip")}</TooltipContent>
                   </Tooltip>
                   <Tooltip>
                     <TooltipTrigger asChild>
@@ -95,14 +99,14 @@ export function PhotoViewerOverlay(props: PhotoViewerOverlayProps) {
                           className="rounded-full"
                           disabled={!props.canNavigateNext}
                           icon={<ArrowRight className="h-5 w-5" />}
-                          label="Next photo"
+                          label={t("actions.nextPhoto")}
                           onClick={props.onNext}
                           size="lg"
                           tone="dark"
                         />
                       </div>
                     </TooltipTrigger>
-                    <TooltipContent>Next (→)</TooltipContent>
+                    <TooltipContent>{t("viewer.nextTooltip")}</TooltipContent>
                   </Tooltip>
                   <div className="grid h-full place-items-center">
                     <div className="h-full max-h-[calc(100vh-16rem)] w-full max-w-[1500px] overflow-hidden rounded-[32px] border border-stone-800 bg-stone-950 shadow-2xl">
@@ -117,18 +121,18 @@ export function PhotoViewerOverlay(props: PhotoViewerOverlayProps) {
                   <div className="mx-auto max-w-[1500px] space-y-3">
                     <div className="flex items-center justify-between">
                       <div>
-                        <p className="text-sm font-semibold text-stone-100">{props.photo.photo.path.split("/").at(-1)}</p>
+                        <p className="text-sm font-semibold text-stone-100">{fileName}</p>
                         <p className="text-sm text-stone-400">{formatTimestamp(props.photo.metadata.datetime)}</p>
                         <div className="mt-2 flex flex-wrap gap-2">
                           {props.photoMemories.length === 0 ? (
                             <Badge className="border-stone-700 bg-stone-900/80 text-stone-300" tone="dark">
-                              Not in any memory
+                              {t("viewer.notInAnyMemory")}
                             </Badge>
                           ) : (
                             props.photoMemories.map((memory) => (
                               <Badge className="border-stone-700 bg-stone-900/80 text-stone-200" key={memory.id} tone="dark">
                                 {memory.name}
-                                {memory.coverPhotoId === props.selectedPhotoId ? " cover" : ""}
+                                {memory.coverPhotoId === props.selectedPhotoId ? ` ${t("common.cover")}` : ""}
                               </Badge>
                             ))
                           )}
@@ -137,13 +141,13 @@ export function PhotoViewerOverlay(props: PhotoViewerOverlayProps) {
                       <Tooltip>
                         <TooltipTrigger asChild>
                           <Button className="border-stone-700 bg-stone-900/80 text-stone-100 hover:bg-stone-800" onClick={() => props.onSwitchMode("detail")} variant="ghost">
-                            Open Inspector
+                            {t("actions.openInspector")}
                           </Button>
                         </TooltipTrigger>
-                        <TooltipContent>Open detail view with full inspector</TooltipContent>
+                        <TooltipContent>{t("viewer.openInspectorTooltip")}</TooltipContent>
                       </Tooltip>
                     </div>
-                    <p className="text-xs text-stone-400">Esc close • Left/Right navigate • D detail</p>
+                    <p className="text-xs text-stone-400">{t("viewer.galleryShortcuts")}</p>
                     <Filmstrip onSelect={props.onSelectPhoto} photos={props.photos} selectedPhotoId={props.selectedPhotoId} tone="dark" />
                   </div>
                 </div>
@@ -156,7 +160,7 @@ export function PhotoViewerOverlay(props: PhotoViewerOverlayProps) {
                   <div className="flex items-center justify-between border-b border-stone-800 px-5 py-4">
                     <div className="flex items-center gap-3">
                       <Badge className="border-stone-700 bg-stone-900/80 text-stone-200" tone="dark">
-                        Detail View
+                        {t("viewer.detailView")}
                       </Badge>
                       <span className="text-sm text-stone-300">{indexLabel}</span>
                     </div>
@@ -171,47 +175,47 @@ export function PhotoViewerOverlay(props: PhotoViewerOverlayProps) {
                         <TooltipTrigger asChild>
                           <IconButton
                             icon={<X className="h-4 w-4" />}
-                            label="Close viewer"
+                            label={t("actions.close")}
                             onClick={props.onClose}
                             size="sm"
                             tone="dark"
                           />
                         </TooltipTrigger>
-                        <TooltipContent>Close (Esc)</TooltipContent>
+                        <TooltipContent>{t("viewer.closeTooltip")}</TooltipContent>
                       </Tooltip>
                       <Tooltip>
                         <TooltipTrigger asChild>
                           <IconButton
                             disabled={!props.canNavigatePrevious}
                             icon={<ArrowLeft className="h-4 w-4" />}
-                            label="Previous photo"
+                            label={t("actions.previousPhoto")}
                             onClick={props.onPrevious}
                             size="sm"
                             tone="dark"
                           />
                         </TooltipTrigger>
-                        <TooltipContent>Previous (←)</TooltipContent>
+                        <TooltipContent>{t("viewer.previousTooltip")}</TooltipContent>
                       </Tooltip>
                       <Tooltip>
                         <TooltipTrigger asChild>
                           <IconButton
                             disabled={!props.canNavigateNext}
                             icon={<ArrowRight className="h-4 w-4" />}
-                            label="Next photo"
+                            label={t("actions.nextPhoto")}
                             onClick={props.onNext}
                             size="sm"
                             tone="dark"
                           />
                         </TooltipTrigger>
-                        <TooltipContent>Next (→)</TooltipContent>
+                        <TooltipContent>{t("viewer.nextTooltip")}</TooltipContent>
                       </Tooltip>
                       <Tooltip>
                         <TooltipTrigger asChild>
                           <Button className="border-stone-700 bg-stone-900/80 text-stone-100 hover:bg-stone-800" onClick={() => props.onSwitchMode("gallery")} variant="ghost">
-                            Gallery
+                            {t("viewer.gallery")}
                           </Button>
                         </TooltipTrigger>
-                        <TooltipContent>Switch to gallery view (G)</TooltipContent>
+                        <TooltipContent>{t("viewer.switchToGallery")}</TooltipContent>
                       </Tooltip>
                     </div>
                   </div>
@@ -222,7 +226,7 @@ export function PhotoViewerOverlay(props: PhotoViewerOverlayProps) {
                         <MediaPreview className="bg-stone-950" controls fit="contain" preferOriginal record={props.photo} />
                       </div>
                     </div>
-                    <p className="px-1 text-xs text-stone-400">Esc close • Left/Right navigate • G gallery</p>
+                    <p className="px-1 text-xs text-stone-400">{t("viewer.detailShortcuts")}</p>
                     <Filmstrip onSelect={props.onSelectPhoto} photos={props.photos} selectedPhotoId={props.selectedPhotoId} tone="dark" />
                   </div>
                 </div>
@@ -230,13 +234,13 @@ export function PhotoViewerOverlay(props: PhotoViewerOverlayProps) {
                 <div className="min-h-0 overflow-auto rounded-[32px] border border-stone-200/80 bg-white shadow-2xl">
                   <div className="flex items-center justify-between border-b border-stone-200/80 px-5 py-4">
                     <div>
-                      <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-stone-500">Inspector</p>
+                      <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-stone-500">{t("viewer.inspector")}</p>
                       <h2 className="mt-2 line-clamp-1 font-['Space_Grotesk','IBM_Plex_Sans',sans-serif] text-2xl font-semibold tracking-tight text-stone-950">
-                        {props.photo.photo.path.split("/").at(-1)}
+                        {fileName}
                       </h2>
                     </div>
                     <Badge tone={props.photo.indexState.error ? "danger" : "success"}>
-                      {props.photo.indexState.error ? "Indexed with error" : "Healthy"}
+                      {props.photo.indexState.error ? t("common.indexedWithError") : t("common.healthy")}
                     </Badge>
                   </div>
                   <div className="grid gap-5 p-5">

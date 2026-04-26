@@ -6,6 +6,7 @@ import type { Memory, PhotoRecord } from "@chronopic/domain";
 import { AddToMemoryMenu } from "./add-to-memory-menu.js";
 import { Badge } from "./badge.js";
 import { IconButton } from "./icon-button.js";
+import { useI18n } from "./i18n-provider.js";
 import { cn } from "./lib/cn.js";
 import { formatTimestamp, mediaIcon, mediaLabel, MediaPreview } from "./lib/media.js";
 
@@ -34,13 +35,15 @@ export function PhotoCard({
   memories = [],
   onAddToMemory,
   onSecondaryAction,
-  secondaryActionLabel = "Remove from Memory",
+  secondaryActionLabel,
   secondaryActionIcon = <Trash2 className="h-3.5 w-3.5" />,
   batchSelected = false,
   onToggleBatchSelect,
   showHoverActions = true,
 }: PhotoCardProps) {
+  const { t } = useI18n();
   const MediaIcon = mediaIcon(record.photo.mime);
+  const resolvedSecondaryActionLabel = secondaryActionLabel ?? t("actions.removeFromMemory");
 
   return (
     <div
@@ -79,14 +82,14 @@ export function PhotoCard({
                 event.stopPropagation();
                 onToggleBatchSelect(record.photo.id);
               }}
-              title={batchSelected ? "Selected for batch actions" : "Select for batch actions"}
+              title={batchSelected ? t("actions.selectedForBatch") : t("actions.selectForBatch")}
               type="button"
             >
               {batchSelected ? <Check className="h-3.5 w-3.5" /> : <Square className="h-3.5 w-3.5" />}
             </button>
           ) : null}
-          {record.indexState.error ? <Badge tone="danger">Error</Badge> : null}
-          {record.indexState.duplicateOf ? <Badge tone="warn">Duplicate</Badge> : null}
+          {record.indexState.error ? <Badge tone="danger">{t("common.error")}</Badge> : null}
+          {record.indexState.duplicateOf ? <Badge tone="warn">{t("common.duplicate")}</Badge> : null}
         </div>
         {showHoverActions && (
           <div className="absolute inset-x-3 top-3 z-10 flex justify-end gap-1 opacity-0 transition group-hover:opacity-100">
@@ -97,7 +100,7 @@ export function PhotoCard({
                   : "bg-stone-950/62 text-stone-100 hover:bg-stone-800"
               )}
               icon={<Heart className={cn("h-3.5 w-3.5", record.photo.favorite && "fill-current")} />}
-              label={record.photo.favorite ? "Unfavorite" : "Favorite"}
+              label={record.photo.favorite ? t("actions.unfavorite") : t("actions.favorite")}
               onClick={(e) => {
                 e.stopPropagation();
                 onToggleFavorite?.(record.photo.id, !record.photo.favorite);
@@ -109,7 +112,7 @@ export function PhotoCard({
             {onAddToMemory ? (
               <div onClick={(e) => e.stopPropagation()}>
                 <AddToMemoryMenu
-                  label="Add to Memory"
+                  label={t("actions.addToMemory")}
                   memories={memories}
                   onAddToMemory={(memoryId) => onAddToMemory(memoryId, record.photo.id)}
                   tone="dark"
@@ -121,7 +124,7 @@ export function PhotoCard({
               <IconButton
                 className="bg-stone-950/62 text-stone-100 hover:bg-red-600"
                 icon={secondaryActionIcon}
-                label={secondaryActionLabel}
+                label={resolvedSecondaryActionLabel}
                 onClick={(e) => {
                   e.stopPropagation();
                   onSecondaryAction(record.photo.id);
@@ -136,10 +139,10 @@ export function PhotoCard({
         <div className="absolute inset-x-4 bottom-4 z-10">
           <div className="space-y-2 text-white">
             <div className="flex items-center justify-between text-[10px] font-medium uppercase tracking-[0.16em] text-white/78 opacity-0 transition group-hover:opacity-100">
-              <span>Double-click to open</span>
+              <span>{t("viewer.doubleClickToOpen")}</span>
               <MediaIcon className="h-3.5 w-3.5" />
             </div>
-            <p className="line-clamp-1 text-base font-semibold tracking-tight">{mediaLabel(record)}</p>
+            <p className="line-clamp-1 text-base font-semibold tracking-tight">{mediaLabel(record, t("metadata.unknown"))}</p>
             <div className="flex flex-wrap items-center gap-3 text-xs text-white/82">
               <span className="inline-flex items-center gap-1.5">
                 <CalendarClock className="h-3.5 w-3.5" />
@@ -147,7 +150,7 @@ export function PhotoCard({
               </span>
               <span className="inline-flex items-center gap-1.5">
                 <MediaIcon className="h-3.5 w-3.5" />
-                {record.photo.mime.startsWith("video/") ? "Video" : "Image"}
+                {record.photo.mime.startsWith("video/") ? t("common.video") : t("common.image")}
               </span>
             </div>
           </div>

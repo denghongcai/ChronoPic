@@ -1,4 +1,6 @@
 import type { BrowseMode, Memory, PhotoFilter, PhotoFilterPatch, PhotoRecord, PlaceGroup } from "@chronopic/domain";
+import { createTranslator } from "@chronopic/i18n";
+import type { TranslationKey, TranslationValues } from "@chronopic/i18n";
 
 export type DiscoverySuggestionKind = "filter" | "memory" | "mode" | "search";
 
@@ -12,6 +14,10 @@ export interface DiscoverySuggestion {
   mode?: BrowseMode;
   query?: string;
 }
+
+type Translator = (key: TranslationKey, values?: TranslationValues) => string;
+
+const fallbackT: Translator = createTranslator("en-US");
 
 function collectTopLabels(records: PhotoRecord[], limit: number): Array<{ label: string; count: number }> {
   const counts = new Map<string, number>();
@@ -40,11 +46,13 @@ export function buildDiscoverySuggestions({
   memories,
   photos,
   placeGroups,
+  t = fallbackT,
 }: {
   filter: PhotoFilter;
   memories: Memory[];
   photos: PhotoRecord[];
   placeGroups: PlaceGroup[];
+  t?: Translator;
 }): DiscoverySuggestion[] {
   const suggestions: DiscoverySuggestion[] = [];
   const gpsCount = photos.filter((record) => record.metadata.lat != null && record.metadata.lng != null).length;
@@ -57,8 +65,8 @@ export function buildDiscoverySuggestions({
     suggestions.push({
       id: "filter:gps",
       kind: "filter",
-      label: "With GPS",
-      detail: `${gpsCount} mapped`,
+      label: t("discovery.withGps"),
+      detail: t("discovery.withGpsDetail", { count: gpsCount }),
       patch: { hasGps: true, offset: 0 },
     });
   }
@@ -67,8 +75,8 @@ export function buildDiscoverySuggestions({
     suggestions.push({
       id: "filter:favorites",
       kind: "filter",
-      label: "Favorites",
-      detail: `${favoriteCount} saved`,
+      label: t("sidebar.favorites"),
+      detail: t("discovery.favoritesDetail", { count: favoriteCount }),
       patch: { favorite: true, offset: 0 },
     });
   }
@@ -77,8 +85,8 @@ export function buildDiscoverySuggestions({
     suggestions.push({
       id: "filter:ai-ready",
       kind: "filter",
-      label: "AI Ready",
-      detail: `${aiReadyCount} enriched`,
+      label: t("discovery.aiReady"),
+      detail: t("discovery.aiReadyDetail", { count: aiReadyCount }),
       patch: { aiStatus: "completed", offset: 0 },
     });
   }
@@ -87,8 +95,8 @@ export function buildDiscoverySuggestions({
     suggestions.push({
       id: "filter:needs-ai",
       kind: "filter",
-      label: "Needs AI",
-      detail: `${needAiCount} queued`,
+      label: t("discovery.needsAi"),
+      detail: t("discovery.needsAiDetail", { count: needAiCount }),
       patch: { aiStatus: "pending", offset: 0 },
     });
   }
@@ -97,8 +105,8 @@ export function buildDiscoverySuggestions({
     suggestions.push({
       id: "mode:map",
       kind: "mode",
-      label: "Map",
-      detail: `${placeGroups.length} places`,
+      label: t("browse.mode.map"),
+      detail: t("discovery.mapDetail", { count: placeGroups.length }),
       mode: "map",
     });
   }
@@ -107,8 +115,8 @@ export function buildDiscoverySuggestions({
     suggestions.push({
       id: "mode:timeline",
       kind: "mode",
-      label: "Timeline",
-      detail: `${timelineReadyCount} dated`,
+      label: t("browse.mode.timeline"),
+      detail: t("discovery.timelineDetail", { count: timelineReadyCount }),
       mode: "timeline",
     });
   }
@@ -122,7 +130,7 @@ export function buildDiscoverySuggestions({
       id: `tag:${item.label}`,
       kind: "search",
       label: item.label,
-      detail: `${item.count} matches`,
+      detail: t("discovery.matchesDetail", { count: item.count }),
       patch: { tag: item.label, offset: 0 },
       query: item.label,
     });
@@ -133,7 +141,7 @@ export function buildDiscoverySuggestions({
       id: `memory:${memory.id}`,
       kind: "memory",
       label: memory.name,
-      detail: `${memory.photoCount} photos`,
+      detail: t("discovery.photosDetail", { count: memory.photoCount }),
       memoryId: memory.id,
     });
   }

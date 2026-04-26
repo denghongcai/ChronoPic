@@ -8,6 +8,8 @@ export type { TagInputProps } from "./tag-input.js";
 export { IconButton } from "./icon-button.js";
 export type { IconButtonProps } from "./icon-button.js";
 export { Dialog, DialogClose, DialogContent, DialogOverlay, DialogPortal } from "./dialog.js";
+export { I18nProvider, useI18n } from "./i18n-provider.js";
+export type { I18nContextValue, I18nProviderProps } from "./i18n-provider.js";
 export {
   DropdownMenu,
   DropdownMenuCheckboxItem,

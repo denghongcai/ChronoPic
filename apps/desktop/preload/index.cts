@@ -9,6 +9,8 @@ const api: ChronoPicBridge = {
   saveAISettings: (settings) => ipcRenderer.invoke("system:saveAISettings", settings),
   getMapSettings: () => ipcRenderer.invoke("system:getMapSettings"),
   saveMapSettings: (settings) => ipcRenderer.invoke("system:saveMapSettings", settings),
+  getLocaleSettings: () => ipcRenderer.invoke("system:getLocaleSettings"),
+  saveLocaleSettings: (settings) => ipcRenderer.invoke("system:saveLocaleSettings", settings),
   pickLibraryDirectory: () => ipcRenderer.invoke("library:pickDirectory"),
   addLibrarySource: (libraryPath: string) => ipcRenderer.invoke("library:add", libraryPath),
   listLibrarySources: () => ipcRenderer.invoke("library:list"),
@@ -22,9 +24,10 @@ const api: ChronoPicBridge = {
   getPhoto: (photoId: string) => ipcRenderer.invoke("photos:get", photoId),
   updatePhotoTags: (photoId: string, labels: string[]) => ipcRenderer.invoke("photos:updateTags", photoId, labels),
   updatePhotoCaption: (photoId: string, caption: string | null) => ipcRenderer.invoke("photos:updateCaption", photoId, caption),
-  enrichPhotoSemantic: (photoId: string) => ipcRenderer.invoke("photos:enrichSemantic", photoId),
-  enrichPendingSemantics: async (limit?: number) => {
-    const response = await ipcRenderer.invoke("photos:enrichPendingSemantics", limit);
+  enrichPhotoSemantic: (photoId: string, context?: { outputLocale?: string | null }) =>
+    ipcRenderer.invoke("photos:enrichSemantic", photoId, context),
+  enrichPendingSemantics: async (limit?: number, context?: { outputLocale?: string | null }) => {
+    const response = await ipcRenderer.invoke("photos:enrichPendingSemantics", limit, context);
     const parsed = typeof response === "string" ? JSON.parse(response) : response;
     if (parsed && typeof parsed === "object" && "ok" in parsed && parsed.ok === false) {
       throw new Error(typeof parsed.message === "string" ? parsed.message : "Failed to process pending AI metadata");

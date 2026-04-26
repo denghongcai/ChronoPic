@@ -1714,6 +1714,74 @@ This file is the local execution record for ChronoPic. It complements `PLAN.md` 
   `pnpm build`
 - Result: Memory AI optimize now has access to the user's current unsaved title/description draft instead of regenerating solely from persisted Memory data.
 
+### 2026-04-26 Step 95
+
+- Added `4.17 Internationalization and AI Output Locale Phase` to `PLAN.md` before implementation.
+- Locked the i18n approach around a new `@chronopic/i18n` package with typed locale IDs, typed translation keys, fallback/interpolation, and date/count formatting helpers.
+- Planned persisted desktop settings for both UI locale and AI output locale, with AI output defaulting to the UI language unless explicitly configured.
+- Planned React integration through `I18nProvider` / `useI18n()` in `@chronopic/ui-components` while keeping persistence in the desktop/config layer.
+- Planned prompt-level AI output locale support so generated names, descriptions, labels, captions, summaries, and memory suggestions can follow the configured output language.
+- Planned lightweight E2E coverage for switching to Simplified Chinese and verifying Sidebar, Header/Search, and Memory Detail key text.
+- Next: implement `@chronopic/i18n`, config persistence, provider wiring, critical UI translations, AI output locale threading, and tests.
+
+### 2026-04-26 Step 96
+
+- Implemented the `4.17 Internationalization and AI Output Locale Phase`.
+- Added `@chronopic/i18n` as a strict workspace package with typed locale IDs, typed translation keys, English/Simplified Chinese dictionaries, fallback interpolation, locale normalization, AI output-locale resolution, and formatting helpers.
+- Added persisted desktop language settings through `@chronopic/infra-config`, Electron main IPC, preload bridge APIs, and renderer app state:
+  `locale`
+  and `aiOutputLocale`.
+- Wired the renderer through `I18nProvider` / `useI18n()` from `@chronopic/ui-components`.
+- Added Library Settings controls for UI language and AI output language using the existing Radix-backed `Select` component.
+- Translated the first critical UI path:
+  Sidebar,
+  browse mode switcher,
+  search placeholder,
+  memory creation dialog,
+  memory detail,
+  and language/settings surfaces.
+- Threaded resolved AI output locale through photo semantic enrichment, pending queue enrichment, and memory semantic enrichment prompts.
+- Added unit coverage for i18n dictionary completeness, interpolation, normalization, count formatting, and AI output-locale resolution.
+- Extended application AI tests to verify photo and pending queue enrichment receive the output-locale context.
+- Added lightweight Electron E2E coverage in `tests/e2e/i18n.spec.ts` for switching to Chinese and checking Sidebar/Header/Memory Detail key text.
+- Verified:
+  `pnpm typecheck`
+  `pnpm test`
+  `pnpm build`
+  `pnpm exec playwright test -c tests/e2e/playwright.config.ts i18n.spec.ts`
+- Result: the i18n phase is landed and build-valid. The E2E spec is present and follows the existing dev-renderer prerequisite on `http://localhost:5173`.
+
+### 2026-04-26 Step 97
+
+- Performed a follow-up i18n coverage audit after reviewing the renderer and shared UI surfaces for remaining hard-coded English.
+- Confirmed the first i18n pass was incomplete beyond the initial critical path.
+- Expanded translation coverage across:
+  filter toolbar,
+  photo cards,
+  add-to-memory menu,
+  viewer overlays,
+  memory cards/list/recent memories,
+  suggested memories,
+  memory description editor,
+  edit controls,
+  metadata inspector,
+  memory story board,
+  notification center,
+  map browse surface,
+  timeline browse surface,
+  gallery selected/batch states,
+  photo grid,
+  and detail panel.
+- Added the required English and Simplified Chinese translation keys to `@chronopic/i18n` while keeping dictionary-completeness tests active.
+- Re-verified:
+  `pnpm typecheck`
+  `pnpm test`
+  `pnpm build`
+- Remaining known i18n debt:
+  transient `showStatus(...)` messages in `use-chronopic-app.ts` are still stored as English strings,
+  and a few legacy/exported-but-currently-unused components still contain English fallback copy.
+  The main rendered product surfaces now have much broader locale coverage, but status/toast localization should be the next i18n cleanup if full polish is required.
+
 ## Next Immediate Tasks
 
 1. Workspace skeleton is implemented.
@@ -1779,3 +1847,46 @@ This file is the local execution record for ChronoPic. It complements `PLAN.md` 
 61. Memory description editing is now standardized on raw Markdown source and `@uiw/react-md-editor`.
 62. Memory title and description now expose AI generate/optimize actions inside their edit dialogs, while direct title/description clicks replace separate rename/edit buttons.
 63. Memory AI optimize now passes unsaved title/description drafts through to the AI prompt as working context.
+64. The `4.17 Internationalization and AI Output Locale Phase` is now landed and has received a follow-up coverage pass across the main visible UI surfaces.
+65. Transient app status/toast messages, discovery helper labels/descriptions, match summaries, browse fallback placeholders, legacy library dialog/sidebar copy, and remaining settings labels have now been converted to locale-backed strings.
+66. The remaining hardcoded renderer scan hits are deliberate technical constants/placeholders rather than user-facing untranslated UI copy.
+
+### 2026-04-26 Step 98
+
+- Performed a full follow-up i18n coverage audit after the initial internationalization implementation.
+- Moved `use-chronopic-app.ts` status/toast feedback onto locale keys, including library scan, AI settings, map settings, memory CRUD, batch add/remove, semantic enrichment, AI queue processing, and edit rollback messages.
+- Threaded the active translator into pure discovery helper functions so discovery context badges, discovery suggestions, and search-match summaries localize correctly instead of returning English from library helpers.
+- Localized remaining fallback/legacy UI surfaces:
+  `Header`,
+  `LibraryDialog`,
+  `LibrarySidebar`,
+  `BrowseModePlaceholder`,
+  map/settings labels,
+  source last-scan labels,
+  and photo-card secondary action fallback copy.
+- Re-ran the hardcoded UI string scan; remaining hits are technical constants/placeholders only:
+  route ids,
+  status tone ids,
+  translation-key ids,
+  the AMap missing-key error code,
+  and AI provider/model/API example placeholders.
+- Re-verified:
+  `pnpm typecheck`
+  `pnpm test`
+  `pnpm build`
+
+### 2026-04-26 Step 99
+
+- Performed an additional stricter i18n scan after the user called out `Select` / `Filter` style omissions.
+- Fixed the remaining visible browse toolbar hardcoded text:
+  the waterfall `Select` / `Done` toggle and `Filter` button now use action translation keys.
+- Localized remaining exported/fallback UI copy:
+  `HomeStats` hero copy, status tile labels, AI enabled/deferred state,
+  `TagInput` remove aria-label,
+  AI settings input placeholders,
+  and the memory delete icon label.
+- Re-ran a focused visible-string scan for text nodes, labels, placeholders, aria-labels, and titles; remaining matches are TypeScript function signatures only.
+- Re-verified:
+  `pnpm typecheck`
+  `pnpm test`
+  `pnpm build`

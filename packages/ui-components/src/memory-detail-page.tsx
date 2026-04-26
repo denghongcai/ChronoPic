@@ -7,6 +7,7 @@ import { Badge } from "./badge.js";
 import { Button } from "./button.js";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "./dialog.js";
 import { IconButton } from "./icon-button.js";
+import { useI18n } from "./i18n-provider.js";
 import { Input } from "./input.js";
 import { getMemoryDescriptionMarkdown, hasMemoryDescription } from "./lib/memory-description.js";
 import { buildMemoryStorySections } from "./lib/memory-story.js";
@@ -63,8 +64,9 @@ export function MemoryDetailPage({
   onDeleteMemory,
   onSaveDescription,
   onEnrichSemantic,
-	}: MemoryDetailPageProps) {
-	  const coverUrl = thumbnailUrl(memory.coverThumbnailPath);
+}: MemoryDetailPageProps) {
+  const { t, formatDateTime: formatLocalizedDateTime } = useI18n();
+  const coverUrl = thumbnailUrl(memory.coverThumbnailPath);
 	  const descriptionMarkdown = getMemoryDescriptionMarkdown(memory.description);
 	  const [editingDescription, setEditingDescription] = React.useState(false);
 	  const [aiSuggestionsOpen, setAiSuggestionsOpen] = React.useState(false);
@@ -121,11 +123,11 @@ export function MemoryDetailPage({
               <div className="flex items-start justify-between gap-4">
                 <div className="space-y-3">
                   <div className="flex items-center gap-2">
-                    <Badge tone="neutral">{memory.photoCount} photos</Badge>
+	                    <Badge tone="neutral">{t("memory.detail.photos", { count: memory.photoCount })}</Badge>
                     <Badge tone="info">{memory.source}</Badge>
                   </div>
                   <div>
-                    <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-stone-500">Memory Detail</p>
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-stone-500">{t("memory.detail.eyebrow")}</p>
                     <button
                       className="mt-2 block rounded-[18px] text-left font-['Space_Grotesk','IBM_Plex_Sans',sans-serif] text-4xl font-semibold tracking-tight text-stone-950 transition hover:text-amber-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300"
                       onClick={() => setRenaming(true)}
@@ -135,11 +137,11 @@ export function MemoryDetailPage({
                     </button>
                     <p className="mt-3 inline-flex items-center gap-2 text-sm text-stone-500">
                       <CalendarClock className="h-4 w-4" />
-                      Updated {formatTimestamp(memory.updatedAt)}
+                      {t("common.updated", { time: formatLocalizedDateTime(memory.updatedAt) })}
                     </p>
                     {memory.coverPhotoId ? (
                       <p className="mt-2 text-xs font-medium uppercase tracking-[0.18em] text-stone-400">
-                        Custom cover selected
+                        {t("memory.detail.customCover")}
                       </p>
                     ) : null}
                   </div>
@@ -147,14 +149,14 @@ export function MemoryDetailPage({
                 <div className="flex items-center gap-2">
                   <IconButton
                     icon={<Sparkles className="h-4 w-4" />}
-                    label="AI Suggestions"
+	                    label={t("memory.detail.aiSuggestions")}
                     onClick={() => setAiSuggestionsOpen(true)}
                     size="sm"
                     variant="ghost"
                   />
                   <IconButton
                     icon={<Trash2 className="h-4 w-4" />}
-                    label="Delete Memory"
+                    label={t("memory.detail.deleteEyebrow")}
                     onClick={() => setDeleteConfirmOpen(true)}
                     size="sm"
                     variant="ghost"
@@ -163,7 +165,7 @@ export function MemoryDetailPage({
               </div>
 
               <div className="space-y-3">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-stone-500">Description</p>
+                <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-stone-500">{t("memory.detail.description")}</p>
                 <button
                   className="w-full rounded-[24px] border border-stone-200 bg-white px-5 py-4 text-left shadow-sm transition hover:border-stone-300 hover:bg-stone-50"
                   onClick={() => setEditingDescription(true)}
@@ -176,7 +178,7 @@ export function MemoryDetailPage({
                       </React.Suspense>
                     </div>
                   ) : (
-                    <p className="text-sm leading-7 text-stone-600">Add context, story beats, and notes for this memory.</p>
+                    <p className="text-sm leading-7 text-stone-600">{t("memory.detail.emptyDescription")}</p>
                   )}
                 </button>
               </div>
@@ -188,22 +190,22 @@ export function MemoryDetailPage({
 
       <Dialog onOpenChange={setAiSuggestionsOpen} open={aiSuggestionsOpen}>
         <DialogContent className="flex items-center justify-center p-6">
-          <DialogTitle className="sr-only">AI suggestions for {memory.name}</DialogTitle>
+          <DialogTitle className="sr-only">{t("memory.detail.aiSuggestionsFor", { name: memory.name })}</DialogTitle>
           <DialogDescription className="sr-only">
-            Generate and apply optional AI suggestions for this memory title, description, and tags.
+            {t("memory.detail.aiSuggestionsDescription")}
           </DialogDescription>
           <div className="relative w-full max-w-3xl rounded-[28px] border border-stone-200 bg-white p-6 shadow-2xl">
             <IconButton
               className="absolute right-4 top-4"
               icon={<X className="h-4 w-4" />}
-              label="Close AI suggestions"
+              label={t("memory.detail.closeAiSuggestions")}
               onClick={() => setAiSuggestionsOpen(false)}
               size="sm"
               variant="ghost"
             />
             <div className="mb-5 pr-12">
               <div className="flex flex-wrap items-center gap-2">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-stone-500">AI Suggestions</p>
+                <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-stone-500">{t("memory.detail.aiSuggestions")}</p>
                 <Badge tone={memory.aiStatus === "completed" ? "success" : memory.aiStatus === "failed" ? "danger" : "neutral"}>
                   {memory.aiStatus}
                 </Badge>
@@ -213,7 +215,7 @@ export function MemoryDetailPage({
                   {memory.name}
                 </h2>
                 <p className="mt-2 max-w-xl text-sm leading-6 text-stone-500">
-                  Generate optional title and description suggestions. Nothing is applied until you choose it.
+                  {t("memory.detail.aiIntro")}
                 </p>
               </div>
             </div>
@@ -221,7 +223,7 @@ export function MemoryDetailPage({
             <div className="flex flex-col gap-4">
               <div className="flex flex-wrap items-center justify-between gap-3 rounded-[20px] border border-stone-200 bg-stone-50/70 px-4 py-3">
                 <p className="text-sm leading-6 text-stone-600">
-                  Suggestions use the photos already inside this memory.
+                  {t("memory.detail.aiUsesPhotos")}
                 </p>
                 <Button
                   disabled={!onEnrichSemantic || isEnrichingSemantic || photos.length === 0}
@@ -230,7 +232,7 @@ export function MemoryDetailPage({
                   variant="outline"
                 >
                   <Sparkles className="h-4 w-4" />
-                  {isEnrichingSemantic ? "Generating..." : "Generate Suggestions"}
+                  {isEnrichingSemantic ? t("memory.detail.generating") : t("memory.detail.generateSuggestions")}
                 </Button>
               </div>
 
@@ -238,7 +240,7 @@ export function MemoryDetailPage({
                 <div className="space-y-4 rounded-[20px] border border-stone-200 bg-white px-4 py-4 shadow-sm">
                   {memory.generatedName ? (
                     <div className="space-y-2">
-                      <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-stone-500">Suggested Title</p>
+                      <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-stone-500">{t("memory.detail.suggestedTitle")}</p>
                       <div className="flex flex-wrap items-center justify-between gap-3">
                         <p className="text-lg font-semibold text-stone-950">{memory.generatedName}</p>
                         <Button
@@ -247,7 +249,7 @@ export function MemoryDetailPage({
                           size="sm"
                           variant="outline"
                         >
-                          Apply Title
+                          {t("memory.detail.applyTitle")}
                         </Button>
                       </div>
                     </div>
@@ -255,7 +257,7 @@ export function MemoryDetailPage({
 
                   {memory.generatedDescription ? (
                     <div className="space-y-2">
-                      <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-stone-500">Suggested Summary</p>
+                      <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-stone-500">{t("memory.detail.suggestedSummary")}</p>
                       <p className="text-sm leading-7 text-stone-600">{memory.generatedDescription}</p>
                       <div>
                         <Button
@@ -264,7 +266,7 @@ export function MemoryDetailPage({
                           size="sm"
                           variant="outline"
                         >
-                          Use as Description
+                          {t("memory.detail.useAsDescription")}
                         </Button>
                       </div>
                     </div>
@@ -272,7 +274,7 @@ export function MemoryDetailPage({
 
                   {memory.generatedLabels.length > 0 ? (
                     <div className="space-y-2">
-                      <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-stone-500">AI Tags</p>
+                      <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-stone-500">{t("memory.detail.aiTags")}</p>
                       <div className="flex flex-wrap gap-2">
                         {memory.generatedLabels.map((label) => (
                           <Badge key={label} tone="neutral">
@@ -284,10 +286,10 @@ export function MemoryDetailPage({
                   ) : null}
                 </div>
               ) : memory.aiStatus === "failed" ? (
-                <p className="text-sm leading-6 text-rose-600">{memory.aiError ?? "AI story generation failed."}</p>
+                <p className="text-sm leading-6 text-rose-600">{memory.aiError ?? t("memory.detail.aiFailed")}</p>
               ) : (
                 <p className="text-sm leading-6 text-stone-500">
-                  No suggestions generated yet.
+                  {t("memory.detail.noSuggestions")}
                 </p>
               )}
             </div>
@@ -306,20 +308,20 @@ export function MemoryDetailPage({
       <Panel className="overflow-hidden">
         <div className="flex items-center justify-between border-b border-stone-200/70 px-5 py-4">
           <div>
-            <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-stone-500">Memory Actions</p>
-            <h2 className="mt-2 font-['Space_Grotesk','IBM_Plex_Sans',sans-serif] text-2xl font-semibold tracking-tight text-stone-950">
-              Manage this memory
+	            <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-stone-500">{t("memory.detail.actions")}</p>
+	            <h2 className="mt-2 font-['Space_Grotesk','IBM_Plex_Sans',sans-serif] text-2xl font-semibold tracking-tight text-stone-950">
+	              {t("memory.detail.manage")}
             </h2>
           </div>
           <Badge tone={selectedRecord ? "info" : "neutral"}>
-            {selectedRecord ? `Selected ${selectedRecord.photo.path.split("/").at(-1)}` : "Select a photo below"}
+	            {selectedRecord ? t("memory.detail.selectedPhoto", { name: selectedRecord.photo.path.split("/").at(-1) ?? "" }) : t("memory.detail.selectPhoto")}
           </Badge>
         </div>
         <div className="grid gap-4 p-5 md:grid-cols-[minmax(0,1fr)_auto] md:items-center">
           <div className="space-y-2">
-            <p className="text-sm font-medium text-stone-900">Cover photo</p>
+	            <p className="text-sm font-medium text-stone-900">{t("memory.detail.coverPhoto")}</p>
             <p className="text-sm leading-6 text-stone-500">
-              Select a photo from this memory and set it as the cover so list cards and the detail header show a stable hero image.
+              {t("memory.detail.coverDescription")}
             </p>
           </div>
           <Button
@@ -328,33 +330,33 @@ export function MemoryDetailPage({
             variant="accent"
           >
             <ImageUp className="h-4 w-4" />
-            Set Selected as Cover
+	            {t("memory.detail.setCover")}
           </Button>
         </div>
       </Panel>
 
       <Dialog onOpenChange={setEditingDescription} open={editingDescription}>
         <DialogContent className="flex items-center justify-center p-6">
-          <DialogTitle className="sr-only">Edit memory description</DialogTitle>
+          <DialogTitle className="sr-only">{t("memory.detail.editDescriptionDialog")}</DialogTitle>
           <DialogDescription className="sr-only">
-            Edit the rich text description for {memory.name}.
+            {t("memory.detail.editDescriptionDescription", { name: memory.name })}
           </DialogDescription>
           <div className="w-full max-w-4xl rounded-[28px] border border-stone-200 bg-white p-6 shadow-2xl">
             <div className="mb-5 flex items-start justify-between gap-4">
               <div>
-                <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-stone-500">Description</p>
+                <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-stone-500">{t("memory.detail.description")}</p>
                 <h2 className="mt-2 font-['Space_Grotesk','IBM_Plex_Sans',sans-serif] text-2xl font-semibold tracking-tight text-stone-950">
                   {memory.name}
                 </h2>
               </div>
               <Button onClick={() => setEditingDescription(false)} size="sm" variant="ghost">
-                Close
+                {t("actions.close")}
               </Button>
             </div>
             <div className="mb-4 rounded-[20px] border border-stone-200 bg-stone-50/70 px-4 py-3">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <p className="text-sm leading-6 text-stone-600">
-                  {draftDescription.trim() ? "Use AI to refine the current description draft." : "Use AI to generate a starting description from this memory."}
+                  {draftDescription.trim() ? t("memory.detail.refineDescription") : t("memory.detail.generateStartingDescription")}
                 </p>
                 <Button
 	                  disabled={!onEnrichSemantic || isEnrichingSemantic || photos.length === 0}
@@ -363,15 +365,19 @@ export function MemoryDetailPage({
                   variant="outline"
                 >
                   <Sparkles className="h-4 w-4" />
-                  {isEnrichingSemantic ? "Generating..." : draftDescription.trim() ? "Optimize Description" : "Generate Description"}
+                  {isEnrichingSemantic
+                    ? t("memory.detail.generating")
+                    : draftDescription.trim()
+                      ? t("memory.detail.optimizeDescription")
+                      : t("memory.detail.generateDescription")}
                 </Button>
               </div>
               {memory.generatedDescription ? (
                 <div className="mt-3 space-y-2 rounded-[16px] border border-stone-200 bg-white p-3">
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-stone-500">AI suggestion</p>
+	                  <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-stone-500">{t("memory.detail.aiSuggestion")}</p>
                   <p className="text-sm leading-6 text-stone-600">{memory.generatedDescription}</p>
                   <Button onClick={() => setDraftDescription(memory.generatedDescription ?? "")} size="sm" variant="outline">
-                    Use suggestion
+	                    {t("memory.detail.useSuggestion")}
                   </Button>
                 </div>
               ) : null}
@@ -391,27 +397,27 @@ export function MemoryDetailPage({
 
       <Dialog onOpenChange={setRenaming} open={renaming}>
         <DialogContent className="flex items-center justify-center p-6">
-          <DialogTitle className="sr-only">Edit memory title</DialogTitle>
+          <DialogTitle className="sr-only">{t("memory.detail.editTitleDialog")}</DialogTitle>
           <DialogDescription className="sr-only">
-            Update the title for {memory.name}.
+            {t("memory.detail.editTitleDescription", { name: memory.name })}
           </DialogDescription>
           <div className="w-full max-w-xl rounded-[28px] border border-stone-200 bg-white p-6 shadow-2xl">
             <div className="mb-5 flex items-start justify-between gap-4">
               <div>
-                <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-stone-500">Title</p>
+                <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-stone-500">{t("memory.detail.titleDialog")}</p>
                 <h2 className="mt-2 font-['Space_Grotesk','IBM_Plex_Sans',sans-serif] text-2xl font-semibold tracking-tight text-stone-950">
-                  Update title
+                  {t("memory.detail.updateTitle")}
                 </h2>
               </div>
               <Button onClick={() => setRenaming(false)} size="sm" variant="ghost">
-                Close
+                {t("actions.close")}
               </Button>
             </div>
             <div className="space-y-4">
               <div className="rounded-[20px] border border-stone-200 bg-stone-50/70 px-4 py-3">
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <p className="text-sm leading-6 text-stone-600">
-                    {draftName.trim() ? "Use AI to refine the current title draft." : "Use AI to generate a title from this memory."}
+                    {draftName.trim() ? t("memory.detail.refineTitle") : t("memory.detail.generateStartingTitle")}
                   </p>
                   <Button
                     disabled={!onEnrichSemantic || isEnrichingSemantic || photos.length === 0}
@@ -420,32 +426,36 @@ export function MemoryDetailPage({
                     variant="outline"
                   >
                     <Sparkles className="h-4 w-4" />
-                    {isEnrichingSemantic ? "Generating..." : draftName.trim() ? "Optimize Title" : "Generate Title"}
+                    {isEnrichingSemantic
+                      ? t("memory.detail.generating")
+                      : draftName.trim()
+                        ? t("memory.detail.optimizeTitle")
+                        : t("memory.detail.generateTitle")}
                   </Button>
                 </div>
                 {memory.generatedName ? (
                   <div className="mt-3 flex flex-wrap items-center justify-between gap-3 rounded-[16px] border border-stone-200 bg-white p-3">
                     <div>
-                      <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-stone-500">AI suggestion</p>
+                      <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-stone-500">{t("memory.detail.aiSuggestion")}</p>
                       <p className="mt-1 text-base font-semibold text-stone-950">{memory.generatedName}</p>
                     </div>
                     <Button onClick={() => setDraftName(memory.generatedName ?? "")} size="sm" variant="outline">
-                      Use suggestion
+                      {t("memory.detail.useSuggestion")}
                     </Button>
                   </div>
                 ) : null}
               </div>
               <div className="space-y-2">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-stone-500">Memory Name</p>
+                <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-stone-500">{t("memory.detail.memoryName")}</p>
                 <Input
                   onChange={(event) => setDraftName(event.target.value)}
-                  placeholder="Memory title"
+                  placeholder={t("memory.detail.titlePlaceholder")}
                   value={draftName}
                 />
               </div>
               <div className="flex justify-end gap-2">
                 <Button onClick={() => setRenaming(false)} variant="ghost">
-                  Cancel
+                  {t("actions.cancel")}
                 </Button>
                 <Button
                   disabled={!draftName.trim() || draftName.trim() === memory.name}
@@ -455,7 +465,7 @@ export function MemoryDetailPage({
                   }}
                   variant="accent"
                 >
-                  Save Name
+                  {t("memory.detail.saveName")}
                 </Button>
               </div>
             </div>
@@ -466,9 +476,9 @@ export function MemoryDetailPage({
       <Panel className="overflow-hidden">
         <div className="flex items-center justify-between border-b border-stone-200/70 px-5 py-4">
           <div>
-            <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-stone-500">Memory Photos</p>
+            <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-stone-500">{t("memory.detail.photosEyebrow")}</p>
             <h2 className="mt-2 font-['Space_Grotesk','IBM_Plex_Sans',sans-serif] text-2xl font-semibold tracking-tight text-stone-950">
-              Photos inside this memory
+	              {t("memory.detail.photosTitle")}
             </h2>
           </div>
           <div className="flex items-center gap-2">
@@ -485,17 +495,17 @@ export function MemoryDetailPage({
               size="sm"
               variant={isSelecting ? "accent" : "outline"}
             >
-              {isSelecting ? "Done" : "Select"}
+              {isSelecting ? t("timeline.done") : t("timeline.select")}
             </Button>
-            <Badge tone="neutral">{photos.length} visible</Badge>
+            <Badge tone="neutral">{t("memory.detail.visible", { count: photos.length })}</Badge>
           </div>
         </div>
         <div className="p-5">
           {hasBatchSelection ? (
             <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-[24px] border border-rose-200 bg-rose-50 px-4 py-3">
               <div className="flex items-center gap-2">
-                <Badge tone="danger">{selectedPhotoIds.length} selected</Badge>
-                <p className="text-sm font-medium text-rose-950">Batch actions for photos in this memory</p>
+                <Badge tone="danger">{t("timeline.selected", { count: selectedPhotoIds.length })}</Badge>
+                <p className="text-sm font-medium text-rose-950">{t("memory.detail.batchMessage")}</p>
               </div>
               <div className="flex items-center gap-2">
                 <Button
@@ -506,10 +516,10 @@ export function MemoryDetailPage({
                   variant="accent"
                 >
                   <Trash2 className="h-4 w-4" />
-                  Remove Selected
+                  {t("memory.detail.removeSelected")}
                 </Button>
                 <Button onClick={onClearBatchSelection} size="sm" variant="outline">
-                  Clear Selection
+                  {t("timeline.clearSelection")}
                 </Button>
               </div>
             </div>
@@ -517,8 +527,8 @@ export function MemoryDetailPage({
           {photos.length === 0 ? (
             <div className="grid min-h-[240px] place-items-center rounded-[24px] border border-dashed border-stone-300 bg-stone-50/70 px-6 text-center">
               <div className="max-w-sm space-y-3">
-                <h3 className="text-lg font-semibold text-stone-900">This memory is empty</h3>
-                <p className="text-sm leading-6 text-stone-500">Add photos to this memory from browsing and viewer flows to build its story.</p>
+                <h3 className="text-lg font-semibold text-stone-900">{t("memory.detail.emptyTitle")}</h3>
+                <p className="text-sm leading-6 text-stone-500">{t("memory.detail.emptyDescriptionLong")}</p>
               </div>
             </div>
           ) : (
@@ -556,23 +566,23 @@ export function MemoryDetailPage({
 
       <Dialog onOpenChange={setDeleteConfirmOpen} open={deleteConfirmOpen}>
         <DialogContent className="flex items-center justify-center p-6">
-          <DialogTitle className="sr-only">Delete memory</DialogTitle>
+          <DialogTitle className="sr-only">{t("memory.detail.deleteDialog")}</DialogTitle>
           <DialogDescription className="sr-only">
-            Confirm deleting the memory {memory.name} while keeping the underlying photos in the library.
+            {t("memory.detail.deleteDescription", { name: memory.name })}
           </DialogDescription>
           <div className="w-full max-w-lg rounded-[28px] border border-stone-200 bg-white p-6 shadow-2xl">
             <div className="space-y-3">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-stone-500">Delete Memory</p>
+              <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-stone-500">{t("memory.detail.deleteEyebrow")}</p>
               <h2 className="font-['Space_Grotesk','IBM_Plex_Sans',sans-serif] text-2xl font-semibold tracking-tight text-stone-950">
-                Delete {memory.name}?
+                {t("memory.detail.deleteQuestion", { name: memory.name })}
               </h2>
               <p className="text-sm leading-6 text-stone-500">
-                This removes the memory container and its curated grouping. Photos stay in the library, but the memory itself will be deleted.
+                {t("memory.detail.deleteBody")}
               </p>
             </div>
             <div className="mt-6 flex justify-end gap-2">
               <Button onClick={() => setDeleteConfirmOpen(false)} variant="ghost">
-                Cancel
+                {t("actions.cancel")}
               </Button>
               <Button
                 onClick={async () => {
@@ -581,7 +591,7 @@ export function MemoryDetailPage({
                 }}
                 variant="accent"
               >
-                Delete Memory
+                {t("memory.detail.deleteEyebrow")}
               </Button>
             </div>
           </div>
@@ -590,23 +600,23 @@ export function MemoryDetailPage({
 
       <Dialog onOpenChange={setRemoveSelectedConfirmOpen} open={removeSelectedConfirmOpen}>
         <DialogContent className="flex items-center justify-center p-6">
-          <DialogTitle className="sr-only">Remove selected photos</DialogTitle>
+          <DialogTitle className="sr-only">{t("memory.detail.removeSelectedDialog")}</DialogTitle>
           <DialogDescription className="sr-only">
-            Confirm removing the currently selected photos from {memory.name}.
+            {t("memory.detail.removeSelectedDescription", { name: memory.name })}
           </DialogDescription>
           <div className="w-full max-w-lg rounded-[28px] border border-stone-200 bg-white p-6 shadow-2xl">
             <div className="space-y-3">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-stone-500">Remove Selected</p>
+              <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-stone-500">{t("memory.detail.removeSelected")}</p>
               <h2 className="font-['Space_Grotesk','IBM_Plex_Sans',sans-serif] text-2xl font-semibold tracking-tight text-stone-950">
-                Remove {selectedPhotoIds.length} selected photo{selectedPhotoIds.length === 1 ? "" : "s"} from {memory.name}?
+                {t("memory.detail.removeSelectedQuestion", { count: selectedPhotoIds.length, name: memory.name })}
               </h2>
               <p className="text-sm leading-6 text-stone-500">
-                This only removes the selected photos from this memory. The original media stays in your library and can still belong to other memories.
+                {t("memory.detail.removeSelectedBody")}
               </p>
             </div>
             <div className="mt-6 flex justify-end gap-2">
               <Button onClick={() => setRemoveSelectedConfirmOpen(false)} variant="ghost">
-                Cancel
+                {t("actions.cancel")}
               </Button>
               <Button
                 onClick={async () => {
@@ -616,7 +626,7 @@ export function MemoryDetailPage({
                 }}
                 variant="accent"
               >
-                Remove Selected
+                {t("memory.detail.removeSelected")}
               </Button>
             </div>
           </div>
@@ -625,25 +635,25 @@ export function MemoryDetailPage({
 
       <Dialog onOpenChange={(open) => !open && setPendingRemovalPhotoId(null)} open={Boolean(pendingRemovalPhotoId)}>
         <DialogContent className="flex items-center justify-center p-6">
-          <DialogTitle className="sr-only">Remove photo from memory</DialogTitle>
+          <DialogTitle className="sr-only">{t("memory.detail.removePhotoDialog")}</DialogTitle>
           <DialogDescription className="sr-only">
-            Confirm removing the selected photo from {memory.name}.
+            {t("memory.detail.removePhotoDescription", { name: memory.name })}
           </DialogDescription>
           <div className="w-full max-w-lg rounded-[28px] border border-stone-200 bg-white p-6 shadow-2xl">
             <div className="space-y-3">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-stone-500">Remove Photo</p>
+              <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-stone-500">{t("memory.detail.removePhoto")}</p>
               <h2 className="font-['Space_Grotesk','IBM_Plex_Sans',sans-serif] text-2xl font-semibold tracking-tight text-stone-950">
-                Remove this photo from {memory.name}?
+                {t("memory.detail.removePhotoQuestion", { name: memory.name })}
               </h2>
               <p className="text-sm leading-6 text-stone-500">
                 {pendingRemovalRecord
-                  ? `${pendingRemovalRecord.photo.path.split("/").at(-1)} will be removed from this memory only.`
-                  : "This removes the photo from the memory only."}
+                  ? t("memory.detail.removePhotoBodyWithName", { name: pendingRemovalRecord.photo.path.split("/").at(-1) ?? "" })
+                  : t("memory.detail.removePhotoBody")}
               </p>
             </div>
             <div className="mt-6 flex justify-end gap-2">
               <Button onClick={() => setPendingRemovalPhotoId(null)} variant="ghost">
-                Cancel
+                {t("actions.cancel")}
               </Button>
               <Button
                 onClick={async () => {
@@ -654,7 +664,7 @@ export function MemoryDetailPage({
                 }}
                 variant="accent"
               >
-                Remove Photo
+                {t("memory.detail.removePhoto")}
               </Button>
             </div>
           </div>

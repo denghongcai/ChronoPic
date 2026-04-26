@@ -31,11 +31,16 @@ export interface MemoryAIAnalysis {
 export interface MemoryAIContext {
   name?: string | null;
   description?: string | null;
+  outputLocale?: string | null;
+}
+
+export interface PhotoAIContext {
+  outputLocale?: string | null;
 }
 
 export interface AIClient {
   isEnabled(): boolean;
-  analyzePhoto(photo: PhotoRecord): Promise<AIAnalysis>;
+  analyzePhoto(photo: PhotoRecord, context?: PhotoAIContext): Promise<AIAnalysis>;
   analyzeMemory(memory: Memory, photos: PhotoRecord[], context?: MemoryAIContext): Promise<MemoryAIAnalysis>;
 }
 
@@ -72,7 +77,11 @@ async function resolvePhotoInput(photo: PhotoRecord): Promise<FileInput | null> 
   }
 }
 
-function buildAnalysisPrompt(photo: PhotoRecord): string {
+function describeOutputLocale(locale: string | null | undefined): string {
+  return locale === "zh-CN" ? "Simplified Chinese (zh-CN)" : "English (en-US)";
+}
+
+function buildAnalysisPrompt(photo: PhotoRecord, context: PhotoAIContext = {}): string {
   const datetime = photo.metadata.datetime ? new Date(photo.metadata.datetime).toISOString() : "unknown";
   const gps =
     photo.metadata.lat != null && photo.metadata.lng != null
@@ -91,6 +100,7 @@ function buildAnalysisPrompt(photo: PhotoRecord): string {
     "- Do not include reasoning, think tags, markdown explanation, or any text outside the JSON object.",
     "- Use the visual content as the primary source of truth.",
     "- If the image is ambiguous, stay conservative.",
+    `Output language for caption, summary, and labels: ${describeOutputLocale(context.outputLocale)}.`,
     `Known metadata: mime=${photo.photo.mime}; datetime=${datetime}; gps=${gps}; path=${path.basename(photo.photo.path)}.`,
   ].join("\n");
 }
@@ -155,6 +165,7 @@ function buildMemoryAnalysisPrompt(memory: Memory, photos: PhotoRecord[], contex
     "- labels: 3 to 8 lowercase tags describing the whole memory.",
     "- Use the provided photo summaries as the source of truth. Do not invent people, places, or events not supported by the inputs.",
     "- Do not output markdown, bullets, or explanatory text outside the JSON object.",
+    `Output language for title, description, and labels: ${describeOutputLocale(context.outputLocale)}.`,
     `Saved memory name: ${memory.name}.`,
     `Saved description: ${memory.description ?? "none"}.`,
     `Current working title draft: ${workingName?.trim() || "none"}.`,
@@ -186,7 +197,7 @@ export class VercelCompatibleAIClient implements AIClient {
     return true;
   }
 
-  async analyzePhoto(photo: PhotoRecord): Promise<AIAnalysis> {
+  async analyzePhoto(photo: PhotoRecord, context?: PhotoAIContext): Promise<AIAnalysis> {
     const fileInput = await resolvePhotoInput(photo);
     const result = streamText({
       model: this.model,
@@ -194,7 +205,7 @@ export class VercelCompatibleAIClient implements AIClient {
         {
           role: "user",
           content: [
-            { type: "text", text: buildAnalysisPrompt(photo) },
+            { type: "text", text: buildAnalysisPrompt(photo, context) },
             ...(fileInput
               ? [
                   {

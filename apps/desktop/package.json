@@ -27,6 +27,7 @@
     "@chronopic/infra-db": "workspace:*",
     "@chronopic/infra-fs": "workspace:*",
     "@chronopic/infra-image": "workspace:*",
+    "@chronopic/i18n": "workspace:*",
     "@chronopic/services-ai-pipeline": "workspace:*",
     "@chronopic/services-indexer": "workspace:*",
     "@chronopic/ui-components": "workspace:*",

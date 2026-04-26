@@ -80,7 +80,7 @@ export async function loadAmap(settings?: MapSettings | null): Promise<AMapNames
 
   const { apiKey, securityJsCode } = resolveMapSettings(settings);
   if (!apiKey) {
-    throw new Error("Missing AMap API key");
+    throw new Error("AMAP_API_KEY_MISSING");
   }
 
   if (securityJsCode) {

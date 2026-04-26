@@ -14,6 +14,7 @@ import type {
   AISettings,
   BrowseMode,
   LibrarySnapshot,
+  LocaleSettings,
   MapSettings,
   Memory,
   MemoryCandidate,
@@ -34,6 +35,7 @@ import type { EditControlsProps } from "./edit-controls.js";
 import { FilterToolbar } from "./filter-toolbar.js";
 import { GallerySection } from "./gallery-section.js";
 import { Input } from "./input.js";
+import { useI18n } from "./i18n-provider.js";
 import { formatTimestamp } from "./lib/media.js";
 import { Label } from "./label.js";
 import { MemoryDetailPage } from "./memory-detail-page.js";
@@ -42,6 +44,7 @@ import { PageViewContext, type PageView } from "./page-view.js";
 import { PhotoViewerOverlay } from "./photo-viewer-overlay.js";
 import { RecentMemories } from "./recent-memories.js";
 import { SearchInput } from "./search-input.js";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./select.js";
 import { Sidebar } from "./sidebar.js";
 import { SuggestedMemoriesSection } from "./suggested-memories-section.js";
 import type { ViewerMode } from "./types.js";
@@ -75,6 +78,7 @@ export interface PhotoHomeProps extends EditControlsProps {
   isScanning: boolean;
   aiEnabled: boolean;
   aiSettings: AISettings;
+  localeSettings: LocaleSettings;
   mapSettings: MapSettings;
   aiQueueStats?: SemanticQueueStats;
   isBatchEnrichingSemantic?: boolean;
@@ -88,6 +92,7 @@ export interface PhotoHomeProps extends EditControlsProps {
   onSearchChange: (query: string) => void;
   onAddLibrary: () => void;
   onSaveAISettings: (settings: AISettings) => void | Promise<void>;
+  onSaveLocaleSettings: (settings: LocaleSettings) => void | Promise<void>;
   onSaveMapSettings: (settings: MapSettings) => void | Promise<void>;
   onScanAll: () => void;
   onEnrichPendingSemantics?: () => void;
@@ -182,6 +187,7 @@ function HomeView({
   timelineBrowseContent?: React.ReactNode;
   onSelectionModeChange: (active: boolean) => void;
 }) {
+  const { t } = useI18n();
   const [filtersOpen, setFiltersOpen] = React.useState(false);
   return (
     <div className="space-y-6">
@@ -199,7 +205,6 @@ function HomeView({
             <SearchInput
               className="w-[320px]"
               onValueChange={onSearchChange}
-              placeholder="Search moments, locations..."
               value={searchQuery}
             />
             {browseMode === "waterfall" ? (
@@ -217,7 +222,7 @@ function HomeView({
                 size="sm"
                 variant={selectionMode || selectedPhotoIds.length > 0 ? "accent" : "outline"}
               >
-                {selectionMode || selectedPhotoIds.length > 0 ? "Done" : "Select"}
+                {selectionMode || selectedPhotoIds.length > 0 ? t("actions.done") : t("actions.select")}
               </Button>
             ) : null}
             <Button
@@ -227,7 +232,7 @@ function HomeView({
               variant={filtersOpen ? "default" : "outline"}
             >
               <SlidersHorizontal className="h-4 w-4" />
-              Filter
+              {t("actions.filter")}
             </Button>
           </div>
         </div>
@@ -307,6 +312,7 @@ export function PhotoHome({
   isScanning,
   aiEnabled,
   aiSettings,
+  localeSettings,
   mapSettings,
   aiQueueStats,
   isBatchEnrichingSemantic,
@@ -320,6 +326,7 @@ export function PhotoHome({
   onSearchChange,
   onAddLibrary,
   onSaveAISettings,
+  onSaveLocaleSettings,
   onSaveMapSettings,
   onScanAll,
   onEnrichPendingSemantics,
@@ -360,6 +367,7 @@ export function PhotoHome({
   onEnrichSemantic,
   onRollback,
 }: PhotoHomeProps) {
+  const { t } = useI18n();
   const statusTone =
     statusKind === "success"
       ? "success"
@@ -515,12 +523,14 @@ export function PhotoHome({
                 <div className="rounded-[32px] border border-stone-200/70 bg-white p-6 shadow-sm">
                   <LibrarySettingsPanel
                     aiEnabled={aiEnabled}
-                    aiSettings={aiSettings}
-                    mapSettings={mapSettings}
+	                    aiSettings={aiSettings}
+	                    localeSettings={localeSettings}
+	                    mapSettings={mapSettings}
                     isScanning={isScanning}
                     onAddLibrary={onAddLibrary}
-                    onSaveAISettings={onSaveAISettings}
-                    onSaveMapSettings={onSaveMapSettings}
+	                    onSaveAISettings={onSaveAISettings}
+	                    onSaveLocaleSettings={onSaveLocaleSettings}
+	                    onSaveMapSettings={onSaveMapSettings}
                     onScanAll={onScanAll}
                     snapshot={snapshot}
                   />
@@ -548,7 +558,7 @@ export function PhotoHome({
                   className={`mb-4 flex items-center justify-between rounded-2xl border px-4 py-3 text-sm shadow-sm ${statusShellClassName}`}
                 >
                   <span>{statusMessage}</span>
-                  <Badge tone={statusTone}>Recent Action</Badge>
+                  <Badge tone={statusTone}>{t("notifications.recentAction")}</Badge>
                 </div>
               ) : null}
 
@@ -687,27 +697,34 @@ export function PhotoHome({
 function LibrarySettingsPanel({
   aiEnabled,
   aiSettings,
+  localeSettings,
   mapSettings,
   snapshot,
   isScanning,
   onAddLibrary,
   onSaveAISettings,
+  onSaveLocaleSettings,
   onSaveMapSettings,
   onScanAll,
 }: {
   aiEnabled: boolean;
   aiSettings: AISettings;
+  localeSettings: LocaleSettings;
   mapSettings: MapSettings;
   snapshot: LibrarySnapshot;
   isScanning: boolean;
   onAddLibrary: () => void;
   onSaveAISettings: (settings: AISettings) => void | Promise<void>;
+  onSaveLocaleSettings: (settings: LocaleSettings) => void | Promise<void>;
   onSaveMapSettings: (settings: MapSettings) => void | Promise<void>;
   onScanAll: () => void;
 }) {
+  const { t } = useI18n();
   const [draftAISettings, setDraftAISettings] = React.useState(aiSettings);
+  const [draftLocaleSettings, setDraftLocaleSettings] = React.useState(localeSettings);
   const [draftMapSettings, setDraftMapSettings] = React.useState(mapSettings);
   const [savingAISettings, setSavingAISettings] = React.useState(false);
+  const [savingLocaleSettings, setSavingLocaleSettings] = React.useState(false);
   const [savingMapSettings, setSavingMapSettings] = React.useState(false);
 
   React.useEffect(() => {
@@ -715,81 +732,148 @@ function LibrarySettingsPanel({
   }, [aiSettings]);
 
   React.useEffect(() => {
+    setDraftLocaleSettings(localeSettings);
+  }, [localeSettings]);
+
+  React.useEffect(() => {
     setDraftMapSettings(mapSettings);
   }, [mapSettings]);
 
   const stats = [
-    { label: "Total", value: snapshot.stats.totalPhotos, icon: HardDrive },
-    { label: "Indexed", value: snapshot.stats.indexedPhotos, icon: CheckCheck },
-    { label: "Errors", value: snapshot.stats.erroredPhotos, icon: AlertTriangle },
-    { label: "Duplicates", value: snapshot.stats.duplicatePhotos, icon: Sparkles },
+    { label: t("common.total"), value: snapshot.stats.totalPhotos, icon: HardDrive },
+    { label: t("common.indexed"), value: snapshot.stats.indexedPhotos, icon: CheckCheck },
+    { label: t("common.errors"), value: snapshot.stats.erroredPhotos, icon: AlertTriangle },
+    { label: t("common.duplicates"), value: snapshot.stats.duplicatePhotos, icon: Sparkles },
   ];
 
   return (
     <div className="space-y-6">
       <div>
         <h2 className="font-['Space_Grotesk','IBM_Plex_Sans',sans-serif] text-2xl font-semibold tracking-tight text-stone-950">
-          Library Settings
+          {t("settings.title")}
         </h2>
-        <p className="mt-1 text-sm text-stone-500">
-          Manage your library sources and indexing preferences.
-        </p>
+        <p className="mt-1 text-sm text-stone-500">{t("settings.description")}</p>
       </div>
 
       <div className="flex gap-3">
         <Button onClick={onAddLibrary} variant="accent">
           <FolderPlus className="h-4 w-4" />
-          Add Folder
+          {t("actions.addFolder")}
         </Button>
         <Button disabled={isScanning} onClick={onScanAll} variant="outline">
           {isScanning ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <FolderOpen className="h-4 w-4" />}
-          {isScanning ? "Scanning..." : "Scan Library"}
+          {isScanning ? t("actions.scanning") : t("actions.scanLibrary")}
         </Button>
+      </div>
+
+      <div className="space-y-3 rounded-[28px] border border-stone-200 bg-stone-50/80 p-5 shadow-sm">
+        <div>
+          <h3 className="font-['Space_Grotesk','IBM_Plex_Sans',sans-serif] text-xl font-semibold tracking-tight text-stone-950">
+            {t("settings.language.title")}
+          </h3>
+          <p className="mt-1 text-sm leading-6 text-stone-500">{t("settings.language.description")}</p>
+        </div>
+        <div className="grid gap-4 md:grid-cols-2">
+          <div className="space-y-2">
+            <Label>{t("settings.language.uiLocale")}</Label>
+            <Select
+              onValueChange={(value) =>
+                setDraftLocaleSettings((current) => ({ ...current, locale: value as LocaleSettings["locale"] }))
+              }
+              value={draftLocaleSettings.locale}
+            >
+              <SelectTrigger className="rounded-2xl">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="en-US">{t("locale.enUS")}</SelectItem>
+                <SelectItem value="zh-CN">{t("locale.zhCN")}</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-2">
+            <Label>{t("settings.language.aiOutputLocale")}</Label>
+            <Select
+              onValueChange={(value) =>
+                setDraftLocaleSettings((current) => ({
+                  ...current,
+                  aiOutputLocale: value as LocaleSettings["aiOutputLocale"],
+                }))
+              }
+              value={draftLocaleSettings.aiOutputLocale}
+            >
+              <SelectTrigger className="rounded-2xl">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="follow-ui">{t("settings.language.followUi")}</SelectItem>
+                <SelectItem value="en-US">{t("locale.enUS")}</SelectItem>
+                <SelectItem value="zh-CN">{t("locale.zhCN")}</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+        <div className="flex justify-end">
+          <Button
+            disabled={savingLocaleSettings}
+            onClick={async () => {
+              setSavingLocaleSettings(true);
+              try {
+                await onSaveLocaleSettings(draftLocaleSettings);
+              } finally {
+                setSavingLocaleSettings(false);
+              }
+            }}
+            variant="outline"
+          >
+            {savingLocaleSettings ? t("settings.language.saving") : t("settings.language.save")}
+          </Button>
+        </div>
       </div>
 
       <div className="space-y-3 rounded-[28px] border border-stone-200 bg-stone-50/80 p-5 shadow-sm">
         <div className="flex items-start justify-between gap-4">
           <div>
             <h3 className="font-['Space_Grotesk','IBM_Plex_Sans',sans-serif] text-xl font-semibold tracking-tight text-stone-950">
-              AI Enrichment
+	              {t("settings.ai.title")}
             </h3>
             <p className="mt-1 text-sm leading-6 text-stone-500">
-              Configure the OpenAI-compatible endpoint used for photo and memory semantic enrichment.
+	              {t("settings.ai.description")}
             </p>
           </div>
-          <Badge tone={aiEnabled ? "success" : "neutral"}>{aiEnabled ? "Enabled" : "Disabled"}</Badge>
+	          <Badge tone={aiEnabled ? "success" : "neutral"}>{aiEnabled ? t("settings.ai.enabled") : t("settings.ai.disabled")}</Badge>
         </div>
 
         <div className="grid gap-4 md:grid-cols-2">
           <div className="space-y-2">
-            <Label>Provider</Label>
+	            <Label>{t("settings.ai.provider")}</Label>
             <Input
               onChange={(event) => setDraftAISettings((current) => ({ ...current, providerName: event.target.value }))}
-              placeholder="openai-compatible"
+              placeholder={t("settings.ai.providerPlaceholder")}
               value={draftAISettings.providerName}
             />
           </div>
           <div className="space-y-2">
-            <Label>Model</Label>
+	            <Label>{t("settings.ai.model")}</Label>
             <Input
               onChange={(event) => setDraftAISettings((current) => ({ ...current, model: event.target.value }))}
-              placeholder="unsloth/gemma-4-E4B-it-GGUF"
+              placeholder={t("settings.ai.modelPlaceholder")}
               value={draftAISettings.model}
             />
           </div>
           <div className="space-y-2 md:col-span-2">
-            <Label>Base URL</Label>
+	            <Label>{t("settings.ai.baseUrl")}</Label>
             <Input
               onChange={(event) => setDraftAISettings((current) => ({ ...current, baseURL: event.target.value }))}
-              placeholder="http://192.168.1.39:8888/v1"
+              placeholder={t("settings.ai.baseUrlPlaceholder")}
               value={draftAISettings.baseURL}
             />
           </div>
           <div className="space-y-2 md:col-span-2">
-            <Label>API Key</Label>
+	            <Label>{t("settings.ai.apiKey")}</Label>
             <Input
               onChange={(event) => setDraftAISettings((current) => ({ ...current, apiKey: event.target.value }))}
-              placeholder="sk-..."
+              placeholder={t("settings.ai.apiKeyPlaceholder")}
               type="password"
               value={draftAISettings.apiKey}
             />
@@ -797,9 +881,7 @@ function LibrarySettingsPanel({
         </div>
 
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <p className="text-xs leading-5 text-stone-500">
-            Save applies immediately in the desktop runtime. Leaving any required field blank disables AI.
-          </p>
+          <p className="text-xs leading-5 text-stone-500">{t("settings.ai.runtimeNote")}</p>
           <Button
             disabled={savingAISettings}
             onClick={async () => {
@@ -812,7 +894,7 @@ function LibrarySettingsPanel({
             }}
             variant="outline"
           >
-            {savingAISettings ? "Saving..." : "Save AI Settings"}
+	            {savingAISettings ? t("settings.ai.saving") : t("settings.ai.save")}
           </Button>
         </div>
 
@@ -822,42 +904,40 @@ function LibrarySettingsPanel({
         <div className="flex items-start justify-between gap-4">
           <div>
             <h3 className="font-['Space_Grotesk','IBM_Plex_Sans',sans-serif] text-xl font-semibold tracking-tight text-stone-950">
-              Map Rendering
+	              {t("settings.map.title")}
             </h3>
             <p className="mt-1 text-sm leading-6 text-stone-500">
-              Configure the Gaode Web JS API used by ChronoPic map browse mode.
+	              {t("settings.map.description")}
             </p>
           </div>
           <Badge tone={draftMapSettings.apiKey ? "success" : "neutral"}>
-            {draftMapSettings.apiKey ? "Configured" : "Disabled"}
+	            {draftMapSettings.apiKey ? t("settings.map.configured") : t("settings.map.disabled")}
           </Badge>
         </div>
 
         <div className="grid gap-4 md:grid-cols-2">
           <div className="space-y-2 md:col-span-2">
-            <Label>AMap API Key</Label>
+            <Label>{t("settings.map.apiKey")}</Label>
             <Input
               onChange={(event) => setDraftMapSettings((current) => ({ ...current, apiKey: event.target.value }))}
-              placeholder="your-amap-api-key"
+              placeholder={t("settings.map.apiKeyPlaceholder")}
               value={draftMapSettings.apiKey}
             />
           </div>
           <div className="space-y-2 md:col-span-2">
-            <Label>Security JS Code</Label>
+            <Label>{t("settings.map.securityJsCode")}</Label>
             <Input
               onChange={(event) =>
                 setDraftMapSettings((current) => ({ ...current, securityJsCode: event.target.value }))
               }
-              placeholder="optional-security-js-code"
+              placeholder={t("settings.map.securityJsCodePlaceholder")}
               value={draftMapSettings.securityJsCode}
             />
           </div>
         </div>
 
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <p className="text-xs leading-5 text-stone-500">
-            Saved map settings are used by the Map browse view. Leaving the API key blank disables map rendering.
-          </p>
+          <p className="text-xs leading-5 text-stone-500">{t("settings.map.note")}</p>
           <Button
             disabled={savingMapSettings}
             onClick={async () => {
@@ -870,7 +950,7 @@ function LibrarySettingsPanel({
             }}
             variant="outline"
           >
-            {savingMapSettings ? "Saving..." : "Save Map Settings"}
+            {savingMapSettings ? t("settings.map.saving") : t("settings.map.save")}
           </Button>
         </div>
       </div>
@@ -892,8 +972,8 @@ function LibrarySettingsPanel({
 
       <div className="space-y-3">
         <div className="flex items-center justify-between">
-          <Label>Registered Sources</Label>
-          <Badge tone="info">{snapshot.sources.length} active</Badge>
+	          <Label>{t("settings.sources.title")}</Label>
+	          <Badge tone="info">{t("settings.sources.active", { count: snapshot.sources.length })}</Badge>
         </div>
         <div className="grid max-h-[38vh] gap-3 overflow-auto pr-1">
           {snapshot.sources.map((source) => (
@@ -906,15 +986,15 @@ function LibrarySettingsPanel({
                   <p className="break-all text-sm font-medium leading-6 text-stone-900">{source.path}</p>
                 </div>
               </div>
-              <p className="text-xs leading-5 text-stone-500">Last scan: {formatTimestamp(source.lastScanAt)}</p>
+              <p className="text-xs leading-5 text-stone-500">{t("settings.sources.lastScan", { time: formatTimestamp(source.lastScanAt) })}</p>
             </div>
           ))}
           {snapshot.sources.length === 0 ? (
             <div className="rounded-2xl border border-dashed border-stone-300 bg-stone-50/70 px-5 py-10 text-center">
               <FolderPlus className="mx-auto mb-3 h-10 w-10 text-stone-400" />
-              <p className="text-sm font-medium text-stone-700">No folders added yet</p>
+	              <p className="text-sm font-medium text-stone-700">{t("settings.sources.emptyTitle")}</p>
               <p className="mt-2 text-sm leading-6 text-stone-500">
-                Add a source folder to start indexing and generating thumbnails.
+	                {t("settings.sources.emptyDescription")}
               </p>
             </div>
           ) : null}
@@ -945,37 +1025,38 @@ function NotificationCenterPanel({
   statusKind: "idle" | "info" | "success" | "warn" | "error";
   statusMessage: string;
 }) {
+  const { t } = useI18n();
   const outstanding = aiQueueStats.disabled + aiQueueStats.pending + aiQueueStats.processing + aiQueueStats.failed;
 
   return (
     <div className="space-y-6">
       <div>
         <h2 className="font-['Space_Grotesk','IBM_Plex_Sans',sans-serif] text-2xl font-semibold tracking-tight text-stone-950">
-          Notifications
+          {t("notifications.title")}
         </h2>
-        <p className="mt-1 text-sm text-stone-500">Review pending AI metadata and suggested memories.</p>
+        <p className="mt-1 text-sm text-stone-500">{t("notifications.description")}</p>
       </div>
 
       <div className="rounded-[28px] border border-stone-200 bg-stone-50/80 p-5 shadow-sm">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div className="space-y-3">
             <div className="flex flex-wrap items-center gap-2">
-              <Badge tone="info">AI Queue</Badge>
-              {aiQueueStats.disabled > 0 ? <Badge tone="neutral">{aiQueueStats.disabled} need AI</Badge> : null}
-              {aiQueueStats.pending > 0 ? <Badge tone="info">{aiQueueStats.pending} pending</Badge> : null}
-              {aiQueueStats.processing > 0 ? <Badge tone="info">{aiQueueStats.processing} processing</Badge> : null}
-              {aiQueueStats.failed > 0 ? <Badge tone="danger">{aiQueueStats.failed} failed</Badge> : null}
-              {aiQueueStats.completed > 0 ? <Badge tone="success">{aiQueueStats.completed} ready</Badge> : null}
+              <Badge tone="info">{t("notifications.aiQueue")}</Badge>
+              {aiQueueStats.disabled > 0 ? <Badge tone="neutral">{t("notifications.needAi", { count: aiQueueStats.disabled })}</Badge> : null}
+              {aiQueueStats.pending > 0 ? <Badge tone="info">{t("notifications.pending", { count: aiQueueStats.pending })}</Badge> : null}
+              {aiQueueStats.processing > 0 ? <Badge tone="info">{t("notifications.processing", { count: aiQueueStats.processing })}</Badge> : null}
+              {aiQueueStats.failed > 0 ? <Badge tone="danger">{t("notifications.failed", { count: aiQueueStats.failed })}</Badge> : null}
+              {aiQueueStats.completed > 0 ? <Badge tone="success">{t("notifications.ready", { count: aiQueueStats.completed })}</Badge> : null}
             </div>
             <p className="text-sm leading-6 text-stone-600">
               {aiEnabled
                 ? outstanding > 0
                   ? aiQueueStats.processing > 0 &&
                     aiQueueStats.disabled + aiQueueStats.pending + aiQueueStats.failed === 0
-                    ? "AI enrichment is currently running for some items."
-                    : "Outstanding AI items are waiting in the library queue."
-                  : "No outstanding AI queue items right now."
-                : "AI is currently disabled. Configure it in Settings to enable queue processing."}
+                    ? t("notifications.aiRunning")
+                    : t("notifications.aiWaiting")
+                  : t("notifications.aiEmpty")
+                : t("notifications.aiDisabled")}
             </p>
           </div>
           <Button
@@ -983,7 +1064,7 @@ function NotificationCenterPanel({
             onClick={() => void onEnrichPendingSemantics?.()}
             variant="outline"
           >
-            {isBatchEnrichingSemantic ? "Processing Queue..." : "Enrich Queue"}
+            {isBatchEnrichingSemantic ? t("notifications.processingQueue") : t("notifications.enrichQueue")}
           </Button>
         </div>
       </div>
@@ -992,13 +1073,13 @@ function NotificationCenterPanel({
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div className="space-y-3">
             <div className="flex flex-wrap items-center gap-2">
-              <Badge tone="info">Memory Candidates</Badge>
-              {memoryCandidateCount > 0 ? <Badge tone="warn">{memoryCandidateCount} ready</Badge> : <Badge tone="neutral">0 ready</Badge>}
+              <Badge tone="info">{t("notifications.memoryCandidates")}</Badge>
+              {memoryCandidateCount > 0 ? <Badge tone="warn">{t("notifications.ready", { count: memoryCandidateCount })}</Badge> : <Badge tone="neutral">{t("notifications.ready", { count: 0 })}</Badge>}
             </div>
             <p className="text-sm leading-6 text-stone-600">
               {memoryCandidateCount > 0
-                ? `${memoryCandidateCount} suggested memor${memoryCandidateCount === 1 ? "y is" : "ies are"} waiting for review in Memories.`
-                : "No suggested memories are waiting right now. Scan or refresh suggestions to find new candidates."}
+                ? t("notifications.suggestedWaiting", { count: memoryCandidateCount })
+                : t("notifications.noSuggestedMemories")}
             </p>
           </div>
           <Button
@@ -1006,13 +1087,13 @@ function NotificationCenterPanel({
             onClick={() => void onGenerateMemoryCandidates?.()}
             variant="outline"
           >
-            {isGeneratingMemoryCandidates ? "Refreshing..." : "Refresh Suggestions"}
+            {isGeneratingMemoryCandidates ? t("notifications.refreshing") : t("notifications.refreshSuggestions")}
           </Button>
         </div>
       </div>
 
       {statusKind !== "idle" ? (
-        <p className="text-sm text-stone-500">Latest action: {statusMessage}</p>
+        <p className="text-sm text-stone-500">{t("notifications.latestAction", { message: statusMessage })}</p>
       ) : null}
     </div>
   );

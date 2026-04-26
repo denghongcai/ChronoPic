@@ -19,6 +19,7 @@
   "devDependencies": {
     "@chronopic/application": "workspace:*",
     "@chronopic/domain": "workspace:*",
+    "@chronopic/i18n": "workspace:*",
     "@chronopic/infra-config": "workspace:*",
     "@chronopic/infra-db": "workspace:*",
     "@chronopic/services-ai-pipeline": "workspace:*",

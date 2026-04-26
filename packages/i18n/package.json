@@ -1,5 +1,5 @@
 {
-  "name": "@chronopic/infra-config",
+  "name": "@chronopic/i18n",
   "version": "0.1.0",
   "type": "module",
   "main": "./dist/index.js",
@@ -13,10 +13,6 @@
       "import": "./dist/index.js",
       "default": "./dist/index.js"
     }
-  },
-  "dependencies": {
-    "@chronopic/domain": "workspace:*",
-    "@chronopic/i18n": "workspace:*"
   },
   "scripts": {
     "build": "pnpm exec tsc -p tsconfig.json",

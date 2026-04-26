@@ -2,7 +2,7 @@ import { MapPinned } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import type { GeoBounds, MapSettings, Memory, PhotoFilter, PlaceGroup, PhotoRecord } from "@chronopic/domain";
-import { Badge, Button, Panel, formatTimestamp, getDiscoveryContext, getDiscoveryMatchSummary, thumbnailUrl } from "@chronopic/ui-components";
+import { Badge, Button, Panel, formatTimestamp, getDiscoveryContext, getDiscoveryMatchSummary, thumbnailUrl, useI18n } from "@chronopic/ui-components";
 
 import { getAmapApiKey, loadAmap, type AMapNamespace } from "./amap-loader";
 
@@ -35,6 +35,7 @@ export function MapBrowseSurface({
   selectedPhotoMemories,
   selectedPhotoId,
 }: MapBrowseSurfaceProps) {
+  const { t } = useI18n();
   const mapContainerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<InstanceType<AMapNamespace["Map"]> | null>(null);
   const markersRef = useRef<InstanceType<AMapNamespace["Marker"]>[]>([]);
@@ -53,12 +54,12 @@ export function MapBrowseSurface({
     [photos, selectedPhotoId]
   );
   const discoveryContext = useMemo(
-    () => getDiscoveryContext(filter, { activeMemoryName: activeMemoryName ?? null }),
-    [activeMemoryName, filter]
+    () => getDiscoveryContext(filter, { activeMemoryName: activeMemoryName ?? null, t }),
+    [activeMemoryName, filter, t]
   );
   const selectedPhotoMatch = useMemo(
-    () => getDiscoveryMatchSummary(selectedPhoto, selectedPhotoMemories, filter.query),
-    [filter.query, selectedPhoto, selectedPhotoMemories]
+    () => getDiscoveryMatchSummary(selectedPhoto, selectedPhotoMemories, filter.query, t),
+    [filter.query, selectedPhoto, selectedPhotoMemories, t]
   );
 
   const selectedGroupId = useMemo(
@@ -236,8 +237,8 @@ export function MapBrowseSurface({
   if (!hasApiKey) {
     return (
       <MapStatePanel
-        description="Save an AMap API key in Library Settings to enable Gaode map rendering for browse mode."
-        title="Map view is missing an API key"
+        description={t("map.missingKeyDescription")}
+        title={t("map.missingKeyTitle")}
         tone="warn"
       />
     );
@@ -246,29 +247,27 @@ export function MapBrowseSurface({
   if (mappablePhotoCount === 0) {
     return (
       <MapStatePanel
-        description="The current browse scope has no GPS-bearing photos yet. Add media with coordinates or loosen the current filter to enable geographic exploration."
-        title="No mappable photos in the current scope"
+        description={t("map.emptyDescription")}
+        title={t("map.emptyTitle")}
         tone="info"
       />
     );
   }
 
   if (mapError) {
-    return <MapStatePanel description={mapError} title="Map view failed to initialize" tone="danger" />;
+    return <MapStatePanel description={mapError} title={t("map.failedTitle")} tone="danger" />;
   }
 
   return (
     <Panel className="select-none overflow-hidden">
       <div className="flex items-end justify-between gap-4 border-b border-stone-200/70 px-5 py-4">
         <div className="space-y-1">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-stone-400">Map View</p>
-          <p className="text-sm text-stone-500">
-            Pan or zoom to refresh place buckets. Markers, place cards, and the shared viewer all stay in the same selection flow.
-          </p>
+          <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-stone-400">{t("map.view")}</p>
+          <p className="text-sm text-stone-500">{t("map.description")}</p>
         </div>
         <div className="flex items-center gap-2">
-          <Badge tone="info">{mappablePhotoCount} GPS photos</Badge>
-          <Badge tone="neutral">{activePlaceGroups.length} viewport groups</Badge>
+          <Badge tone="info">{t("map.gpsPhotos", { count: mappablePhotoCount })}</Badge>
+          <Badge tone="neutral">{t("map.viewportGroups", { count: activePlaceGroups.length })}</Badge>
         </div>
       </div>
       <div className="grid gap-0 xl:grid-cols-[minmax(0,1.4fr)_420px]">
@@ -278,7 +277,7 @@ export function MapBrowseSurface({
               <div className="border-b border-stone-200/70 px-5 py-4">
                 <div className="space-y-3 rounded-[24px] border border-stone-200 bg-stone-50/80 px-4 py-3">
                   <div className="flex flex-wrap items-center gap-2">
-                    <Badge tone="info">Discovery Scope</Badge>
+                    <Badge tone="info">{t("map.discoveryScope")}</Badge>
                     {discoveryContext.badges.map((badge) => (
                       <Badge key={badge.label} tone={badge.tone}>
                         {badge.label}
@@ -297,25 +296,25 @@ export function MapBrowseSurface({
             {selectedPhoto ? (
               <div className="rounded-[24px] border border-sky-200 bg-sky-50/80 px-4 py-3">
                 <div className="flex flex-wrap items-center gap-2">
-                  <Badge tone="info">Selected Photo</Badge>
+                  <Badge tone="info">{t("map.selectedPhoto")}</Badge>
                   <p className="text-sm text-sky-900">
-                    {selectedPhoto.photo.path.split("/").at(-1) ?? "Selected photo"} is the current geographic focus.
+                    {t("map.selectedFocus", { name: selectedPhoto.photo.path.split("/").at(-1) ?? t("map.selectedPhoto") })}
                   </p>
                   <Button
                     onClick={() => onOpenDetail(selectedPhoto.photo.id)}
                     size="sm"
                     variant="outline"
                   >
-                    Open Detail
+                    {t("map.openDetail")}
                   </Button>
                 </div>
                 {selectedPhotoMemories.length > 0 ? (
                   <div className="mt-3 flex flex-wrap items-center gap-2">
-                    <p className="text-xs font-medium uppercase tracking-[0.18em] text-sky-700">Memories</p>
+                    <p className="text-xs font-medium uppercase tracking-[0.18em] text-sky-700">{t("sidebar.memories")}</p>
                     {selectedPhotoMemories.map((memory) => (
                       <Badge key={memory.id} tone={memory.coverPhotoId === selectedPhoto.photo.id ? "info" : "neutral"}>
                         {memory.name}
-                        {memory.coverPhotoId === selectedPhoto.photo.id ? " cover" : ""}
+                        {memory.coverPhotoId === selectedPhoto.photo.id ? ` ${t("common.cover")}` : ""}
                       </Badge>
                     ))}
                   </div>
@@ -369,10 +368,10 @@ export function MapBrowseSurface({
                         </Badge>
                       </div>
                       <p className="mt-2 text-sm font-semibold text-stone-950">
-                        {representative?.photo.path.split("/").at(-1) ?? "Representative photo"}
+                        {representative?.photo.path.split("/").at(-1) ?? t("map.representativePhoto")}
                       </p>
                       <p className="mt-1 text-xs text-stone-500">
-                        {group.toDatetime != null ? `Latest capture ${formatTimestamp(group.toDatetime)}` : "No capture time available"}
+                        {group.toDatetime != null ? t("map.latestCapture", { time: formatTimestamp(group.toDatetime) }) : t("map.noCaptureTime")}
                       </p>
                       {representative?.photo.id ? (
                         <div className="mt-3">
@@ -385,7 +384,7 @@ export function MapBrowseSurface({
                             size="sm"
                             variant="outline"
                           >
-                            <span>Open Photo</span>
+                            <span>{t("actions.openPhoto")}</span>
                           </Button>
                         </div>
                       ) : null}
@@ -410,11 +409,13 @@ function MapStatePanel({
   title: string;
   tone: "danger" | "info" | "warn";
 }) {
+  const { t } = useI18n();
+
   return (
     <Panel className="overflow-hidden">
       <div className="grid min-h-[420px] place-items-center px-6 py-8 text-center">
         <div className="max-w-xl space-y-3">
-          <Badge tone={tone}>{tone === "danger" ? "Map Error" : tone === "warn" ? "Map Setup" : "Map Empty"}</Badge>
+          <Badge tone={tone}>{tone === "danger" ? t("map.error") : tone === "warn" ? t("map.setup") : t("map.empty")}</Badge>
           <h2 className="font-['Space_Grotesk','IBM_Plex_Sans',sans-serif] text-2xl font-semibold tracking-tight text-stone-950">
             {title}
           </h2>

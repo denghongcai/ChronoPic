@@ -4,8 +4,8 @@ import { FolderPlus } from "lucide-react";
 import { Button } from "./button.js";
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogOverlay, DialogPortal, DialogTitle } from "./dialog.js";
 import { Input } from "./input.js";
+import { useI18n } from "./i18n-provider.js";
 import { Label } from "./label.js";
-import { cn } from "./lib/cn.js";
 
 export interface CreateMemoryDialogProps {
   open: boolean;
@@ -14,6 +14,7 @@ export interface CreateMemoryDialogProps {
 }
 
 export function CreateMemoryDialog({ open, onOpenChange, onConfirm }: CreateMemoryDialogProps) {
+  const { t } = useI18n();
   const [name, setName] = React.useState("");
   const [submitting, setSubmitting] = React.useState(false);
 
@@ -57,18 +58,18 @@ export function CreateMemoryDialog({ open, onOpenChange, onConfirm }: CreateMemo
                 <FolderPlus className="h-5 w-5" />
               </div>
               <div>
-                <DialogTitle className="text-base font-semibold text-stone-950">Create Memory</DialogTitle>
+                <DialogTitle className="text-base font-semibold text-stone-950">{t("memories.createDialogTitle")}</DialogTitle>
                 <DialogDescription className="mt-0.5 text-sm text-stone-500">
-                  Group photos into a named memory.
+                  {t("memories.createDialogDescription")}
                 </DialogDescription>
               </div>
             </div>
 
             <div className="space-y-1.5">
-              <Label htmlFor="memory-name">Memory Name</Label>
+              <Label htmlFor="memory-name">{t("memories.nameLabel")}</Label>
               <Input
                 id="memory-name"
-                placeholder="e.g. Summer 2024, Paris Trip"
+                placeholder={t("memories.namePlaceholder")}
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 onKeyDown={handleKeyDown}
@@ -78,7 +79,7 @@ export function CreateMemoryDialog({ open, onOpenChange, onConfirm }: CreateMemo
 
             <div className="flex justify-end gap-2.5">
               <DialogClose asChild>
-                <Button variant="outline" type="button">Cancel</Button>
+                <Button variant="outline" type="button">{t("actions.cancel")}</Button>
               </DialogClose>
               <Button
                 onClick={() => void handleConfirm()}
@@ -86,7 +87,7 @@ export function CreateMemoryDialog({ open, onOpenChange, onConfirm }: CreateMemo
                 variant="accent"
                 type="button"
               >
-                Create
+                {t("actions.create")}
               </Button>
             </div>
           </div>

@@ -17,7 +17,7 @@ import type {
   TimelineGroupQuery,
 } from "@chronopic/domain";
 import type { ChronoPicDatabase } from "@chronopic/infra-db";
-import type { AIClient, MemoryAIContext } from "@chronopic/services-ai-pipeline";
+import type { AIClient, MemoryAIContext, PhotoAIContext } from "@chronopic/services-ai-pipeline";
 import type { IndexerService } from "@chronopic/services-indexer";
 
 export class ChronoPicAppService {
@@ -91,7 +91,7 @@ export class ChronoPicAppService {
     return this.db.updatePhotoCaption(photoId, caption);
   }
 
-  async enrichPhotoSemantic(photoId: string): Promise<PhotoRecord> {
+  async enrichPhotoSemantic(photoId: string, context?: PhotoAIContext): Promise<PhotoRecord> {
     if (!this.aiClient.isEnabled()) {
       throw new Error("AI enrichment is not configured");
     }
@@ -107,7 +107,7 @@ export class ChronoPicAppService {
     });
 
     try {
-      const analysis = await this.aiClient.analyzePhoto(photo);
+      const analysis = await this.aiClient.analyzePhoto(photo, context);
       return this.db.updatePhotoSemanticEnrichment(photoId, {
         ...analysis,
         aiStatus: "completed",
@@ -127,7 +127,7 @@ export class ChronoPicAppService {
     return this.db.getSemanticQueueStats();
   }
 
-  async enrichPendingSemantics(limit = 12): Promise<{
+  async enrichPendingSemantics(limit = 12, context?: PhotoAIContext): Promise<{
     processed: number;
     completed: number;
     failed: number;
@@ -153,7 +153,7 @@ export class ChronoPicAppService {
     };
 
     for (const photo of queue) {
-      const updated = await this.enrichPhotoSemantic(photo.photo.id);
+      const updated = await this.enrichPhotoSemantic(photo.photo.id, context);
       if (updated.semantic.aiStatus === "completed") {
         summary.completed += 1;
       } else if (updated.semantic.aiStatus === "failed") {

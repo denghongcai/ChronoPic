@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 
 import type { Memory, PhotoFilter, PhotoRecord, TimelineGranularity, TimelineGroup } from "@chronopic/domain";
-import { AddToMemoryMenu, Badge, Button, Panel, PhotoCard, getDiscoveryContext, getDiscoveryMatchSummary } from "@chronopic/ui-components";
+import { AddToMemoryMenu, Badge, Button, Panel, PhotoCard, getDiscoveryContext, getDiscoveryMatchSummary, useI18n } from "@chronopic/ui-components";
 
 interface TimelineBrowseSurfaceProps {
   filter: PhotoFilter;
@@ -40,6 +40,7 @@ export function TimelineBrowseSurface({
   onToggleBatchSelect,
   onToggleFavorite,
 }: TimelineBrowseSurfaceProps) {
+  const { t } = useI18n();
   const [selectionMode, setSelectionMode] = useState(false);
   const hasBatchSelection = selectedPhotoIds.length > 0;
   const isSelecting = selectionMode || hasBatchSelection;
@@ -73,20 +74,20 @@ export function TimelineBrowseSurface({
     [filter.memoryId, memories]
   );
   const discoveryContext = useMemo(
-    () => getDiscoveryContext(filter, { activeMemoryName }),
-    [activeMemoryName, filter]
+    () => getDiscoveryContext(filter, { activeMemoryName, t }),
+    [activeMemoryName, filter, t]
   );
   const selectedPhotoMatch = useMemo(
-    () => getDiscoveryMatchSummary(selectedPhoto, selectedPhotoMemories, filter.query),
-    [filter.query, selectedPhoto, selectedPhotoMemories]
+    () => getDiscoveryMatchSummary(selectedPhoto, selectedPhotoMemories, filter.query, t),
+    [filter.query, selectedPhoto, selectedPhotoMemories, t]
   );
 
   return (
     <Panel className="select-none overflow-hidden">
       <div className="flex flex-wrap items-end justify-between gap-4 border-b border-stone-200/70 px-5 py-4">
         <div className="space-y-1">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-stone-400">Timeline View</p>
-          <p className="text-sm text-stone-500">Browse the current library scope chronologically and keep the same viewer and memory flows.</p>
+          <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-stone-400">{t("timeline.view")}</p>
+          <p className="text-sm text-stone-500">{t("timeline.description")}</p>
         </div>
         <div className="flex flex-wrap items-center justify-end gap-2">
           <div className="flex items-center gap-1 rounded-full border border-stone-200 bg-stone-100/80 p-1">
@@ -101,7 +102,7 @@ export function TimelineBrowseSurface({
                 onClick={() => onTimelineGranularityChange(item.value)}
                 type="button"
               >
-                {item.label}
+                {t(item.label)}
               </button>
             ))}
           </div>
@@ -118,22 +119,21 @@ export function TimelineBrowseSurface({
             size="sm"
             variant={isSelecting ? "accent" : "outline"}
           >
-            {isSelecting ? "Done" : "Select"}
+            {isSelecting ? t("timeline.done") : t("timeline.select")}
           </Button>
-          <Badge tone="neutral">{visibleGroups.length} groups</Badge>
-          <Badge tone="info">{datedPhotoCount} dated photos</Badge>
+          <Badge tone="neutral">{t("timeline.groups", { count: visibleGroups.length })}</Badge>
+          <Badge tone="info">{t("timeline.datedPhotos", { count: datedPhotoCount })}</Badge>
         </div>
       </div>
 
       <div className="p-5">
         <div className="mb-4 flex flex-wrap items-center gap-2 rounded-[24px] border border-stone-200 bg-stone-50/80 px-4 py-3">
-          <Badge tone="info">Timeline Scope</Badge>
+          <Badge tone="info">{t("timeline.scope")}</Badge>
           <p className="text-sm text-stone-700">
-            Showing {datedPhotoCount} dated photo{datedPhotoCount === 1 ? "" : "s"} across {visibleGroups.length}{" "}
-            {timelineGranularity} group{visibleGroups.length === 1 ? "" : "s"} in the current result set.
+            {t("timeline.scopeDescription", { photos: datedPhotoCount, groups: visibleGroups.length, granularity: t(granularityLabelKey(timelineGranularity)) })}
           </p>
           {undatedPhotoCount > 0 ? (
-            <Badge tone="warn">{undatedPhotoCount} undated hidden</Badge>
+            <Badge tone="warn">{t("timeline.undatedHidden", { count: undatedPhotoCount })}</Badge>
           ) : null}
           {discoveryContext?.badges.map((badge) => (
             <Badge key={badge.label} tone={badge.tone}>
@@ -148,25 +148,25 @@ export function TimelineBrowseSurface({
         {!isSelecting && selectedPhoto ? (
           <div className="mb-4 rounded-[24px] border border-sky-200 bg-sky-50/80 px-4 py-3">
             <div className="flex flex-wrap items-center gap-2">
-              <Badge tone="info">Selected Photo</Badge>
+              <Badge tone="info">{t("map.selectedPhoto")}</Badge>
               <p className="text-sm text-sky-900">
-                {selectedPhoto.photo.path.split("/").at(-1) ?? "Selected photo"} is the current timeline focus.
+                {t("timeline.selectedFocus", { name: selectedPhoto.photo.path.split("/").at(-1) ?? t("map.selectedPhoto") })}
               </p>
               <Button
                 onClick={() => onOpenDetail(selectedPhoto.photo.id)}
                 size="sm"
                 variant="outline"
               >
-                Open Detail
+                {t("map.openDetail")}
               </Button>
             </div>
             {selectedPhotoMemories.length > 0 ? (
               <div className="mt-3 flex flex-wrap items-center gap-2">
-                <p className="text-xs font-medium uppercase tracking-[0.18em] text-sky-700">Memories</p>
+                <p className="text-xs font-medium uppercase tracking-[0.18em] text-sky-700">{t("sidebar.memories")}</p>
                 {selectedPhotoMemories.map((memory) => (
                   <Badge key={memory.id} tone={memory.coverPhotoId === selectedPhoto.photo.id ? "info" : "neutral"}>
                     {memory.name}
-                    {memory.coverPhotoId === selectedPhoto.photo.id ? " cover" : ""}
+                    {memory.coverPhotoId === selectedPhoto.photo.id ? ` ${t("common.cover")}` : ""}
                   </Badge>
                 ))}
               </div>
@@ -180,8 +180,8 @@ export function TimelineBrowseSurface({
         {hasBatchSelection ? (
           <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-[24px] border border-amber-200 bg-amber-50 px-4 py-3">
             <div className="flex items-center gap-2">
-              <Badge tone="warn">{selectedPhotoIds.length} selected</Badge>
-              <p className="text-sm font-medium text-amber-950">Batch actions for selected photos in the timeline</p>
+              <Badge tone="warn">{t("timeline.selected", { count: selectedPhotoIds.length })}</Badge>
+              <p className="text-sm font-medium text-amber-950">{t("timeline.batchMessage")}</p>
             </div>
             <div className="flex items-center gap-2">
               <Button
@@ -189,10 +189,10 @@ export function TimelineBrowseSurface({
                 size="sm"
                 variant="outline"
               >
-                Keep Browsing
+                {t("timeline.keepBrowsing")}
               </Button>
               <Button onClick={onClearBatchSelection} size="sm" variant="outline">
-                Clear Selection
+                {t("timeline.clearSelection")}
               </Button>
             </div>
           </div>
@@ -203,7 +203,7 @@ export function TimelineBrowseSurface({
             <div onClick={(event) => event.stopPropagation()}>
               <AddToMemoryMenu
                 buttonVariant="accent"
-                label="Add Selected to Memory"
+                label={t("timeline.addSelectedToMemory")}
                 memories={memories}
                 onAddToMemory={async (memoryId) => {
                   await onAddSelectionToMemory(memoryId, selectedPhotoIds);
@@ -216,9 +216,9 @@ export function TimelineBrowseSurface({
         {visibleGroups.length === 0 ? (
           <div className="grid min-h-[360px] place-items-center rounded-[24px] border border-dashed border-stone-300 bg-stone-50/70 px-6 text-center">
             <div className="max-w-sm space-y-3">
-              <p className="text-lg font-semibold text-stone-900">No dated photos available for the timeline</p>
+              <p className="text-lg font-semibold text-stone-900">{t("timeline.emptyTitle")}</p>
               <p className="text-sm leading-6 text-stone-500">
-                Timeline view only includes photos with a captured time. Scan folders with EXIF time data, or correct a few timestamps in detail view.
+                {t("timeline.emptyDescription")}
               </p>
             </div>
           </div>
@@ -232,7 +232,7 @@ export function TimelineBrowseSurface({
                       {group.label}
                     </h3>
                     <p className="mt-1 text-sm text-stone-500">
-                      {group.records.length} photo{group.records.length === 1 ? "" : "s"} captured in this period
+                      {t("timeline.periodPhotos", { count: group.records.length })}
                     </p>
                   </div>
                   <div className="flex items-center gap-2">
@@ -283,8 +283,14 @@ export function TimelineBrowseSurface({
   );
 }
 
-const timelineGranularities: Array<{ label: string; value: TimelineGranularity }> = [
-  { label: "Year", value: "year" },
-  { label: "Month", value: "month" },
-  { label: "Day", value: "day" },
+function granularityLabelKey(value: TimelineGranularity): "timeline.year" | "timeline.month" | "timeline.day" {
+  if (value === "year") return "timeline.year";
+  if (value === "day") return "timeline.day";
+  return "timeline.month";
+}
+
+const timelineGranularities: Array<{ label: "timeline.year" | "timeline.month" | "timeline.day"; value: TimelineGranularity }> = [
+  { label: "timeline.year", value: "year" },
+  { label: "timeline.month", value: "month" },
+  { label: "timeline.day", value: "day" },
 ];

@@ -16,7 +16,7 @@ export function mediaUrl(assetPath: string | null): string | null {
 
 export function formatTimestamp(timestamp: number | null): string {
   if (!timestamp) {
-    return "Unknown";
+    return "unknown";
   }
 
   return new Intl.DateTimeFormat("zh-CN", {
@@ -28,8 +28,8 @@ export function formatTimestamp(timestamp: number | null): string {
   }).format(new Date(timestamp));
 }
 
-export function mediaLabel(record: PhotoRecord): string {
-  return record.semantic.labels[0] ?? record.photo.path.split("/").at(-1) ?? record.photo.mime;
+export function mediaLabel(record: PhotoRecord, fallback = "unknown"): string {
+  return record.semantic.labels[0] ?? record.photo.path.split("/").at(-1) ?? fallback;
 }
 
 export function mediaIcon(mime: string) {

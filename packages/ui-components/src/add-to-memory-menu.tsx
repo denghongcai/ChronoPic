@@ -12,6 +12,7 @@ import {
   DropdownMenuTrigger,
 } from "./dropdown-menu.js";
 import { IconButton } from "./icon-button.js";
+import { useI18n } from "./i18n-provider.js";
 
 export interface AddToMemoryMenuProps {
   memories: Memory[];
@@ -30,28 +31,31 @@ export function AddToMemoryMenu({
   tone = "light",
   buttonVariant,
 }: AddToMemoryMenuProps) {
+  const { t } = useI18n();
+  const resolvedLabel = label ?? t("actions.addToMemory");
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         {trigger === "icon" ? (
           <IconButton
             icon={<Plus className="h-4 w-4" />}
-            label={label}
+            label={resolvedLabel}
             size="sm"
             tone={tone}
           />
         ) : (
           <Button variant={buttonVariant ?? (tone === "dark" ? "ghost" : "outline")}>
             <BookMarked className="h-4 w-4" />
-            {label}
+            {resolvedLabel}
           </Button>
         )}
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-64">
-        <DropdownMenuLabel>Add photo to memory</DropdownMenuLabel>
+        <DropdownMenuLabel>{t("memories.addPhotoMenuTitle")}</DropdownMenuLabel>
         <DropdownMenuSeparator />
         {memories.length === 0 ? (
-          <DropdownMenuItem disabled>No memories yet</DropdownMenuItem>
+          <DropdownMenuItem disabled>{t("memories.noMemoriesYet")}</DropdownMenuItem>
         ) : (
           memories.map((memory) => (
             <DropdownMenuItem key={memory.id} onClick={() => onAddToMemory(memory.id)}>

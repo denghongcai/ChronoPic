@@ -4,6 +4,7 @@ import type { LibrarySnapshot } from "@chronopic/domain";
 
 import { Badge } from "./badge.js";
 import { Button } from "./button.js";
+import { useI18n } from "./i18n-provider.js";
 import { formatTimestamp } from "./lib/media.js";
 import { Label } from "./label.js";
 import { Panel } from "./panel.js";
@@ -16,34 +17,33 @@ export interface LibrarySidebarProps {
 }
 
 export function LibrarySidebar(props: LibrarySidebarProps) {
+  const { t } = useI18n();
   const stats = [
-    { label: "Total", value: props.snapshot.stats.totalPhotos, icon: HardDrive },
-    { label: "Indexed", value: props.snapshot.stats.indexedPhotos, icon: CheckCheck },
-    { label: "Errors", value: props.snapshot.stats.erroredPhotos, icon: AlertTriangle },
-    { label: "Duplicates", value: props.snapshot.stats.duplicatePhotos, icon: Sparkles }
+    { label: t("common.total"), value: props.snapshot.stats.totalPhotos, icon: HardDrive },
+    { label: t("common.indexed"), value: props.snapshot.stats.indexedPhotos, icon: CheckCheck },
+    { label: t("common.errors"), value: props.snapshot.stats.erroredPhotos, icon: AlertTriangle },
+    { label: t("common.duplicates"), value: props.snapshot.stats.duplicatePhotos, icon: Sparkles }
   ];
 
   return (
     <aside className="grid content-start gap-4 xl:sticky xl:top-6">
       <Panel className="overflow-hidden">
         <div className="border-b border-stone-200/70 bg-gradient-to-br from-stone-950 via-stone-900 to-amber-950 px-5 py-6 text-stone-50">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-amber-200">Library Control</p>
+          <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-amber-200">{t("library.control")}</p>
           <h2 className="mt-3 font-['Space_Grotesk','IBM_Plex_Sans',sans-serif] text-2xl font-semibold tracking-tight">
-            Sources & scans
+            {t("library.sourcesAndScans")}
           </h2>
-          <p className="mt-2 text-sm leading-6 text-stone-300">
-            Register local folders, inspect indexing health, and re-run scans when the library changes.
-          </p>
+          <p className="mt-2 text-sm leading-6 text-stone-300">{t("library.description")}</p>
         </div>
         <div className="grid gap-4 p-5">
           <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-1">
             <Button className="w-full justify-start" onClick={props.onAddLibrary} variant="accent">
               <FolderPlus className="h-4 w-4" />
-              Add Folder
+              {t("actions.addFolder")}
             </Button>
             <Button className="w-full justify-start" disabled={props.isScanning} onClick={props.onScanAll} variant="outline">
               {props.isScanning ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <FolderOpen className="h-4 w-4" />}
-              {props.isScanning ? "Scanning..." : "Scan Library"}
+              {props.isScanning ? t("actions.scanning") : t("actions.scanLibrary")}
             </Button>
           </div>
           <div className="grid grid-cols-2 gap-3">
@@ -63,8 +63,8 @@ export function LibrarySidebar(props: LibrarySidebarProps) {
           </div>
           <div className="space-y-3">
             <div className="flex items-center justify-between">
-              <Label>Registered Sources</Label>
-              <Badge tone="info">{props.snapshot.sources.length} active</Badge>
+              <Label>{t("settings.sources.title")}</Label>
+              <Badge tone="info">{t("settings.sources.active", { count: props.snapshot.sources.length })}</Badge>
             </div>
             <div className="grid max-h-[38vh] gap-3 overflow-auto pr-1">
               {props.snapshot.sources.map((source) => (
@@ -77,14 +77,14 @@ export function LibrarySidebar(props: LibrarySidebarProps) {
                       <p className="break-all text-sm font-medium leading-6 text-stone-900">{source.path}</p>
                     </div>
                   </div>
-                  <p className="text-xs leading-5 text-stone-500">Last scan: {formatTimestamp(source.lastScanAt)}</p>
+                  <p className="text-xs leading-5 text-stone-500">{t("settings.sources.lastScan", { time: formatTimestamp(source.lastScanAt) })}</p>
                 </div>
               ))}
               {props.snapshot.sources.length === 0 ? (
                 <div className="rounded-2xl border border-dashed border-stone-300 bg-stone-50/70 px-5 py-10 text-center">
                   <FolderPlus className="mx-auto mb-3 h-10 w-10 text-stone-400" />
-                  <p className="text-sm font-medium text-stone-700">No folders added yet</p>
-                  <p className="mt-2 text-sm leading-6 text-stone-500">Add a source folder to start indexing and generating thumbnails.</p>
+                  <p className="text-sm font-medium text-stone-700">{t("settings.sources.emptyTitle")}</p>
+                  <p className="mt-2 text-sm leading-6 text-stone-500">{t("settings.sources.emptyDescription")}</p>
                 </div>
               ) : null}
             </div>

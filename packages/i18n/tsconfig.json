@@ -6,19 +6,9 @@
     "moduleResolution": "NodeNext",
     "outDir": "dist",
     "rootDir": "src",
-    "jsx": "react-jsx",
     "tsBuildInfoFile": "dist/.tsbuildinfo"
   },
   "include": [
-    "src/**/*.ts",
-    "src/**/*.tsx"
-  ],
-  "references": [
-    {
-      "path": "../domain"
-    },
-    {
-      "path": "../i18n"
-    }
+    "src/**/*.ts"
   ]
 }

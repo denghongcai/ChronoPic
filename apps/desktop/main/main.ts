@@ -6,7 +6,15 @@ import { pathToFileURL } from "node:url";
 import { app, BrowserWindow, dialog, ipcMain, net, protocol } from "electron";
 import type { OpenDialogOptions } from "electron";
 
-import type { AISettings, DiscoveryQuery, MapSettings, PhotoFilter, PlaceGroupQuery, TimelineGroupQuery } from "@chronopic/domain";
+import type {
+  AISettings,
+  DiscoveryQuery,
+  LocaleSettings,
+  MapSettings,
+  PhotoFilter,
+  PlaceGroupQuery,
+  TimelineGroupQuery,
+} from "@chronopic/domain";
 import { ChronoPicConfigStore } from "@chronopic/infra-config";
 
 import { createRuntime } from "./runtime.js";
@@ -178,6 +186,8 @@ function registerHandlers() {
   });
   ipcMain.handle("system:getMapSettings", async () => getConfigStore().getMapSettings());
   ipcMain.handle("system:saveMapSettings", async (_event, settings: MapSettings) => getConfigStore().saveMapSettings(settings));
+  ipcMain.handle("system:getLocaleSettings", async () => getConfigStore().getLocaleSettings());
+  ipcMain.handle("system:saveLocaleSettings", async (_event, settings: LocaleSettings) => getConfigStore().saveLocaleSettings(settings));
 
   ipcMain.handle("library:add", async (_event, libraryPath: string) => getRuntimeHandle().appService.addLibrarySource(libraryPath));
   ipcMain.handle("library:list", async () => getRuntimeHandle().appService.listLibrarySources());
@@ -199,11 +209,13 @@ function registerHandlers() {
   ipcMain.handle("photos:updateCaption", async (_event, photoId: string, caption: string | null) =>
     getRuntimeHandle().appService.updatePhotoCaption(photoId, caption)
   );
-  ipcMain.handle("photos:enrichSemantic", async (_event, photoId: string) => getRuntimeHandle().appService.enrichPhotoSemantic(photoId));
-  ipcMain.handle("photos:enrichPendingSemantics", async (_event, limit?: number) => {
+  ipcMain.handle("photos:enrichSemantic", async (_event, photoId: string, context?: { outputLocale?: string | null }) =>
+    getRuntimeHandle().appService.enrichPhotoSemantic(photoId, context)
+  );
+  ipcMain.handle("photos:enrichPendingSemantics", async (_event, limit?: number, context?: { outputLocale?: string | null }) => {
     appendDebugLog(`photos:enrichPendingSemantics start limit=${String(limit ?? 12)}`);
     try {
-      const summary = await getRuntimeHandle().appService.enrichPendingSemantics(limit);
+      const summary = await getRuntimeHandle().appService.enrichPendingSemantics(limit, context);
       appendDebugLog(`photos:enrichPendingSemantics success processed=${summary.processed} completed=${summary.completed} failed=${summary.failed} skipped=${summary.skipped}`);
       return JSON.stringify({
         ok: true,
