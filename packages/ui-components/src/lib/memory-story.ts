@@ -2,8 +2,7 @@ import type { PhotoRecord } from "@chronopic/domain";
 
 export interface MemoryStorySection {
   id: string;
-  title: string;
-  subtitle: string;
+  monthKey: string | null;
   photoCount: number;
   coverPhotoId: string | null;
   coverThumbnailPath: string | null;
@@ -19,23 +18,6 @@ function getMonthKey(timestamp: number): string {
   const month = String(date.getMonth() + 1).padStart(2, "0");
 
   return `${year}-${month}`;
-}
-
-function formatMonthTitle(key: string): string {
-  const [year, month] = key.split("-");
-  const date = new Date(Number(year), Number(month) - 1, 1);
-
-  return new Intl.DateTimeFormat("en", { month: "long", year: "numeric" }).format(date);
-}
-
-function formatSectionRange(fromDatetime: number | null, toDatetime: number | null): string {
-  if (!fromDatetime || !toDatetime || fromDatetime === toDatetime) {
-    return fromDatetime ? new Intl.DateTimeFormat("en", { month: "short", day: "numeric" }).format(new Date(fromDatetime)) : "Undated";
-  }
-
-  const formatter = new Intl.DateTimeFormat("en", { month: "short", day: "numeric" });
-
-  return `${formatter.format(new Date(fromDatetime))} - ${formatter.format(new Date(toDatetime))}`;
 }
 
 export function buildMemoryStorySections(records: PhotoRecord[]): MemoryStorySection[] {
@@ -72,8 +54,7 @@ export function buildMemoryStorySections(records: PhotoRecord[]): MemoryStorySec
 
     return {
       id: key === "undated" ? `undated-${index}` : key,
-      title: key === "undated" ? "Undated moments" : formatMonthTitle(key),
-      subtitle: formatSectionRange(fromDatetime, toDatetime),
+      monthKey: key === "undated" ? null : key,
       photoCount: group.length,
       coverPhotoId: cover?.photo.id ?? null,
       coverThumbnailPath: cover?.photo.thumbnailPath ?? null,

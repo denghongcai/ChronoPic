@@ -96,11 +96,11 @@ test("buildMemoryStorySections groups memory photos into chronological chapters"
   ]);
 
   assert.equal(sections.length, 2);
-  assert.equal(sections[0]?.title, "April 2026");
+  assert.equal(sections[0]?.monthKey, "2026-04");
   assert.equal(sections[0]?.photoCount, 2);
   assert.equal(sections[0]?.gpsCount, 1);
   assert.equal(sections[0]?.aiReadyCount, 1);
-  assert.equal(sections[1]?.title, "May 2026");
+  assert.equal(sections[1]?.monthKey, "2026-05");
 });
 
 test("buildDiscoverySuggestions returns actionable pivots from the current browse scope", () => {

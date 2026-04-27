@@ -11,11 +11,41 @@ export interface MemoryStoryBoardProps {
   onOpenSection?: (photoId: string) => void;
 }
 
+function monthDateFromKey(monthKey: string): Date {
+  const [year, month] = monthKey.split("-");
+  return new Date(Number(year), Number(month) - 1, 1);
+}
+
 export function MemoryStoryBoard({ sections, onOpenSection }: MemoryStoryBoardProps) {
-  const { t } = useI18n();
+  const { locale, t } = useI18n();
 
   if (sections.length === 0) {
     return null;
+  }
+
+  function formatSectionTitle(section: MemoryStorySection): string {
+    if (!section.monthKey) {
+      return t("story.undatedMoments");
+    }
+
+    return new Intl.DateTimeFormat(locale, { month: "long", year: "numeric" }).format(monthDateFromKey(section.monthKey));
+  }
+
+  function formatSectionSubtitle(section: MemoryStorySection): string {
+    if (!section.fromDatetime) {
+      return t("story.undated");
+    }
+
+    const formatter = new Intl.DateTimeFormat(locale, { month: "short", day: "numeric" });
+
+    if (!section.toDatetime || section.fromDatetime === section.toDatetime) {
+      return formatter.format(new Date(section.fromDatetime));
+    }
+
+    return t("story.dateRange", {
+      from: formatter.format(new Date(section.fromDatetime)),
+      to: formatter.format(new Date(section.toDatetime)),
+    });
   }
 
   return (
@@ -62,9 +92,9 @@ export function MemoryStoryBoard({ sections, onOpenSection }: MemoryStoryBoardPr
                 </div>
                 <div>
                   <h3 className="font-['Space_Grotesk','IBM_Plex_Sans',sans-serif] text-lg font-semibold tracking-tight text-stone-950">
-                    {section.title}
+                    {formatSectionTitle(section)}
                   </h3>
-                  <p className="mt-1 text-sm text-stone-500">{section.subtitle}</p>
+                  <p className="mt-1 text-sm text-stone-500">{formatSectionSubtitle(section)}</p>
                 </div>
                 <div className="flex flex-wrap gap-2">
                   {section.gpsCount > 0 ? (
@@ -76,7 +106,7 @@ export function MemoryStoryBoard({ sections, onOpenSection }: MemoryStoryBoardPr
                   {section.aiReadyCount > 0 ? (
                     <Badge tone="neutral">
                       <Sparkles className="h-3 w-3" />
-                      {section.aiReadyCount} AI
+                      {t("story.aiReady", { count: section.aiReadyCount })}
                     </Badge>
                   ) : null}
                 </div>

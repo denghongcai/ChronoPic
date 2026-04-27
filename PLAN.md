@@ -899,6 +899,7 @@ Current landed scope:
 - Lightweight Electron E2E coverage is added in `tests/e2e/i18n.spec.ts`; it expects the dev renderer to be available on `http://localhost:5173`, matching the existing E2E smoke-test model.
 - Follow-up coverage audit expanded translations beyond the initial path to include filter toolbar, photo cards, add-to-memory menu, viewer overlays, memory list/recent/detail/story/suggestions, metadata/edit controls, notifications, map, timeline, gallery, photo grid, detail panel, discovery helper text, transient app status/toast messages, and legacy exported fallback components.
 - A stricter second audit explicitly covered browse toolbar controls such as `Select` / `Filter`, `TagInput` accessibility labels, AI settings placeholders, exported `HomeStats` fallback copy, and the remaining memory delete icon label.
+- Memory story chapters now keep raw month/date range data and format titles/subtitles at render time with the active UI locale, so chapter dates no longer stay in English after switching to Chinese.
 - The remaining renderer scan hits are technical constants/placeholders rather than untranslated user-facing UI copy:
   timeline translation keys,
   browse/router state ids,

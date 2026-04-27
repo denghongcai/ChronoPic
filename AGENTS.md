@@ -1890,3 +1890,15 @@ This file is the local execution record for ChronoPic. It complements `PLAN.md` 
   `pnpm typecheck`
   `pnpm test`
   `pnpm build`
+
+### 2026-04-26 Step 100
+
+- Fixed memory story chapter date formatting so it follows the active UI locale.
+- Changed `buildMemoryStorySections` to keep raw `monthKey`, `fromDatetime`, and `toDatetime` data instead of pre-formatting English `title` / `subtitle` strings inside the helper.
+- Moved chapter title and date-range formatting into `MemoryStoryBoard`, using the `I18nProvider` locale at render time.
+- Added localized strings for undated story chapters, date ranges, and AI-ready story badges.
+- Updated the story/discovery unit test to assert locale-neutral `monthKey` data rather than English month text.
+- Re-verified:
+  `pnpm typecheck`
+  `pnpm test`
+  `pnpm build`
