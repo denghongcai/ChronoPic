@@ -5,6 +5,7 @@ import {
   FolderOpen,
   FolderPlus,
   HardDrive,
+  Heart,
   LoaderCircle,
   SlidersHorizontal,
   Sparkles,
@@ -132,6 +133,7 @@ function HomeView({
   photos,
   placeGroups,
   memories,
+  memoryCandidateCount,
   hasIndexedPhotos,
   hasLibrarySources,
   isScanning,
@@ -156,6 +158,7 @@ function HomeView({
   onAddLibrary,
   onScanAll,
   onCreateMemory,
+  onOpenSettings,
   browseMode,
   onBrowseModeChange,
   mapBrowseContent,
@@ -166,6 +169,7 @@ function HomeView({
   photos: PhotoRecord[];
   placeGroups: PlaceGroup[];
   memories: Memory[];
+  memoryCandidateCount: number;
   hasIndexedPhotos: boolean;
   hasLibrarySources: boolean;
   isScanning: boolean;
@@ -190,6 +194,7 @@ function HomeView({
   onAddLibrary: () => void;
   onScanAll: () => void;
   onCreateMemory: () => void;
+  onOpenSettings: () => void;
   browseMode: BrowseMode;
   onBrowseModeChange: (mode: BrowseMode) => void;
   mapBrowseContent?: React.ReactNode;
@@ -200,6 +205,7 @@ function HomeView({
   const { t } = useI18n();
   const [filtersOpen, setFiltersOpen] = React.useState(false);
   const showFirstRunPanel = !hasLibrarySources || !hasIndexedPhotos;
+  const showGuidedNextSteps = hasIndexedPhotos && memories.length === 0;
   return (
     <div className="space-y-6">
       {showFirstRunPanel ? (
@@ -210,13 +216,26 @@ function HomeView({
           onScanAll={onScanAll}
         />
       ) : null}
-      <RecentMemories
-        memories={memories}
-        onCreateMemory={onCreateMemory}
-        onOpenMemory={onOpenMemory}
-        onSeeAll={onSeeAllMemories}
-        selectedMemoryId={selectedMemoryId}
-      />
+      {showGuidedNextSteps ? (
+        <GuidedNextStepsPanel
+          memoryCandidateCount={memoryCandidateCount}
+          onCreateMemory={onCreateMemory}
+          onOpenMemories={onSeeAllMemories}
+          onOpenSettings={onOpenSettings}
+          onStartSelection={() => {
+            onClearBatchSelection();
+            onSelectionModeChange(true);
+          }}
+        />
+      ) : (
+        <RecentMemories
+          memories={memories}
+          onCreateMemory={onCreateMemory}
+          onOpenMemory={onOpenMemory}
+          onSeeAll={onSeeAllMemories}
+          selectedMemoryId={selectedMemoryId}
+        />
+      )}
       <section className="space-y-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <BrowseModeSwitcher mode={browseMode} onModeChange={onBrowseModeChange} />
@@ -307,6 +326,60 @@ function HomeView({
         />
       )}
     </div>
+  );
+}
+
+function GuidedNextStepsPanel({
+  memoryCandidateCount,
+  onCreateMemory,
+  onOpenMemories,
+  onOpenSettings,
+  onStartSelection,
+}: {
+  memoryCandidateCount: number;
+  onCreateMemory: () => void;
+  onOpenMemories: () => void;
+  onOpenSettings: () => void;
+  onStartSelection: () => void;
+}) {
+  const { t } = useI18n();
+
+  return (
+    <section className="rounded-[28px] border border-amber-200 bg-amber-50/80 p-5 shadow-[0_18px_42px_-34px_rgba(180,83,9,0.32)]">
+      <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
+        <div className="max-w-3xl space-y-3">
+          <Badge tone="warn">{t("onboarding.nextBadge")}</Badge>
+          <div className="space-y-2">
+            <h2 className="text-2xl font-semibold tracking-tight text-stone-950">{t("onboarding.nextTitle")}</h2>
+            <p className="text-sm leading-6 text-stone-700">{t("onboarding.nextDescription")}</p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <Badge tone="neutral">{t("onboarding.nextBrowse")}</Badge>
+            <Badge tone="neutral">{t("onboarding.nextFavorite")}</Badge>
+            <Badge tone="neutral">{t("onboarding.nextMemory")}</Badge>
+          </div>
+        </div>
+        <div className="flex flex-wrap gap-2 lg:justify-end">
+          <Button className="rounded-full" onClick={onCreateMemory} variant="accent">
+            <Sparkles className="h-4 w-4" />
+            {t("onboarding.createFirstMemory")}
+          </Button>
+          <Button className="rounded-full" onClick={onStartSelection} variant="outline">
+            <CheckCheck className="h-4 w-4" />
+            {t("onboarding.selectForMemory")}
+          </Button>
+          {memoryCandidateCount > 0 ? (
+            <Button className="rounded-full" onClick={onOpenMemories} variant="outline">
+              <Heart className="h-4 w-4" />
+              {t("onboarding.reviewSuggestions", { count: memoryCandidateCount })}
+            </Button>
+          ) : null}
+          <Button className="rounded-full" onClick={onOpenSettings} variant="ghost">
+            {t("onboarding.optionalSetup")}
+          </Button>
+        </div>
+      </div>
+    </section>
   );
 }
 
@@ -700,6 +773,7 @@ export function PhotoHome({
                   hasLibrarySources={snapshot.sources.length > 0}
                   isScanning={isScanning}
                   memories={recentMemories}
+                  memoryCandidateCount={memoryCandidates.length}
                   onFilterChange={onFilterChange}
                   onOpenDetail={onOpenDetail}
                   onOpenMemory={openMemoryDetail}
@@ -712,6 +786,7 @@ export function PhotoHome({
                   onAddLibrary={onAddLibrary}
                   onClearBatchSelection={onClearBatchSelection}
                   onCreateMemory={() => setCreateMemoryDialogOpen(true)}
+                  onOpenSettings={() => setPage("library-settings")}
                   browseMode={browseMode}
                   mappablePhotoCount={mappablePhotoCount}
                   mapBrowseContent={mapBrowseContent}

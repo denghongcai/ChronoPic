@@ -2029,3 +2029,39 @@ This file is the local execution record for ChronoPic. It complements `PLAN.md` 
   `pnpm typecheck`
 - Result: future agents now have a Markdown director script and `AGENTS.md` requires using it after completed plan slices.
 - Next: commit the documentation correction when requested.
+
+### 2026-05-06 Step 107
+
+- Opened and completed `4.21 Guided Onboarding Completion Phase` in `PLAN.md`.
+- Implemented the post-scan onboarding slice in `packages/ui-components/src/photo-home.tsx`.
+- When photos are indexed but no memories exist, the home surface now replaces the empty Recent Memories card with a compact next-step panel.
+- The panel guides the user toward:
+  creating the first memory,
+  entering photo selection mode,
+  reviewing memory suggestions when candidates exist,
+  and opening optional setup for AI/map/language configuration.
+- Existing users with memories continue to see the normal Recent Memories surface instead of onboarding.
+- Added localized strings for the new guided next-step panel in:
+  `packages/i18n/src/locales/en-US.ts`
+  and `packages/i18n/src/locales/zh-CN.ts`.
+- Followed `docs/agent-verification-script.md` for this user-facing runtime flow.
+- Playwright director scenes run with a temporary Electron data directory:
+  Scene 1 - Launch And First Impression,
+  Scene 2 - First-Run And Library Setup,
+  Scene 3 - Scan And Browse,
+  Scene 6 - Memories,
+  Scene 7 - Restart Persistence.
+- Director-script evidence:
+  screenshots written under `/tmp/chronopic-421-verify-UtYkDs`,
+  fixture directory `/tmp/chronopic-421-fixtures-L2LUOB`,
+  user data directory `/tmp/chronopic-421-userdata-cAtuLu`,
+  3 fixture photos indexed,
+  1 memory created from the onboarding panel,
+  source/photo/memory state verified after Electron restart.
+- Verified:
+  `pnpm test`
+  `pnpm typecheck`
+  `pnpm build`
+  `pnpm run e2e:runtime`
+- Result: 4.21 is landed and verified locally.
+- Next: commit and push the phase.

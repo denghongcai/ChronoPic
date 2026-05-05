@@ -848,7 +848,8 @@ Priority order from this point forward:
 1. `4.18 UX Refine and Lazyweb Research Phase`
 2. `4.19 Runtime QA and Release Readiness Phase`
 3. `4.20 First-Run and Onboarding UX Phase`
-4. Evaluate the future product backlog below only after the current product loop is verified with real Electron/database/runtime coverage.
+4. `4.21 Guided Onboarding Completion Phase`
+5. Evaluate the future product backlog below only after the current product loop is verified with real Electron/database/runtime coverage.
 
 Recently completed product-expansion sequence:
 
@@ -1169,7 +1170,63 @@ Current status:
 - Landed first pass on 2026-05-06.
 - The empty-library and registered-but-unscanned first-run states now have a product-native setup panel instead of a generic "no media matches filters" result.
 - Existing users with indexed photos are not interrupted because the panel only appears when there are no sources or no indexed photos.
-- Deeper guided memory onboarding remains a backlog item after runtime QA because the critical local-first entry path is now covered.
+- Deeper guided memory onboarding is promoted to `4.21 Guided Onboarding Completion Phase`.
+
+### 4.21 Guided Onboarding Completion Phase
+
+- Complete the product-native onboarding path after the first successful scan.
+- Keep the flow non-blocking and embedded in the home surface rather than adding modal tours or marketing-style pages.
+- The goal is to help a new user move from indexed photos to the first meaningful library actions:
+  browsing,
+  selecting,
+  favoriting,
+  creating or reviewing a memory,
+  and optionally configuring AI/map settings.
+
+Implementation breakdown:
+
+1. Post-scan next steps
+- When indexed photos exist but no memories exist yet, replace the empty Recent Memories card with a compact next-step panel.
+- The panel should explain that the library is ready and offer clear next actions.
+- Do not show this panel for established users with memories.
+
+2. First memory path
+- Primary action should open the existing Create Memory dialog.
+- Secondary action should enter photo selection mode so the user can choose photos for a memory.
+- If memory candidates exist, provide a route to the Memories review surface.
+
+3. Optional setup path
+- Provide a low-priority route to Library Settings for optional AI/map/language configuration.
+- Optional setup must not make missing AI or map keys look like a product failure.
+
+4. Verification
+- Use `docs/agent-verification-script.md` because this is a user-facing runtime flow.
+- Required scenes:
+  Scene 1 - Launch And First Impression,
+  Scene 2 - First-Run And Library Setup,
+  Scene 3 - Scan And Browse,
+  Scene 6 - Memories,
+  Scene 7 - Restart Persistence.
+- Also run:
+  `pnpm test`,
+  `pnpm typecheck`,
+  `pnpm build`,
+  and `pnpm run e2e:runtime`.
+
+Acceptance expectations:
+
+- A new user with indexed photos and zero memories sees a clear next-step panel instead of another empty memory card.
+- The user can create a first memory from the home surface.
+- The user can enter selection mode from the onboarding panel.
+- If memory suggestions exist, the user can navigate to review them.
+- Existing users with memories continue to see Recent Memories rather than onboarding.
+
+Current status:
+
+- Landed on 2026-05-06.
+- The home surface now shows a guided next-step panel when photos are indexed and no memories exist.
+- The panel provides actions for creating the first memory, selecting photos, reviewing suggestions when available, and opening optional setup.
+- Existing users with memories continue to see the Recent Memories surface.
 
 ## Future Product Backlog
 
