@@ -2,13 +2,16 @@ import type { IndexerStats, LibrarySource, PhotoRecord } from "@chronopic/domain
 import { createId, ensureErrorMessage, runWithConcurrency } from "@chronopic/shared-utils";
 import type { ChronoPicDatabase } from "@chronopic/infra-db";
 import type { MediaFileService } from "@chronopic/infra-fs";
-import type { ThumbnailService } from "@chronopic/infra-image";
+
+export interface ThumbnailGenerator {
+  generateThumbnail(sourcePath: string, mime: string, preferredKey: string): Promise<string>;
+}
 
 export class IndexerService {
   constructor(
     private readonly db: ChronoPicDatabase,
     private readonly mediaFiles: MediaFileService,
-    private readonly thumbnails: ThumbnailService,
+    private readonly thumbnails: ThumbnailGenerator,
     private readonly aiEnabled = false,
     private readonly concurrency = 4
   ) {}

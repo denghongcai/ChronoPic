@@ -845,12 +845,19 @@ Current landed scope:
 
 Priority order from this point forward:
 
-1. `4.11 AI and Semantic Enrichment Phase`
-2. `4.12 Search and Discovery Phase`
-3. `4.13 Memory Authoring and Storytelling Phase`
-4. `4.14 Advanced Discovery Phase`
-5. `4.15 AI Memory Auto-Grouping Phase`
-6. `4.16 Memory Candidate Queue and Notifications Phase`
+1. `4.18 UX Refine and Lazyweb Research Phase`
+2. `4.19 Runtime QA and Release Readiness Phase`
+3. `4.20 First-Run and Onboarding UX Phase`
+4. Evaluate the future product backlog below only after the current product loop is verified with real Electron/database/runtime coverage.
+
+Recently completed product-expansion sequence:
+
+1. `4.11 AI and Semantic Enrichment Phase` ✅
+2. `4.12 Search and Discovery Phase` ✅
+3. `4.13 Memory Authoring and Storytelling Phase` ✅
+4. `4.14 Advanced Discovery Phase` ✅
+5. `4.15 AI Memory Auto-Grouping Phase` ✅
+6. `4.16 Memory Candidate Queue and Notifications Phase` ✅
 7. `4.17 Internationalization and AI Output Locale Phase` ✅
 
 ### 4.17 Internationalization and AI Output Locale Phase ✅
@@ -906,6 +913,287 @@ Current landed scope:
   status severity ids,
   an AMap technical error code,
   and AI provider/model/API example placeholders.
+
+### 4.18 UX Refine and Lazyweb Research Phase
+
+- Add a dedicated UX refinement phase before runtime QA so the product can be evaluated visually and interactionally after the broad product-expansion sequence has landed.
+- Use Lazyweb as the research source of record for this phase rather than relying only on internal taste or isolated screenshots.
+- The goal is to identify concrete improvements for ChronoPic's current desktop UX:
+  home/library shell,
+  browse modes,
+  memory list/detail,
+  AI suggestions,
+  notifications,
+  settings,
+  first-run states,
+  and dense photo-management actions.
+- This phase should produce research artifacts first, then a prioritized refinement plan, then scoped implementation work.
+- Do not use this phase to add new product capabilities; it is about improving clarity, hierarchy, ergonomics, and visual consistency of existing surfaces.
+
+Implementation breakdown:
+
+1. Capture current product state
+- Run the current desktop app or dev renderer and capture representative screens:
+  empty library,
+  populated library waterfall,
+  map browse,
+  timeline browse,
+  memory list,
+  memory detail,
+  suggested memories,
+  notifications,
+  library/settings,
+  and focused photo viewer.
+- Save current-state screenshots under the Lazyweb research directory so external references can be compared against the actual product.
+- If the app cannot be launched, record the blocker and use the best available built renderer screenshots, but do not skip the current-state section.
+
+2. Lazyweb design research
+- Use `lazyweb-design-research` for a desktop-focused research pass.
+- Search for photo-library, memory/album, asset-management, AI suggestion, notification, and settings patterns across direct and adjacent products.
+- Prioritize references from products with strong collection-management UX, such as:
+  Apple Photos,
+  Google Photos,
+  Lightroom,
+  Notion-style structured authoring,
+  Linear-style calm operational surfaces,
+  and other high-quality desktop/web collection tools.
+- Save research output to:
+  `.lazyweb/design-research/chronopic-ux-refine-YYYY-MM-DD/report.md`,
+  `.lazyweb/design-research/chronopic-ux-refine-YYYY-MM-DD/report.html`,
+  and referenced screenshots under that report's `references/` directory.
+- The report must distinguish between:
+  direct findings that should change ChronoPic,
+  interesting but nonessential inspiration,
+  and patterns that should be rejected because they conflict with ChronoPic's local-first desktop workflow.
+
+3. UX audit and issue inventory
+- Compare Lazyweb findings with ChronoPic's current surfaces.
+- Produce a prioritized issue inventory covering:
+  information hierarchy,
+  action density,
+  duplicated controls,
+  unclear empty states,
+  mode-switching discoverability,
+  memory authoring ergonomics,
+  AI affordance prominence,
+  notification usefulness,
+  and settings/configuration clarity.
+- Classify each issue as:
+  `must fix before runtime QA`,
+  `should fix before onboarding`,
+  or `backlog`.
+- Keep findings grounded in screenshots, file paths, or specific app surfaces rather than generic UX preferences.
+
+4. Scoped refinement implementation
+- Implement only the top `must fix before runtime QA` items in this phase.
+- Likely implementation areas are renderer/UI only:
+  `packages/ui-components/src/*`,
+  `apps/desktop/renderer/src/app/*`,
+  `apps/desktop/renderer/src/styles.css`,
+  and i18n keys if visible copy changes.
+- Preserve existing app/service/IPC/data contracts unless the research uncovers a clear interaction bug that cannot be fixed at the presentation layer.
+- Keep changes small enough that runtime QA can still follow immediately after this phase.
+
+5. Validation and documentation
+- Re-run:
+  `pnpm typecheck`,
+  `pnpm test`,
+  and `pnpm build`.
+- Update `DESIGN.md` if the research changes durable design guidance.
+- Update `AGENTS.md` after the research pass and again after each meaningful implementation slice.
+
+Acceptance expectations:
+
+- Lazyweb research artifacts are saved locally and linked from `AGENTS.md`.
+- A prioritized UX issue inventory exists before implementation starts.
+- Top-priority refinements are implemented without widening business/package boundaries.
+- `pnpm typecheck`, `pnpm test`, and `pnpm build` pass after implementation.
+- Remaining UX ideas are either moved into `4.20 First-Run and Onboarding UX Phase` or left in the Future Product Backlog.
+
+Current status:
+
+- Landed first pass on 2026-05-06.
+- Current-state screenshots, picsum-based fixture imagery, capture notes, and the UX report are saved under:
+  `.lazyweb/design-research/chronopic-ux-refine-2026-05-06/`.
+- Lazyweb MCP tools were not exposed as callable tools in the current Codex runtime, so the phase used the installed Lazyweb skill structure plus fallback web research sources and local current-state screenshots.
+- The prioritized issue inventory identified first-run/empty-library guidance as the top `must fix before runtime QA` item.
+- The top refinement has landed in the UI layer: home now shows a first-run panel with `Add Folder` when no sources exist and `Scan Library` when sources exist but no photos are indexed.
+- Remaining lower-priority findings are tracked in the report backlog.
+
+### 4.19 Runtime QA and Release Readiness Phase
+
+- Add a dedicated quality and release-readiness phase before any new major product feature work.
+- The product surface is now broad enough that typecheck/unit/build validation is not sufficient by itself:
+  AI enrichment,
+  memory candidates,
+  map/timeline browse,
+  Markdown memory authoring,
+  i18n,
+  and incremental scan behavior all depend on real Electron runtime paths.
+- The phase goal is to prove the first usable desktop loop end to end with a real preload bridge, temporary app data, SQLite persistence, fixture media, and packaged/development launch paths.
+- This phase should not add major product scope unless a runtime defect requires a targeted UX correction.
+
+Implementation breakdown:
+
+1. Real Electron integration harness
+- Add an E2E harness that launches the Electron app with:
+  a temporary user-data directory,
+  a controlled fixture library,
+  isolated SQLite/config/cache paths,
+  and deterministic cleanup between tests.
+- Cover preload-backed flows instead of relying only on a browser-rendered Vite page where `window.chronoPic` is unavailable.
+- Keep the existing lightweight Playwright smoke tests, but treat the new Electron integration suite as the acceptance path for runtime behavior.
+
+2. Fixture library and critical workflows
+- Add small deterministic fixture media for integration tests:
+  normal image,
+  duplicate or same-content image if practical,
+  image without GPS,
+  GPS-bearing image if a stable fixture can be created,
+  and an EXIF-light or timestamp-fallback case.
+- Verify the critical first-user loop:
+  add library source,
+  scan library,
+  browse imported photos,
+  open detail/gallery viewer,
+  favorite/unfavorite,
+  create memory,
+  add/remove photos from memory,
+  edit caption/tags/datetime,
+  rollback latest edit,
+  switch locale,
+  and reload the app to verify persisted state.
+
+3. AI, memory-candidate, and configuration smoke coverage
+- Use test doubles or disabled-provider paths for deterministic CI validation.
+- Verify configuration persistence for:
+  AI provider settings,
+  AI output locale,
+  UI locale,
+  and Gaode/AMap settings.
+- Verify queue and candidate surfaces do not crash when provider configuration is absent, disabled, or temporarily unavailable.
+
+4. CI and verification commands
+- Add a repository CI entrypoint once the test split is clear.
+- Required CI baseline should include:
+  `pnpm install`,
+  `pnpm test`,
+  `pnpm typecheck`,
+  and `pnpm build`.
+- Electron E2E may be a separate job or manually triggered job if native display/runtime setup makes it too expensive for the default path.
+- Keep package-boundary validation intact: CI must continue to build packages through declared exports rather than source aliases.
+
+5. README and developer handoff
+- Add a root `README.md` that documents:
+  product purpose,
+  local setup,
+  launch commands,
+  verification commands,
+  AI provider configuration,
+  AMap configuration,
+  data/storage behavior,
+  and known out-of-scope items.
+- Keep `PLAN.md`, `AGENTS.md`, and `DESIGN.md` as deeper implementation and design references rather than forcing new contributors to read them first.
+
+Acceptance expectations:
+
+- `pnpm test`, `pnpm typecheck`, and `pnpm build` remain green.
+- A documented Electron integration command exists and verifies at least the core scan/browse/edit/memory/locale persistence loop.
+- README gives a new developer a stable path to install, launch, configure, and verify the desktop app.
+- Any runtime defects found during this phase are fixed narrowly and recorded in `AGENTS.md`.
+
+Current status:
+
+- Landed first pass on 2026-05-06.
+- Added runtime path isolation through `CHRONOPIC_USER_DATA_DIR` so Electron QA can use a disposable database, settings file, thumbnail cache, and debug log.
+- Fixed a production desktop launch defect by making Vite emit relative renderer asset paths for Electron `loadFile()`.
+- Fixed new empty-database initialization by applying schema before migrations.
+- Added an Electron-native thumbnail generator for the desktop main process so runtime scanning no longer depends on a Node-ABI `sharp` build inside Electron.
+- Added `tests/e2e/runtime.spec.ts` plus `pnpm run e2e:runtime` to verify the core preload/IPC/SQLite loop:
+  add source,
+  scan fixtures,
+  edit caption/tags/datetime,
+  rollback,
+  favorite,
+  create memory,
+  add photo to memory,
+  persist locale,
+  restart,
+  and verify state is still present.
+- Added root `README.md` and `.github/workflows/ci.yml` with test, typecheck, build, and runtime E2E coverage.
+
+### 4.20 First-Run and Onboarding UX Phase
+
+- Add a focused onboarding phase after runtime QA rather than adding another broad feature surface immediately.
+- The current product has enough capabilities that a first-time user needs a guided path through the local-first loop.
+- Keep onboarding product-native and dismissible:
+  it should help the user start using ChronoPic, not behave like a marketing landing page.
+
+Recommended scope:
+
+1. Empty-library first run
+- Show a clear empty state for a new install with no registered library.
+- Primary action should be adding a folder.
+- Secondary actions should point to language/settings and optional AI/map configuration.
+
+2. Guided scan and first results
+- After adding a folder, guide the user to run `Scan Library`.
+- During scan, show progress and explain that ChronoPic is indexing local files and generating thumbnails.
+- After scan, route the user toward browse, favorites, and memory creation without adding blocking tutorial steps.
+
+3. Optional capability setup
+- Surface AI enrichment and map setup as optional enhancements.
+- Make missing API keys understandable without making the product feel broken.
+- Keep manual scan as the explicit sync model; do not reintroduce realtime file watching.
+
+4. First memory workflow
+- Help the user create or accept a first memory once enough photos exist.
+- If AI memory candidates are available, show the review workflow.
+- If no candidates exist, guide toward manual selection and memory creation.
+
+Acceptance expectations:
+
+- First-run state is understandable with zero photos, zero memories, no AI provider, and no map key.
+- A new user can complete:
+  add folder,
+  scan,
+  view photos,
+  create or review a memory,
+  and return to normal browsing.
+- Existing users with libraries should not be interrupted by onboarding.
+
+Current status:
+
+- Landed first pass on 2026-05-06.
+- The empty-library and registered-but-unscanned first-run states now have a product-native setup panel instead of a generic "no media matches filters" result.
+- Existing users with indexed photos are not interrupted because the panel only appears when there are no sources or no indexed photos.
+- Deeper guided memory onboarding remains a backlog item after runtime QA because the critical local-first entry path is now covered.
+
+## Future Product Backlog
+
+These are intentionally recorded as candidate directions rather than committed phases. They should be promoted into explicit numbered phases only after `4.19` runtime QA is complete and the product risk is re-evaluated.
+
+- Person / face grouping:
+  add person-like memory grouping only after the app has a real person-recognition or clustering signal.
+  Do not pretend to identify people from generic captions or tags.
+- OCR and text-in-image search:
+  useful for screenshots, documents, receipts, posters, and travel photos.
+  Should feed the same discovery/search model rather than creating a separate OCR-only search surface.
+- Vector / embedding search:
+  useful once semantic search needs fuzzy matching beyond inspectable text fields.
+  Must preserve local-first semantics and explain provider/storage tradeoffs clearly.
+- Export, backup, and restore:
+  export memories, metadata, edits, and local configuration in a durable format.
+  Important before the app is used on large personal libraries.
+- Packaged desktop release:
+  add signing/notarization/release packaging only after runtime QA stabilizes launch, storage, and native module behavior.
+- Large-library performance pass:
+  measure scan throughput, query latency, thumbnail cache growth, and renderer responsiveness with larger fixture libraries.
+- Accessibility and keyboard audit:
+  verify Radix-backed controls, dialogs, viewer shortcuts, browse mode switching, and onboarding flows with keyboard and screen-reader expectations.
+- Import/export sidecar metadata:
+  consider JSON sidecars before EXIF writeback.
+  EXIF writeback remains out of scope until the app has stronger backup and rollback guarantees.
 
 ### 5. Editing and History ✅
 

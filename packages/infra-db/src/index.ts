@@ -198,8 +198,8 @@ export class ChronoPicDatabase {
   constructor(databasePath: string) {
     this.db = new Database(databasePath);
     this.db.pragma("foreign_keys = ON");
-    this.runMigrations();
     this.db.exec(SCHEMA_SQL);
+    this.runMigrations();
   }
 
   private runMigrations(): void {

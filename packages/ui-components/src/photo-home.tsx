@@ -132,6 +132,9 @@ function HomeView({
   photos,
   placeGroups,
   memories,
+  hasIndexedPhotos,
+  hasLibrarySources,
+  isScanning,
   mappablePhotoCount,
   searchQuery,
   selectedPhotoIds,
@@ -150,6 +153,8 @@ function HomeView({
   onToggleFavorite,
   onAddPhotoToMemory,
   onAddSelectionToMemory,
+  onAddLibrary,
+  onScanAll,
   onCreateMemory,
   browseMode,
   onBrowseModeChange,
@@ -161,6 +166,9 @@ function HomeView({
   photos: PhotoRecord[];
   placeGroups: PlaceGroup[];
   memories: Memory[];
+  hasIndexedPhotos: boolean;
+  hasLibrarySources: boolean;
+  isScanning: boolean;
   mappablePhotoCount: number;
   searchQuery: string;
   selectedPhotoIds: string[];
@@ -179,6 +187,8 @@ function HomeView({
   onToggleFavorite: (photoId: string, favorite: boolean) => void;
   onAddPhotoToMemory: (memoryId: string, photoId: string) => Promise<void> | void;
   onAddSelectionToMemory: (memoryId: string, photoIds: string[]) => Promise<void> | void;
+  onAddLibrary: () => void;
+  onScanAll: () => void;
   onCreateMemory: () => void;
   browseMode: BrowseMode;
   onBrowseModeChange: (mode: BrowseMode) => void;
@@ -189,8 +199,17 @@ function HomeView({
 }) {
   const { t } = useI18n();
   const [filtersOpen, setFiltersOpen] = React.useState(false);
+  const showFirstRunPanel = !hasLibrarySources || !hasIndexedPhotos;
   return (
     <div className="space-y-6">
+      {showFirstRunPanel ? (
+        <FirstRunPanel
+          hasLibrarySources={hasLibrarySources}
+          isScanning={isScanning}
+          onAddLibrary={onAddLibrary}
+          onScanAll={onScanAll}
+        />
+      ) : null}
       <RecentMemories
         memories={memories}
         onCreateMemory={onCreateMemory}
@@ -288,6 +307,65 @@ function HomeView({
         />
       )}
     </div>
+  );
+}
+
+function FirstRunPanel({
+  hasLibrarySources,
+  isScanning,
+  onAddLibrary,
+  onScanAll,
+}: {
+  hasLibrarySources: boolean;
+  isScanning: boolean;
+  onAddLibrary: () => void;
+  onScanAll: () => void;
+}) {
+  const { t } = useI18n();
+  const title = hasLibrarySources ? t("onboarding.scanTitle") : t("onboarding.emptyTitle");
+  const description = hasLibrarySources ? t("onboarding.scanDescription") : t("onboarding.emptyDescription");
+
+  return (
+    <section className="overflow-hidden rounded-[28px] border border-stone-200 bg-white shadow-sm">
+      <div className="grid gap-0 lg:grid-cols-[1.15fr_0.85fr]">
+        <div className="space-y-5 p-6 sm:p-8">
+          <Badge tone="info">{t("onboarding.badge")}</Badge>
+          <div className="max-w-2xl space-y-3">
+            <h1 className="text-2xl font-semibold tracking-tight text-stone-950 sm:text-3xl">{title}</h1>
+            <p className="text-sm leading-6 text-stone-600 sm:text-base">{description}</p>
+          </div>
+          <div className="flex flex-wrap gap-3">
+            <Button className="rounded-full" onClick={hasLibrarySources ? onScanAll : onAddLibrary}>
+              {hasLibrarySources && isScanning ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <FolderPlus className="h-4 w-4" />}
+              {hasLibrarySources
+                ? isScanning
+                  ? t("actions.scanning")
+                  : t("onboarding.scanLibrary")
+                : t("onboarding.addFolder")}
+            </Button>
+            {hasLibrarySources ? (
+              <Button className="rounded-full" onClick={onAddLibrary} variant="outline">
+                <FolderOpen className="h-4 w-4" />
+                {t("onboarding.addAnotherFolder")}
+              </Button>
+            ) : null}
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <Badge tone="neutral">{t("onboarding.metaLocal")}</Badge>
+            <Badge tone="neutral">{t("onboarding.metaManual")}</Badge>
+            <Badge tone="neutral">{t("onboarding.metaOptionalAi")}</Badge>
+          </div>
+        </div>
+        <div className="relative hidden min-h-[260px] border-l border-stone-200 bg-stone-950 text-white lg:block">
+          <div className="absolute inset-0 bg-[linear-gradient(135deg,rgba(28,25,23,0.2),rgba(28,25,23,0.95))]" />
+          <div className="relative grid h-full grid-cols-3 gap-3 p-6">
+            <div className="mt-8 rounded-3xl bg-white/15" />
+            <div className="rounded-3xl bg-white/25" />
+            <div className="mt-14 rounded-3xl bg-white/10" />
+          </div>
+        </div>
+      </div>
+    </section>
   );
 }
 
@@ -618,6 +696,9 @@ export function PhotoHome({
               {page === "home" ? (
                 <HomeView
                   filter={filter}
+                  hasIndexedPhotos={snapshot.stats.totalPhotos > 0}
+                  hasLibrarySources={snapshot.sources.length > 0}
+                  isScanning={isScanning}
                   memories={recentMemories}
                   onFilterChange={onFilterChange}
                   onOpenDetail={onOpenDetail}
@@ -628,6 +709,7 @@ export function PhotoHome({
                   }}
                   onAddPhotoToMemory={onAddPhotoToMemory}
                   onAddSelectionToMemory={onAddSelectionToMemory}
+                  onAddLibrary={onAddLibrary}
                   onClearBatchSelection={onClearBatchSelection}
                   onCreateMemory={() => setCreateMemoryDialogOpen(true)}
                   browseMode={browseMode}
@@ -637,6 +719,7 @@ export function PhotoHome({
                   onSearchChange={onSearchChange}
                   onSelectPhoto={onSelectPhoto}
                   onSelectionModeChange={setSelectionMode}
+                  onScanAll={onScanAll}
                   onToggleBatchSelect={onToggleBatchSelect}
                   onToggleFavorite={onToggleFavorite}
                   placeGroups={placeGroups}

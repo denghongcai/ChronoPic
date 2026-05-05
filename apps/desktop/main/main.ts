@@ -17,6 +17,7 @@ import type {
 } from "@chronopic/domain";
 import { ChronoPicConfigStore } from "@chronopic/infra-config";
 
+import { getChronoPicDebugLogPath, getChronoPicSettingsPath, getChronoPicThumbsDir } from "./paths.js";
 import { createRuntime } from "./runtime.js";
 
 const ASSET_SCHEME = "chronopic-asset";
@@ -41,8 +42,8 @@ let assetProtocolRegistered = false;
 let configStore: ChronoPicConfigStore | null = null;
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url));
-const thumbsDir = path.join(app.getPath("userData"), "chronopic", "thumbs");
-const debugLogPath = path.join(app.getPath("userData"), "chronopic", "debug.log");
+const thumbsDir = getChronoPicThumbsDir();
+const debugLogPath = getChronoPicDebugLogPath();
 
 function appendDebugLog(message: string): void {
   try {
@@ -89,7 +90,7 @@ async function createMainWindow(): Promise<void> {
 }
 
 function getConfigStore(): ChronoPicConfigStore {
-  configStore ??= new ChronoPicConfigStore(path.join(app.getPath("userData"), "chronopic", "settings.json"));
+  configStore ??= new ChronoPicConfigStore(getChronoPicSettingsPath());
   return configStore;
 }
 

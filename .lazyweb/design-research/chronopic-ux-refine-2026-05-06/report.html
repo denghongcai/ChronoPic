@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>ChronoPic UX Refine Research</title>
+    <style>
+      body {
+        background: #f5f5f4;
+        color: #1c1917;
+        font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        line-height: 1.55;
+        margin: 0;
+      }
+      main {
+        margin: 0 auto;
+        max-width: 1040px;
+        padding: 48px 24px;
+      }
+      h1,
+      h2,
+      h3 {
+        line-height: 1.15;
+      }
+      a {
+        color: #0369a1;
+      }
+      .meta,
+      .finding {
+        background: #fff;
+        border: 1px solid #e7e5e4;
+        border-radius: 18px;
+        box-shadow: 0 18px 42px -34px rgba(28, 25, 23, 0.3);
+        padding: 20px;
+      }
+      .grid {
+        display: grid;
+        gap: 16px;
+      }
+      .priority {
+        color: #0f766e;
+        font-weight: 700;
+        text-transform: uppercase;
+      }
+      img {
+        border: 1px solid #e7e5e4;
+        border-radius: 14px;
+        display: block;
+        max-width: 100%;
+      }
+      code {
+        background: #ece9e4;
+        border-radius: 6px;
+        padding: 2px 5px;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>ChronoPic UX Refine Research</h1>
+      <section class="meta">
+        <p><strong>Date:</strong> 2026-05-06</p>
+        <p><strong>Phase:</strong> 4.18 UX Refine and Lazyweb Research</p>
+        <p><strong>Lazyweb status:</strong> Skill installed; MCP tools were not exposed as callable tools, so this pass uses local screenshots and fallback web research.</p>
+      </section>
+
+      <h2>Primary Finding</h2>
+      <section class="finding">
+        <p class="priority">P0</p>
+        <h3>First-run home is a dead end</h3>
+        <p>The empty home screen reads as a filtered result failure. The app needs to make the first meaningful action explicit: add a local folder, then scan it.</p>
+        <img src="references/current-01-empty-home.png" alt="ChronoPic empty home screenshot" />
+      </section>
+
+      <h2>Sources</h2>
+      <ul>
+        <li><a href="https://m1.material.io/patterns/empty-states.html">Material Design empty states</a></li>
+        <li><a href="https://m1.material.io/patterns/navigation.html">Material Design navigation</a></li>
+        <li><a href="https://developer.apple.com/design/human-interface-guidelines/patterns">Apple HIG patterns</a></li>
+        <li><a href="https://www.useronboard.com/onboarding-ux-patterns/empty-states/">UserOnboard empty-state onboarding</a></li>
+      </ul>
+
+      <h2>Issue Inventory</h2>
+      <div class="grid">
+        <section class="finding">
+          <p class="priority">P1</p>
+          <h3>Navigation priority should stay contextual</h3>
+          <p>Global navigation is stable. Add/scan actions are better placed in first-run and settings contexts than as permanent global chrome.</p>
+        </section>
+        <section class="finding">
+          <p class="priority">P1</p>
+          <h3>Empty states need separate meanings</h3>
+          <p>No-source is onboarding, no-indexed-photo is operational, and no filter result is query feedback. The first-run panel now covers the first two.</p>
+        </section>
+        <section class="finding">
+          <p class="priority">P2</p>
+          <h3>Recent Memories can be reduced before content exists</h3>
+          <p>The section is useful after setup, but it should not outrank the first local-library action during first run.</p>
+        </section>
+        <section class="finding">
+          <p class="priority">P2</p>
+          <h3>Settings remains visually heavy</h3>
+          <p>Settings is functional, but later polish should flatten nested card surfaces into quieter full-width panels.</p>
+        </section>
+      </div>
+    </main>
+  </body>
+</html>

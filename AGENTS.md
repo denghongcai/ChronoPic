@@ -1902,3 +1902,102 @@ This file is the local execution record for ChronoPic. It complements `PLAN.md` 
   `pnpm typecheck`
   `pnpm test`
   `pnpm build`
+
+### 2026-05-05 Step 101
+
+- Reviewed the current roadmap after the completed i18n/date-localization work and confirmed that the previously planned product-expansion sequence is largely landed.
+- Updated `PLAN.md` to make the next primary phase explicit:
+  `Runtime QA and Release Readiness Phase` (then numbered `4.18`, later shifted to `4.19` after the UX refine phase was inserted).
+- Scoped the runtime QA phase around real Electron/runtime validation rather than another product expansion:
+  temporary app data,
+  fixture media,
+  real preload bridge,
+  SQLite persistence,
+  scan/browse/edit/memory/locale workflows,
+  CI verification,
+  and a root README/developer handoff.
+- Added `First-Run and Onboarding UX Phase` as the next product-oriented direction after runtime QA (now numbered `4.20`).
+- Added a `Future Product Backlog` section to keep candidate directions discoverable without treating them as approved implementation phases:
+  person/face grouping,
+  OCR,
+  vector search,
+  export/backup/restore,
+  packaged desktop release,
+  large-library performance,
+  accessibility audit,
+  and sidecar metadata import/export.
+- No implementation code changed in this step.
+- Next: begin the newly inserted UX refine phase before runtime QA.
+
+### 2026-05-06 Step 102
+
+- Inserted a new `4.18 UX Refine and Lazyweb Research Phase` before runtime QA in `PLAN.md`.
+- Shifted the previously planned runtime QA phase to `4.19 Runtime QA and Release Readiness Phase`.
+- Shifted the first-run onboarding direction to `4.20 First-Run and Onboarding UX Phase`.
+- Updated the roadmap priority order so UX research/refinement happens before the real Electron/database runtime-readiness pass.
+- Scoped the new UX phase around using Lazyweb as the research source of record:
+  current-state screenshots,
+  desktop-focused Lazyweb design research,
+  a saved research report under `.lazyweb/design-research/chronopic-ux-refine-YYYY-MM-DD/`,
+  a prioritized UX issue inventory,
+  and only the top `must fix before runtime QA` implementation items.
+- Explicitly constrained the phase to existing-product refinement:
+  hierarchy,
+  action density,
+  empty states,
+  browse-mode discoverability,
+  memory authoring ergonomics,
+  AI affordance prominence,
+  notification usefulness,
+  and settings clarity.
+- Kept future feature candidates in the backlog rather than promoting them to implementation phases.
+- No implementation code changed in this step.
+- Next: execute `4.18` by running the Lazyweb research pass and producing the UX issue inventory before touching UI code.
+
+### 2026-05-06 Step 103
+
+- Executed the `4.18 UX Refine and Lazyweb Research Phase` first pass.
+- Used the installed Lazyweb design-research skill structure, but recorded that Lazyweb MCP tools were not exposed as callable tools in the current Codex runtime.
+- Created `.lazyweb/design-research/chronopic-ux-refine-2026-05-06/` with:
+  `capture-notes.md`,
+  picsum-based fixture images,
+  current-state screenshots for empty home, populated waterfall, timeline, map, memories, memory-created state, notifications, settings, and focused viewer,
+  `report.md`,
+  and `report.html`.
+- Grounded the fallback research in external UX references for empty states and navigation, then produced a prioritized issue inventory.
+- Identified the top must-fix item before runtime QA:
+  the empty first-run home read like a filter failure rather than a local-library setup path.
+- Next: implement the first-run/empty-library refinement before completing runtime QA.
+
+### 2026-05-06 Step 104
+
+- Implemented the top `4.18` refinement and the first pass of `4.20 First-Run and Onboarding UX Phase`.
+- Added a home-page first-run panel in `packages/ui-components/src/photo-home.tsx`.
+- The panel now shows:
+  `Add Folder` when there are no registered library sources,
+  and `Scan Library` when sources exist but no photos have been indexed.
+- Added localized onboarding strings in `packages/i18n/src/locales/en-US.ts` and `packages/i18n/src/locales/zh-CN.ts`.
+- Kept the change in the UI/i18n layer and preserved existing IPC, database, package, and indexing contracts.
+- Next: finish runtime QA with a real Electron/preload/SQLite integration path.
+
+### 2026-05-06 Step 105
+
+- Implemented the first pass of `4.19 Runtime QA and Release Readiness Phase`.
+- Added `apps/desktop/main/paths.ts` and wired `CHRONOPIC_USER_DATA_DIR` into the desktop runtime, config store, thumbnail cache, database path, and debug log path so tests can isolate app state.
+- Fixed new empty-database startup by applying the SQLite schema before running migrations in `ChronoPicDatabase`.
+- Added `apps/desktop/main/electron-thumbnail-service.ts` and changed the Electron runtime to generate thumbnails through `nativeImage`, avoiding a `sharp` Node ABI mismatch inside Electron.
+- Updated `scripts/ensure-native-modules.mjs` so the native rebuild guard tracks both `better-sqlite3` and `sharp` correctly.
+- Fixed production renderer loading by setting Vite `base: "./"` so Electron `loadFile()` resolves built JS/CSS assets relative to `index.html`.
+- Added `tests/e2e/runtime.spec.ts` and root scripts:
+  `pnpm run e2e`,
+  `pnpm run e2e:runtime`.
+- The runtime E2E now launches the built Electron app with isolated user data, indexes deterministic fixture images, exercises caption/tag/datetime edit and rollback, favorites, memory creation/add, locale persistence, restarts the app, and verifies persisted state through the preload bridge.
+- Added root `README.md` with setup, launch, verification, data-dir override, AI, map, and project-layout guidance.
+- Added `.github/workflows/ci.yml` with install, test, typecheck, build, Playwright install, and runtime E2E under `xvfb-run`.
+- Verified:
+  `pnpm typecheck`
+  `pnpm build`
+  `pnpm run e2e:runtime`
+  `pnpm test`
+- Result: phases `4.18`, `4.19`, and the first critical `4.20` onboarding slice have landed locally.
+- Next: re-run the final verification set after the documentation updates, then decide whether to continue into deeper guided memory onboarding or leave it in backlog.

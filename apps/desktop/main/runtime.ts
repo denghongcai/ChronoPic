@@ -1,15 +1,14 @@
 import fs from "node:fs/promises";
-import path from "node:path";
-
-import { app } from "electron";
 
 import type { AISettings } from "@chronopic/domain";
 import { ChronoPicAppService } from "@chronopic/application";
 import { ChronoPicDatabase } from "@chronopic/infra-db";
 import { MediaFileService } from "@chronopic/infra-fs";
-import { ThumbnailService } from "@chronopic/infra-image";
 import { DisabledAIClient, VercelCompatibleAIClient } from "@chronopic/services-ai-pipeline";
 import { IndexerService } from "@chronopic/services-indexer";
+
+import { ElectronThumbnailService } from "./electron-thumbnail-service.js";
+import { getChronoPicDataDir, getChronoPicDbPath, getChronoPicThumbsDir } from "./paths.js";
 
 export interface ChronoPicRuntime {
   appService: ChronoPicAppService;
@@ -17,9 +16,9 @@ export interface ChronoPicRuntime {
 }
 
 export async function createRuntime(options?: { aiSettings?: AISettings | null }): Promise<ChronoPicRuntime> {
-  const rootDataDir = path.join(app.getPath("userData"), "chronopic");
-  const thumbsDir = path.join(rootDataDir, "thumbs");
-  const dbPath = path.join(rootDataDir, "chronopic.sqlite");
+  const rootDataDir = getChronoPicDataDir();
+  const thumbsDir = getChronoPicThumbsDir();
+  const dbPath = getChronoPicDbPath();
 
   await fs.mkdir(rootDataDir, { recursive: true });
   await fs.mkdir(thumbsDir, { recursive: true });
@@ -27,7 +26,7 @@ export async function createRuntime(options?: { aiSettings?: AISettings | null }
   const db = new ChronoPicDatabase(dbPath);
   db.recoverInterruptedAIProcessing();
   const mediaFiles = new MediaFileService();
-  const thumbnails = new ThumbnailService(thumbsDir);
+  const thumbnails = new ElectronThumbnailService(thumbsDir);
   const aiClient = createAIClientFromEnv(options?.aiSettings ?? null);
   const indexer = new IndexerService(db, mediaFiles, thumbnails, aiClient.isEnabled());
   const appService = new ChronoPicAppService(db, indexer, aiClient);
