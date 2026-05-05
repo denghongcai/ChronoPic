@@ -52,6 +52,8 @@ pnpm run e2e:runtime
 
 `pnpm run e2e:runtime` launches the built Electron app with an isolated user-data directory, indexes fixture media, writes edits and memory data, restarts the app, and verifies persistence through the preload IPC bridge.
 
+For broader agent-led product validation, follow the director script in `docs/agent-verification-script.md`. It tells code agents how to use Playwright manually after completing plan items, including which product scenes to inspect and what evidence to record in `AGENTS.md`.
+
 ## Optional Integrations
 
 AI enrichment is disabled unless all required settings are present in the app settings or environment:

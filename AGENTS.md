@@ -11,6 +11,7 @@ This file is the local execution record for ChronoPic. It complements `PLAN.md` 
 - Record what changed, why it changed, and what remains next.
 - Do not mark a step complete unless the corresponding code or verification has landed locally.
 - After completing a phase or task (including each checklist item in PLAN.md), always update both `PLAN.md` and this file before considering the work done.
+- After completing any `PLAN.md` phase, phase checklist item, or meaningful implementation slice, follow `docs/agent-verification-script.md` before marking the work complete. Record which scenes were run, which commands passed, and any skipped scenes with reasons.
 
 ## Current Plan Reference
 
@@ -2001,3 +2002,30 @@ This file is the local execution record for ChronoPic. It complements `PLAN.md` 
   `pnpm test`
 - Result: phases `4.18`, `4.19`, and the first critical `4.20` onboarding slice have landed locally.
 - Next: re-run the final verification set after the documentation updates, then decide whether to continue into deeper guided memory onboarding or leave it in backlog.
+
+### 2026-05-06 Step 106
+
+- Reframed the requested agent verification "script" as a director-style Markdown document rather than an executable `.mjs` script.
+- Added `docs/agent-verification-script.md`.
+- The document tells future code agents when to run the verification script:
+  after completing any `PLAN.md` phase, phase checklist item, or meaningful implementation slice,
+  and before marking the work complete in `PLAN.md` / `AGENTS.md`.
+- The director script defines Playwright-guided verification scenes for:
+  launch and first impression,
+  first-run/library setup,
+  scan and browse,
+  focused viewing,
+  editing/favorites/rollback,
+  memories,
+  restart persistence,
+  settings/locale/AI/map,
+  and notifications/AI queue.
+- Updated the `AGENTS.md` Working Rules to require future agents to follow `docs/agent-verification-script.md` and record scenes, commands, evidence, and skipped-scene reasons.
+- Updated `README.md` and `PLAN.md` to point to the Markdown director script as the supplemental project-verification guidance.
+- Removed the previously added executable agent verifier direction from the repo plan/docs in favor of the Markdown agent script.
+- This correction is docs/process-only, so the Playwright runtime scenes in `docs/agent-verification-script.md` were not run; there was no runtime/UI behavior change to inspect.
+- Verified:
+  `pnpm test`
+  `pnpm typecheck`
+- Result: future agents now have a Markdown director script and `AGENTS.md` requires using it after completed plan slices.
+- Next: commit the documentation correction when requested.

@@ -1120,6 +1120,8 @@ Current status:
   persist locale,
   restart,
   and verify state is still present.
+- Added `docs/agent-verification-script.md` as an agent-oriented Playwright director script for broader manual/agent confidence checks beyond the rigid E2E suite.
+- The director script tells future agents to use Playwright after completed plan slices, choose scenes based on the affected flow, verify first-run onboarding, scan/browse, viewer, editing/favorites/rollback, memories, settings, notifications, and restart persistence as applicable, and record evidence in `AGENTS.md`.
 - Added root `README.md` and `.github/workflows/ci.yml` with test, typecheck, build, and runtime E2E coverage.
 
 ### 4.20 First-Run and Onboarding UX Phase
