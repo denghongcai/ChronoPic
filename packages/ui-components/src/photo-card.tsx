@@ -44,9 +44,12 @@ export function PhotoCard({
   const { t } = useI18n();
   const MediaIcon = mediaIcon(record.photo.mime);
   const resolvedSecondaryActionLabel = secondaryActionLabel ?? t("actions.removeFromMemory");
+  const accessibleName = mediaLabel(record, t("metadata.unknown"));
 
   return (
     <div
+      aria-label={accessibleName}
+      aria-pressed={batchSelected || selected}
       className={cn(
         "group relative h-auto select-none overflow-hidden rounded-[28px] border bg-white p-0 text-left shadow-[0_18px_42px_-28px_rgba(15,23,42,0.24)] transition duration-200 hover:-translate-y-0.5 hover:shadow-[0_24px_52px_-30px_rgba(15,23,42,0.28)]",
         batchSelected
@@ -61,6 +64,12 @@ export function PhotoCard({
         if (event.key === "Enter") {
           event.preventDefault();
           onOpenDetail();
+          return;
+        }
+
+        if (event.key === " ") {
+          event.preventDefault();
+          onSelect();
         }
       }}
       role="button"
@@ -82,6 +91,8 @@ export function PhotoCard({
                 event.stopPropagation();
                 onToggleBatchSelect(record.photo.id);
               }}
+              aria-label={batchSelected ? t("actions.selectedForBatch") : t("actions.selectForBatch")}
+              aria-pressed={batchSelected}
               title={batchSelected ? t("actions.selectedForBatch") : t("actions.selectForBatch")}
               type="button"
             >

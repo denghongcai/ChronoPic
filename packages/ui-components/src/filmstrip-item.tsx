@@ -12,8 +12,12 @@ export interface FilmstripItemProps {
 }
 
 export function FilmstripItem({ record, selected, onSelect, tone = "light" }: FilmstripItemProps) {
+  const fileName = record.photo.path.split("/").at(-1) ?? record.photo.path;
+
   return (
     <Button
+      aria-label={fileName}
+      aria-pressed={selected}
       className={cn(
         "group relative h-20 w-20 shrink-0 overflow-hidden rounded-2xl p-0",
         "shadow-none",

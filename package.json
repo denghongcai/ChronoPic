@@ -13,6 +13,7 @@
     "desktop:dev": "pnpm --filter @chronopic/desktop dev",
     "desktop:start": "pnpm build && pnpm --filter @chronopic/desktop start",
     "e2e": "pnpm exec playwright test -c tests/e2e/playwright.config.ts",
+    "e2e:accessibility": "pnpm exec playwright test -c tests/e2e/playwright.config.ts accessibility.spec.ts",
     "e2e:runtime": "pnpm exec playwright test -c tests/e2e/playwright.config.ts runtime.spec.ts",
     "lint": "pnpm run typecheck",
     "test": "pnpm run clean && pnpm run build:packages && node --experimental-strip-types --test tests/*.test.ts",

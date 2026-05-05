@@ -849,7 +849,8 @@ Priority order from this point forward:
 2. `4.19 Runtime QA and Release Readiness Phase`
 3. `4.20 First-Run and Onboarding UX Phase`
 4. `4.21 Guided Onboarding Completion Phase`
-5. Evaluate the future product backlog below only after the current product loop is verified with real Electron/database/runtime coverage.
+5. `4.22 Accessibility and Keyboard Audit Phase`
+6. Evaluate the future product backlog below only after the current product loop is verified with real Electron/database/runtime coverage.
 
 Recently completed product-expansion sequence:
 
@@ -1228,6 +1229,69 @@ Current status:
 - The panel provides actions for creating the first memory, selecting photos, reviewing suggestions when available, and opening optional setup.
 - Existing users with memories continue to see the Recent Memories surface.
 
+### 4.22 Accessibility and Keyboard Audit Phase
+
+- Audit and harden the keyboard/focus paths that became important after the onboarding, memory, viewer, and Radix dialog/select work.
+- Keep the phase focused on accessibility and keyboard behavior rather than broad visual redesign or new product capability.
+
+Implementation breakdown:
+
+1. Keyboard activation
+- Photo cards must support keyboard selection and keyboard detail opening.
+- Enter should open focused detail view.
+- Space should activate the card's lightweight selection path.
+
+2. Focus management
+- Create Memory dialog should focus the memory-name input when opened.
+- Closing the dialog with Escape should restore focus to the triggering control.
+- Viewer dialog should close with Escape and leave the app in a usable focused state.
+
+3. Accessible names and states
+- Icon-only or compact controls must expose explicit accessible names.
+- Select-for-batch controls must expose both an accessible name and pressed state.
+- Thumbnail filmstrip items should expose useful names and selected state.
+
+4. Runtime coverage
+- Add a Playwright runtime accessibility spec for the core keyboard/focus path:
+  first-run setup,
+  post-scan onboarding,
+  create-memory dialog focus return,
+  photo-card Space/Enter behavior,
+  viewer Escape close,
+  and batch-select accessible names.
+- Add a root script for the accessibility spec and include it in CI.
+
+5. Verification
+- Use `docs/agent-verification-script.md` because this is a user-facing runtime flow.
+- Required scenes:
+  Scene 1 - Launch And First Impression,
+  Scene 2 - First-Run And Library Setup,
+  Scene 3 - Scan And Browse,
+  Scene 4 - Focused Viewing,
+  Scene 6 - Memories,
+  Scene 7 - Restart Persistence.
+- Also run:
+  `pnpm test`,
+  `pnpm typecheck`,
+  `pnpm build`,
+  `pnpm run e2e:runtime`,
+  and `pnpm run e2e:accessibility`.
+
+Acceptance expectations:
+
+- Create Memory dialog keyboard focus is predictable and returns to the trigger after Escape.
+- Photo cards can be selected and opened from the keyboard.
+- Viewer can be closed with Escape after keyboard opening.
+- Batch selection controls are discoverable by role/name and expose selected state.
+- Accessibility runtime coverage is available locally and in CI.
+
+Current status:
+
+- Landed on 2026-05-06.
+- Added keyboard and accessible-state improvements for photo cards, batch selection, and filmstrip items.
+- Added focus return for the controlled Create Memory dialog.
+- Added `tests/e2e/accessibility.spec.ts`, `pnpm run e2e:accessibility`, CI coverage, and README documentation.
+
 ## Future Product Backlog
 
 These are intentionally recorded as candidate directions rather than committed phases. They should be promoted into explicit numbered phases only after `4.19` runtime QA is complete and the product risk is re-evaluated.
@@ -1248,8 +1312,6 @@ These are intentionally recorded as candidate directions rather than committed p
   add signing/notarization/release packaging only after runtime QA stabilizes launch, storage, and native module behavior.
 - Large-library performance pass:
   measure scan throughput, query latency, thumbnail cache growth, and renderer responsiveness with larger fixture libraries.
-- Accessibility and keyboard audit:
-  verify Radix-backed controls, dialogs, viewer shortcuts, browse mode switching, and onboarding flows with keyboard and screen-reader expectations.
 - Import/export sidecar metadata:
   consider JSON sidecars before EXIF writeback.
   EXIF writeback remains out of scope until the app has stronger backup and rollback guarantees.

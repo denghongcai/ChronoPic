@@ -2065,3 +2065,42 @@ This file is the local execution record for ChronoPic. It complements `PLAN.md` 
   `pnpm run e2e:runtime`
 - Result: 4.21 is landed and verified locally.
 - Next: commit and push the phase.
+
+### 2026-05-06 Step 108
+
+- Opened and completed `4.22 Accessibility and Keyboard Audit Phase` in `PLAN.md`.
+- Used a TDD pass for the new accessibility coverage:
+  the first Playwright accessibility spec failed because closing the Create Memory dialog with `Escape` did not restore focus to the trigger,
+  then the implementation restored focus and the spec passed.
+- Added focused accessibility and keyboard fixes in `@chronopic/ui-components`:
+  Create Memory dialog focus restoration,
+  photo-card keyboard activation with `Space` and `Enter`,
+  selected-state `aria-pressed` metadata,
+  accessible names for photo cards,
+  and clearer filmstrip selected-state semantics.
+- Added `tests/e2e/accessibility.spec.ts` and the root verification script:
+  `pnpm run e2e:accessibility`.
+- Added the accessibility E2E gate to `.github/workflows/ci.yml` and documented it in `README.md`.
+- Followed `docs/agent-verification-script.md` for this user-facing runtime flow.
+- Playwright director scenes run with a temporary Electron data directory:
+  Scene 1 - Launch And First Impression,
+  Scene 2 - First-Run And Library Setup,
+  Scene 3 - Scan And Browse,
+  Scene 4 - Focused Viewing,
+  Scene 6 - Memories,
+  Scene 7 - Restart Persistence.
+- Director-script evidence:
+  screenshots written under `/tmp/chronopic-422-verify-ZBDIw5`,
+  fixture directory `/tmp/chronopic-422-fixtures-8cn5II`,
+  user data directory `/tmp/chronopic-422-userdata-Cy80pf`,
+  2 fixture photos indexed,
+  1 memory created,
+  focus restoration and restart persistence verified.
+- Verified:
+  `pnpm test`
+  `pnpm typecheck`
+  `pnpm build`
+  `pnpm run e2e:runtime`
+  `pnpm run e2e:accessibility`
+- Result: 4.22 is landed and verified locally.
+- Next: decide whether to commit/push this phase or continue into the next roadmap slice.

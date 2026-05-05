@@ -42,3 +42,6 @@ jobs:
 
       - name: Runtime E2E
         run: xvfb-run -a pnpm run e2e:runtime
+
+      - name: Accessibility E2E
+        run: xvfb-run -a pnpm run e2e:accessibility

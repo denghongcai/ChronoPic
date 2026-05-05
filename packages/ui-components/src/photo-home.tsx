@@ -539,6 +539,7 @@ export function PhotoHome({
 
   const [page, setPage] = React.useState<PageView>("home");
   const [createMemoryDialogOpen, setCreateMemoryDialogOpen] = React.useState(false);
+  const createMemoryReturnFocusRef = React.useRef<HTMLElement | null>(null);
   const [browseMode, setBrowseMode] = React.useState<BrowseMode>("waterfall");
   const [selectionMode, setSelectionMode] = React.useState(false);
   const safeAiQueueStats = aiQueueStats ?? EMPTY_QUEUE_STATS;
@@ -585,6 +586,23 @@ export function PhotoHome({
     setPage("memories");
   }
 
+  function openCreateMemoryDialog() {
+    const activeElement = typeof document !== "undefined" ? document.activeElement : null;
+    createMemoryReturnFocusRef.current = activeElement instanceof HTMLElement ? activeElement : null;
+    setCreateMemoryDialogOpen(true);
+  }
+
+  function handleCreateMemoryDialogOpenChange(open: boolean) {
+    setCreateMemoryDialogOpen(open);
+
+    if (!open) {
+      window.requestAnimationFrame(() => {
+        createMemoryReturnFocusRef.current?.focus();
+        createMemoryReturnFocusRef.current = null;
+      });
+    }
+  }
+
   async function handleSaveMemoryDescription(memoryId: string, description: string) {
     await onUpdateMemory(memoryId, { description });
   }
@@ -620,7 +638,7 @@ export function PhotoHome({
               safeAiQueueStats.failed +
               memoryCandidates.length
             }
-            onCreateMemory={() => setCreateMemoryDialogOpen(true)}
+            onCreateMemory={openCreateMemoryDialog}
             onSelectItem={(id) => {
               if (id === "settings") {
                 onClearBatchSelection();
@@ -724,7 +742,7 @@ export function PhotoHome({
                   />
                   <MemoryListSection
                     memories={recentMemories}
-                    onCreateMemory={() => setCreateMemoryDialogOpen(true)}
+                    onCreateMemory={openCreateMemoryDialog}
                     onOpenMemory={openMemoryDetail}
                     selectedMemoryId={selectedMemory?.id ?? null}
                   />
@@ -760,7 +778,7 @@ export function PhotoHome({
               {page === "memory-detail" && !selectedMemory ? (
                 <MemoryListSection
                   memories={recentMemories}
-                  onCreateMemory={() => setCreateMemoryDialogOpen(true)}
+                  onCreateMemory={openCreateMemoryDialog}
                   onOpenMemory={openMemoryDetail}
                   selectedMemoryId={null}
                 />
@@ -785,7 +803,7 @@ export function PhotoHome({
                   onAddSelectionToMemory={onAddSelectionToMemory}
                   onAddLibrary={onAddLibrary}
                   onClearBatchSelection={onClearBatchSelection}
-                  onCreateMemory={() => setCreateMemoryDialogOpen(true)}
+                  onCreateMemory={openCreateMemoryDialog}
                   onOpenSettings={() => setPage("library-settings")}
                   browseMode={browseMode}
                   mappablePhotoCount={mappablePhotoCount}
@@ -844,7 +862,7 @@ export function PhotoHome({
 
         <CreateMemoryDialog
           onConfirm={handleCreateMemory}
-          onOpenChange={setCreateMemoryDialogOpen}
+          onOpenChange={handleCreateMemoryDialogOpenChange}
           open={createMemoryDialogOpen}
         />
       </div>

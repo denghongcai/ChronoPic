@@ -48,9 +48,12 @@ pnpm test
 pnpm typecheck
 pnpm build
 pnpm run e2e:runtime
+pnpm run e2e:accessibility
 ```
 
 `pnpm run e2e:runtime` launches the built Electron app with an isolated user-data directory, indexes fixture media, writes edits and memory data, restarts the app, and verifies persistence through the preload IPC bridge.
+
+`pnpm run e2e:accessibility` launches the built Electron app and verifies the core keyboard/focus loop: first-run setup, post-scan onboarding, create-memory focus return, photo-card keyboard activation, viewer Escape close, and batch-select accessible names.
 
 For broader agent-led product validation, follow the director script in `docs/agent-verification-script.md`. It tells code agents how to use Playwright manually after completing plan items, including which product scenes to inspect and what evidence to record in `AGENTS.md`.
 
