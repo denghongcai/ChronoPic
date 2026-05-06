@@ -124,6 +124,7 @@ async function run(command, args, options = {}) {
         ...process.env,
         ...options.env,
       },
+      shell: process.platform === "win32",
       stdio: "inherit",
     });
 
