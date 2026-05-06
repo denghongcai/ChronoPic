@@ -2187,3 +2187,83 @@ This file is the local execution record for ChronoPic. It complements `PLAN.md` 
 - Verified:
   `git diff --check`
 - Next: choose a different next phase candidate, likely packaged desktop release readiness or another backlog item.
+
+### 2026-05-06 Step 111
+
+- Promoted `4.24 Packaged Desktop Release Readiness Phase` into `PLAN.md`.
+- Defined the phase around proving the app can be packaged and launched from packaged output rather than only from `apps/desktop/dist/main/main.js`.
+- Scoped the first pass to local/Linux packaging readiness and explicit platform limitations, leaving signing, notarization, auto-update, and macOS/Windows hardening as later follow-up unless verified locally.
+- Added acceptance expectations for:
+  packaging configuration,
+  local packaging scripts,
+  packaged runtime smoke testing,
+  release artifact verification,
+  README/CI handoff,
+  and director-script runtime scenes.
+- Removed the old packaged-release backlog bullet because it is now an explicit planned phase.
+- This is a planning-only update; no runtime code changed.
+- Verified:
+  `git diff --check`
+- Next: execute `4.24` when implementation is requested.
+
+### 2026-05-06 Step 112
+
+- Implemented `4.24 Packaged Desktop Release Readiness Phase`.
+- Used a small TDD guard for release wiring:
+  `tests/packaging.test.ts` first failed because package scripts and implementation files did not exist,
+  then passed after the scripts and packaged E2E were added.
+- Added `scripts/package-linux.mjs` as the local Linux packaging path:
+  it stages the desktop production build,
+  copies built workspace package `dist` outputs with sanitized package metadata,
+  installs production dependencies in a non-workspace staging app,
+  rebuilds `better-sqlite3` and `sharp` against the Electron runtime,
+  and embeds the staged app into Electron's Linux distribution under `dist/release/chronopic-linux-x64`.
+- Added `scripts/verify-package.mjs` to validate the unpacked artifact:
+  executable presence and mode,
+  packaged main/preload/renderer assets,
+  explicit ChronoPic app metadata,
+  `better-sqlite3` and `sharp` native modules,
+  and absence of repo-local `tests`, `test-results`, `data`, and `thumbs` directories inside `resources/app`.
+- Added root packaging scripts:
+  `package:linux`,
+  `package:verify`,
+  `package:smoke`,
+  and `e2e:packaged`.
+- Added `tests/e2e/packaged.spec.ts` so packaged smoke verification launches `dist/release/chronopic-linux-x64/chronopic` directly instead of `apps/desktop/dist/main/main.js`.
+- Updated `README.md` with local Linux packaging commands, packaged smoke verification, Xvfb guidance, and the current platform/release limitations:
+  no signing,
+  no notarization,
+  no auto-update,
+  and no verified macOS/Windows artifacts yet.
+- Updated `.github/workflows/ci.yml` so CI packages the Linux artifact, verifies the artifact layout, and runs packaged E2E under Xvfb.
+- Followed `docs/agent-verification-script.md` for this launch/distribution flow using the packaged executable.
+- Playwright director scenes run with temporary packaged-app data:
+  Scene 1 - Launch And First Impression,
+  Scene 2 - First-Run And Library Setup,
+  Scene 3 - Scan And Browse,
+  Scene 7 - Restart Persistence,
+  Scene 8 - Settings, Locale, AI, And Map.
+- Director-script evidence:
+  screenshots and `evidence.json` written under `/tmp/chronopic-424-verify-owcuzM`,
+  fixture directory `/tmp/chronopic-424-fixtures-5PyRBJ`,
+  user data directory `/tmp/chronopic-424-userdata-Bq8wqx`,
+  backup file `/tmp/chronopic-424-verify-owcuzM/chronopic-424-backup.json`,
+  packaged executable `/home/dhc/workspace/ChronoPic/dist/release/chronopic-linux-x64/chronopic`,
+  first-run `Add Folder` and preload bridge verified,
+  2 fixture photos indexed,
+  2 thumbnails generated,
+  1 memory created,
+  backup preview exercised,
+  and restart persistence verified for source count, photo count, memory membership, caption, favorite state, locale, AI settings, and map settings.
+- Verified:
+  `node --experimental-strip-types --test tests/packaging.test.ts`
+  `pnpm test`
+  `pnpm typecheck`
+  `pnpm build`
+  `pnpm run e2e:runtime`
+  `pnpm run e2e:accessibility`
+  `pnpm run e2e:backup`
+  `pnpm run package:linux`
+  `pnpm run package:smoke`
+- Result: 4.24 is landed and verified locally for local/Linux unpacked release readiness.
+- Next: decide whether to commit/push this phase or promote the next product phase.

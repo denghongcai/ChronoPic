@@ -60,6 +60,34 @@ pnpm run e2e:backup
 
 For broader agent-led product validation, follow the director script in `docs/agent-verification-script.md`. It tells code agents how to use Playwright manually after completing plan items, including which product scenes to inspect and what evidence to record in `AGENTS.md`.
 
+## Local Packaging
+
+Build an unpacked Linux desktop artifact:
+
+```sh
+pnpm run package:linux
+```
+
+The local artifact is emitted at `dist/release/chronopic-linux-x64/chronopic`. Verify the artifact layout and native modules:
+
+```sh
+pnpm run package:verify
+```
+
+Run the packaged smoke test, which launches the packaged executable rather than `apps/desktop/dist/main/main.js`:
+
+```sh
+pnpm run package:smoke
+```
+
+In headless Linux environments, run the smoke command under Xvfb:
+
+```sh
+xvfb-run -a pnpm run package:smoke
+```
+
+Current packaging scope is local Linux unpacked output only. Signing, notarization, auto-update, installers, and macOS/Windows artifacts are follow-up release work.
+
 ## Optional Integrations
 
 AI enrichment is disabled unless all required settings are present in the app settings or environment:

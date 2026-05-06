@@ -851,7 +851,8 @@ Priority order from this point forward:
 4. `4.21 Guided Onboarding Completion Phase`
 5. `4.22 Accessibility and Keyboard Audit Phase`
 6. `4.23 Export, Backup, and Restore Phase`
-7. Evaluate the remaining future product backlog below only after backup/restore is verified.
+7. `4.24 Packaged Desktop Release Readiness Phase`
+8. Evaluate the remaining future product backlog below only after packaged-launch readiness is verified.
 
 Recently completed product-expansion sequence:
 
@@ -1416,6 +1417,123 @@ Current status:
 - Added `tests/e2e/backup.spec.ts`, `pnpm run e2e:backup`, CI coverage, and README documentation.
 - Hardened local native-module verification scripts so Node unit tests and Electron E2E can deliberately rebuild `better-sqlite3` for the correct ABI before running.
 
+### 4.24 Packaged Desktop Release Readiness Phase
+
+- Add a dedicated release-readiness phase before new discovery or AI capabilities.
+- The goal is not a public signed release yet; it is to prove ChronoPic can be packaged locally and launched from the packaged output rather than only from `apps/desktop/dist/main/main.js`.
+- Start with the current Linux development environment and record macOS/Windows as follow-up packaging targets unless the local toolchain already supports them cleanly.
+- Keep this phase focused on packaging, launch, and artifact verification rather than broad product behavior changes.
+
+Implementation breakdown:
+
+1. Packaging configuration
+- Add the minimal Electron packaging toolchain needed for a local desktop artifact.
+- Prefer a directory/unpacked artifact first so the app can be smoked without installer complexity.
+- Keep package metadata explicit:
+  app id,
+  product name,
+  files included,
+  native module handling,
+  renderer assets,
+  preload output,
+  and main-process entry.
+- Ensure packaged output does not include dev-only test artifacts or local data directories.
+
+2. Local packaging commands
+- Add root scripts for:
+  package build,
+  local release artifact generation,
+  and packaged smoke verification.
+- Commands should be easy to run after the existing verification set and should not require manual path composition.
+- Preserve the existing runtime scripts:
+  `desktop:dev`,
+  `desktop:start`,
+  and E2E commands should continue to work.
+
+3. Packaged runtime smoke test
+- Add a smoke path that launches the packaged app with a temporary `CHRONOPIC_USER_DATA_DIR`.
+- Verify:
+  production renderer loads,
+  preload bridge is available,
+  SQLite opens,
+  thumbnail generation works,
+  backup/restore bridge remains available,
+  and the app can close cleanly.
+- Reuse the current fixture-media and Playwright Electron testing pattern where practical, but make sure it launches the packaged binary/artifact rather than the built main JS file.
+
+4. Release artifact verification
+- Add an artifact verification script that checks the local packaged output contains the expected main/preload/renderer assets and required native modules.
+- For Linux, smoke the extracted/packaged executable directly.
+- Record platform limitations explicitly:
+  no signing/notarization yet,
+  no auto-update yet,
+  and macOS/Windows packaging can remain follow-up work unless verified locally.
+
+5. Documentation and CI
+- Update `README.md` with local packaging commands and packaged smoke verification.
+- Add CI coverage where practical:
+  at minimum package/verify the Linux artifact in CI,
+  or document why full packaging is manual if CI constraints block it.
+- Keep CI evidence aligned with what the README tells contributors to run.
+
+6. Verification
+- Use `docs/agent-verification-script.md` because this is a launch/distribution flow.
+- Required scenes:
+  Scene 1 - Launch And First Impression,
+  Scene 2 - First-Run And Library Setup,
+  Scene 3 - Scan And Browse,
+  Scene 7 - Restart Persistence,
+  Scene 8 - Settings, Locale, AI, And Map.
+- Also run:
+  `pnpm test`,
+  `pnpm typecheck`,
+  `pnpm build`,
+  `pnpm run e2e:runtime`,
+  `pnpm run e2e:accessibility`,
+  `pnpm run e2e:backup`,
+  and the new packaged smoke command.
+
+Acceptance expectations:
+
+- A local packaged desktop artifact can be produced from the repo.
+- The packaged app can launch with isolated user data and exercise the preload/SQLite/thumbnail path.
+- A verifier or smoke command checks packaged output rather than only source-build output.
+- README and CI/local scripts document the supported packaging path and current platform limitations.
+- No unrelated performance, OCR, vector search, person grouping, or sidecar writeback work is bundled into this phase.
+
+Current status:
+
+- Completed locally on 2026-05-06.
+- Added a custom local Linux unpacked packaging path that stages only the desktop production build, package `dist` outputs, production dependencies, and Electron-rebuilt native modules before embedding them into Electron's Linux runtime.
+- Added root scripts:
+  `package:linux`,
+  `package:verify`,
+  `package:smoke`,
+  and `e2e:packaged`.
+- Added packaged artifact verification for:
+  executable presence,
+  main/preload/renderer assets,
+  explicit ChronoPic package metadata,
+  `better-sqlite3` and `sharp` native modules,
+  executable mode,
+  and exclusion of repo-local test/data artifacts.
+- Added `tests/e2e/packaged.spec.ts` so the smoke path launches `dist/release/chronopic-linux-x64/chronopic` directly rather than `apps/desktop/dist/main/main.js`.
+- Updated README and CI with the supported local/Linux packaging path and current release limitations:
+  no signing,
+  no notarization,
+  no auto-update,
+  and no verified macOS/Windows artifacts yet.
+- Verified with:
+  `pnpm test`,
+  `pnpm typecheck`,
+  `pnpm build`,
+  `pnpm run e2e:runtime`,
+  `pnpm run e2e:accessibility`,
+  `pnpm run e2e:backup`,
+  `pnpm run package:linux`,
+  `pnpm run package:smoke`,
+  and packaged director-script scenes 1, 2, 3, 7, and 8.
+
 ## Future Product Backlog
 
 These are intentionally recorded as candidate directions rather than committed phases. They should be promoted into explicit numbered phases only after the current product risk is re-evaluated.
@@ -1429,8 +1547,6 @@ These are intentionally recorded as candidate directions rather than committed p
 - Vector / embedding search:
   useful once semantic search needs fuzzy matching beyond inspectable text fields.
   Must preserve local-first semantics and explain provider/storage tradeoffs clearly.
-- Packaged desktop release:
-  add signing/notarization/release packaging only after runtime QA stabilizes launch, storage, and native module behavior.
 - Large-library performance pass:
   measure scan throughput, query latency, thumbnail cache growth, and renderer responsiveness with larger fixture libraries.
   Deprioritized on 2026-05-06; keep this in backlog rather than promoting it as the next numbered phase.
