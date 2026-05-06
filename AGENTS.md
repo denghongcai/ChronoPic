@@ -2435,3 +2435,15 @@ This file is the local execution record for ChronoPic. It complements `PLAN.md` 
   `pnpm run e2e:accessibility`
 - Result: AI setup/readiness, queue recovery, and memory-candidate review semantics are more visible without adding OCR, vector search, person recognition, installers, or performance work.
 - Next: run the broader final verification set, then commit/push when requested.
+
+### 2026-05-07 Step 121
+
+- Tightened the GitHub Actions pnpm setup path before cutting the next release.
+- Removed `pnpm/action-setup@v4` from both CI and release workflows so the workflows no longer depend on the deprecated Node 20 action runtime.
+- Switched pnpm activation to `corepack enable pnpm` after `actions/setup-node@v5` with Node 24.
+- Updated `tests/packaging.test.ts` so the workflow guard now checks for Node 24, Corepack pnpm setup, and absence of the old pnpm action/cache wiring.
+- Verified:
+  `node --experimental-strip-types --test tests/packaging.test.ts`
+  `git diff --check`
+- Result: CI and tag release workflows are ready for a cleaner v0.1.3 verification/release run.
+- Next: commit/push, wait for main CI, tag `v0.1.3`, then verify the release workflow and published assets.

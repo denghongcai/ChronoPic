@@ -52,6 +52,9 @@ test("CI and release workflows use Node 24 compatible official actions", () => {
   for (const workflow of [ciWorkflow, releaseWorkflow]) {
     assert.match(workflow, /actions\/checkout@v5/);
     assert.match(workflow, /actions\/setup-node@v5/);
-    assert.match(workflow, /FORCE_JAVASCRIPT_ACTIONS_TO_NODE24:\s+true/);
+    assert.match(workflow, /node-version:\s+24/);
+    assert.match(workflow, /corepack enable pnpm/);
+    assert.doesNotMatch(workflow, /pnpm\/action-setup/);
+    assert.doesNotMatch(workflow, /cache:\s+pnpm/);
   }
 });
