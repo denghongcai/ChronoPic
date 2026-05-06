@@ -2267,3 +2267,17 @@ This file is the local execution record for ChronoPic. It complements `PLAN.md` 
   `pnpm run package:smoke`
 - Result: 4.24 is landed and verified locally for local/Linux unpacked release readiness.
 - Next: decide whether to commit/push this phase or promote the next product phase.
+
+### 2026-05-06 Step 113
+
+- Added a tag-triggered GitHub Release workflow in `.github/workflows/release.yml`.
+- The release workflow runs on pushed tags matching `v*`.
+- The workflow packages the Linux artifact, verifies the package layout, runs packaged E2E under Xvfb, archives `dist/release/chronopic-linux-x64` into a versioned tarball, writes a SHA-256 checksum, and publishes both files to the GitHub Release for the tag.
+- The workflow uses the built-in `GITHUB_TOKEN` with `contents: write` permission and handles reruns by uploading assets with `--clobber` when the release already exists.
+- Added README instructions for publishing by tag:
+  `git tag v0.1.0`
+  `git push origin v0.1.0`
+- Expanded `tests/packaging.test.ts` so release workflow wiring is covered by the local packaging structure test.
+- Verified:
+  `node --experimental-strip-types --test tests/packaging.test.ts`
+- Next: run broader verification, then commit/push when requested.

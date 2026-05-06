@@ -1,0 +1,78 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  linux:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.0.0
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Install Playwright browsers
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: Package Linux Artifact
+        run: pnpm run package:linux
+
+      - name: Verify Linux Package
+        run: pnpm run package:verify
+
+      - name: Packaged E2E
+        run: xvfb-run -a pnpm run e2e:packaged
+
+      - name: Create Release Archive
+        env:
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+          mkdir -p dist/release-artifacts
+          artifact_name="chronopic-linux-x64-${RELEASE_TAG}.tar.gz"
+          tar -C dist/release -czf "dist/release-artifacts/${artifact_name}" chronopic-linux-x64
+          sha256sum "dist/release-artifacts/${artifact_name}" > "dist/release-artifacts/${artifact_name}.sha256"
+
+      - name: Publish GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+          artifact_name="chronopic-linux-x64-${RELEASE_TAG}.tar.gz"
+          release_title="ChronoPic ${RELEASE_TAG}"
+          release_notes="Automated ChronoPic Linux release for ${RELEASE_TAG}."
+
+          if gh release view "${RELEASE_TAG}" --repo "${GITHUB_REPOSITORY}" >/dev/null 2>&1; then
+            gh release upload "${RELEASE_TAG}" \
+              "dist/release-artifacts/${artifact_name}" \
+              "dist/release-artifacts/${artifact_name}.sha256" \
+              --repo "${GITHUB_REPOSITORY}" \
+              --clobber
+          else
+            gh release create "${RELEASE_TAG}" \
+              "dist/release-artifacts/${artifact_name}" \
+              "dist/release-artifacts/${artifact_name}.sha256" \
+              --repo "${GITHUB_REPOSITORY}" \
+              --title "${release_title}" \
+              --notes "${release_notes}"
+          fi

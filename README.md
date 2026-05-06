@@ -88,6 +88,17 @@ xvfb-run -a pnpm run package:smoke
 
 Current packaging scope is local Linux unpacked output only. Signing, notarization, auto-update, installers, and macOS/Windows artifacts are follow-up release work.
 
+## Tag Releases
+
+Pushing a version tag that starts with `v` runs the release workflow:
+
+```sh
+git tag v0.1.0
+git push origin v0.1.0
+```
+
+The workflow builds the Linux package, verifies the packaged artifact, runs packaged E2E under Xvfb, archives `dist/release/chronopic-linux-x64`, writes a SHA-256 checksum, and publishes both files to the GitHub Release for the tag.
+
 ## Optional Integrations
 
 AI enrichment is disabled unless all required settings are present in the app settings or environment:
