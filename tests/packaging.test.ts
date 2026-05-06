@@ -19,6 +19,7 @@ test("release packaging scripts are exposed at the repository root", () => {
 test("release packaging implementation files exist", () => {
   assert.equal(fs.existsSync("scripts/package-desktop.mjs"), true);
   assert.equal(fs.existsSync("scripts/package-linux.mjs"), true);
+  assert.equal(fs.existsSync("scripts/package-targets.mjs"), true);
   assert.equal(fs.existsSync("scripts/archive-release-artifact.mjs"), true);
   assert.equal(fs.existsSync("scripts/verify-package.mjs"), true);
   assert.equal(fs.existsSync("tests/e2e/packaged.spec.ts"), true);
@@ -42,4 +43,14 @@ test("tag release workflow publishes verified Linux, macOS, and Windows packages
   assert.match(workflow, /scripts\/archive-release-artifact\.mjs \$\{\{ matrix\.target \}\}/);
   assert.match(workflow, /gh release upload/);
   assert.match(workflow, /sha256/);
+});
+
+test("CI and release workflows use Node 24 compatible official actions", () => {
+  const ciWorkflow = fs.readFileSync(".github/workflows/ci.yml", "utf8");
+  const releaseWorkflow = fs.readFileSync(".github/workflows/release.yml", "utf8");
+
+  for (const workflow of [ciWorkflow, releaseWorkflow]) {
+    assert.match(workflow, /actions\/checkout@v5/);
+    assert.match(workflow, /actions\/setup-node@v5/);
+  }
 });

@@ -4,6 +4,8 @@ import { spawn } from "node:child_process";
 import { createRequire } from "node:module";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
+import { normalizePackageTarget, packageFolderName } from "./package-targets.mjs";
+
 const scriptDir = path.dirname(fileURLToPath(import.meta.url));
 const rootDir = path.resolve(scriptDir, "..");
 const desktopDir = path.join(rootDir, "apps", "desktop");
@@ -24,32 +26,6 @@ const runtimeWorkspacePackages = [
   "@chronopic/services-indexer",
   "@chronopic/shared-utils",
 ];
-
-const targetByPlatform = new Map([
-  ["linux", "linux"],
-  ["darwin", "macos"],
-  ["win32", "windows"],
-]);
-
-function normalizeTarget(input = targetByPlatform.get(process.platform)) {
-  if (input === "darwin") {
-    return "macos";
-  }
-
-  if (input === "win32") {
-    return "windows";
-  }
-
-  if (input === "linux" || input === "macos" || input === "windows") {
-    return input;
-  }
-
-  throw new Error(`Unsupported package target: ${String(input)}`);
-}
-
-function packageFolderName(target, arch = process.arch) {
-  return `chronopic-${target}-${arch}`;
-}
 
 function commandForPlatform(command) {
   return process.platform === "win32" ? `${command}.cmd` : command;
@@ -293,7 +269,7 @@ async function copyElectronRuntime(target, stagingAppDir, outputDir) {
 }
 
 export async function packageDesktop(inputTarget = process.argv[2]) {
-  const target = normalizeTarget(inputTarget);
+  const target = normalizePackageTarget(inputTarget);
   const folderName = packageFolderName(target);
   const workDir = path.join(rootDir, "dist", "package-work", folderName);
   const stagingAppDir = path.join(workDir, "app");

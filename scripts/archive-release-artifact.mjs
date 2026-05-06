@@ -4,20 +4,10 @@ import path from "node:path";
 import { spawn } from "node:child_process";
 import { fileURLToPath } from "node:url";
 
+import { normalizePackageTarget, packageFolderName } from "./package-targets.mjs";
+
 const scriptDir = path.dirname(fileURLToPath(import.meta.url));
 const rootDir = path.resolve(scriptDir, "..");
-
-function normalizeTarget(input = process.argv[2]) {
-  if (input === "linux" || input === "macos" || input === "windows") {
-    return input;
-  }
-
-  throw new Error(`Unsupported archive target: ${String(input)}`);
-}
-
-function packageFolderName(target, arch = process.arch) {
-  return `chronopic-${target}-${arch}`;
-}
 
 function commandForPlatform(command) {
   return process.platform === "win32" ? `${command}.exe` : command;
@@ -58,7 +48,7 @@ async function sha256(filePath) {
   return hash.digest("hex");
 }
 
-const target = normalizeTarget();
+const target = normalizePackageTarget(process.argv[2]);
 const tag = process.argv[3] ?? process.env.RELEASE_TAG;
 
 if (!tag) {

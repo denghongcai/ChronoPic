@@ -2,41 +2,17 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
+import { isPackageTarget, normalizePackageTarget, packageFolderName } from "./package-targets.mjs";
+
 const scriptDir = path.dirname(fileURLToPath(import.meta.url));
 const rootDir = path.resolve(scriptDir, "..");
-
-const targetByPlatform = new Map([
-  ["linux", "linux"],
-  ["darwin", "macos"],
-  ["win32", "windows"],
-]);
-
-function normalizeTarget(input = targetByPlatform.get(process.platform)) {
-  if (input === "darwin") {
-    return "macos";
-  }
-
-  if (input === "win32") {
-    return "windows";
-  }
-
-  if (input === "linux" || input === "macos" || input === "windows") {
-    return input;
-  }
-
-  throw new Error(`Unsupported package verification target: ${String(input)}`);
-}
-
-function packageFolderName(target, arch = process.arch) {
-  return `chronopic-${target}-${arch}`;
-}
 
 function resolvePackagePaths(argv) {
   const args = argv.slice(2).filter((arg) => arg !== "--");
   const firstArg = args[0];
   const secondArg = args[1];
-  const isTargetArg = firstArg === "linux" || firstArg === "macos" || firstArg === "windows";
-  const target = normalizeTarget(isTargetArg ? firstArg : undefined);
+  const isTargetArg = isPackageTarget(firstArg);
+  const target = normalizePackageTarget(isTargetArg ? firstArg : undefined);
   const packageDir = path.resolve(
     isTargetArg
       ? secondArg ?? path.join(rootDir, "dist", "release", packageFolderName(target))

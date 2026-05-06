@@ -852,7 +852,8 @@ Priority order from this point forward:
 5. `4.22 Accessibility and Keyboard Audit Phase`
 6. `4.23 Export, Backup, and Restore Phase`
 7. `4.24 Packaged Desktop Release Readiness Phase`
-8. Evaluate the remaining future product backlog below only after packaged-launch readiness is verified.
+8. `4.25 Maintenance Review and Platform Hygiene Phase`
+9. Evaluate the remaining future product backlog below only after packaged-launch readiness and maintenance hygiene are verified.
 
 Recently completed product-expansion sequence:
 
@@ -1541,6 +1542,68 @@ Current status:
   `pnpm run package:linux`,
   `pnpm run package:smoke`,
   and packaged director-script scenes 1, 2, 3, 7, and 8.
+
+### 4.25 Maintenance Review and Platform Hygiene Phase ✅
+
+- Treat installable installers as unnecessary for now; keep the release model focused on portable, unpacked desktop bundles.
+- Review the current logic, release workflow, and platform packaging path after the first verified three-platform release.
+- Keep this as a maintenance close-out rather than a new product feature phase.
+
+Implementation breakdown:
+
+1. Platform workflow hygiene
+- Update GitHub official actions to current Node 24-compatible versions where available.
+- Keep the release matrix behavior unchanged:
+  Linux,
+  macOS,
+  and Windows still package, verify, smoke, archive, and upload assets independently.
+
+2. Packaging script maintainability
+- Remove repeated package-target normalization and release-folder naming logic from release helper scripts.
+- Keep platform-specific runtime copy behavior explicit inside the packager.
+- Preserve current artifact naming:
+  `chronopic-<target>-<arch>`.
+
+3. Documentation consistency
+- Keep README wording aligned with the chosen portable-bundle release model.
+- Keep developer-document references clickable where the document points to repo files.
+
+4. Verification
+- Run script syntax checks for package/release helpers.
+- Run the packaging structure regression test.
+- Run root tests and typecheck.
+- Run Linux package and package verification because the shared target helper affects real packaging paths.
+
+Current status:
+
+- Completed locally on 2026-05-06.
+- Added [scripts/package-targets.mjs](scripts/package-targets.mjs) as the shared package-target helper for:
+  target normalization,
+  target validation,
+  and release folder naming.
+- Updated [scripts/package-desktop.mjs](scripts/package-desktop.mjs),
+  [scripts/verify-package.mjs](scripts/verify-package.mjs),
+  and [scripts/archive-release-artifact.mjs](scripts/archive-release-artifact.mjs)
+  to consume the shared helper instead of carrying duplicate logic.
+- Updated [.github/workflows/ci.yml](.github/workflows/ci.yml)
+  and [.github/workflows/release.yml](.github/workflows/release.yml)
+  from `actions/checkout@v4` / `actions/setup-node@v4`
+  to `actions/checkout@v5` / `actions/setup-node@v5`.
+- Updated [tests/packaging.test.ts](tests/packaging.test.ts)
+  to cover the shared package-target helper and Node 24-compatible workflow actions.
+- Generalized the packaged E2E test name in [tests/e2e/packaged.spec.ts](tests/e2e/packaged.spec.ts)
+  so it no longer describes the cross-platform packaged smoke as Linux-only.
+- Updated [README.md](README.md) and [DEVELOPMENT.md](DEVELOPMENT.md)
+  to describe releases as portable, unpacked desktop bundles rather than installers.
+- Tightened [DEVELOPMENT.md](DEVELOPMENT.md) file references so repo-file pointers are clickable Markdown links.
+- Verified with:
+  `node --check scripts/package-targets.mjs && node --check scripts/package-desktop.mjs && node --check scripts/verify-package.mjs && node --check scripts/archive-release-artifact.mjs`,
+  `node --experimental-strip-types --test tests/packaging.test.ts`,
+  `pnpm run package:linux`,
+  `pnpm run package:verify -- linux`,
+  `pnpm test`,
+  `pnpm typecheck`,
+  and `git diff --check`.
 
 ## Future Product Backlog
 

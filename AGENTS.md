@@ -2364,3 +2364,28 @@ This file is the local execution record for ChronoPic. It complements `PLAN.md` 
   `git diff --check`
 - Result: README now presents the product as AI-powered while keeping the privacy/local-first framing clear.
 - Next: commit/push the README wording update when requested.
+
+### 2026-05-06 Step 118
+
+- Performed the requested maintenance close-out review after deciding not to pursue installable installers for now.
+- Added `4.25 Maintenance Review and Platform Hygiene Phase` to `PLAN.md` and marked it complete after the maintenance fixes landed locally.
+- Reviewed the current release/platform path and kept the portable unpacked-bundle model intact.
+- Added `scripts/package-targets.mjs` so package target normalization and release folder naming are shared by:
+  `scripts/package-desktop.mjs`,
+  `scripts/verify-package.mjs`,
+  and `scripts/archive-release-artifact.mjs`.
+- Updated CI and release workflows from `actions/checkout@v4` / `actions/setup-node@v4` to `actions/checkout@v5` / `actions/setup-node@v5`, matching the current Node 24-compatible official action line.
+- Updated `tests/packaging.test.ts` to cover the new shared packaging helper and workflow action versions.
+- Generalized the packaged E2E test title so the cross-platform packaged smoke no longer describes itself as Linux-only.
+- Updated `README.md` and `DEVELOPMENT.md` to describe releases as portable unpacked bundles rather than installers.
+- Tightened developer-document references in `DEVELOPMENT.md` so repo-file pointers are clickable links instead of inline-code file names.
+- Verified:
+  `node --check scripts/package-targets.mjs && node --check scripts/package-desktop.mjs && node --check scripts/verify-package.mjs && node --check scripts/archive-release-artifact.mjs`
+  `node --experimental-strip-types --test tests/packaging.test.ts`
+  `pnpm run package:linux`
+  `pnpm run package:verify -- linux`
+  `pnpm test`
+  `pnpm typecheck`
+  `git diff --check`
+- Result: the current product logic was left untouched, release/platform maintenance gaps were narrowed, and Linux packaging remains verified after the helper extraction.
+- Next: review the diff, then commit/push the maintenance close-out when requested.

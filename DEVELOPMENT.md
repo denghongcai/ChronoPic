@@ -1,6 +1,6 @@
 # ChronoPic Development
 
-This document is for contributors and code agents working on ChronoPic. The user-facing product overview lives in `README.md`.
+This document is for contributors and code agents working on ChronoPic. The user-facing product overview lives in [README.md](README.md).
 
 ## Repository Status
 
@@ -8,9 +8,9 @@ This document is for contributors and code agents working on ChronoPic. The user
 - Latest verified release: `v0.1.2`
 - Package manager: `pnpm@10.0.0`
 - Runtime baseline: Node.js 24
-- Planning source: `PLAN.md`
-- Execution log: `AGENTS.md`
-- Manual verification script: `docs/agent-verification-script.md`
+- Planning source: [PLAN.md](PLAN.md)
+- Execution log: [AGENTS.md](AGENTS.md)
+- Manual verification script: [docs/agent-verification-script.md](docs/agent-verification-script.md)
 
 ## Setup
 
@@ -84,9 +84,9 @@ What the main E2E suites cover:
 - `e2e:runtime`: launches the built Electron app, indexes fixture media, writes edits/memories/settings, restarts, and verifies persistence through the preload bridge.
 - `e2e:accessibility`: checks the keyboard/focus loop for first-run setup, create-memory dialog focus return, photo-card activation, viewer Escape close, and batch-select accessible labels.
 - `e2e:backup`: exports a JSON backup, previews conflicts, restores into a clean data directory, and verifies authored metadata, favorites, memories, memberships, locale, and map settings.
-- `e2e:packaged`: launches the packaged executable or app bundle directly rather than `apps/desktop/dist/main/main.js`.
+- `e2e:packaged`: launches the packaged executable or app bundle directly rather than [apps/desktop/dist/main/main.js](apps/desktop/dist/main/main.js).
 
-For broader product validation after a phase or meaningful implementation slice, follow `docs/agent-verification-script.md` and record evidence in `AGENTS.md`.
+For broader product validation after a phase or meaningful implementation slice, follow [docs/agent-verification-script.md](docs/agent-verification-script.md) and record evidence in [AGENTS.md](AGENTS.md).
 
 ## Local Packaging
 
@@ -127,7 +127,7 @@ chronopic-<target>-<arch>-<tag>.tar.gz.sha256
 
 ## Releases
 
-Pushing a version tag that starts with `v` runs `.github/workflows/release.yml`:
+Pushing a version tag that starts with `v` runs [.github/workflows/release.yml](.github/workflows/release.yml):
 
 ```sh
 git tag v0.1.2
@@ -147,7 +147,7 @@ The release workflow:
 
 Current release limitations:
 
-- artifacts are unpacked desktop bundles, not installers
+- artifacts are portable, unpacked desktop bundles rather than installers
 - macOS artifacts are not notarized
 - Windows artifacts are not signed
 - auto-update is not implemented
@@ -213,8 +213,8 @@ pnpm run package:verify -- <target>
 ## Planning And Agent Workflow
 
 - `PRD.md` records the original product and architecture direction.
-- `PLAN.md` is the stable implementation plan and roadmap.
-- `AGENTS.md` is the local execution record and must be updated after meaningful implementation or verification steps.
-- `docs/agent-verification-script.md` is the director script for manual product verification after completing plan items.
+- [PLAN.md](PLAN.md) is the stable implementation plan and roadmap.
+- [AGENTS.md](AGENTS.md) is the local execution record and must be updated after meaningful implementation or verification steps.
+- [docs/agent-verification-script.md](docs/agent-verification-script.md) is the director script for manual product verification after completing plan items.
 
-When implementation work changes a planned phase or checklist item, update both `PLAN.md` and `AGENTS.md` before considering the work complete.
+When implementation work changes a planned phase or checklist item, update both [PLAN.md](PLAN.md) and [AGENTS.md](AGENTS.md) before considering the work complete.

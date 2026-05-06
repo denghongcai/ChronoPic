@@ -24,7 +24,7 @@ Each archive has a matching `.sha256` checksum file.
 
 ## Current Limitations
 
-- Releases are unpacked desktop bundles, not installers.
+- Releases are portable, unpacked desktop bundles rather than installers.
 - macOS builds are not notarized yet.
 - Windows builds are not signed yet.
 - Auto-update is not implemented yet.

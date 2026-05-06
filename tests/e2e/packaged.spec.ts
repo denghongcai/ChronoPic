@@ -56,7 +56,7 @@ function platformTarget(): string {
 }
 
 test.describe("ChronoPic packaged desktop runtime", () => {
-  test("launches the packaged Linux executable and exercises preload, SQLite, thumbnails, and backup bridge", async () => {
+  test("launches the packaged executable and exercises preload, SQLite, thumbnails, and backup bridge", async () => {
     const userDataDir = await fs.mkdtemp(path.join(os.tmpdir(), "chronopic-packaged-userdata-"));
     const fixtureDir = await createFixtureLibrary();
     const backupPath = path.join(await fs.mkdtemp(path.join(os.tmpdir(), "chronopic-packaged-backup-")), "backup.json");
