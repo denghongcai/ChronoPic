@@ -2339,3 +2339,18 @@ This file is the local execution record for ChronoPic. It complements `PLAN.md` 
   `git diff --check`
 - Result: README is now user-facing, while development and release mechanics live in `DEVELOPMENT.md`.
 - Next: commit/push the documentation split when requested.
+
+### 2026-05-06 Step 116
+
+- Revised `README.md` again to make the user-facing document English-language.
+- Added a GitHub Release badge at the top of the README that links to the latest release page.
+- Changed the developer-documentation references in the README from inline-code filenames to Markdown links:
+  [DEVELOPMENT.md](DEVELOPMENT.md),
+  [PLAN.md](PLAN.md),
+  [AGENTS.md](AGENTS.md),
+  and [docs/agent-verification-script.md](docs/agent-verification-script.md).
+- Kept developer setup, verification, packaging, release, architecture, and workflow details in `DEVELOPMENT.md`.
+- Verified:
+  `git diff --check`
+- Result: README is now an English user-facing entry page with a release badge and linked developer-doc references.
+- Next: commit/push the documentation update when requested.

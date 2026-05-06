@@ -1,110 +1,113 @@
 # ChronoPic
 
-ChronoPic 是一个本地优先的桌面相册工作台。它可以索引你选择的本地照片文件夹，生成缩略图，把可编辑的相册数据保存在本机 SQLite 数据库里，并提供浏览、搜索、回忆整理、AI 辅助和本地备份能力。
+[![Release](https://img.shields.io/github/v/release/denghongcai/ChronoPic?label=release)](https://github.com/denghongcai/ChronoPic/releases/latest)
 
-ChronoPic 的核心使用方式不依赖云端存储。照片原文件仍保留在你的本地文件夹中，应用只保存索引、缩略图、设置、编辑记录和组织信息。
+ChronoPic is a local-first desktop photo workspace. It indexes the folders you choose, generates thumbnails, keeps an editable catalog in a local SQLite database, and helps you browse, search, organize, enrich, and back up your photo library.
 
-## 下载
+ChronoPic does not require cloud storage for its core workflow. Your original photos stay in your own folders; the app stores indexes, thumbnails, settings, edit history, and organization data locally.
 
-最新已验证版本：`v0.1.2`
+## Download
 
-GitHub Release:
+Latest verified release: `v0.1.2`
 
-https://github.com/denghongcai/ChronoPic/releases/tag/v0.1.2
+Download ChronoPic from the GitHub Releases page:
 
-当前提供三平台未安装包形式的桌面归档：
+https://github.com/denghongcai/ChronoPic/releases/latest
+
+Current desktop archives:
 
 - Linux: `chronopic-linux-x64-v0.1.2.tar.gz`
 - macOS: `chronopic-macos-arm64-v0.1.2.tar.gz`
 - Windows: `chronopic-windows-x64-v0.1.2.tar.gz`
 
-每个平台同时提供 `.sha256` 校验文件。
+Each archive has a matching `.sha256` checksum file.
 
-## 当前限制
+## Current Limitations
 
-- 当前发布物是未安装包形式，不是系统安装器。
-- macOS 包尚未 notarize。
-- Windows 包尚未签名。
-- 暂未提供自动更新。
-- 备份不会复制照片原文件，只会导出 ChronoPic 的本地数据库投影和设置。
+- Releases are unpacked desktop bundles, not installers.
+- macOS builds are not notarized yet.
+- Windows builds are not signed yet.
+- Auto-update is not implemented yet.
+- Backups do not copy original photo files; they export ChronoPic's local catalog projection and settings.
 
-## 可以做什么
+## What You Can Do
 
-- 添加本地照片文件夹作为图库来源
-- 扫描文件夹并生成本地索引
-- 提取照片时间、位置、相机等元信息
-- 生成本地缩略图
-- 用瀑布流、地图、时间线浏览照片
-- 搜索文件路径、标题、标签、AI 生成字段和回忆内容
-- 打开详情视图或沉浸式图库视图
-- 编辑标题、标签、时间，并回滚最近编辑
-- 收藏照片
-- 创建和管理 Memories
-- 为 Memory 设置封面、描述和故事章节
-- 将照片加入或移出 Memory
-- 使用 AI 生成照片语义、Memory 建议和候选回忆
-- 在通知页查看 AI 队列和 Memory 候选
-- 在英文和简体中文界面之间切换
-- 单独设置 AI 输出语言
-- 配置 Gaode/AMap Key 后使用地图浏览
-- 导出本地 JSON 备份
-- 预览恢复冲突
-- 将备份恢复到本地数据库
+- Add local photo folders as library sources
+- Scan folders and build a local index
+- Extract photo time, location, camera, and related metadata
+- Generate local thumbnails
+- Browse photos in waterfall, map, and timeline views
+- Search paths, captions, tags, AI-generated fields, and memory content
+- Open detail and immersive gallery views
+- Edit captions, tags, and datetimes
+- Roll back the latest edit
+- Mark photos as favorites
+- Create and manage Memories
+- Set Memory covers, descriptions, and story sections
+- Add photos to Memories or remove them
+- Use AI to generate photo semantics, Memory suggestions, and candidate Memories
+- Review AI queue and Memory candidates from Notifications
+- Switch between English and Simplified Chinese UI
+- Set AI output language separately from UI language
+- Configure Gaode/AMap for optional map browsing
+- Export local JSON backups
+- Preview restore conflicts
+- Restore backups into the local database
 
-## 数据保存在哪里
+## Where Data Is Stored
 
-ChronoPic 是本地优先应用：
+ChronoPic is local-first:
 
-- 照片原文件仍在你选择的文件夹里。
-- 应用本地保存数据库、缩略图、设置和 debug log。
-- 备份文件是本地 JSON 文件。
-- AI 能力只有在你配置 API 设置后才会调用远程服务。
+- Original photos stay in the folders you selected.
+- The app stores its database, thumbnails, settings, and debug log locally.
+- Backup files are local JSON files.
+- AI calls happen only after you configure AI provider settings.
 
-你可以通过 `CHRONOPIC_USER_DATA_DIR` 指定独立的数据目录，适合测试或临时使用。
+You can set `CHRONOPIC_USER_DATA_DIR` to use an isolated data directory for testing or temporary runs.
 
-## 可选功能
+## Optional Features
 
 ### AI
 
-AI 功能默认不可用，只有配置完整的 provider 设置后才会启用：
+AI is disabled until provider settings are configured:
 
 - API Key
 - Base URL
 - Model
 - Provider name
-- AI 输出语言
+- AI output language
 
-AI 生成内容会和用户手动编辑内容分开保存，避免覆盖用户自己的标题、标签和描述。
+AI-generated content is stored separately from user-authored captions, tags, and descriptions so suggestions do not overwrite your edits.
 
-### 地图
+### Maps
 
-地图浏览使用 Gaode/AMap Web JS API 设置。没有配置 Key 时，普通浏览、搜索、回忆和备份功能仍可正常使用。
+Map browsing uses Gaode/AMap Web JS API settings. If no map key is configured, normal browsing, search, Memories, and backup still work.
 
-## 备份与恢复
+## Backup And Restore
 
-Library Settings 中提供本地备份能力：
+Library Settings includes local backup actions:
 
 - Export Backup
 - Preview Restore
 - Restore Backup
 
-备份包含：
+Backups include:
 
-- 图库来源
-- 照片索引和元信息
-- 用户标题、标签、时间修正、收藏
-- 编辑历史
-- Memories 和照片关系
-- AI 生成字段和候选回忆
-- AI、地图、语言设置
+- Library sources
+- Photo index and metadata
+- User captions, tags, datetime corrections, and favorites
+- Edit history
+- Memories and photo membership
+- AI-generated fields and candidate Memories
+- AI, map, and language settings
 
-备份不包含照片原文件。恢复后，照片路径仍指向原来的本地文件位置。
+Backups do not include original photo files. After restore, photo paths still point to their original local file locations.
 
-## 面向开发者
+## For Developers
 
-开发、测试、打包、发布、架构和仓库协作说明请看：
+Developer setup, testing, packaging, release, architecture, and repository workflow documentation lives in:
 
-- `DEVELOPMENT.md`
-- `PLAN.md`
-- `AGENTS.md`
-- `docs/agent-verification-script.md`
+- [DEVELOPMENT.md](DEVELOPMENT.md)
+- [PLAN.md](PLAN.md)
+- [AGENTS.md](AGENTS.md)
+- [docs/agent-verification-script.md](docs/agent-verification-script.md)
