@@ -2178,3 +2178,12 @@ This file is the local execution record for ChronoPic. It complements `PLAN.md` 
   `git diff --check`
 - Result: 4.23 is landed and verified locally.
 - Next: decide whether to commit/push this phase or promote the next backlog item.
+
+### 2026-05-06 Step 110
+
+- Recorded the product-priority decision that large-library performance optimization should not be promoted as the next phase.
+- Updated `PLAN.md` so the `Large-library performance pass` remains explicitly in the Future Product Backlog and is marked as deprioritized on 2026-05-06.
+- This is a planning-only update; no runtime code changed.
+- Verified:
+  `git diff --check`
+- Next: choose a different next phase candidate, likely packaged desktop release readiness or another backlog item.

@@ -1433,6 +1433,7 @@ These are intentionally recorded as candidate directions rather than committed p
   add signing/notarization/release packaging only after runtime QA stabilizes launch, storage, and native module behavior.
 - Large-library performance pass:
   measure scan throughput, query latency, thumbnail cache growth, and renderer responsiveness with larger fixture libraries.
+  Deprioritized on 2026-05-06; keep this in backlog rather than promoting it as the next numbered phase.
 - Import/export sidecar metadata:
   consider JSON sidecars before EXIF writeback.
   EXIF writeback remains out of scope until the app has stronger backup and rollback guarantees.
