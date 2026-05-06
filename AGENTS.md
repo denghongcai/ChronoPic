@@ -2447,3 +2447,16 @@ This file is the local execution record for ChronoPic. It complements `PLAN.md` 
   `git diff --check`
 - Result: CI and tag release workflows are ready for a cleaner v0.1.3 verification/release run.
 - Next: commit/push, wait for main CI, tag `v0.1.3`, then verify the release workflow and published assets.
+
+### 2026-05-07 Step 122
+
+- Investigated the failed main CI run after the Corepack pnpm setup cleanup.
+- Root cause: `actions/setup-node@v5` needed `pnpm` available before it could finish the Node setup/cache step, but the workflow only enabled pnpm after that step.
+- Verified that `pnpm/action-setup@v6` exists and runs on Node 24.
+- Updated CI and release workflows to run `pnpm/action-setup@v6` before `actions/setup-node@v5`, with pnpm pinned to `10.0.0` and `cache: pnpm` restored in the Node setup step.
+- Updated `tests/packaging.test.ts` so the workflow guard now requires `pnpm/action-setup@v6` and rejects the old `v4` action.
+- Verified:
+  `node --experimental-strip-types --test tests/packaging.test.ts`
+  `git diff --check`
+- Result: the local workflow guard passes with the v6 pnpm action setup.
+- Next: commit/push this CI fix and wait for main CI again before tagging the release.
