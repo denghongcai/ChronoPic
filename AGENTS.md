@@ -2104,3 +2104,77 @@ This file is the local execution record for ChronoPic. It complements `PLAN.md` 
   `pnpm run e2e:accessibility`
 - Result: 4.22 is landed and verified locally.
 - Next: decide whether to commit/push this phase or continue into the next roadmap slice.
+
+### 2026-05-06 Step 109
+
+- Opened and completed `4.23 Export, Backup, and Restore Phase` in `PLAN.md`.
+- Used a TDD pass for the core backup contract:
+  `tests/backup.test.ts` first failed because `ChronoPicAppService.createBackup()` and `previewBackupRestore()` did not exist,
+  then passed after the backup service/database implementation landed.
+- Added a versioned ChronoPic JSON backup format in `packages/domain`.
+- Added backup support through the application, database, and config layers:
+  export local projection data,
+  restore-preview counts,
+  conflict reporting for sources/photos/memories/memory candidates,
+  replace-mode restore,
+  settings export,
+  and settings restore.
+- Backup contents now include:
+  library sources,
+  photo projections,
+  metadata,
+  semantic/generated fields,
+  index state,
+  edit history,
+  memories,
+  memory-photo membership,
+  memory candidates,
+  AI settings,
+  map settings,
+  and locale settings.
+- Added desktop main/preload bridge methods:
+  `exportBackup`,
+  `previewBackupRestore`,
+  and `restoreBackup`.
+- Added Library Settings controls for:
+  `Export Backup`,
+  `Preview Restore`,
+  and `Restore Backup`,
+  with localized English and Simplified Chinese copy explaining that backups are local JSON and do not copy original media files.
+- Added `tests/e2e/backup.spec.ts` and the root script:
+  `pnpm run e2e:backup`.
+- Added backup E2E coverage to `.github/workflows/ci.yml` and documented the backup/restore flow in `README.md`.
+- Fixed a local verification reliability issue discovered during testing:
+  Node unit tests and Electron E2E require different native ABIs for `better-sqlite3`,
+  so `pnpm test` now prepares the Node ABI and E2E scripts now prepare the Electron ABI before launching.
+- Followed `docs/agent-verification-script.md` for this user-facing data-safety flow.
+- Playwright director scenes run with temporary Electron data directories:
+  Scene 1 - Launch And First Impression,
+  Scene 2 - First-Run And Library Setup,
+  Scene 3 - Scan And Browse,
+  Scene 5 - Editing, Favorites, And Rollback,
+  Scene 6 - Memories,
+  Scene 7 - Restart Persistence,
+  Scene 8 - Settings, Locale, AI, And Map.
+- Director-script evidence:
+  screenshots and `evidence.json` written under `/tmp/chronopic-423-verify-Y5z1Ih`,
+  fixture directory `/tmp/chronopic-423-fixtures-ZIxODw`,
+  source user data directory `/tmp/chronopic-423-source-userdata-GyZUBu`,
+  target user data directory `/tmp/chronopic-423-target-userdata-XeBwFj`,
+  backup file `/tmp/chronopic-423-verify-Y5z1Ih/chronopic-423-backup.json`,
+  2 fixture photos indexed,
+  1 memory created,
+  rollback verified,
+  restore-preview conflicts verified in the source library,
+  zero-conflict preview verified in the clean target library,
+  and restored target data verified for photos, favorites, caption, tags, memory membership, locale, and map settings.
+- Verified:
+  `pnpm test`
+  `pnpm typecheck`
+  `pnpm build`
+  `pnpm run e2e:runtime`
+  `pnpm run e2e:accessibility`
+  `pnpm run e2e:backup`
+  `git diff --check`
+- Result: 4.23 is landed and verified locally.
+- Next: decide whether to commit/push this phase or promote the next backlog item.

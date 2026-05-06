@@ -3,6 +3,11 @@ import path from "node:path";
 import Database from "better-sqlite3";
 
 import type {
+  BackupRestoreConflict,
+  BackupRestoreOptions,
+  BackupRestorePreview,
+  BackupRestoreResult,
+  ChronoPicBackup,
   EditHistory,
   LibrarySource,
   LibrarySnapshot,
@@ -732,6 +737,33 @@ export class ChronoPicDatabase {
     return rows.map(mapPhotoRow);
   }
 
+  private listAllPhotoPayloads(): UpsertPhotoPayload[] {
+    const rows = this.db
+      .prepare(
+        `SELECT
+          p.id, p.path, p.hash, p.size, p.mime, p.thumbnail_path, p.favorite, p.created_at, p.updated_at,
+          m.datetime, m.lat, m.lng, m.camera, m.confidence, m.original_datetime_text,
+          s.labels, s.caption, s.generated_labels, s.generated_caption, s.summary, s.embedding_ref, s.ai_status, s.ai_provider, s.ai_model, s.ai_processed_at, s.ai_error,
+          i.indexed, i.ai_processed, i.error, i.last_indexed_at, i.duplicate_of, i.source_updated_at, i.missing_at
+        FROM photos p
+        JOIN metadata m ON m.photo_id = p.id
+        JOIN semantic s ON s.photo_id = p.id
+        JOIN index_state i ON i.photo_id = p.id
+        ORDER BY p.path ASC`
+      )
+      .all() as PhotoRow[];
+
+    return rows.map((row) => {
+      const record = mapPhotoRow(row);
+      return {
+        photo: record.photo,
+        metadata: record.metadata,
+        semantic: record.semantic,
+        indexState: record.indexState,
+      };
+    });
+  }
+
   getPhoto(photoId: string): PhotoRecord | null {
     const row = this.db
       .prepare(
@@ -991,6 +1023,390 @@ export class ChronoPicDatabase {
         duplicatePhotos: stats.duplicatePhotos ?? 0
       }
     };
+  }
+
+  exportBackup(settings: ChronoPicBackup["settings"]): ChronoPicBackup {
+    return {
+      app: "ChronoPic",
+      schemaVersion: 1,
+      exportedAt: Date.now(),
+      settings,
+      librarySources: this.listLibrarySources(),
+      photos: this.listAllPhotoPayloads(),
+      memories: this.listMemories(),
+      memoryPhotos: this.listMemoryPhotos(),
+      editHistory: this.listAllEditHistory(),
+      memoryCandidates: this.listAllMemoryCandidates(),
+    };
+  }
+
+  previewBackupRestore(backup: ChronoPicBackup): BackupRestorePreview {
+    this.assertSupportedBackup(backup);
+
+    const conflicts: BackupRestoreConflict[] = [];
+
+    for (const source of backup.librarySources) {
+      const existing = this.listLibrarySources().find((candidate) => candidate.id === source.id || candidate.path === source.path);
+      if (existing) {
+        conflicts.push({
+          kind: "source",
+          id: source.id,
+          path: source.path,
+          reason: existing.id === source.id ? "source id already exists" : "source path already exists",
+        });
+      }
+    }
+
+    for (const payload of backup.photos) {
+      const existing = this.findPhotoConflict(payload.photo.id, payload.photo.path);
+      if (existing) {
+        conflicts.push({
+          kind: "photo",
+          id: payload.photo.id,
+          path: payload.photo.path,
+          reason: existing.id === payload.photo.id ? "photo id already exists" : "photo path already exists",
+        });
+      }
+    }
+
+    for (const memory of backup.memories) {
+      if (this.getMemory(memory.id)) {
+        conflicts.push({
+          kind: "memory",
+          id: memory.id,
+          reason: "memory id already exists",
+        });
+      }
+    }
+
+    for (const candidate of backup.memoryCandidates) {
+      const existing = this.findMemoryCandidateConflict(candidate.id, candidate.signature);
+      if (existing) {
+        conflicts.push({
+          kind: "memoryCandidate",
+          id: candidate.id,
+          reason: existing.id === candidate.id ? "memory candidate id already exists" : "memory candidate signature already exists",
+        });
+      }
+    }
+
+    return {
+      schemaVersion: backup.schemaVersion,
+      sourceCount: backup.librarySources.length,
+      photoCount: backup.photos.length,
+      memoryCount: backup.memories.length,
+      memoryPhotoCount: backup.memoryPhotos.length,
+      editHistoryCount: backup.editHistory.length,
+      memoryCandidateCount: backup.memoryCandidates.length,
+      settingsIncluded: Boolean(backup.settings),
+      conflictCount: conflicts.length,
+      conflicts,
+    };
+  }
+
+  restoreBackup(backup: ChronoPicBackup, options: BackupRestoreOptions = {}): BackupRestoreResult {
+    this.assertSupportedBackup(backup);
+    const mode = options.mode ?? "merge";
+    const preview = this.previewBackupRestore(backup);
+
+    const transaction = this.db.transaction(() => {
+      if (mode === "replace") {
+        this.clearRestorableData();
+      }
+
+      this.restoreLibrarySources(backup.librarySources);
+      this.restorePhotos(backup.photos);
+      this.restoreEditHistory(backup.editHistory);
+      this.restoreMemories(backup.memories);
+      this.restoreMemoryPhotos(backup.memoryPhotos);
+      this.restoreMemoryCandidates(backup.memoryCandidates);
+    });
+
+    transaction();
+
+    return {
+      ...preview,
+      restoredAt: Date.now(),
+      restoredSourceCount: backup.librarySources.length,
+      restoredPhotoCount: backup.photos.length,
+      restoredMemoryCount: backup.memories.length,
+      restoredMemoryPhotoCount: backup.memoryPhotos.length,
+      restoredEditHistoryCount: backup.editHistory.length,
+      restoredMemoryCandidateCount: backup.memoryCandidates.length,
+    };
+  }
+
+  listMemoryPhotos(): MemoryPhoto[] {
+    const rows = this.db
+      .prepare("SELECT memory_id, photo_id, added_at FROM memory_photos ORDER BY memory_id ASC, added_at ASC")
+      .all() as Array<{ memory_id: string; photo_id: string; added_at: number }>;
+
+    return rows.map((row) => ({
+      memoryId: row.memory_id,
+      photoId: row.photo_id,
+      addedAt: row.added_at,
+    }));
+  }
+
+  private listAllEditHistory(): EditHistory[] {
+    const rows = this.db
+      .prepare(
+        `SELECT id, photo_id, field_name, previous_value, next_value, created_at, rolled_back_at
+         FROM edit_history
+         ORDER BY created_at ASC`
+      )
+      .all() as Array<{
+      id: string;
+      photo_id: string;
+      field_name: EditHistory["fieldName"];
+      previous_value: string | null;
+      next_value: string | null;
+      created_at: number;
+      rolled_back_at: number | null;
+    }>;
+
+    return rows.map((row) => ({
+      id: row.id,
+      photoId: row.photo_id,
+      fieldName: row.field_name,
+      previousValue: row.previous_value,
+      nextValue: row.next_value,
+      createdAt: row.created_at,
+      rolledBackAt: row.rolled_back_at,
+    }));
+  }
+
+  private listAllMemoryCandidates(): MemoryCandidate[] {
+    const rows = this.db
+      .prepare(
+        `SELECT
+          c.id,
+          c.signature,
+          c.title,
+          c.description,
+          c.reason,
+          c.confidence,
+          c.source,
+          c.status,
+          c.photo_ids,
+          c.cover_photo_id,
+          (
+            SELECT p.thumbnail_path
+            FROM photos p
+            WHERE p.id = c.cover_photo_id
+          ) AS cover_thumbnail_path,
+          c.generated_labels,
+          c.accepted_memory_id,
+          c.created_at,
+          c.updated_at
+        FROM memory_candidates c
+        ORDER BY c.updated_at DESC, c.created_at DESC`
+      )
+      .all() as MemoryCandidateRow[];
+
+    return rows.map(mapMemoryCandidateRow);
+  }
+
+  private assertSupportedBackup(backup: ChronoPicBackup): void {
+    if (backup.app !== "ChronoPic" || backup.schemaVersion !== 1) {
+      throw new Error("Unsupported ChronoPic backup format");
+    }
+  }
+
+  private findPhotoConflict(photoId: string, photoPath: string): { id: string; path: string } | null {
+    const row = this.db
+      .prepare("SELECT id, path FROM photos WHERE id = ? OR path = ? LIMIT 1")
+      .get(photoId, photoPath) as { id: string; path: string } | undefined;
+    return row ?? null;
+  }
+
+  private findMemoryCandidateConflict(candidateId: string, signature: string): { id: string; signature: string } | null {
+    const row = this.db
+      .prepare("SELECT id, signature FROM memory_candidates WHERE id = ? OR signature = ? LIMIT 1")
+      .get(candidateId, signature) as { id: string; signature: string } | undefined;
+    return row ?? null;
+  }
+
+  private clearRestorableData(): void {
+    this.db.prepare("DELETE FROM memory_candidates").run();
+    this.db.prepare("DELETE FROM memory_photos").run();
+    this.db.prepare("DELETE FROM memories").run();
+    this.db.prepare("DELETE FROM edit_history").run();
+    this.db.prepare("DELETE FROM index_state").run();
+    this.db.prepare("DELETE FROM semantic").run();
+    this.db.prepare("DELETE FROM metadata").run();
+    this.db.prepare("DELETE FROM photos").run();
+    this.db.prepare("DELETE FROM library_sources").run();
+  }
+
+  private restoreLibrarySources(sources: LibrarySource[]): void {
+    const insertSource = this.db.prepare(
+      `INSERT OR REPLACE INTO library_sources (id, path, is_active, created_at, updated_at, last_scan_at)
+       VALUES (?, ?, ?, ?, ?, ?)`
+    );
+
+    for (const source of sources) {
+      insertSource.run(source.id, source.path, source.isActive ? 1 : 0, source.createdAt, source.updatedAt, source.lastScanAt);
+    }
+  }
+
+  private restorePhotos(photos: UpsertPhotoPayload[]): void {
+    const insertPhoto = this.db.prepare(
+      `INSERT OR REPLACE INTO photos (id, path, hash, size, mime, thumbnail_path, favorite, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
+    );
+    const insertMetadata = this.db.prepare(
+      `INSERT OR REPLACE INTO metadata (photo_id, datetime, lat, lng, camera, confidence, original_datetime_text)
+       VALUES (?, ?, ?, ?, ?, ?, ?)`
+    );
+    const insertSemantic = this.db.prepare(
+      `INSERT OR REPLACE INTO semantic (
+         photo_id, labels, caption, generated_labels, generated_caption, summary, embedding_ref,
+         ai_status, ai_provider, ai_model, ai_processed_at, ai_error
+       )
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+    );
+    const insertIndexState = this.db.prepare(
+      `INSERT OR REPLACE INTO index_state (
+         photo_id, indexed, ai_processed, error, last_indexed_at, duplicate_of, source_updated_at, missing_at
+       )
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
+    );
+
+    for (const payload of photos) {
+      insertPhoto.run(
+        payload.photo.id,
+        payload.photo.path,
+        payload.photo.hash,
+        payload.photo.size,
+        payload.photo.mime,
+        payload.photo.thumbnailPath,
+        payload.photo.favorite ? 1 : 0,
+        payload.photo.createdAt,
+        payload.photo.updatedAt
+      );
+      insertMetadata.run(
+        payload.metadata.photoId,
+        payload.metadata.datetime,
+        payload.metadata.lat,
+        payload.metadata.lng,
+        payload.metadata.camera,
+        payload.metadata.confidence,
+        payload.metadata.originalDatetimeText
+      );
+      insertSemantic.run(
+        payload.semantic.photoId,
+        serializeStringArray(payload.semantic.labels),
+        payload.semantic.caption,
+        serializeStringArray(payload.semantic.generatedLabels),
+        payload.semantic.generatedCaption,
+        payload.semantic.summary,
+        payload.semantic.embeddingRef,
+        payload.semantic.aiStatus,
+        payload.semantic.aiProvider,
+        payload.semantic.aiModel,
+        payload.semantic.aiProcessedAt,
+        payload.semantic.aiError
+      );
+      insertIndexState.run(
+        payload.indexState.photoId,
+        payload.indexState.indexed ? 1 : 0,
+        payload.indexState.aiProcessed ? 1 : 0,
+        payload.indexState.error,
+        payload.indexState.lastIndexedAt,
+        payload.indexState.duplicateOf,
+        payload.indexState.sourceUpdatedAt,
+        payload.indexState.missingAt
+      );
+    }
+  }
+
+  private restoreEditHistory(history: EditHistory[]): void {
+    const insertEdit = this.db.prepare(
+      `INSERT OR REPLACE INTO edit_history (id, photo_id, field_name, previous_value, next_value, created_at, rolled_back_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?)`
+    );
+
+    for (const edit of history) {
+      insertEdit.run(
+        edit.id,
+        edit.photoId,
+        edit.fieldName,
+        edit.previousValue,
+        edit.nextValue,
+        edit.createdAt,
+        edit.rolledBackAt
+      );
+    }
+  }
+
+  private restoreMemories(memories: Memory[]): void {
+    const insertMemory = this.db.prepare(
+      `INSERT OR REPLACE INTO memories (
+         id, name, description, cover_photo_id, generated_name, generated_description, generated_labels,
+         ai_status, ai_provider, ai_model, ai_processed_at, ai_error, source, created_at, updated_at
+       )
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+    );
+
+    for (const memory of memories) {
+      insertMemory.run(
+        memory.id,
+        memory.name,
+        memory.description,
+        memory.coverPhotoId,
+        memory.generatedName,
+        memory.generatedDescription,
+        serializeStringArray(memory.generatedLabels),
+        memory.aiStatus,
+        memory.aiProvider,
+        memory.aiModel,
+        memory.aiProcessedAt,
+        memory.aiError,
+        memory.source,
+        memory.createdAt,
+        memory.updatedAt
+      );
+    }
+  }
+
+  private restoreMemoryPhotos(memoryPhotos: MemoryPhoto[]): void {
+    const insertMemoryPhoto = this.db.prepare(
+      "INSERT OR REPLACE INTO memory_photos (memory_id, photo_id, added_at) VALUES (?, ?, ?)"
+    );
+
+    for (const memoryPhoto of memoryPhotos) {
+      insertMemoryPhoto.run(memoryPhoto.memoryId, memoryPhoto.photoId, memoryPhoto.addedAt);
+    }
+  }
+
+  private restoreMemoryCandidates(candidates: MemoryCandidate[]): void {
+    const insertCandidate = this.db.prepare(
+      `INSERT OR REPLACE INTO memory_candidates (
+         id, signature, title, description, reason, confidence, source, status, photo_ids,
+         cover_photo_id, generated_labels, accepted_memory_id, created_at, updated_at
+       )
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+    );
+
+    for (const candidate of candidates) {
+      insertCandidate.run(
+        candidate.id,
+        candidate.signature,
+        candidate.title,
+        candidate.description,
+        candidate.reason,
+        candidate.confidence,
+        candidate.source,
+        candidate.status,
+        serializeStringArray(candidate.photoIds),
+        candidate.coverPhotoId,
+        serializeStringArray(candidate.generatedLabels),
+        candidate.acceptedMemoryId,
+        candidate.createdAt,
+        candidate.updatedAt
+      );
+    }
   }
 
   // ─── Favorite ────────────────────────────────────────────────────────────────

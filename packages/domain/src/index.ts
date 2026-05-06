@@ -288,6 +288,61 @@ export interface LocaleSettings {
   aiOutputLocale: AIOutputLocale;
 }
 
+export interface ChronoPicBackupSettings {
+  ai: AISettings;
+  map: MapSettings;
+  locale: LocaleSettings;
+}
+
+export interface ChronoPicBackup {
+  app: "ChronoPic";
+  schemaVersion: 1;
+  exportedAt: number;
+  settings: ChronoPicBackupSettings;
+  librarySources: LibrarySource[];
+  photos: UpsertPhotoPayload[];
+  memories: Memory[];
+  memoryPhotos: MemoryPhoto[];
+  editHistory: EditHistory[];
+  memoryCandidates: MemoryCandidate[];
+}
+
+export type BackupRestoreMode = "merge" | "replace";
+
+export interface BackupRestoreOptions {
+  mode?: BackupRestoreMode;
+}
+
+export interface BackupRestoreConflict {
+  kind: "source" | "photo" | "memory" | "memoryCandidate";
+  id: string;
+  path?: string;
+  reason: string;
+}
+
+export interface BackupRestorePreview {
+  schemaVersion: 1;
+  sourceCount: number;
+  photoCount: number;
+  memoryCount: number;
+  memoryPhotoCount: number;
+  editHistoryCount: number;
+  memoryCandidateCount: number;
+  settingsIncluded: boolean;
+  conflictCount: number;
+  conflicts: BackupRestoreConflict[];
+}
+
+export interface BackupRestoreResult extends BackupRestorePreview {
+  restoredAt: number;
+  restoredSourceCount: number;
+  restoredPhotoCount: number;
+  restoredMemoryCount: number;
+  restoredMemoryPhotoCount: number;
+  restoredEditHistoryCount: number;
+  restoredMemoryCandidateCount: number;
+}
+
 export interface UpsertPhotoPayload {
   photo: Photo;
   metadata: Metadata;

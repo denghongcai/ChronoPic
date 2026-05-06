@@ -1,7 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 
-import type { AISettings, LocaleSettings, MapSettings } from "@chronopic/domain";
+import type { AISettings, ChronoPicBackupSettings, LocaleSettings, MapSettings } from "@chronopic/domain";
 import { defaultLocaleSettings, normalizeAIOutputLocale, normalizeLocale } from "@chronopic/i18n";
 
 const DEFAULT_AI_SETTINGS: AISettings = {
@@ -54,6 +54,22 @@ export class ChronoPicConfigStore {
 
   getLocaleSettings(): LocaleSettings {
     return this.read().locale;
+  }
+
+  exportSettings(): ChronoPicBackupSettings {
+    return this.read();
+  }
+
+  restoreSettings(settings: ChronoPicBackupSettings): ChronoPicBackupSettings {
+    const next: ChronoPicBackupSettings = {
+      ai: normalizeSettings(settings.ai),
+      map: normalizeMapSettings(settings.map),
+      locale: normalizeLocaleSettings(settings.locale),
+    };
+
+    fs.mkdirSync(path.dirname(this.filePath), { recursive: true });
+    fs.writeFileSync(this.filePath, JSON.stringify(next, null, 2), "utf8");
+    return next;
   }
 
   saveAISettings(settings: Partial<AISettings>): AISettings {

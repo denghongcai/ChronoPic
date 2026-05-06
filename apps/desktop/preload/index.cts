@@ -11,6 +11,10 @@ const api: ChronoPicBridge = {
   saveMapSettings: (settings) => ipcRenderer.invoke("system:saveMapSettings", settings),
   getLocaleSettings: () => ipcRenderer.invoke("system:getLocaleSettings"),
   saveLocaleSettings: (settings) => ipcRenderer.invoke("system:saveLocaleSettings", settings),
+  exportBackup: (backupPath?: string) => ipcRenderer.invoke("system:exportBackup", backupPath),
+  previewBackupRestore: (backupPath?: string) => ipcRenderer.invoke("system:previewBackupRestore", backupPath),
+  restoreBackup: (backupPath?: string, options?: { mode?: "merge" | "replace" }) =>
+    ipcRenderer.invoke("system:restoreBackup", backupPath, options),
   pickLibraryDirectory: () => ipcRenderer.invoke("library:pickDirectory"),
   addLibrarySource: (libraryPath: string) => ipcRenderer.invoke("library:add", libraryPath),
   listLibrarySources: () => ipcRenderer.invoke("library:list"),

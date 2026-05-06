@@ -69,14 +69,17 @@ export function App() {
         onEnrichMemorySemantic={app.handleEnrichMemorySemantic}
         onEnrichPendingSemantics={app.handleEnrichPendingSemantics}
         onEnrichSemantic={app.handleEnrichSemantic}
+        onExportBackup={app.handleExportBackup}
         onFilterChange={app.patchFilter}
         onGenerateMemoryCandidates={app.handleGenerateMemoryCandidates}
         onNextPhoto={() => app.selectRelativePhoto(1)}
         onOpenDetail={(photoId) => app.openViewer("detail", photoId)}
+        onPreviewBackupRestore={app.handlePreviewBackupRestore}
         onPreviousPhoto={() => app.selectRelativePhoto(-1)}
         onRejectMemoryCandidate={app.handleRejectMemoryCandidate}
         onRemovePhotoFromMemory={app.handleRemovePhotoFromMemory}
         onRemoveSelectionFromMemory={app.handleRemoveSelectionFromMemory}
+        onRestoreBackup={app.handleRestoreBackup}
         onRollback={app.handleRollback}
         onSaveAISettings={app.handleSaveAISettings}
         onSaveCaption={app.handleSaveCaption}

@@ -8,6 +8,8 @@ import type { OpenDialogOptions } from "electron";
 
 import type {
   AISettings,
+  BackupRestoreOptions,
+  ChronoPicBackup,
   DiscoveryQuery,
   LocaleSettings,
   MapSettings,
@@ -106,6 +108,50 @@ function toSerializable<T>(value: T): T {
   return JSON.parse(JSON.stringify(value)) as T;
 }
 
+function readBackupFile(backupPath: string): ChronoPicBackup {
+  return JSON.parse(fs.readFileSync(backupPath, "utf8")) as ChronoPicBackup;
+}
+
+async function resolveExportBackupPath(providedPath?: string | null): Promise<string | null> {
+  if (providedPath?.trim()) {
+    return path.resolve(providedPath);
+  }
+
+  const result = mainWindow
+    ? await dialog.showSaveDialog(mainWindow, {
+        title: "Export ChronoPic Backup",
+        defaultPath: `chronopic-backup-${new Date().toISOString().slice(0, 10)}.json`,
+        filters: [{ name: "ChronoPic Backup", extensions: ["json"] }],
+      })
+    : await dialog.showSaveDialog({
+        title: "Export ChronoPic Backup",
+        defaultPath: `chronopic-backup-${new Date().toISOString().slice(0, 10)}.json`,
+        filters: [{ name: "ChronoPic Backup", extensions: ["json"] }],
+      });
+
+  return result.canceled ? null : result.filePath ?? null;
+}
+
+async function resolveImportBackupPath(providedPath?: string | null): Promise<string | null> {
+  if (providedPath?.trim()) {
+    return path.resolve(providedPath);
+  }
+
+  const result = mainWindow
+    ? await dialog.showOpenDialog(mainWindow, {
+        title: "Restore ChronoPic Backup",
+        properties: ["openFile"],
+        filters: [{ name: "ChronoPic Backup", extensions: ["json"] }],
+      })
+    : await dialog.showOpenDialog({
+        title: "Restore ChronoPic Backup",
+        properties: ["openFile"],
+        filters: [{ name: "ChronoPic Backup", extensions: ["json"] }],
+      });
+
+  return result.canceled ? null : result.filePaths[0] ?? null;
+}
+
 async function rebuildRuntime(): Promise<NonNullable<typeof runtimeHandle>> {
   runtimeHandle?.close();
   runtimeHandle = await createRuntime({ aiSettings: getConfigStore().getAISettings() });
@@ -189,6 +235,56 @@ function registerHandlers() {
   ipcMain.handle("system:saveMapSettings", async (_event, settings: MapSettings) => getConfigStore().saveMapSettings(settings));
   ipcMain.handle("system:getLocaleSettings", async () => getConfigStore().getLocaleSettings());
   ipcMain.handle("system:saveLocaleSettings", async (_event, settings: LocaleSettings) => getConfigStore().saveLocaleSettings(settings));
+  ipcMain.handle("system:exportBackup", async (_event, backupPath?: string) => {
+    const targetPath = await resolveExportBackupPath(backupPath);
+
+    if (!targetPath) {
+      return null;
+    }
+
+    const backup = getRuntimeHandle().appService.createBackup(getConfigStore().exportSettings());
+    fs.mkdirSync(path.dirname(targetPath), { recursive: true });
+    fs.writeFileSync(targetPath, JSON.stringify(backup, null, 2), "utf8");
+
+    return toSerializable({
+      path: targetPath,
+      preview: getRuntimeHandle().appService.previewBackupRestore(backup),
+    });
+  });
+  ipcMain.handle("system:previewBackupRestore", async (_event, backupPath?: string) => {
+    const sourcePath = await resolveImportBackupPath(backupPath);
+
+    if (!sourcePath) {
+      return null;
+    }
+
+    const backup = readBackupFile(sourcePath);
+
+    return toSerializable({
+      path: sourcePath,
+      preview: getRuntimeHandle().appService.previewBackupRestore(backup),
+    });
+  });
+  ipcMain.handle("system:restoreBackup", async (_event, backupPath?: string, options?: BackupRestoreOptions) => {
+    const sourcePath = await resolveImportBackupPath(backupPath);
+
+    if (!sourcePath) {
+      return null;
+    }
+
+    const backup = readBackupFile(sourcePath);
+    const result = getRuntimeHandle().appService.restoreBackup(backup, options);
+    const settings = getConfigStore().restoreSettings(backup.settings);
+    const runtime = await rebuildRuntime();
+
+    return toSerializable({
+      path: sourcePath,
+      result,
+      settings,
+      snapshot: runtime.appService.getSnapshot(),
+      capabilities: runtime.appService.getCapabilities(),
+    });
+  });
 
   ipcMain.handle("library:add", async (_event, libraryPath: string) => getRuntimeHandle().appService.addLibrarySource(libraryPath));
   ipcMain.handle("library:list", async () => getRuntimeHandle().appService.listLibrarySources());

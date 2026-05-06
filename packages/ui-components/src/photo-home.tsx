@@ -2,6 +2,8 @@ import * as React from "react";
 import {
   AlertTriangle,
   CheckCheck,
+  Download,
+  FileSearch,
   FolderOpen,
   FolderPlus,
   HardDrive,
@@ -9,10 +11,13 @@ import {
   LoaderCircle,
   SlidersHorizontal,
   Sparkles,
+  Upload,
 } from "lucide-react";
 
 import type {
   AISettings,
+  BackupRestorePreview,
+  BackupRestoreResult,
   BrowseMode,
   LibrarySnapshot,
   LocaleSettings,
@@ -95,6 +100,9 @@ export interface PhotoHomeProps extends EditControlsProps {
   onSaveAISettings: (settings: AISettings) => void | Promise<void>;
   onSaveLocaleSettings: (settings: LocaleSettings) => void | Promise<void>;
   onSaveMapSettings: (settings: MapSettings) => void | Promise<void>;
+  onExportBackup: () => Promise<{ path: string; preview: BackupRestorePreview } | null>;
+  onPreviewBackupRestore: () => Promise<{ path: string; preview: BackupRestorePreview } | null>;
+  onRestoreBackup: (path?: string) => Promise<{ path: string; result: BackupRestoreResult } | null>;
   onScanAll: () => void;
   onEnrichPendingSemantics?: () => void;
   onEnrichMemorySemantic?: (
@@ -476,6 +484,9 @@ export function PhotoHome({
   onFilterChange,
   onSearchChange,
   onAddLibrary,
+  onExportBackup,
+  onPreviewBackupRestore,
+  onRestoreBackup,
   onSaveAISettings,
   onSaveLocaleSettings,
   onSaveMapSettings,
@@ -697,6 +708,9 @@ export function PhotoHome({
 	                    mapSettings={mapSettings}
                     isScanning={isScanning}
                     onAddLibrary={onAddLibrary}
+                    onExportBackup={onExportBackup}
+                    onPreviewBackupRestore={onPreviewBackupRestore}
+                    onRestoreBackup={onRestoreBackup}
 	                    onSaveAISettings={onSaveAISettings}
 	                    onSaveLocaleSettings={onSaveLocaleSettings}
 	                    onSaveMapSettings={onSaveMapSettings}
@@ -878,6 +892,9 @@ function LibrarySettingsPanel({
   snapshot,
   isScanning,
   onAddLibrary,
+  onExportBackup,
+  onPreviewBackupRestore,
+  onRestoreBackup,
   onSaveAISettings,
   onSaveLocaleSettings,
   onSaveMapSettings,
@@ -890,6 +907,9 @@ function LibrarySettingsPanel({
   snapshot: LibrarySnapshot;
   isScanning: boolean;
   onAddLibrary: () => void;
+  onExportBackup: () => Promise<{ path: string; preview: BackupRestorePreview } | null>;
+  onPreviewBackupRestore: () => Promise<{ path: string; preview: BackupRestorePreview } | null>;
+  onRestoreBackup: (path?: string) => Promise<{ path: string; result: BackupRestoreResult } | null>;
   onSaveAISettings: (settings: AISettings) => void | Promise<void>;
   onSaveLocaleSettings: (settings: LocaleSettings) => void | Promise<void>;
   onSaveMapSettings: (settings: MapSettings) => void | Promise<void>;
@@ -902,6 +922,8 @@ function LibrarySettingsPanel({
   const [savingAISettings, setSavingAISettings] = React.useState(false);
   const [savingLocaleSettings, setSavingLocaleSettings] = React.useState(false);
   const [savingMapSettings, setSavingMapSettings] = React.useState(false);
+  const [backupPreview, setBackupPreview] = React.useState<{ path: string; preview: BackupRestorePreview } | null>(null);
+  const [backupAction, setBackupAction] = React.useState<"export" | "preview" | "restore" | null>(null);
 
   React.useEffect(() => {
     setDraftAISettings(aiSettings);
@@ -1005,6 +1027,100 @@ function LibrarySettingsPanel({
             {savingLocaleSettings ? t("settings.language.saving") : t("settings.language.save")}
           </Button>
         </div>
+      </div>
+
+      <div className="space-y-3 rounded-[28px] border border-stone-200 bg-stone-50/80 p-5 shadow-sm">
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <h3 className="font-['Space_Grotesk','IBM_Plex_Sans',sans-serif] text-xl font-semibold tracking-tight text-stone-950">
+              {t("settings.backup.title")}
+            </h3>
+            <p className="mt-1 text-sm leading-6 text-stone-500">{t("settings.backup.description")}</p>
+          </div>
+          <Badge tone="info">{t("settings.backup.localJson")}</Badge>
+        </div>
+
+        <div className="grid gap-3 md:grid-cols-3">
+          <Button
+            disabled={backupAction !== null}
+            onClick={async () => {
+              setBackupAction("export");
+              try {
+                await onExportBackup();
+              } finally {
+                setBackupAction(null);
+              }
+            }}
+            variant="outline"
+          >
+            {backupAction === "export" ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
+            {t("settings.backup.export")}
+          </Button>
+          <Button
+            disabled={backupAction !== null}
+            onClick={async () => {
+              setBackupAction("preview");
+              try {
+                setBackupPreview(await onPreviewBackupRestore());
+              } finally {
+                setBackupAction(null);
+              }
+            }}
+            variant="outline"
+          >
+            {backupAction === "preview" ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <FileSearch className="h-4 w-4" />}
+            {t("settings.backup.preview")}
+          </Button>
+          <Button
+            disabled={backupAction !== null}
+            onClick={async () => {
+              const confirmed = backupPreview
+                ? window.confirm(
+                    t("settings.backup.restoreConfirm", {
+                      photos: backupPreview.preview.photoCount,
+                      memories: backupPreview.preview.memoryCount,
+                      conflicts: backupPreview.preview.conflictCount,
+                    })
+                  )
+                : window.confirm(t("settings.backup.restoreConfirmNoPreview"));
+
+              if (!confirmed) {
+                return;
+              }
+
+              setBackupAction("restore");
+              try {
+                const restored = await onRestoreBackup(backupPreview?.path);
+                if (restored) {
+                  setBackupPreview(null);
+                }
+              } finally {
+                setBackupAction(null);
+              }
+            }}
+            variant="accent"
+          >
+            {backupAction === "restore" ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
+            {t("settings.backup.restore")}
+          </Button>
+        </div>
+
+        {backupPreview ? (
+          <div className="rounded-2xl border border-stone-200 bg-white px-4 py-3 text-sm leading-6 text-stone-600 shadow-sm">
+            <p className="font-medium text-stone-900">{t("settings.backup.previewTitle")}</p>
+            <p className="break-all text-xs text-stone-500">{backupPreview.path}</p>
+            <p className="mt-2">
+              {t("settings.backup.previewSummary", {
+                photos: backupPreview.preview.photoCount,
+                memories: backupPreview.preview.memoryCount,
+                sources: backupPreview.preview.sourceCount,
+                conflicts: backupPreview.preview.conflictCount,
+              })}
+            </p>
+          </div>
+        ) : (
+          <p className="text-xs leading-5 text-stone-500">{t("settings.backup.note")}</p>
+        )}
       </div>
 
       <div className="space-y-3 rounded-[28px] border border-stone-200 bg-stone-50/80 p-5 shadow-sm">

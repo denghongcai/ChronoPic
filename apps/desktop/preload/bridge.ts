@@ -1,6 +1,10 @@
 import type {
   AISettings,
   AppCapabilities,
+  BackupRestoreOptions,
+  BackupRestorePreview,
+  BackupRestoreResult,
+  ChronoPicBackupSettings,
   DiscoveryQuery,
   LibrarySnapshot,
   LocaleSettings,
@@ -36,6 +40,18 @@ export interface ChronoPicBridge {
   saveMapSettings: (settings: MapSettings) => Promise<MapSettings>;
   getLocaleSettings: () => Promise<LocaleSettings>;
   saveLocaleSettings: (settings: LocaleSettings) => Promise<LocaleSettings>;
+  exportBackup: (backupPath?: string) => Promise<{ path: string; preview: BackupRestorePreview } | null>;
+  previewBackupRestore: (backupPath?: string) => Promise<{ path: string; preview: BackupRestorePreview } | null>;
+  restoreBackup: (
+    backupPath?: string,
+    options?: BackupRestoreOptions
+  ) => Promise<{
+    path: string;
+    result: BackupRestoreResult;
+    settings: ChronoPicBackupSettings;
+    snapshot: LibrarySnapshot;
+    capabilities: AppCapabilities;
+  } | null>;
   pickLibraryDirectory: () => Promise<string | null>;
   addLibrarySource: (libraryPath: string) => Promise<unknown>;
   listLibrarySources: () => Promise<unknown>;

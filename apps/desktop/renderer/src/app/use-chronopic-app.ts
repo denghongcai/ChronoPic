@@ -7,6 +7,8 @@ import {
 import type {
   AISettings,
   AppCapabilities,
+  BackupRestorePreview,
+  BackupRestoreResult,
   DiscoveryQuery,
   DiscoveryQueryPatch,
   LibrarySnapshot,
@@ -441,6 +443,94 @@ export function useChronoPicApp() {
       showStatus("success", t("status.languageSettingsSaved"));
     } catch (error) {
       showStatus("error", formatErrorMessage(error, t("status.failedSaveLanguageSettings")));
+    }
+  }
+
+  async function handleExportBackup(): Promise<{ path: string; preview: BackupRestorePreview } | null> {
+    const activeBridge = requireBridge();
+    if (!activeBridge) {
+      return null;
+    }
+
+    try {
+      const result = await activeBridge.exportBackup();
+      if (!result) {
+        showStatus("warn", t("status.backupExportCancelled"));
+        return null;
+      }
+
+      showStatus("success", t("status.backupExported", { count: result.preview.photoCount, path: result.path }));
+      return result;
+    } catch (error) {
+      showStatus("error", formatErrorMessage(error, t("status.failedExportBackup")));
+      throw error;
+    }
+  }
+
+  async function handlePreviewBackupRestore(): Promise<{ path: string; preview: BackupRestorePreview } | null> {
+    const activeBridge = requireBridge();
+    if (!activeBridge) {
+      return null;
+    }
+
+    try {
+      const result = await activeBridge.previewBackupRestore();
+      if (!result) {
+        showStatus("warn", t("status.backupRestorePreviewCancelled"));
+        return null;
+      }
+
+      showStatus(
+        result.preview.conflictCount > 0 ? "warn" : "success",
+        t("status.backupRestorePreviewed", {
+          photos: result.preview.photoCount,
+          memories: result.preview.memoryCount,
+          conflicts: result.preview.conflictCount,
+        })
+      );
+      return result;
+    } catch (error) {
+      showStatus("error", formatErrorMessage(error, t("status.failedPreviewBackupRestore")));
+      throw error;
+    }
+  }
+
+  async function handleRestoreBackup(path?: string): Promise<{ path: string; result: BackupRestoreResult } | null> {
+    const activeBridge = requireBridge();
+    if (!activeBridge) {
+      return null;
+    }
+
+    try {
+      const response = await activeBridge.restoreBackup(path, { mode: "replace" });
+      if (!response) {
+        showStatus("warn", t("status.backupRestoreCancelled"));
+        return null;
+      }
+
+      setSnapshot(response.snapshot);
+      setCapabilities(response.capabilities);
+      setAISettings(response.settings.ai);
+      setMapSettings(response.settings.map);
+      setLocaleSettings(response.settings.locale);
+      await refreshPhotos();
+      await refreshMemories();
+      await refreshMemoryCandidates();
+      await refreshSemanticQueueStats();
+      showStatus(
+        "success",
+        t("status.backupRestored", {
+          photos: response.result.restoredPhotoCount,
+          memories: response.result.restoredMemoryCount,
+        })
+      );
+      return {
+        path: response.path,
+        result: response.result,
+      };
+    } catch (error) {
+      showStatus("error", formatErrorMessage(error, t("status.failedRestoreBackup")));
+      throw error;
     }
   }
 
@@ -1017,10 +1107,13 @@ export function useChronoPicApp() {
     handleEnrichMemorySemantic,
     handleEnrichSemantic,
     handleEnrichPendingSemantics,
+    handleExportBackup,
     handleGenerateMemoryCandidates,
+    handlePreviewBackupRestore,
     handleRejectMemoryCandidate,
     handleRemovePhotoFromMemory,
     handleRemoveSelectionFromMemory,
+    handleRestoreBackup,
     handleRollback,
     handleSaveAISettings,
     handleSaveLocaleSettings,

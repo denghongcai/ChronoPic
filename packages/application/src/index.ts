@@ -1,4 +1,9 @@
 import type {
+  BackupRestoreOptions,
+  BackupRestorePreview,
+  BackupRestoreResult,
+  ChronoPicBackup,
+  ChronoPicBackupSettings,
   DiscoveryQuery,
   IndexerStats,
   LibrarySnapshot,
@@ -176,6 +181,18 @@ export class ChronoPicAppService {
 
   getSnapshot(): LibrarySnapshot {
     return this.db.getSnapshot();
+  }
+
+  createBackup(settings: ChronoPicBackupSettings): ChronoPicBackup {
+    return this.db.exportBackup(settings);
+  }
+
+  previewBackupRestore(backup: ChronoPicBackup): BackupRestorePreview {
+    return this.db.previewBackupRestore(backup);
+  }
+
+  restoreBackup(backup: ChronoPicBackup, options?: BackupRestoreOptions): BackupRestoreResult {
+    return this.db.restoreBackup(backup, options);
   }
 
   getCapabilities() {

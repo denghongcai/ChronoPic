@@ -49,11 +49,14 @@ pnpm typecheck
 pnpm build
 pnpm run e2e:runtime
 pnpm run e2e:accessibility
+pnpm run e2e:backup
 ```
 
 `pnpm run e2e:runtime` launches the built Electron app with an isolated user-data directory, indexes fixture media, writes edits and memory data, restarts the app, and verifies persistence through the preload IPC bridge.
 
 `pnpm run e2e:accessibility` launches the built Electron app and verifies the core keyboard/focus loop: first-run setup, post-scan onboarding, create-memory focus return, photo-card keyboard activation, viewer Escape close, and batch-select accessible names.
+
+`pnpm run e2e:backup` launches the built Electron app, exports a local JSON backup, previews conflicts, restores into a clean user-data directory, and verifies authored metadata, favorites, memories, memberships, locale, and map settings.
 
 For broader agent-led product validation, follow the director script in `docs/agent-verification-script.md`. It tells code agents how to use Playwright manually after completing plan items, including which product scenes to inspect and what evidence to record in `AGENTS.md`.
 
@@ -67,6 +70,10 @@ AI enrichment is disabled unless all required settings are present in the app se
 - `CHRONOPIC_AI_PROVIDER`
 
 Map browsing uses Gaode/AMap Web JS API settings saved from the desktop settings page. Leaving the API key blank keeps map rendering disabled.
+
+## Backup And Restore
+
+Library Settings includes local JSON backup controls. Backups include ChronoPic's database projection and settings: library source records, photo metadata, authored captions/tags/datetime edits, favorites, memories, memory memberships, generated fields, memory candidates, AI settings, map settings, and locale settings. Original media files are referenced by path and are not copied into the backup.
 
 ## Project Layout
 
