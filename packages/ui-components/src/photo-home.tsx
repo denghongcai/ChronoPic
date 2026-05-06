@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 
 import type {
+  AISettingsField,
   AISettings,
   BackupRestorePreview,
   BackupRestoreResult,
@@ -30,6 +31,8 @@ import type {
   PhotoRecord,
   SemanticQueueStats,
 } from "@chronopic/domain";
+import { getAIReadiness } from "@chronopic/domain";
+import type { TranslationKey } from "@chronopic/i18n";
 
 import { Badge } from "./badge.js";
 import { BrowseModePlaceholder } from "./browse-mode-placeholder.js";
@@ -62,6 +65,19 @@ const EMPTY_QUEUE_STATS: SemanticQueueStats = {
   completed: 0,
   failed: 0,
 };
+
+function aiFieldLabel(field: AISettingsField, t: (key: TranslationKey) => string): string {
+  switch (field) {
+    case "apiKey":
+      return t("settings.ai.apiKey");
+    case "baseURL":
+      return t("settings.ai.baseUrl");
+    case "model":
+      return t("settings.ai.model");
+    case "providerName":
+      return t("settings.ai.provider");
+  }
+}
 
 export interface PhotoHomeProps extends EditControlsProps {
   mapBrowseContent?: React.ReactNode;
@@ -724,8 +740,10 @@ export function PhotoHome({
                 <div className="rounded-[32px] border border-stone-200/70 bg-white p-6 shadow-sm">
                   <NotificationCenterPanel
                     aiEnabled={aiEnabled}
+                    aiSettings={aiSettings}
                     aiQueueStats={safeAiQueueStats}
                     memoryCandidateCount={memoryCandidates.length}
+                    onOpenSettings={() => setPage("library-settings")}
                     statusKind={statusKind}
                     statusMessage={statusMessage}
                     {...(isBatchEnrichingSemantic !== undefined ? { isBatchEnrichingSemantic } : {})}
@@ -943,6 +961,14 @@ function LibrarySettingsPanel({
     { label: t("common.errors"), value: snapshot.stats.erroredPhotos, icon: AlertTriangle },
     { label: t("common.duplicates"), value: snapshot.stats.duplicatePhotos, icon: Sparkles },
   ];
+  const aiReadiness = getAIReadiness(draftAISettings);
+  const aiStatusLabel = aiEnabled
+    ? t("settings.ai.configured")
+    : aiReadiness.presentFields.length > 0
+      ? t("settings.ai.incomplete")
+      : t("settings.ai.disabled");
+  const aiStatusTone = aiEnabled ? "success" : aiReadiness.presentFields.length > 0 ? "warn" : "neutral";
+  const aiRequiredFields: AISettingsField[] = ["apiKey", "baseURL", "model", "providerName"];
 
   return (
     <div className="space-y-6">
@@ -1133,7 +1159,44 @@ function LibrarySettingsPanel({
 	              {t("settings.ai.description")}
             </p>
           </div>
-	          <Badge tone={aiEnabled ? "success" : "neutral"}>{aiEnabled ? t("settings.ai.enabled") : t("settings.ai.disabled")}</Badge>
+	          <Badge tone={aiStatusTone}>{aiStatusLabel}</Badge>
+        </div>
+
+        <div className="rounded-2xl border border-stone-200 bg-white px-4 py-3 shadow-sm">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <p className="text-sm font-medium text-stone-900">{t("settings.ai.setupStatus")}</p>
+              <p className="mt-1 text-xs leading-5 text-stone-500">
+                {aiEnabled
+                  ? t("settings.ai.configuredDescription")
+                  : aiReadiness.presentFields.length > 0
+                    ? t("settings.ai.incompleteDescription")
+                    : t("settings.ai.disabledDescription")}
+              </p>
+            </div>
+            <Badge tone={aiStatusTone}>{aiStatusLabel}</Badge>
+          </div>
+          <div className="mt-3 grid gap-2 sm:grid-cols-2">
+            {aiRequiredFields.map((field) => {
+              const isPresent = aiReadiness.presentFields.includes(field);
+              return (
+                <div
+                  className="flex items-center justify-between gap-2 rounded-xl border border-stone-200 bg-stone-50/70 px-3 py-2"
+                  key={field}
+                >
+                  <span className="text-xs font-medium text-stone-700">{aiFieldLabel(field, t)}</span>
+                  <Badge tone={isPresent ? "success" : "warn"}>
+                    {isPresent ? t("settings.ai.present") : t("settings.ai.missing")}
+                  </Badge>
+                </div>
+              );
+            })}
+            <div className="flex items-center justify-between gap-2 rounded-xl border border-stone-200 bg-stone-50/70 px-3 py-2">
+              <span className="text-xs font-medium text-stone-700">{t("settings.language.aiOutputLocale")}</span>
+              <Badge tone="success">{t("settings.ai.present")}</Badge>
+            </div>
+          </div>
+          <p className="mt-3 text-xs leading-5 text-stone-500">{t("settings.ai.secretNote")}</p>
         </div>
 
         <div className="grid gap-4 md:grid-cols-2">
@@ -1298,27 +1361,33 @@ function LibrarySettingsPanel({
 
 function NotificationCenterPanel({
   aiEnabled,
+  aiSettings,
   aiQueueStats,
   memoryCandidateCount,
   isGeneratingMemoryCandidates,
   isBatchEnrichingSemantic,
   onGenerateMemoryCandidates,
   onEnrichPendingSemantics,
+  onOpenSettings,
   statusKind,
   statusMessage,
 }: {
   aiEnabled: boolean;
+  aiSettings: AISettings;
   aiQueueStats: SemanticQueueStats;
   memoryCandidateCount: number;
   isGeneratingMemoryCandidates?: boolean;
   isBatchEnrichingSemantic?: boolean;
   onGenerateMemoryCandidates?: () => void;
   onEnrichPendingSemantics?: () => void;
+  onOpenSettings: () => void;
   statusKind: "idle" | "info" | "success" | "warn" | "error";
   statusMessage: string;
 }) {
   const { t } = useI18n();
+  const aiReadiness = getAIReadiness(aiSettings);
   const outstanding = aiQueueStats.disabled + aiQueueStats.pending + aiQueueStats.processing + aiQueueStats.failed;
+  const canRunQueue = aiEnabled && outstanding > 0 && !isBatchEnrichingSemantic;
 
   return (
     <div className="space-y-6">
@@ -1350,14 +1419,28 @@ function NotificationCenterPanel({
                   : t("notifications.aiEmpty")
                 : t("notifications.aiDisabled")}
             </p>
+            {aiReadiness.configured ? (
+              <p className="text-xs leading-5 text-stone-500">{t("notifications.aiReviewBoundary")}</p>
+            ) : (
+              <p className="text-xs leading-5 text-stone-500">
+                {t("notifications.aiSetupMissing", { fields: aiReadiness.missingFields.map((field) => aiFieldLabel(field, t)).join(", ") })}
+              </p>
+            )}
           </div>
-          <Button
-            disabled={!aiEnabled || outstanding === 0 || isBatchEnrichingSemantic}
-            onClick={() => void onEnrichPendingSemantics?.()}
-            variant="outline"
-          >
-            {isBatchEnrichingSemantic ? t("notifications.processingQueue") : t("notifications.enrichQueue")}
-          </Button>
+          <div className="flex flex-wrap gap-2">
+            {!aiReadiness.configured ? (
+              <Button onClick={onOpenSettings} variant="outline">
+                {t("notifications.configureAi")}
+              </Button>
+            ) : null}
+            <Button
+              disabled={!canRunQueue}
+              onClick={() => void onEnrichPendingSemantics?.()}
+              variant="outline"
+            >
+              {isBatchEnrichingSemantic ? t("notifications.processingQueue") : t("notifications.enrichQueue")}
+            </Button>
+          </div>
         </div>
       </div>
 

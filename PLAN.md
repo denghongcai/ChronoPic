@@ -1605,6 +1605,115 @@ Current status:
   `pnpm typecheck`,
   and `git diff --check`.
 
+### 4.26 AI Productization Tightening Phase ✅
+
+- Do a smaller AI productization close-out before promoting larger AI features such as OCR, vector search, or person grouping.
+- The goal is to make the existing AI-powered promise more visible, understandable, and recoverable in the product without changing the core local-first model.
+- Keep this phase focused on UX/status/orchestration around already-planned AI enrichment, memory suggestions, candidate review, and settings.
+
+Implementation breakdown:
+
+1. AI setup clarity
+- Add a clear AI readiness surface in Settings or Notifications:
+  configured,
+  incomplete,
+  disabled,
+  and failed states should be distinguishable.
+- Show which settings are required for AI enrichment:
+  API key,
+  base URL,
+  model,
+  provider name,
+  and AI output language.
+- Avoid exposing secrets after save; only show presence/absence and safe metadata.
+- Add a lightweight health-check action if the current provider abstraction supports it cleanly.
+  If not, add the UI affordance and disabled-state copy first, then defer live provider probing.
+
+2. AI enrichment queue visibility
+- Make pending, processing, failed, and completed AI enrichment states visible from the existing Notifications or AI-related surfaces.
+- Provide retry affordances for failed photo enrichment and failed memory enrichment where application APIs already support retry semantics.
+- Keep user-authored fields visually distinct from AI-generated suggestions.
+- Explain that generated content is reviewable and does not overwrite user edits.
+
+3. Memory candidate guidance
+- Tighten the suggested-memory review flow so users understand:
+  why a memory candidate was suggested,
+  which photos are included,
+  confidence/reason metadata when available,
+  and that accepting a candidate creates an editable Memory.
+- Preserve the explicit accept/reject rule.
+- Do not auto-create Memories from AI suggestions.
+
+4. First-run and empty-state integration
+- Add small AI-aware empty states in relevant surfaces:
+  home,
+  notifications,
+  search/discovery,
+  and memory suggestions.
+- The empty states should point to the next concrete action:
+  configure AI,
+  scan library,
+  run enrichment,
+  review candidates,
+  or retry failed work.
+- Keep copy concise and user-facing; avoid developer or implementation terminology.
+
+5. Verification
+- Add or update unit tests around any new application-level AI status aggregation.
+- Add E2E coverage only for visible UI state changes that can be exercised without real provider secrets.
+- Use [docs/agent-verification-script.md](docs/agent-verification-script.md) because this is a user-facing product-flow refinement.
+- Suggested manual scenes:
+  Scene 1 - Launch And First Impression,
+  Scene 3 - Scan And Browse,
+  Scene 6 - Settings, Locale, AI, And Map,
+  Scene 8 - Notifications And AI Queue,
+  and Scene 7 - Restart Persistence if settings or queue state persistence changes.
+
+Acceptance expectations:
+
+- Users can tell whether AI is disabled, incomplete, configured, running, failed, or ready for review.
+- AI setup and output-language state are visible without exposing secrets.
+- Failed AI work has an obvious recovery path where retry APIs exist.
+- Memory candidates explain enough context to support review without automatic acceptance.
+- The README's AI-powered positioning is reflected in the product UI, while local-first and review-before-apply boundaries remain clear.
+- No OCR, vector embedding search, face/person recognition, installer work, or large-library performance work is bundled into this phase.
+
+Current status:
+
+- Completed locally on 2026-05-07.
+- Added `getAIReadiness()` in [packages/domain/src/index.ts](packages/domain/src/index.ts) with unit coverage in [tests/domain.test.ts](tests/domain.test.ts).
+- Added an AI setup status card in [packages/ui-components/src/photo-home.tsx](packages/ui-components/src/photo-home.tsx) that distinguishes:
+  configured,
+  incomplete,
+  and disabled settings.
+- The setup card lists required AI fields safely:
+  API key,
+  base URL,
+  model,
+  provider name,
+  and AI output language,
+  using presence/missing badges instead of exposing saved secrets.
+- Notifications now show missing AI setup fields and provide a direct `Configure AI` path back to Library Settings when the AI queue cannot run.
+- Existing AI queue status badges remain visible for:
+  disabled,
+  pending,
+  processing,
+  failed,
+  and completed items.
+- Suggested Memories now explain that accepting a candidate creates an editable Memory, rejecting it leaves the library untouched, and each candidate shows source/confidence/photo-count context near the reason.
+- Added an accessible name and title to the sidebar Notifications icon button in [packages/ui-components/src/sidebar.tsx](packages/ui-components/src/sidebar.tsx).
+- Added [tests/e2e/ai-productization.spec.ts](tests/e2e/ai-productization.spec.ts) plus the root script:
+  `pnpm run e2e:ai`.
+- Added `e2e:ai` to CI and documented it in [DEVELOPMENT.md](DEVELOPMENT.md).
+- Live provider health checking is intentionally deferred because the current provider abstraction does not expose a separate non-generating health probe; this phase adds readiness and recovery UI without adding a new provider API.
+- Verified with:
+  `pnpm test`,
+  `pnpm typecheck`,
+  `pnpm build`,
+  `pnpm run clean && pnpm run build:packages && node --experimental-strip-types --test tests/domain.test.ts tests/i18n.test.ts`,
+  `pnpm run e2e:ai`,
+  and `pnpm run e2e:accessibility`.
+
 ## Future Product Backlog
 
 These are intentionally recorded as candidate directions rather than committed phases. They should be promoted into explicit numbered phases only after the current product risk is re-evaluated.

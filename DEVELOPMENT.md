@@ -4,8 +4,8 @@ This document is for contributors and code agents working on ChronoPic. The user
 
 ## Repository Status
 
-- Current package version: `0.1.2`
-- Latest verified release: `v0.1.2`
+- Current package version: `0.1.3`
+- Latest verified release: `v0.1.3`
 - Package manager: `pnpm@10.0.0`
 - Runtime baseline: Node.js 24
 - Planning source: [PLAN.md](PLAN.md)
@@ -64,6 +64,7 @@ Runtime E2E checks:
 ```sh
 pnpm run e2e:runtime
 pnpm run e2e:accessibility
+pnpm run e2e:ai
 pnpm run e2e:backup
 ```
 
@@ -83,6 +84,7 @@ What the main E2E suites cover:
 
 - `e2e:runtime`: launches the built Electron app, indexes fixture media, writes edits/memories/settings, restarts, and verifies persistence through the preload bridge.
 - `e2e:accessibility`: checks the keyboard/focus loop for first-run setup, create-memory dialog focus return, photo-card activation, viewer Escape close, and batch-select accessible labels.
+- `e2e:ai`: checks AI setup readiness, safe required-field visibility, disabled queue recovery, and the Notifications-to-Settings path without requiring real provider secrets.
 - `e2e:backup`: exports a JSON backup, previews conflicts, restores into a clean data directory, and verifies authored metadata, favorites, memories, memberships, locale, and map settings.
 - `e2e:packaged`: launches the packaged executable or app bundle directly rather than [apps/desktop/dist/main/main.js](apps/desktop/dist/main/main.js).
 
@@ -130,8 +132,8 @@ chronopic-<target>-<arch>-<tag>.tar.gz.sha256
 Pushing a version tag that starts with `v` runs [.github/workflows/release.yml](.github/workflows/release.yml):
 
 ```sh
-git tag v0.1.2
-git push origin v0.1.2
+git tag v0.1.3
+git push origin v0.1.3
 ```
 
 The release workflow:
@@ -202,6 +204,7 @@ pnpm typecheck            # package and desktop TypeScript checks
 pnpm build                # clean build for packages and desktop app
 pnpm run e2e:runtime      # Electron runtime persistence smoke
 pnpm run e2e:accessibility
+pnpm run e2e:ai
 pnpm run e2e:backup
 pnpm run e2e:packaged
 pnpm run package:linux

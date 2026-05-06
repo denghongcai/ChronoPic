@@ -41,6 +41,9 @@ export function SuggestedMemoriesSection({
           <p className="mt-2 text-sm text-stone-500">
             {t("memories.suggestedDescription")}
           </p>
+          <p className="mt-1 text-xs leading-5 text-stone-500">
+            {t("memories.suggestedReviewBoundary")}
+          </p>
         </div>
         <div className="flex items-center gap-2">
           <Badge tone={candidates.length > 0 ? "warn" : "neutral"}>
@@ -92,6 +95,13 @@ export function SuggestedMemoriesSection({
                           value={draftTitle}
                         />
                         <p className="text-sm leading-6 text-stone-500">{candidate.reason}</p>
+                        <p className="text-xs leading-5 text-stone-500">
+                          {t("memories.suggestedCandidateContext", {
+                            source: candidate.source,
+                            confidence: Math.round(candidate.confidence * 100),
+                            count: retainedPhotoIds.length,
+                          })}
+                        </p>
                       </div>
                       <div className="flex flex-wrap gap-2">
                         <Badge tone="neutral">{t("memory.detail.photos", { count: retainedPhotoIds.length })}</Badge>

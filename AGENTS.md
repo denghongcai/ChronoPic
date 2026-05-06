@@ -2389,3 +2389,49 @@ This file is the local execution record for ChronoPic. It complements `PLAN.md` 
   `git diff --check`
 - Result: the current product logic was left untouched, release/platform maintenance gaps were narrowed, and Linux packaging remains verified after the helper extraction.
 - Next: review the diff, then commit/push the maintenance close-out when requested.
+
+### 2026-05-07 Step 119
+
+- Added `4.26 AI Productization Tightening Phase` to `PLAN.md`.
+- Scoped the phase as a small AI productization close-out rather than a larger AI capability expansion.
+- Defined the next implementation direction around:
+  AI setup clarity,
+  AI enrichment queue visibility,
+  memory candidate guidance,
+  first-run/empty-state integration,
+  and verification.
+- Explicitly excluded OCR, vector embedding search, face/person recognition, installer work, and large-library performance work from this phase.
+- Verification for this planning-only change:
+  `git diff --check`
+- Result: the next phase is now recorded locally and ready for implementation when requested.
+- Next: implement `4.26` or commit/push the planning update when requested.
+
+### 2026-05-07 Step 120
+
+- Implemented `4.26 AI Productization Tightening Phase`.
+- Added `getAIReadiness()` to the domain package so AI setup state can be derived without exposing secrets.
+- Added unit coverage for AI readiness in `tests/domain.test.ts`.
+- Added a clearer AI setup status card in Library Settings:
+  configured,
+  incomplete,
+  and disabled states are visible,
+  required AI fields are listed,
+  and API-key state is shown only as present/missing.
+- Added direct Notifications recovery for incomplete AI setup:
+  Notifications now shows missing setup fields and a `Configure AI` action back to Library Settings.
+- Kept the existing queue model but made the review boundary clearer:
+  generated captions, summaries, tags, and memory suggestions remain separate from user-authored edits.
+- Tightened Suggested Memories copy so candidates explain accept/reject semantics, source, confidence, and included-photo count.
+- Added an accessible label/title to the sidebar Notifications icon button, which the new E2E coverage needed to navigate the AI queue surface.
+- Added `tests/e2e/ai-productization.spec.ts` and root script `pnpm run e2e:ai`.
+- Added `e2e:ai` to CI and documented the suite in `DEVELOPMENT.md`.
+- Explicitly deferred live provider health checking because the current provider abstraction has no separate non-generating health probe.
+- Verified:
+  `pnpm test`
+  `pnpm typecheck`
+  `pnpm build`
+  `pnpm run clean && pnpm run build:packages && node --experimental-strip-types --test tests/domain.test.ts tests/i18n.test.ts`
+  `pnpm run e2e:ai`
+  `pnpm run e2e:accessibility`
+- Result: AI setup/readiness, queue recovery, and memory-candidate review semantics are more visible without adding OCR, vector search, person recognition, installers, or performance work.
+- Next: run the broader final verification set, then commit/push when requested.

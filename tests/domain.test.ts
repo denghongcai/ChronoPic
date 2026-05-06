@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { DEFAULT_FILTER, discoveryQueryToPhotoFilter, photoFilterToDiscoveryQuery } from "@chronopic/domain";
+import { DEFAULT_FILTER, getAIReadiness, discoveryQueryToPhotoFilter, photoFilterToDiscoveryQuery } from "@chronopic/domain";
 
 test("DEFAULT_FILTER keeps stable paging and sort defaults", () => {
   assert.deepEqual(DEFAULT_FILTER, {
@@ -33,4 +33,36 @@ test("discovery query helpers map search text and shared filter fields consisten
   });
 
   assert.deepEqual(photoFilterToDiscoveryQuery(filter), discovery);
+});
+
+test("getAIReadiness reports safe setup state without exposing secrets", () => {
+  assert.deepEqual(
+    getAIReadiness({
+      apiKey: "",
+      baseURL: "https://models.example/v1",
+      model: "vision-model",
+      providerName: "openai-compatible",
+    }),
+    {
+      status: "incomplete",
+      configured: false,
+      missingFields: ["apiKey"],
+      presentFields: ["baseURL", "model", "providerName"],
+    }
+  );
+
+  assert.deepEqual(
+    getAIReadiness({
+      apiKey: "secret-token",
+      baseURL: "https://models.example/v1",
+      model: "vision-model",
+      providerName: "openai-compatible",
+    }),
+    {
+      status: "configured",
+      configured: true,
+      missingFields: [],
+      presentFields: ["apiKey", "baseURL", "model", "providerName"],
+    }
+  );
 });

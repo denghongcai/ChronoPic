@@ -275,6 +275,17 @@ export interface AISettings {
   providerName: string;
 }
 
+export type AISettingsField = keyof AISettings;
+
+export type AIReadinessStatus = "configured" | "incomplete";
+
+export interface AIReadiness {
+  status: AIReadinessStatus;
+  configured: boolean;
+  missingFields: AISettingsField[];
+  presentFields: AISettingsField[];
+}
+
 export interface MapSettings {
   apiKey: string;
   securityJsCode: string;
@@ -376,6 +387,20 @@ export function discoveryQueryToPhotoFilter(query: DiscoveryQuery = {}): PhotoFi
   if (query.offset !== undefined) filter.offset = query.offset;
 
   return filter;
+}
+
+export function getAIReadiness(settings: AISettings): AIReadiness {
+  const requiredFields: AISettingsField[] = ["apiKey", "baseURL", "model", "providerName"];
+  const missingFields = requiredFields.filter((field) => !settings[field]?.trim());
+  const presentFields = requiredFields.filter((field) => settings[field]?.trim());
+  const configured = missingFields.length === 0;
+
+  return {
+    status: configured ? "configured" : "incomplete",
+    configured,
+    missingFields,
+    presentFields,
+  };
 }
 
 export function photoFilterToDiscoveryQuery(filter: PhotoFilter = {}): DiscoveryQuery {

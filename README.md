@@ -8,7 +8,7 @@ ChronoPic uses AI to turn a local photo library into searchable semantics, story
 
 ## Download
 
-Latest verified release: `v0.1.2`
+Latest verified release: `v0.1.3`
 
 Download ChronoPic from the GitHub Releases page:
 
@@ -16,9 +16,9 @@ https://github.com/denghongcai/ChronoPic/releases/latest
 
 Current desktop archives:
 
-- Linux: `chronopic-linux-x64-v0.1.2.tar.gz`
-- macOS: `chronopic-macos-arm64-v0.1.2.tar.gz`
-- Windows: `chronopic-windows-x64-v0.1.2.tar.gz`
+- Linux: `chronopic-linux-x64-v0.1.3.tar.gz`
+- macOS: `chronopic-macos-arm64-v0.1.3.tar.gz`
+- Windows: `chronopic-windows-x64-v0.1.3.tar.gz`
 
 Each archive has a matching `.sha256` checksum file.
 

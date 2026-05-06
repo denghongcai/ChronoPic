@@ -46,6 +46,9 @@ jobs:
       - name: Accessibility E2E
         run: xvfb-run -a pnpm run e2e:accessibility
 
+      - name: AI Productization E2E
+        run: xvfb-run -a pnpm run e2e:ai
+
       - name: Backup E2E
         run: xvfb-run -a pnpm run e2e:backup
 

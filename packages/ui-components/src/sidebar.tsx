@@ -81,6 +81,7 @@ export function Sidebar({
           <p className="text-xs text-stone-400">{t("sidebar.subtitle")}</p>
         </div>
         <button
+          aria-label={t("sidebar.notifications")}
           className={cn(
             "relative grid h-9 w-9 shrink-0 place-items-center rounded-full border bg-white shadow-sm transition",
             activeItem === "notifications"
@@ -88,6 +89,7 @@ export function Sidebar({
               : "border-stone-200 text-stone-500 hover:border-stone-300 hover:text-stone-900"
           )}
           onClick={() => onSelectItem?.("notifications")}
+          title={t("sidebar.notifications")}
           type="button"
         >
           <BellIcon className="h-4 w-4" />

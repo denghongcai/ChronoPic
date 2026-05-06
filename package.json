@@ -1,6 +1,6 @@
 {
   "name": "chronopic",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "private": true,
   "type": "module",
   "packageManager": "pnpm@10.0.0",
@@ -14,6 +14,7 @@
     "desktop:start": "pnpm build && pnpm --filter @chronopic/desktop start",
     "e2e": "pnpm run e2e:prepare && pnpm exec playwright test -c tests/e2e/playwright.config.ts",
     "e2e:accessibility": "pnpm run e2e:prepare && pnpm exec playwright test -c tests/e2e/playwright.config.ts accessibility.spec.ts",
+    "e2e:ai": "pnpm run e2e:prepare && pnpm exec playwright test -c tests/e2e/playwright.config.ts ai-productization.spec.ts",
     "e2e:backup": "pnpm run e2e:prepare && pnpm exec playwright test -c tests/e2e/playwright.config.ts backup.spec.ts",
     "e2e:packaged": "pnpm exec playwright test -c tests/e2e/playwright.config.ts packaged.spec.ts",
     "e2e:prepare": "pnpm run native:electron",
