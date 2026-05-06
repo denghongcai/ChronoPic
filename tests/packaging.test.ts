@@ -7,7 +7,9 @@ const packageJson = JSON.parse(fs.readFileSync("package.json", "utf8")) as {
 };
 
 test("release packaging scripts are exposed at the repository root", () => {
-  assert.match(packageJson.scripts?.["package:linux"] ?? "", /scripts\/package-linux\.mjs/);
+  assert.match(packageJson.scripts?.["package:linux"] ?? "", /scripts\/package-desktop\.mjs linux/);
+  assert.match(packageJson.scripts?.["package:macos"] ?? "", /scripts\/package-desktop\.mjs macos/);
+  assert.match(packageJson.scripts?.["package:windows"] ?? "", /scripts\/package-desktop\.mjs windows/);
   assert.match(packageJson.scripts?.["package:verify"] ?? "", /scripts\/verify-package\.mjs/);
   assert.match(packageJson.scripts?.["e2e:packaged"] ?? "", /packaged\.spec\.ts/);
   assert.match(packageJson.scripts?.["package:smoke"] ?? "", /package:verify/);
@@ -15,20 +17,29 @@ test("release packaging scripts are exposed at the repository root", () => {
 });
 
 test("release packaging implementation files exist", () => {
+  assert.equal(fs.existsSync("scripts/package-desktop.mjs"), true);
   assert.equal(fs.existsSync("scripts/package-linux.mjs"), true);
+  assert.equal(fs.existsSync("scripts/archive-release-artifact.mjs"), true);
   assert.equal(fs.existsSync("scripts/verify-package.mjs"), true);
   assert.equal(fs.existsSync("tests/e2e/packaged.spec.ts"), true);
 });
 
-test("tag release workflow publishes the verified Linux package", () => {
+test("tag release workflow publishes verified Linux, macOS, and Windows packages", () => {
   assert.equal(fs.existsSync(".github/workflows/release.yml"), true);
 
   const workflow = fs.readFileSync(".github/workflows/release.yml", "utf8");
   assert.match(workflow, /tags:\s*\n\s*-\s+"v\*"/);
   assert.match(workflow, /contents:\s+write/);
-  assert.match(workflow, /pnpm run package:linux/);
-  assert.match(workflow, /pnpm run package:verify/);
-  assert.match(workflow, /xvfb-run -a pnpm run e2e:packaged/);
-  assert.match(workflow, /gh release (create|upload)/);
+  assert.match(workflow, /target:\s+linux/);
+  assert.match(workflow, /target:\s+macos/);
+  assert.match(workflow, /target:\s+windows/);
+  assert.match(workflow, /os:\s+ubuntu-latest/);
+  assert.match(workflow, /os:\s+macos-latest/);
+  assert.match(workflow, /os:\s+windows-latest/);
+  assert.match(workflow, /pnpm run package:\$\{\{ matrix\.target \}\}/);
+  assert.match(workflow, /pnpm run package:verify -- \$\{\{ matrix\.target \}\}/);
+  assert.match(workflow, /CHRONOPIC_PACKAGED_TARGET: \$\{\{ matrix\.target \}\}/);
+  assert.match(workflow, /scripts\/archive-release-artifact\.mjs \$\{\{ matrix\.target \}\}/);
+  assert.match(workflow, /gh release upload/);
   assert.match(workflow, /sha256/);
 });

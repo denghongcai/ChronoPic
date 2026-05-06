@@ -16,7 +16,7 @@ async function createFixtureLibrary(): Promise<string> {
 
 async function launchPackagedChronoPic(userDataDir: string) {
   const { VITE_DEV_SERVER_URL: _viteDevServerUrl, ...baseEnv } = process.env;
-  const executablePath = process.env.CHRONOPIC_PACKAGED_APP_PATH ?? path.resolve("dist/release/chronopic-linux-x64/chronopic");
+  const executablePath = process.env.CHRONOPIC_PACKAGED_APP_PATH ?? defaultPackagedExecutablePath();
 
   return electron.launch({
     executablePath,
@@ -26,6 +26,33 @@ async function launchPackagedChronoPic(userDataDir: string) {
       ELECTRON_DISABLE_SANDBOX: "1",
     },
   });
+}
+
+function defaultPackagedExecutablePath(): string {
+  const arch = process.arch;
+  const target = process.env.CHRONOPIC_PACKAGED_TARGET ?? platformTarget();
+
+  if (target === "macos") {
+    return path.resolve(`dist/release/chronopic-macos-${arch}/ChronoPic.app/Contents/MacOS/ChronoPic`);
+  }
+
+  if (target === "windows") {
+    return path.resolve(`dist/release/chronopic-windows-${arch}/chronopic.exe`);
+  }
+
+  return path.resolve(`dist/release/chronopic-linux-${arch}/chronopic`);
+}
+
+function platformTarget(): string {
+  if (process.platform === "darwin") {
+    return "macos";
+  }
+
+  if (process.platform === "win32") {
+    return "windows";
+  }
+
+  return "linux";
 }
 
 test.describe("ChronoPic packaged desktop runtime", () => {

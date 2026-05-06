@@ -2281,3 +2281,33 @@ This file is the local execution record for ChronoPic. It complements `PLAN.md` 
 - Verified:
   `node --experimental-strip-types --test tests/packaging.test.ts`
 - Next: run broader verification, then commit/push when requested.
+
+### 2026-05-06 Step 114
+
+- Expanded release packaging from Linux-only to Linux, macOS, and Windows.
+- Added `scripts/package-desktop.mjs` as the shared platform-aware packager and kept `scripts/package-linux.mjs` as a compatibility wrapper.
+- The packager now emits:
+  `dist/release/chronopic-linux-<arch>`,
+  `dist/release/chronopic-macos-<arch>`,
+  and `dist/release/chronopic-windows-<arch>` on matching runner platforms.
+- Updated `scripts/verify-package.mjs` so package verification understands Linux, macOS app bundles, and Windows executables.
+- Added `scripts/archive-release-artifact.mjs` so all release jobs create a tar.gz archive and SHA-256 checksum consistently.
+- Updated packaged E2E default executable resolution to support:
+  Linux `chronopic`,
+  macOS `ChronoPic.app/Contents/MacOS/ChronoPic`,
+  and Windows `chronopic.exe`.
+- Updated `.github/workflows/release.yml` to use a three-platform matrix:
+  `ubuntu-latest`,
+  `macos-latest`,
+  and `windows-latest`.
+- The release workflow now creates or updates the GitHub Release once, then each platform job packages, verifies, smokes, archives, and uploads its own assets with `--clobber`.
+- Updated `README.md` and `PLAN.md` to describe the three-platform tag release path and the remaining limitations around signing, notarization, auto-update, and installers.
+- Verified locally on Linux:
+  `node --experimental-strip-types --test tests/packaging.test.ts`
+  `node --check scripts/package-desktop.mjs && node --check scripts/package-linux.mjs && node --check scripts/verify-package.mjs && node --check scripts/archive-release-artifact.mjs`
+  `pnpm run package:linux`
+  `pnpm run package:verify -- linux`
+  `pnpm run e2e:packaged`
+  `node scripts/archive-release-artifact.mjs linux v0.1.0-local`
+- Result: Linux remains locally verified after the shared-packager refactor; macOS and Windows packaging are wired for real validation on GitHub Actions runners.
+- Next: run the root test suite, then commit/push and trigger a new tag release when requested.

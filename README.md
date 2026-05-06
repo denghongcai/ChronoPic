@@ -62,16 +62,20 @@ For broader agent-led product validation, follow the director script in `docs/ag
 
 ## Local Packaging
 
-Build an unpacked Linux desktop artifact:
+Build an unpacked desktop artifact for the current release target:
 
 ```sh
 pnpm run package:linux
+pnpm run package:macos
+pnpm run package:windows
 ```
 
-The local artifact is emitted at `dist/release/chronopic-linux-x64/chronopic`. Verify the artifact layout and native modules:
+Run each command on the matching OS. The artifacts are emitted under `dist/release/chronopic-<target>-<arch>`. Verify the artifact layout and native modules:
 
 ```sh
-pnpm run package:verify
+pnpm run package:verify -- linux
+pnpm run package:verify -- macos
+pnpm run package:verify -- windows
 ```
 
 Run the packaged smoke test, which launches the packaged executable rather than `apps/desktop/dist/main/main.js`:
@@ -86,7 +90,7 @@ In headless Linux environments, run the smoke command under Xvfb:
 xvfb-run -a pnpm run package:smoke
 ```
 
-Current packaging scope is local Linux unpacked output only. Signing, notarization, auto-update, installers, and macOS/Windows artifacts are follow-up release work.
+Current packaging scope is unpacked desktop output. Signing, notarization, auto-update, and installers are follow-up release work.
 
 ## Tag Releases
 
@@ -97,7 +101,7 @@ git tag v0.1.0
 git push origin v0.1.0
 ```
 
-The workflow builds the Linux package, verifies the packaged artifact, runs packaged E2E under Xvfb, archives `dist/release/chronopic-linux-x64`, writes a SHA-256 checksum, and publishes both files to the GitHub Release for the tag.
+The workflow builds Linux, macOS, and Windows packages on matching GitHub-hosted runners. Each matrix job verifies its packaged artifact, runs packaged E2E, archives `dist/release/chronopic-<target>-<arch>`, writes a SHA-256 checksum, and uploads both files to the GitHub Release for the tag.
 
 ## Optional Integrations
 

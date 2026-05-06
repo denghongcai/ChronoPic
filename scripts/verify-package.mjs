@@ -4,8 +4,73 @@ import { fileURLToPath } from "node:url";
 
 const scriptDir = path.dirname(fileURLToPath(import.meta.url));
 const rootDir = path.resolve(scriptDir, "..");
-const packageDir = path.resolve(process.argv[2] ?? path.join(rootDir, "dist", "release", "chronopic-linux-x64"));
-const appDir = path.join(packageDir, "resources", "app");
+
+const targetByPlatform = new Map([
+  ["linux", "linux"],
+  ["darwin", "macos"],
+  ["win32", "windows"],
+]);
+
+function normalizeTarget(input = targetByPlatform.get(process.platform)) {
+  if (input === "darwin") {
+    return "macos";
+  }
+
+  if (input === "win32") {
+    return "windows";
+  }
+
+  if (input === "linux" || input === "macos" || input === "windows") {
+    return input;
+  }
+
+  throw new Error(`Unsupported package verification target: ${String(input)}`);
+}
+
+function packageFolderName(target, arch = process.arch) {
+  return `chronopic-${target}-${arch}`;
+}
+
+function resolvePackagePaths(argv) {
+  const args = argv.slice(2).filter((arg) => arg !== "--");
+  const firstArg = args[0];
+  const secondArg = args[1];
+  const isTargetArg = firstArg === "linux" || firstArg === "macos" || firstArg === "windows";
+  const target = normalizeTarget(isTargetArg ? firstArg : undefined);
+  const packageDir = path.resolve(
+    isTargetArg
+      ? secondArg ?? path.join(rootDir, "dist", "release", packageFolderName(target))
+      : firstArg ?? path.join(rootDir, "dist", "release", packageFolderName(target))
+  );
+
+  if (target === "macos") {
+    return {
+      target,
+      packageDir,
+      appDir: path.join(packageDir, "ChronoPic.app", "Contents", "Resources", "app"),
+      executablePath: path.join(packageDir, "ChronoPic.app", "Contents", "MacOS", "ChronoPic"),
+      executableLabel: "ChronoPic.app/Contents/MacOS/ChronoPic",
+    };
+  }
+
+  if (target === "windows") {
+    return {
+      target,
+      packageDir,
+      appDir: path.join(packageDir, "resources", "app"),
+      executablePath: path.join(packageDir, "chronopic.exe"),
+      executableLabel: "chronopic.exe",
+    };
+  }
+
+  return {
+    target,
+    packageDir,
+    appDir: path.join(packageDir, "resources", "app"),
+    executablePath: path.join(packageDir, "chronopic"),
+    executableLabel: "chronopic",
+  };
+}
 
 async function pathExists(filePath) {
   try {
@@ -16,14 +81,12 @@ async function pathExists(filePath) {
   }
 }
 
-async function assertExists(relativePath) {
-  const absolutePath = path.join(packageDir, relativePath);
-
-  if (!(await pathExists(absolutePath))) {
-    throw new Error(`Packaged artifact is missing ${relativePath}`);
+async function assertExists(filePath, label) {
+  if (!(await pathExists(filePath))) {
+    throw new Error(`Packaged artifact is missing ${label}`);
   }
 
-  return absolutePath;
+  return filePath;
 }
 
 async function collectFiles(rootPath, predicate, results = []) {
@@ -49,18 +112,26 @@ async function collectFiles(rootPath, predicate, results = []) {
   return results;
 }
 
-async function assertAbsent(relativePath) {
+async function assertAbsent(appDir, relativePath) {
   if (await pathExists(path.join(appDir, relativePath))) {
     throw new Error(`Packaged app should not include ${relativePath}`);
   }
 }
 
-const executablePath = await assertExists("chronopic");
-await assertExists("resources/app/package.json");
-await assertExists("resources/app/dist/main/main.js");
-await assertExists("resources/app/dist/preload/index.cjs");
-await assertExists("resources/app/dist/renderer/index.html");
-await assertExists("resources/app/node_modules");
+const {
+  target,
+  packageDir,
+  appDir,
+  executablePath,
+  executableLabel,
+} = resolvePackagePaths(process.argv);
+
+await assertExists(executablePath, executableLabel);
+await assertExists(path.join(appDir, "package.json"), "app package.json");
+await assertExists(path.join(appDir, "dist", "main", "main.js"), "app dist/main/main.js");
+await assertExists(path.join(appDir, "dist", "preload", "index.cjs"), "app dist/preload/index.cjs");
+await assertExists(path.join(appDir, "dist", "renderer", "index.html"), "app dist/renderer/index.html");
+await assertExists(path.join(appDir, "node_modules"), "app node_modules");
 
 const packageJson = JSON.parse(await fs.readFile(path.join(appDir, "package.json"), "utf8"));
 
@@ -72,9 +143,15 @@ if (packageJson.chronopic?.appId !== "app.chronopic.desktop") {
   throw new Error("Packaged app metadata is missing chronopic.appId");
 }
 
-const executableMode = (await fs.stat(executablePath)).mode;
-if ((executableMode & 0o111) === 0) {
-  throw new Error("Packaged chronopic executable is not executable");
+if (packageJson.chronopic?.platform !== target) {
+  throw new Error(`Packaged app metadata platform must be ${target}, received ${String(packageJson.chronopic?.platform)}`);
+}
+
+if (target !== "windows") {
+  const executableMode = (await fs.stat(executablePath)).mode;
+  if ((executableMode & 0o111) === 0) {
+    throw new Error(`Packaged ${executableLabel} is not executable`);
+  }
 }
 
 const nativeModules = await collectFiles(path.join(appDir, "node_modules"), (filePath) => filePath.endsWith(".node"));
@@ -89,12 +166,13 @@ if (!sharp) {
   throw new Error("Packaged app is missing sharp native module");
 }
 
-await assertAbsent("tests");
-await assertAbsent("test-results");
-await assertAbsent("data");
-await assertAbsent("thumbs");
+await assertAbsent(appDir, "tests");
+await assertAbsent(appDir, "test-results");
+await assertAbsent(appDir, "data");
+await assertAbsent(appDir, "thumbs");
 
 console.log(JSON.stringify({
+  target,
   packageDir: path.relative(rootDir, packageDir),
   executable: path.relative(rootDir, executablePath),
   main: packageJson.main,

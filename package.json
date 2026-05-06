@@ -21,9 +21,11 @@
     "lint": "pnpm run typecheck",
     "native:electron": "rm -f node_modules/.cache/chronopic/native-*.json && pnpm --filter @chronopic/desktop run ensure:native",
     "native:node": "rm -f node_modules/.cache/chronopic/native-*.json && pnpm --filter @chronopic/infra-db rebuild better-sqlite3 --pending=false",
-    "package:linux": "pnpm build && node scripts/package-linux.mjs",
+    "package:linux": "pnpm build && node scripts/package-desktop.mjs linux",
+    "package:macos": "pnpm build && node scripts/package-desktop.mjs macos",
     "package:smoke": "pnpm run package:verify && pnpm run e2e:packaged",
     "package:verify": "node scripts/verify-package.mjs",
+    "package:windows": "pnpm build && node scripts/package-desktop.mjs windows",
     "test": "pnpm run native:node && pnpm run clean && pnpm run build:packages && node --experimental-strip-types --test tests/*.test.ts",
     "typecheck": "pnpm run clean && pnpm run build:packages && pnpm --filter @chronopic/desktop typecheck"
   },

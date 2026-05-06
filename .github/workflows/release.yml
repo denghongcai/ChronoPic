@@ -9,8 +9,45 @@ permissions:
   contents: write
 
 jobs:
-  linux:
+  prepare-release:
     runs-on: ubuntu-latest
+
+    steps:
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+          release_title="ChronoPic ${RELEASE_TAG}"
+          release_notes="Automated ChronoPic desktop release for ${RELEASE_TAG}."
+
+          if gh release view "${RELEASE_TAG}" --repo "${GITHUB_REPOSITORY}" >/dev/null 2>&1; then
+            gh release edit "${RELEASE_TAG}" \
+              --repo "${GITHUB_REPOSITORY}" \
+              --title "${release_title}" \
+              --notes "${release_notes}"
+          else
+            gh release create "${RELEASE_TAG}" \
+              --repo "${GITHUB_REPOSITORY}" \
+              --title "${release_title}" \
+              --notes "${release_notes}"
+          fi
+
+  desktop:
+    needs: prepare-release
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target: linux
+            os: ubuntu-latest
+          - target: macos
+            os: macos-latest
+          - target: windows
+            os: windows-latest
+
+    runs-on: ${{ matrix.os }}
 
     steps:
       - name: Checkout
@@ -30,49 +67,38 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Install Playwright browsers
+      - name: Install Playwright browsers Linux
+        if: matrix.target == 'linux'
         run: pnpm exec playwright install --with-deps chromium
 
-      - name: Package Linux Artifact
-        run: pnpm run package:linux
+      - name: Install Playwright browsers
+        if: matrix.target != 'linux'
+        run: pnpm exec playwright install chromium
 
-      - name: Verify Linux Package
-        run: pnpm run package:verify
+      - name: Package Desktop Artifact
+        run: pnpm run package:${{ matrix.target }}
 
-      - name: Packaged E2E
+      - name: Verify Desktop Package
+        run: pnpm run package:verify -- ${{ matrix.target }}
+
+      - name: Packaged E2E Linux
+        if: matrix.target == 'linux'
+        env:
+          CHRONOPIC_PACKAGED_TARGET: ${{ matrix.target }}
         run: xvfb-run -a pnpm run e2e:packaged
 
-      - name: Create Release Archive
+      - name: Packaged E2E
+        if: matrix.target != 'linux'
         env:
-          RELEASE_TAG: ${{ github.ref_name }}
-        run: |
-          set -euo pipefail
-          mkdir -p dist/release-artifacts
-          artifact_name="chronopic-linux-x64-${RELEASE_TAG}.tar.gz"
-          tar -C dist/release -czf "dist/release-artifacts/${artifact_name}" chronopic-linux-x64
-          sha256sum "dist/release-artifacts/${artifact_name}" > "dist/release-artifacts/${artifact_name}.sha256"
+          CHRONOPIC_PACKAGED_TARGET: ${{ matrix.target }}
+        run: pnpm run e2e:packaged
 
-      - name: Publish GitHub Release
+      - name: Create Release Archive And sha256
+        run: node scripts/archive-release-artifact.mjs ${{ matrix.target }} ${{ github.ref_name }}
+
+      - name: Upload Release Assets
+        shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
           RELEASE_TAG: ${{ github.ref_name }}
-        run: |
-          set -euo pipefail
-          artifact_name="chronopic-linux-x64-${RELEASE_TAG}.tar.gz"
-          release_title="ChronoPic ${RELEASE_TAG}"
-          release_notes="Automated ChronoPic Linux release for ${RELEASE_TAG}."
-
-          if gh release view "${RELEASE_TAG}" --repo "${GITHUB_REPOSITORY}" >/dev/null 2>&1; then
-            gh release upload "${RELEASE_TAG}" \
-              "dist/release-artifacts/${artifact_name}" \
-              "dist/release-artifacts/${artifact_name}.sha256" \
-              --repo "${GITHUB_REPOSITORY}" \
-              --clobber
-          else
-            gh release create "${RELEASE_TAG}" \
-              "dist/release-artifacts/${artifact_name}" \
-              "dist/release-artifacts/${artifact_name}.sha256" \
-              --repo "${GITHUB_REPOSITORY}" \
-              --title "${release_title}" \
-              --notes "${release_notes}"
-          fi
+        run: gh release upload "${RELEASE_TAG}" dist/release-artifacts/* --repo "${GITHUB_REPOSITORY}" --clobber

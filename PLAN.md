@@ -1523,10 +1523,10 @@ Current status:
   no notarization,
   no auto-update,
   and no verified macOS/Windows artifacts yet.
-- Added a tag-triggered GitHub Release workflow:
-  tags matching `v*` build and verify the Linux package,
-  run packaged E2E under Xvfb,
-  create a tar.gz archive and SHA-256 checksum,
+- Expanded the tag-triggered GitHub Release workflow to Linux, macOS, and Windows:
+  tags matching `v*` build and verify each platform package on the matching runner,
+  run packaged E2E,
+  create platform-specific tar.gz archives and SHA-256 checksums,
   and publish or update the GitHub Release for the tag.
 - Verified with:
   `pnpm test`,
