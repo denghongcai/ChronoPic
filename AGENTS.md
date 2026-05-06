@@ -2354,3 +2354,13 @@ This file is the local execution record for ChronoPic. It complements `PLAN.md` 
   `git diff --check`
 - Result: README is now an English user-facing entry page with a release badge and linked developer-doc references.
 - Next: commit/push the documentation update when requested.
+
+### 2026-05-06 Step 117
+
+- Adjusted the user-facing README positioning to emphasize ChronoPic as an AI-powered, local-first desktop photo workspace.
+- Expanded the AI wording around searchable semantics, story-ready Memories, reviewable organization suggestions, and AI-powered enrichment for captions, summaries, tags, Memory suggestions, and candidate Memories.
+- Preserved the existing user-facing boundary that AI is optional, core library workflow remains local-first, and generated content does not overwrite user-authored edits.
+- Verified:
+  `git diff --check`
+- Result: README now presents the product as AI-powered while keeping the privacy/local-first framing clear.
+- Next: commit/push the README wording update when requested.

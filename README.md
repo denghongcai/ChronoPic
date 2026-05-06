@@ -2,9 +2,9 @@
 
 [![Release](https://img.shields.io/github/v/release/denghongcai/ChronoPic?label=release)](https://github.com/denghongcai/ChronoPic/releases/latest)
 
-ChronoPic is a local-first desktop photo workspace. It indexes the folders you choose, generates thumbnails, keeps an editable catalog in a local SQLite database, and helps you browse, search, organize, enrich, and back up your photo library.
+ChronoPic is an AI-powered, local-first desktop photo workspace. It indexes the folders you choose, generates thumbnails, keeps an editable catalog in a local SQLite database, and helps you browse, search, organize, enrich, and back up your photo library.
 
-ChronoPic does not require cloud storage for its core workflow. Your original photos stay in your own folders; the app stores indexes, thumbnails, settings, edit history, and organization data locally.
+ChronoPic uses AI to turn a local photo library into searchable semantics, story-ready Memories, and reviewable organization suggestions. Its core workflow does not require cloud storage: your original photos stay in your own folders, while the app stores indexes, thumbnails, settings, edit history, and organization data locally.
 
 ## Download
 
@@ -37,7 +37,7 @@ Each archive has a matching `.sha256` checksum file.
 - Extract photo time, location, camera, and related metadata
 - Generate local thumbnails
 - Browse photos in waterfall, map, and timeline views
-- Search paths, captions, tags, AI-generated fields, and memory content
+- Search paths, captions, tags, AI-generated fields, and Memory content
 - Open detail and immersive gallery views
 - Edit captions, tags, and datetimes
 - Roll back the latest edit
@@ -45,7 +45,7 @@ Each archive has a matching `.sha256` checksum file.
 - Create and manage Memories
 - Set Memory covers, descriptions, and story sections
 - Add photos to Memories or remove them
-- Use AI to generate photo semantics, Memory suggestions, and candidate Memories
+- Use AI-powered enrichment to generate captions, summaries, tags, Memory suggestions, and candidate Memories
 - Review AI queue and Memory candidates from Notifications
 - Switch between English and Simplified Chinese UI
 - Set AI output language separately from UI language
@@ -77,7 +77,7 @@ AI is disabled until provider settings are configured:
 - Provider name
 - AI output language
 
-AI-generated content is stored separately from user-authored captions, tags, and descriptions so suggestions do not overwrite your edits.
+AI-powered enrichment can generate captions, summaries, tags, Memory suggestions, and candidate Memories. Generated content is stored separately from user-authored captions, tags, and descriptions so suggestions do not overwrite your edits.
 
 ### Maps
 
