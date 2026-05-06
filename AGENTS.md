@@ -2311,3 +2311,31 @@ This file is the local execution record for ChronoPic. It complements `PLAN.md` 
   `node scripts/archive-release-artifact.mjs linux v0.1.0-local`
 - Result: Linux remains locally verified after the shared-packager refactor; macOS and Windows packaging are wired for real validation on GitHub Actions runners.
 - Next: run the root test suite, then commit/push and trigger a new tag release when requested.
+
+### 2026-05-06 Step 115
+
+- Split project documentation by audience.
+- Rewrote `README.md` as a user-facing product document:
+  download/release entry,
+  current limitations,
+  core capabilities,
+  local data behavior,
+  optional AI/map setup,
+  backup/restore behavior,
+  and links to developer/project docs.
+- Added `DEVELOPMENT.md` for contributor and code-agent details:
+  setup,
+  source launch,
+  verification,
+  E2E suites,
+  local packaging,
+  tag releases,
+  architecture,
+  project layout,
+  main commands,
+  and planning/agent workflow.
+- Updated `PLAN.md` to record the documentation audience split under the 4.24 release-readiness status.
+- Verified:
+  `git diff --check`
+- Result: README is now user-facing, while development and release mechanics live in `DEVELOPMENT.md`.
+- Next: commit/push the documentation split when requested.

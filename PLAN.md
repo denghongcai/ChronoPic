@@ -1528,6 +1528,9 @@ Current status:
   run packaged E2E,
   create platform-specific tar.gz archives and SHA-256 checksums,
   and publish or update the GitHub Release for the tag.
+- Split project documentation by audience:
+  `README.md` is user-facing,
+  and `DEVELOPMENT.md` owns developer setup, verification, architecture, packaging, and release workflow details.
 - Verified with:
   `pnpm test`,
   `pnpm typecheck`,

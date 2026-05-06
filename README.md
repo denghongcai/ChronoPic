@@ -1,135 +1,110 @@
 # ChronoPic
 
-ChronoPic is a local-first desktop photo workspace. It indexes user-selected folders, stores metadata in a local SQLite database, generates thumbnails, supports browse/filter/detail viewing, and lets users build Memories from selected photos. AI enrichment and map rendering are optional layers; the core desktop loop works without cloud services or API keys.
+ChronoPic 是一个本地优先的桌面相册工作台。它可以索引你选择的本地照片文件夹，生成缩略图，把可编辑的相册数据保存在本机 SQLite 数据库里，并提供浏览、搜索、回忆整理、AI 辅助和本地备份能力。
 
-## Requirements
+ChronoPic 的核心使用方式不依赖云端存储。照片原文件仍保留在你的本地文件夹中，应用只保存索引、缩略图、设置、编辑记录和组织信息。
 
-- Node.js 24
-- pnpm 10
-- Native build tooling supported by `better-sqlite3` and `sharp`
+## 下载
 
-## Setup
+最新已验证版本：`v0.1.2`
 
-```sh
-pnpm install
-```
+GitHub Release:
 
-If Electron or native modules are partially installed, the desktop launch scripts run local repair guards automatically:
+https://github.com/denghongcai/ChronoPic/releases/tag/v0.1.2
 
-```sh
-pnpm --filter @chronopic/desktop run ensure:electron
-pnpm --filter @chronopic/desktop run ensure:native
-```
+当前提供三平台未安装包形式的桌面归档：
 
-## Run
+- Linux: `chronopic-linux-x64-v0.1.2.tar.gz`
+- macOS: `chronopic-macos-arm64-v0.1.2.tar.gz`
+- Windows: `chronopic-windows-x64-v0.1.2.tar.gz`
 
-Development:
+每个平台同时提供 `.sha256` 校验文件。
 
-```sh
-pnpm desktop:dev
-```
+## 当前限制
 
-Production-style desktop launch:
+- 当前发布物是未安装包形式，不是系统安装器。
+- macOS 包尚未 notarize。
+- Windows 包尚未签名。
+- 暂未提供自动更新。
+- 备份不会复制照片原文件，只会导出 ChronoPic 的本地数据库投影和设置。
 
-```sh
-pnpm desktop:start
-```
+## 可以做什么
 
-Use `CHRONOPIC_USER_DATA_DIR` to isolate the database, thumbnails, settings, and debug log:
+- 添加本地照片文件夹作为图库来源
+- 扫描文件夹并生成本地索引
+- 提取照片时间、位置、相机等元信息
+- 生成本地缩略图
+- 用瀑布流、地图、时间线浏览照片
+- 搜索文件路径、标题、标签、AI 生成字段和回忆内容
+- 打开详情视图或沉浸式图库视图
+- 编辑标题、标签、时间，并回滚最近编辑
+- 收藏照片
+- 创建和管理 Memories
+- 为 Memory 设置封面、描述和故事章节
+- 将照片加入或移出 Memory
+- 使用 AI 生成照片语义、Memory 建议和候选回忆
+- 在通知页查看 AI 队列和 Memory 候选
+- 在英文和简体中文界面之间切换
+- 单独设置 AI 输出语言
+- 配置 Gaode/AMap Key 后使用地图浏览
+- 导出本地 JSON 备份
+- 预览恢复冲突
+- 将备份恢复到本地数据库
 
-```sh
-CHRONOPIC_USER_DATA_DIR=/tmp/chronopic-dev pnpm desktop:start
-```
+## 数据保存在哪里
 
-## Verification
+ChronoPic 是本地优先应用：
 
-```sh
-pnpm test
-pnpm typecheck
-pnpm build
-pnpm run e2e:runtime
-pnpm run e2e:accessibility
-pnpm run e2e:backup
-```
+- 照片原文件仍在你选择的文件夹里。
+- 应用本地保存数据库、缩略图、设置和 debug log。
+- 备份文件是本地 JSON 文件。
+- AI 能力只有在你配置 API 设置后才会调用远程服务。
 
-`pnpm run e2e:runtime` launches the built Electron app with an isolated user-data directory, indexes fixture media, writes edits and memory data, restarts the app, and verifies persistence through the preload IPC bridge.
+你可以通过 `CHRONOPIC_USER_DATA_DIR` 指定独立的数据目录，适合测试或临时使用。
 
-`pnpm run e2e:accessibility` launches the built Electron app and verifies the core keyboard/focus loop: first-run setup, post-scan onboarding, create-memory focus return, photo-card keyboard activation, viewer Escape close, and batch-select accessible names.
+## 可选功能
 
-`pnpm run e2e:backup` launches the built Electron app, exports a local JSON backup, previews conflicts, restores into a clean user-data directory, and verifies authored metadata, favorites, memories, memberships, locale, and map settings.
+### AI
 
-For broader agent-led product validation, follow the director script in `docs/agent-verification-script.md`. It tells code agents how to use Playwright manually after completing plan items, including which product scenes to inspect and what evidence to record in `AGENTS.md`.
+AI 功能默认不可用，只有配置完整的 provider 设置后才会启用：
 
-## Local Packaging
+- API Key
+- Base URL
+- Model
+- Provider name
+- AI 输出语言
 
-Build an unpacked desktop artifact for the current release target:
+AI 生成内容会和用户手动编辑内容分开保存，避免覆盖用户自己的标题、标签和描述。
 
-```sh
-pnpm run package:linux
-pnpm run package:macos
-pnpm run package:windows
-```
+### 地图
 
-Run each command on the matching OS. The artifacts are emitted under `dist/release/chronopic-<target>-<arch>`. Verify the artifact layout and native modules:
+地图浏览使用 Gaode/AMap Web JS API 设置。没有配置 Key 时，普通浏览、搜索、回忆和备份功能仍可正常使用。
 
-```sh
-pnpm run package:verify -- linux
-pnpm run package:verify -- macos
-pnpm run package:verify -- windows
-```
+## 备份与恢复
 
-Run the packaged smoke test, which launches the packaged executable rather than `apps/desktop/dist/main/main.js`:
+Library Settings 中提供本地备份能力：
 
-```sh
-pnpm run package:smoke
-```
+- Export Backup
+- Preview Restore
+- Restore Backup
 
-In headless Linux environments, run the smoke command under Xvfb:
+备份包含：
 
-```sh
-xvfb-run -a pnpm run package:smoke
-```
+- 图库来源
+- 照片索引和元信息
+- 用户标题、标签、时间修正、收藏
+- 编辑历史
+- Memories 和照片关系
+- AI 生成字段和候选回忆
+- AI、地图、语言设置
 
-Current packaging scope is unpacked desktop output. Signing, notarization, auto-update, and installers are follow-up release work.
+备份不包含照片原文件。恢复后，照片路径仍指向原来的本地文件位置。
 
-## Tag Releases
+## 面向开发者
 
-Pushing a version tag that starts with `v` runs the release workflow:
+开发、测试、打包、发布、架构和仓库协作说明请看：
 
-```sh
-git tag v0.1.0
-git push origin v0.1.0
-```
-
-The workflow builds Linux, macOS, and Windows packages on matching GitHub-hosted runners. Each matrix job verifies its packaged artifact, runs packaged E2E, archives `dist/release/chronopic-<target>-<arch>`, writes a SHA-256 checksum, and uploads both files to the GitHub Release for the tag.
-
-## Optional Integrations
-
-AI enrichment is disabled unless all required settings are present in the app settings or environment:
-
-- `CHRONOPIC_AI_API_KEY`
-- `CHRONOPIC_AI_BASE_URL`
-- `CHRONOPIC_AI_MODEL`
-- `CHRONOPIC_AI_PROVIDER`
-
-Map browsing uses Gaode/AMap Web JS API settings saved from the desktop settings page. Leaving the API key blank keeps map rendering disabled.
-
-## Backup And Restore
-
-Library Settings includes local JSON backup controls. Backups include ChronoPic's database projection and settings: library source records, photo metadata, authored captions/tags/datetime edits, favorites, memories, memory memberships, generated fields, memory candidates, AI settings, map settings, and locale settings. Original media files are referenced by path and are not copied into the backup.
-
-## Project Layout
-
-- `apps/desktop`: Electron main/preload/renderer app
-- `packages/domain`: shared domain types and defaults
-- `packages/infra-db`: SQLite schema, migrations, and repositories
-- `packages/infra-fs`: filesystem scanning and media metadata extraction
-- `packages/services-indexer`: indexing orchestration
-- `packages/services-ai-pipeline`: optional AI enrichment client
-- `packages/ui-components`: shared React UI components
-- `tests`: unit and E2E tests
-
-## Planning
-
-- `PLAN.md` is the stable product and implementation plan.
-- `AGENTS.md` is the local execution log and must be updated after meaningful implementation or verification steps.
+- `DEVELOPMENT.md`
+- `PLAN.md`
+- `AGENTS.md`
+- `docs/agent-verification-script.md`
