@@ -2690,3 +2690,855 @@ This file is the local execution record for ChronoPic. It complements `PLAN.md` 
 - Result:
   no whitespace errors,
   and generated Flutter/Dart cache and build directories are excluded from the untracked file set.
+
+### 2026-05-08 Step 136
+
+- Inserted `Flutter Rewrite Phase 5.5: Linux Desktop Feature Parity And E2E Gate` before Android/iOS productization.
+- Added the Phase 5.5 implementation plan at:
+  `docs/superpowers/plans/2026-05-08-flutter-linux-desktop-parity-phase-5-5.md`.
+- Updated `docs/flutter-refactor-phases.md` and `PLAN.md` so Phase 6 remains blocked until Linux desktop parity is stronger.
+- Added `docs/flutter-linux-desktop-parity-matrix.md` to make the Electron-vs-Flutter Linux workflow gaps explicit.
+- Implemented the first executable Linux parity slice:
+  repository incremental `upsertPhotoRecord`,
+  library source tracking,
+  edit history and latest-edit rollback,
+  memory listing and membership count updates,
+  missing-asset marking,
+  app-service `scanDesktopDirectory`,
+  and indexer upsert behavior so scanning multiple files no longer replaces the catalog per asset.
+- Rewired `chronopic_ui` so the Linux desktop shell can:
+  enter a local library path,
+  add the library,
+  run a scan,
+  browse/search scanned files,
+  toggle favorite,
+  edit caption/tags,
+  rollback latest edit,
+  create a memory,
+  add the selected photo to the memory,
+  and exercise backup export/preview/restore smoke actions.
+- Added tests:
+  `chronopic_flutter/packages/chronopic_app/test/linux_desktop_scan_test.dart`
+  and `chronopic_flutter/packages/chronopic_ui/test/linux_desktop_parity_test.dart`.
+- Continued Phase 5.5 by adding:
+  datetime correction through repository, app service, and Flutter UI,
+  rollback coverage for caption, tags, favorite, and datetime edits,
+  local image preview rendering for grid/detail surfaces,
+  a focused gallery dialog with widget coverage for open/close,
+  UI-level caption/tag/favorite/memory/backup smoke coverage,
+  and Favorites navigation filtering coverage.
+- Verified this slice with:
+  `dart test packages/chronopic_domain packages/chronopic_media packages/chronopic_ai packages/chronopic_app`
+  `dart test test/repository_test.dart test/drift_database_test.dart`
+  from `chronopic_flutter/packages/chronopic_database`
+  `dart analyze packages/chronopic_domain packages/chronopic_database packages/chronopic_media packages/chronopic_ai packages/chronopic_app packages/chronopic_testkit`
+  `flutter test packages/chronopic_ui apps/chronopic`
+  `flutter analyze packages/chronopic_ui apps/chronopic`
+  `flutter build linux --debug`
+  `git diff --check`
+- Important audit result:
+  Phase 5.5 is not yet complete against full Electron desktop parity.
+- Remaining at that point, before Step 137 continued the same phase:
+  app-shell-level UI scan integration around real file IO,
+  an Electron-vs-Flutter parity matrix,
+  local preview parity,
+  full detail/gallery keyboard parity,
+  datetime correction UI,
+  map/timeline browse,
+  AI readiness/queue/candidate notification parity,
+  backup file workflow,
+  and Flutter desktop i18n parity.
+
+### 2026-05-08 Step 137
+
+- Continued Phase 5.5 by closing two more Linux desktop parity gaps.
+- Added generated thumbnail cache support for scanned local images in the Flutter app-service/indexer path:
+  `ChronoPicAppService.scanDesktopDirectory` now passes a per-library cache directory,
+  `ChronoPicIndexerService` writes downscaled JPG thumbnails for image assets,
+  and repository upsert preserves an existing thumbnail when an unchanged record is merged.
+- Updated the Flutter UI preview path so grid/detail/gallery previews prefer `photo.thumbnailPath` and fall back to the original file path.
+- Replaced backup smoke-only coverage with explicit Linux JSON file path coverage:
+  `ChronoPicAppService` now exports, reads, previews, and restores backup JSON through a path,
+  and the Flutter UI exposes path-driven export/preview/restore buttons.
+- Updated Phase 5.5 records in:
+  `PLAN.md`,
+  `docs/flutter-refactor-phases.md`,
+  `docs/flutter-linux-desktop-parity-matrix.md`,
+  and `docs/superpowers/plans/2026-05-08-flutter-linux-desktop-parity-phase-5-5.md`.
+- Verified with:
+  `dart test packages/chronopic_app`
+  `flutter test packages/chronopic_ui/test/linux_desktop_parity_test.dart`
+  `dart analyze packages/chronopic_app packages/chronopic_database packages/chronopic_ui`
+  `dart test packages/chronopic_domain packages/chronopic_media packages/chronopic_ai packages/chronopic_app`
+  `dart test test/repository_test.dart test/drift_database_test.dart`
+  from `chronopic_flutter/packages/chronopic_database`
+  `dart analyze packages/chronopic_domain packages/chronopic_database packages/chronopic_media packages/chronopic_ai packages/chronopic_app packages/chronopic_testkit packages/chronopic_ui`
+  `flutter test packages/chronopic_ui apps/chronopic`
+  `flutter analyze packages/chronopic_ui apps/chronopic`
+  `flutter build linux --debug`
+  `git diff --check`
+- Result:
+  all commands passed.
+- Important audit result:
+  Phase 5.5 remains incomplete.
+- Remaining:
+  app-shell-level UI scan integration around real file IO,
+  video placeholders and larger-library desktop browse coverage,
+  full detail/gallery adjacent-navigation and keyboard parity,
+  date/time picker UX for datetime correction,
+  map/timeline browse,
+  AI readiness/queue/candidate notification parity,
+  native backup import/export file picker UX,
+  malformed backup error coverage,
+  and Flutter desktop i18n parity.
+
+### 2026-05-08 Step 138
+
+- Continued Phase 5.5 by adding UI-driven Linux scan coverage instead of relying only on a pre-scanned service fixture.
+- Extended `chronopic_flutter/packages/chronopic_ui/test/linux_desktop_parity_test.dart` with an empty-to-scanned workflow:
+  create a real temporary Linux directory,
+  render `ChronoPicHome` with an empty repository,
+  enter the directory into `library-path-field`,
+  click `add-library-button`,
+  click `scan-library-button`,
+  then assert scanned images render, unsupported text files stay hidden, library sources persist, and generated thumbnail files exist.
+- Updated the Phase 5.5 tracking docs so app-shell/UI scan integration is no longer listed as a remaining gap:
+  `PLAN.md`,
+  `docs/flutter-refactor-phases.md`,
+  `docs/flutter-linux-desktop-parity-matrix.md`,
+  and `docs/superpowers/plans/2026-05-08-flutter-linux-desktop-parity-phase-5-5.md`.
+- Verified this targeted slice with:
+  `flutter test packages/chronopic_ui/test/linux_desktop_parity_test.dart`
+  `dart test packages/chronopic_domain packages/chronopic_media packages/chronopic_ai packages/chronopic_app`
+  `dart test test/repository_test.dart test/drift_database_test.dart`
+  from `chronopic_flutter/packages/chronopic_database`
+  `dart analyze packages/chronopic_domain packages/chronopic_database packages/chronopic_media packages/chronopic_ai packages/chronopic_app packages/chronopic_testkit packages/chronopic_ui`
+  `flutter test packages/chronopic_ui apps/chronopic`
+  `flutter analyze packages/chronopic_ui apps/chronopic`
+  `flutter build linux --debug`
+  `git diff --check`
+- Result:
+  all commands passed.
+- Important audit result:
+  Phase 5.5 remains incomplete.
+- Remaining:
+  video placeholders and larger-library desktop browse coverage,
+  full detail/gallery adjacent-navigation and keyboard parity,
+  date/time picker UX for datetime correction,
+  map/timeline browse,
+  AI readiness/queue/candidate notification parity,
+  native backup import/export file picker UX,
+  malformed backup error coverage,
+  restart persistence tests,
+  and Flutter desktop i18n parity.
+
+### 2026-05-08 Step 139
+
+- Continued Phase 5.5 by improving focused gallery parity.
+- Reworked the Flutter gallery from a single-record fullscreen dialog into a stateful gallery dialog over the current visible result set.
+- Added toolbar navigation:
+  `previous-gallery-button`,
+  `next-gallery-button`,
+  and `close-gallery-button`.
+- Added keyboard handling inside the gallery:
+  `ArrowLeft` moves to the previous visible photo,
+  `ArrowRight` moves to the next visible photo,
+  and `Escape` closes the gallery while preserving the current gallery selection back into the detail surface.
+- Added stable gallery title keys so widget tests can assert the currently focused media without colliding with grid/detail preview keys.
+- Extended `chronopic_flutter/packages/chronopic_ui/test/linux_desktop_parity_test.dart` to verify:
+  adjacent navigation by button,
+  adjacent navigation by keyboard,
+  Escape close behavior,
+  and detail selection synchronization after closing.
+- Updated Phase 5.5 records in:
+  `PLAN.md`,
+  `docs/flutter-refactor-phases.md`,
+  `docs/flutter-linux-desktop-parity-matrix.md`,
+  and `docs/superpowers/plans/2026-05-08-flutter-linux-desktop-parity-phase-5-5.md`.
+- Verified this targeted slice with:
+  `flutter test packages/chronopic_ui/test/linux_desktop_parity_test.dart`
+  `dart analyze packages/chronopic_ui`
+  `flutter analyze packages/chronopic_ui apps/chronopic`
+- Result:
+  all targeted commands passed.
+- Important audit result:
+  Phase 5.5 remains incomplete.
+- Remaining:
+  video placeholders and larger-library desktop browse coverage,
+  detail keyboard parity and full immersive gallery visual polish,
+  date/time picker UX for datetime correction,
+  map/timeline browse,
+  AI readiness/queue/candidate notification parity,
+  native backup import/export file picker UX,
+  malformed backup error coverage,
+  restart persistence tests,
+  and Flutter desktop i18n parity.
+
+### 2026-05-08 Step 140
+
+- Continued Phase 5.5 by adding malformed backup error coverage.
+- Extended `chronopic_flutter/packages/chronopic_app/test/app_service_test.dart` so `previewBackupFile` rejects malformed JSON with a `FormatException`.
+- Extended `chronopic_flutter/packages/chronopic_ui/test/linux_desktop_parity_test.dart` so the Flutter backup path flow surfaces `Preview restore failed:` for malformed JSON backup files.
+- Updated Phase 5.5 records in:
+  `PLAN.md`,
+  `docs/flutter-refactor-phases.md`,
+  `docs/flutter-linux-desktop-parity-matrix.md`,
+  and `docs/superpowers/plans/2026-05-08-flutter-linux-desktop-parity-phase-5-5.md`.
+- Verified this targeted slice with:
+  `dart test packages/chronopic_app/test/app_service_test.dart`
+  `flutter test packages/chronopic_ui/test/linux_desktop_parity_test.dart`
+  `dart test packages/chronopic_domain packages/chronopic_media packages/chronopic_ai packages/chronopic_app`
+  `dart test test/repository_test.dart test/drift_database_test.dart`
+  from `chronopic_flutter/packages/chronopic_database`
+  `dart analyze packages/chronopic_domain packages/chronopic_database packages/chronopic_media packages/chronopic_ai packages/chronopic_app packages/chronopic_testkit packages/chronopic_ui`
+  `flutter test packages/chronopic_ui apps/chronopic`
+  `flutter analyze packages/chronopic_ui apps/chronopic`
+  `flutter build linux --debug`
+  `git diff --check`
+- Result:
+  all commands passed.
+- Important audit result:
+  Phase 5.5 remains incomplete.
+- Remaining:
+  video placeholders and larger-library desktop browse coverage,
+  detail keyboard parity and full immersive gallery visual polish,
+  date/time picker UX for datetime correction,
+  map/timeline browse,
+  AI readiness/queue/candidate notification parity,
+  native backup import/export file picker UX,
+  restart persistence tests,
+  and Flutter desktop i18n parity.
+### 2026-05-08 Step 141
+
+- Continued Phase 5.5 by adding explicit Flutter video placeholders.
+- Updated `_MediaPreview` so records with `video/*` MIME types render a stable `video-preview-*` placeholder with a movie icon and `Video` label instead of falling through to a generic image placeholder.
+- Extended the UI-driven Linux scan test with a fake `clip.mp4` fixture so the scan imports a supported video file, keeps unsupported text hidden, and asserts the video placeholder renders.
+- Updated Phase 5.5 records in:
+  `PLAN.md`,
+  `docs/flutter-refactor-phases.md`,
+  `docs/flutter-linux-desktop-parity-matrix.md`,
+  and `docs/superpowers/plans/2026-05-08-flutter-linux-desktop-parity-phase-5-5.md`.
+- Verified this targeted slice with:
+  `flutter test packages/chronopic_ui/test/linux_desktop_parity_test.dart`
+  `dart test packages/chronopic_domain packages/chronopic_media packages/chronopic_ai packages/chronopic_app`
+  `dart test test/repository_test.dart test/drift_database_test.dart`
+  from `chronopic_flutter/packages/chronopic_database`
+  `dart analyze packages/chronopic_domain packages/chronopic_database packages/chronopic_media packages/chronopic_ai packages/chronopic_app packages/chronopic_testkit packages/chronopic_ui`
+  `flutter test packages/chronopic_ui apps/chronopic`
+  `flutter analyze packages/chronopic_ui apps/chronopic`
+  `flutter build linux --debug`
+  `git diff --check`
+- Result:
+  all commands passed.
+- Important audit result:
+  Phase 5.5 remains incomplete.
+- Remaining:
+  larger-library desktop browse layout and responsiveness coverage,
+  detail keyboard parity and full immersive gallery visual polish,
+  date/time picker UX for datetime correction,
+  map/timeline browse,
+  AI readiness/queue/candidate notification parity,
+  native backup import/export file picker UX,
+  restart persistence tests,
+  and Flutter desktop i18n parity.
+
+### 2026-05-08 Step 142
+
+- Continued Phase 5.5 by replacing the raw epoch-millisecond datetime edit field with desktop date/time inputs.
+- Updated the Flutter detail surface to use:
+  `date-field` with `YYYY-MM-DD`,
+  and `time-field` with `HH:mm`.
+- Added parser/formatter logic that:
+  clears datetime when both fields are empty,
+  saves valid local date/time values as epoch milliseconds through the existing repository/service boundary,
+  rejects invalid calendar dates and times,
+  and keeps the previous stored datetime unchanged when validation fails.
+- Updated rollback behavior so the date/time fields are refreshed from the restored record.
+- Extended `chronopic_flutter/packages/chronopic_ui/test/linux_desktop_parity_test.dart` to verify valid date/time save, invalid-input UX, unchanged persistence after invalid input, and datetime rollback.
+- Updated Phase 5.5 records in:
+  `PLAN.md`,
+  `docs/flutter-refactor-phases.md`,
+  `docs/flutter-linux-desktop-parity-matrix.md`,
+  and `docs/superpowers/plans/2026-05-08-flutter-linux-desktop-parity-phase-5-5.md`.
+- Verified this slice with:
+  `flutter test packages/chronopic_ui/test/linux_desktop_parity_test.dart`
+  `dart analyze packages/chronopic_ui`
+  `dart test packages/chronopic_domain packages/chronopic_media packages/chronopic_ai packages/chronopic_app`
+  `dart test test/repository_test.dart test/drift_database_test.dart`
+  from `chronopic_flutter/packages/chronopic_database`
+  `dart analyze packages/chronopic_domain packages/chronopic_database packages/chronopic_media packages/chronopic_ai packages/chronopic_app packages/chronopic_testkit packages/chronopic_ui`
+  `flutter test packages/chronopic_ui apps/chronopic`
+  `flutter analyze packages/chronopic_ui apps/chronopic`
+  `flutter build linux --debug`
+  `git diff --check`
+- Result:
+  all commands passed.
+- Important audit result:
+  Phase 5.5 remains incomplete.
+- Remaining:
+  larger-library desktop browse layout and responsiveness coverage,
+  detail keyboard parity and full immersive gallery visual polish,
+  richer datetime metadata/timezone display parity,
+  map/timeline browse,
+  AI readiness/queue/candidate notification parity,
+  native backup import/export file picker UX,
+  restart persistence tests,
+  and Flutter desktop i18n parity.
+
+### 2026-05-08 Step 143
+
+- Continued Phase 5.5 by broadening Flutter search/filter parity.
+- Extended repository `listPhotos` filtering to honor more of the Dart domain `PhotoFilter` contract:
+  `mimePrefix`,
+  `aiStatus`,
+  `indexed`,
+  `hasError`,
+  `hasGps: false`,
+  `fromDatetime`,
+  and `toDatetime`.
+- Added repository test coverage for tag, GPS, AI status, date range, and path sort semantics.
+- Added a visible Flutter filter toolbar with:
+  `tag-filter-field`,
+  `gps-filter-chip`,
+  `from-date-filter-field`,
+  `to-date-filter-field`,
+  `sort-by-control`,
+  `sort-direction-control`,
+  `ai-status-filter-control`,
+  `apply-filter-button`,
+  and `clear-filter-button`.
+- Added UI validation for invalid date filters using the same `YYYY-MM-DD` desktop format.
+- Extended `chronopic_flutter/packages/chronopic_ui/test/linux_desktop_parity_test.dart` to verify tag filtering, GPS-only filtering, AI status filtering, invalid date-filter UX, and filter clearing in the real scanned desktop flow.
+- Updated Phase 5.5 records in:
+  `PLAN.md`,
+  `docs/flutter-refactor-phases.md`,
+  `docs/flutter-linux-desktop-parity-matrix.md`,
+  and `docs/superpowers/plans/2026-05-08-flutter-linux-desktop-parity-phase-5-5.md`.
+- Verified this slice with:
+  `dart test test/repository_test.dart`
+  from `chronopic_flutter/packages/chronopic_database`
+  `flutter test packages/chronopic_ui/test/linux_desktop_parity_test.dart`
+  `dart analyze packages/chronopic_database packages/chronopic_ui`
+  `dart test packages/chronopic_domain packages/chronopic_media packages/chronopic_ai packages/chronopic_app`
+  `dart test test/repository_test.dart test/drift_database_test.dart`
+  from `chronopic_flutter/packages/chronopic_database`
+  `dart analyze packages/chronopic_domain packages/chronopic_database packages/chronopic_media packages/chronopic_ai packages/chronopic_app packages/chronopic_testkit packages/chronopic_ui`
+  `flutter test packages/chronopic_ui apps/chronopic`
+  `flutter analyze packages/chronopic_ui apps/chronopic`
+  `flutter build linux --debug`
+  `git diff --check`
+- Result:
+  all commands passed.
+- Important audit result:
+  Phase 5.5 remains incomplete.
+- Remaining:
+  larger-library desktop browse layout and responsiveness coverage,
+  detail keyboard parity and full immersive gallery visual polish,
+  richer datetime metadata/timezone display parity,
+  map/timeline browse,
+  AI readiness/queue/candidate notification parity,
+  native backup import/export file picker UX,
+  restart persistence tests,
+  and Flutter desktop i18n parity.
+
+### 2026-05-08 Step 144
+
+- Continued Phase 5.5 by adding the visible AI status filter that was still missing from the Flutter filter toolbar.
+- Added `ai-status-filter-control` to the Flutter filter toolbar with `disabled`, `pending`, `processing`, `completed`, and `failed` states plus the default `AI: any` option.
+- Wired the selected AI status into `PhotoFilter.aiStatus` and reset it through `Clear Filters`.
+- Extended `chronopic_flutter/packages/chronopic_ui/test/linux_desktop_parity_test.dart` to verify the visible control exists and that applying `disabled` vs `completed` AI status changes the scanned desktop result set as expected.
+- Updated Phase 5.5 records in:
+  `PLAN.md`,
+  `docs/flutter-refactor-phases.md`,
+  `docs/flutter-linux-desktop-parity-matrix.md`,
+  and `docs/superpowers/plans/2026-05-08-flutter-linux-desktop-parity-phase-5-5.md`.
+- Verified this targeted slice with:
+  `flutter test packages/chronopic_ui/test/linux_desktop_parity_test.dart`
+  `dart analyze packages/chronopic_ui`
+- Result:
+  all targeted commands passed.
+- Important audit result:
+  Phase 5.5 remains incomplete.
+- Remaining:
+  larger-library desktop browse layout and responsiveness coverage,
+  detail keyboard parity and full immersive gallery visual polish,
+  richer datetime metadata/timezone display parity,
+  map/timeline browse,
+  AI readiness/queue/candidate notification parity,
+  native backup import/export file picker UX,
+  restart persistence tests,
+  and Flutter desktop i18n parity.
+
+### 2026-05-08 Step 145
+
+- Continued Phase 5.5 by adding native backup save/open picker entry points to the Flutter Linux desktop UI.
+- Queried dependency resolution before adding the picker package:
+  `dart pub add file_selector --dry-run`
+  resolved `file_selector 1.1.0`.
+- Added `file_selector: ^1.1.0` to `chronopic_flutter/packages/chronopic_ui/pubspec.yaml`.
+- Verified dependency freshness after install with:
+  `dart pub outdated`
+  Result:
+  direct dependencies are all up to date and the workspace is using the newest resolvable versions.
+- Added backup picker buttons:
+  `choose-backup-export-path`
+  and `choose-backup-restore-path`.
+- Wired those buttons through `file_selector`:
+  `getSaveLocation` selects a JSON backup export path,
+  and `openFile` selects a JSON backup restore file.
+- Kept the existing `backup-path-field` path workflow because widget tests need deterministic non-interactive file paths.
+- Updated Phase 5.5 records in:
+  `PLAN.md`,
+  `docs/flutter-refactor-phases.md`,
+  `docs/flutter-linux-desktop-parity-matrix.md`,
+  and `docs/superpowers/plans/2026-05-08-flutter-linux-desktop-parity-phase-5-5.md`.
+- Verified this targeted slice with:
+  `dart analyze packages/chronopic_ui`
+  `flutter test packages/chronopic_ui/test/linux_desktop_parity_test.dart`
+  `flutter test packages/chronopic_ui apps/chronopic`
+  `flutter analyze packages/chronopic_ui apps/chronopic`
+  `flutter build linux --debug`
+- Result:
+  all targeted commands passed.
+- Important audit result:
+  Phase 5.5 remains incomplete.
+- Remaining:
+  larger-library desktop browse layout and responsiveness coverage,
+  detail keyboard parity and full immersive gallery visual polish,
+  richer datetime metadata/timezone display parity,
+  map/timeline browse,
+  AI provider settings form, queue recovery actions, and candidate notification parity,
+  native backup dialog smoke coverage outside widget tests,
+  and Flutter desktop i18n parity.
+
+### 2026-05-08 Step 146
+
+- Continued Phase 5.5 by adding visible AI readiness and queue-state surfaces to the Flutter desktop shell.
+- Added app-service methods for:
+  secret-safe AI setup readiness,
+  per-status AI count aggregation,
+  and pending memory candidate listing.
+- Added a Flutter `AI` status panel that displays:
+  `ai-readiness-status`,
+  `ai-readiness-missing-fields`,
+  `ai-status-count-*` chips,
+  and `memory-candidate-count`.
+- Extended app-service tests to verify readiness, completed/failed status counts, and memory candidate listing from the parity backup fixture.
+- Extended the Linux desktop parity widget test to verify visible incomplete readiness, disabled queue count, and memory candidate count in the real scanned desktop flow.
+- Updated Phase 5.5 records in:
+  `PLAN.md`,
+  `docs/flutter-refactor-phases.md`,
+  `docs/flutter-linux-desktop-parity-matrix.md`,
+  and `docs/superpowers/plans/2026-05-08-flutter-linux-desktop-parity-phase-5-5.md`.
+- Verified this targeted slice with:
+  `dart test packages/chronopic_app/test/app_service_test.dart`
+  `flutter test packages/chronopic_ui/test/linux_desktop_parity_test.dart`
+  `dart analyze packages/chronopic_app packages/chronopic_ui`
+- Result:
+  all targeted commands passed.
+- Important audit result:
+  Phase 5.5 remains incomplete.
+- Remaining:
+  larger-library desktop browse layout and responsiveness coverage,
+  detail keyboard parity and full immersive gallery visual polish,
+  richer datetime metadata/timezone display parity,
+  map/timeline browse,
+  AI provider settings form, queue recovery actions, and candidate notification parity,
+  native backup dialog smoke coverage outside widget tests,
+  restart persistence tests,
+  and Flutter desktop i18n parity.
+
+### 2026-05-08 Step 147
+
+- Continued Phase 5.5 by making the Flutter Linux desktop shell persist local app state across fresh service/shell starts.
+- Added `ChronoPicAppService.persistent()` with a default local data path:
+  `XDG_DATA_HOME/chronopic_flutter/chronopic-backup.json`
+  or `~/.local/share/chronopic_flutter/chronopic-backup.json`.
+- Reused the existing ChronoPic backup JSON contract as the desktop persistence format for this slice.
+- Wired the default `ChronoPicHome` service creation to use the persistent app service instead of an in-memory-only repository.
+- Persisted state after the core desktop mutations that currently exist in Flutter:
+  backup restore,
+  library source registration,
+  desktop scan,
+  caption/tag/datetime/favorite edits,
+  rollback,
+  memory creation,
+  and add-photo-to-memory.
+- Added service-level restart coverage in `chronopic_flutter/packages/chronopic_app/test/app_service_test.dart` for:
+  library state,
+  caption,
+  tags,
+  datetime,
+  favorite,
+  memory creation,
+  and memory membership.
+- Added Flutter shell reload coverage in `chronopic_flutter/packages/chronopic_ui/test/linux_desktop_parity_test.dart` for:
+  persisted caption,
+  persisted tags,
+  persisted favorite navigation,
+  and persisted memory membership after constructing a fresh service and widget shell.
+- Updated Phase 5.5 records in:
+  `PLAN.md`,
+  `docs/flutter-refactor-phases.md`,
+  `docs/flutter-linux-desktop-parity-matrix.md`,
+  and `docs/superpowers/plans/2026-05-08-flutter-linux-desktop-parity-phase-5-5.md`.
+- Verified this slice with:
+  `dart test packages/chronopic_app/test/app_service_test.dart`
+  `flutter test packages/chronopic_ui/test/linux_desktop_parity_test.dart`
+  `dart analyze packages/chronopic_app packages/chronopic_ui`
+  `dart test packages/chronopic_domain packages/chronopic_media packages/chronopic_ai packages/chronopic_app`
+  `dart test test/repository_test.dart test/drift_database_test.dart`
+  from `chronopic_flutter/packages/chronopic_database`
+  `dart analyze packages/chronopic_domain packages/chronopic_database packages/chronopic_media packages/chronopic_ai packages/chronopic_app packages/chronopic_testkit packages/chronopic_ui`
+  `flutter test packages/chronopic_ui apps/chronopic`
+  `flutter analyze packages/chronopic_ui apps/chronopic`
+  `flutter build linux --debug`
+  `git diff --check`
+- Result:
+  all commands passed.
+- Important audit result:
+  Phase 5.5 remains incomplete.
+- Remaining:
+  larger-library desktop browse layout and responsiveness coverage,
+  detail keyboard parity and full immersive gallery visual polish,
+  richer datetime metadata/timezone display parity,
+  map/timeline browse,
+  AI provider settings form, queue recovery actions, and candidate notification parity,
+  native backup dialog smoke coverage outside widget tests,
+  and Flutter desktop i18n parity.
+
+### 2026-05-08 Step 148
+
+- Continued Phase 5.5 by adding a native folder-picker entry point to the Flutter Linux first-run library flow.
+- Added `choose-library-folder-button` to the library toolbar.
+- Wired the button through `file_selector.getDirectoryPath` with a Linux desktop folder-selection dialog.
+- Kept the typed `library-path-field` flow because parity/widget tests need deterministic non-interactive local paths.
+- Updated the empty-to-scanned Linux desktop parity test to assert the folder-picker entry point is visible before driving the typed path scan flow.
+- Updated Phase 5.5 records in:
+  `PLAN.md`,
+  `docs/flutter-refactor-phases.md`,
+  `docs/flutter-linux-desktop-parity-matrix.md`,
+  and `docs/superpowers/plans/2026-05-08-flutter-linux-desktop-parity-phase-5-5.md`.
+- Verified this slice with:
+  `flutter test packages/chronopic_ui/test/linux_desktop_parity_test.dart`
+  `dart analyze packages/chronopic_ui`
+  `flutter test packages/chronopic_ui apps/chronopic`
+  `flutter analyze packages/chronopic_ui apps/chronopic`
+  `flutter build linux --debug`
+  `git diff --check`
+- Result:
+  all commands passed.
+- Important audit result:
+  Phase 5.5 remains incomplete.
+- Remaining:
+  larger-library desktop browse layout and responsiveness coverage,
+  detail keyboard parity and full immersive gallery visual polish,
+  richer datetime metadata/timezone display parity,
+  map/timeline browse,
+  AI provider settings form, queue recovery actions, and candidate notification parity,
+  native folder/backup dialog smoke coverage outside widget tests,
+  and Flutter desktop i18n parity.
+
+### 2026-05-08 Step 149
+
+- Continued Phase 5.5 by closing the core Flutter memory lifecycle gap from the desktop parity matrix.
+- Added repository support for:
+  `getMemory`,
+  `updateMemory`,
+  `removePhotoFromMemory`,
+  and `setMemoryCover`.
+- Added app-service wrappers for those memory lifecycle actions and persisted each mutation through the desktop persistence path.
+- Added a Flutter selected-memory detail panel with:
+  `memory-detail-panel`,
+  `memory-title-field`,
+  `memory-description-field`,
+  `save-memory-button`,
+  `set-memory-cover-button`,
+  and `remove-from-memory-button`.
+- Wired the memory detail panel so users can rename a memory, edit its description, set the selected photo as cover, and remove the selected photo from the active memory.
+- Extended repository, service, and Linux desktop parity tests to cover memory rename, description editing, cover selection, remove-photo behavior, and persisted memory state reloads.
+- Updated Phase 5.5 records in:
+  `PLAN.md`,
+  `docs/flutter-refactor-phases.md`,
+  `docs/flutter-linux-desktop-parity-matrix.md`,
+  and `docs/superpowers/plans/2026-05-08-flutter-linux-desktop-parity-phase-5-5.md`.
+- Verified this targeted slice with:
+  `dart test test/repository_test.dart`
+  from `chronopic_flutter/packages/chronopic_database`
+  `dart test packages/chronopic_app/test/app_service_test.dart`
+  `flutter test packages/chronopic_ui/test/linux_desktop_parity_test.dart`
+  `dart analyze packages/chronopic_database packages/chronopic_app packages/chronopic_ui`
+- Result:
+  all targeted commands passed.
+- Important audit result:
+  Phase 5.5 remains incomplete.
+- Remaining:
+  larger-library desktop browse layout and responsiveness coverage,
+  detail keyboard parity and full immersive gallery visual polish,
+  richer datetime metadata/timezone display parity,
+  map/timeline browse,
+  AI provider settings form, queue recovery actions, and candidate notification parity,
+  native folder/backup dialog smoke coverage outside widget tests,
+  and Flutter desktop i18n parity.
+
+### 2026-05-08 Step 150
+
+- Continued Phase 5.5 by adding visible detail metadata and datetime display parity to the Flutter desktop detail surface.
+- Added `metadata-grid` to the selected-photo detail panel.
+- The metadata grid now displays:
+  `metadata-captured`,
+  `metadata-timezone`,
+  `metadata-original-date`,
+  `metadata-camera`,
+  `metadata-gps`,
+  `metadata-mime`,
+  and `metadata-size`.
+- Extended the Linux desktop parity test to verify captured local date/time, local UTC offset, and MIME metadata after datetime correction.
+- Adjusted the long desktop parity test interactions to explicitly scroll to detail and memory action buttons after the detail surface grew taller.
+- Updated Phase 5.5 records in:
+  `PLAN.md`,
+  `docs/flutter-refactor-phases.md`,
+  `docs/flutter-linux-desktop-parity-matrix.md`,
+  and `docs/superpowers/plans/2026-05-08-flutter-linux-desktop-parity-phase-5-5.md`.
+- Verified this targeted slice with:
+  `flutter test packages/chronopic_ui/test/linux_desktop_parity_test.dart`
+  `dart analyze packages/chronopic_ui`
+- Result:
+  all targeted commands passed.
+- Important audit result:
+  Phase 5.5 remains incomplete.
+- Remaining:
+  larger-library desktop browse layout and responsiveness coverage,
+  detail keyboard parity and full immersive gallery visual polish,
+  map/timeline browse,
+  AI provider settings form, queue recovery actions, and candidate notification parity,
+  native folder/backup dialog smoke coverage outside widget tests,
+  and Flutter desktop i18n parity.
+
+### 2026-05-08 Step 151
+
+- Continued Phase 5.5 by adding larger-library and responsive browse-grid coverage.
+- Replaced the fixed 4-column Flutter photo grid with an adaptive column count based on available desktop width.
+- Added a stable `photo-grid` key for widget-level layout assertions.
+- Extended `chronopic_flutter/packages/chronopic_ui/test/chronopic_home_test.dart` to verify the adaptive grid delegate uses different column counts at wide and narrower desktop widths.
+- Extended `chronopic_flutter/packages/chronopic_ui/test/linux_desktop_parity_test.dart` with an 18-photo temporary Linux directory scan and verified the scanned catalog renders through the adaptive grid.
+- Updated Phase 5.5 records in:
+  `PLAN.md`,
+  `docs/flutter-refactor-phases.md`,
+  `docs/flutter-linux-desktop-parity-matrix.md`,
+  and `docs/superpowers/plans/2026-05-08-flutter-linux-desktop-parity-phase-5-5.md`.
+- Verified this targeted slice with:
+  `flutter test packages/chronopic_ui/test/chronopic_home_test.dart`
+  `flutter test packages/chronopic_ui/test/linux_desktop_parity_test.dart`
+  `dart analyze packages/chronopic_ui`
+- Result:
+  all targeted commands passed.
+- Important audit result:
+  Phase 5.5 remains incomplete.
+- Remaining:
+  detail keyboard parity and full immersive gallery visual polish,
+  map/timeline browse,
+  AI provider settings form, queue recovery actions, and candidate notification parity,
+  native folder/backup dialog smoke coverage outside widget tests,
+  and Flutter desktop i18n parity.
+
+### 2026-05-08 Step 152
+
+- Continued Phase 5.5 by adding desktop keyboard parity for the selected-photo detail flow.
+- Wrapped the Flutter desktop shell in a focused keyboard handler.
+- Added selected-photo shortcuts:
+  `F` toggles favorite,
+  `R` rolls back the latest edit,
+  and `Enter` / `G` opens the focused gallery.
+- Extended `chronopic_flutter/packages/chronopic_ui/test/chronopic_home_test.dart` to verify favorite toggle, rollback, and gallery-open keyboard behavior from a selected detail record.
+- Updated Phase 5.5 records in:
+  `PLAN.md`,
+  `docs/flutter-refactor-phases.md`,
+  `docs/flutter-linux-desktop-parity-matrix.md`,
+  and `docs/superpowers/plans/2026-05-08-flutter-linux-desktop-parity-phase-5-5.md`.
+- Verified this targeted slice with:
+  `flutter test packages/chronopic_ui/test/chronopic_home_test.dart`
+  `dart analyze packages/chronopic_ui`
+- Result:
+  all targeted commands passed.
+- Important audit result:
+  Phase 5.5 remains incomplete.
+- Remaining:
+  full immersive gallery visual polish,
+  map/timeline browse,
+  AI provider settings form, queue recovery actions, and candidate notification parity,
+  native folder/backup dialog smoke coverage outside widget tests,
+  and Flutter desktop i18n parity.
+
+### 2026-05-08 Step 153
+
+- Ran the full Phase 5.5 local verification gate after the latest memory lifecycle, metadata, adaptive-grid, and keyboard-parity slices.
+- Verified with:
+  `dart test packages/chronopic_domain packages/chronopic_media packages/chronopic_ai packages/chronopic_app`
+  `dart test test/repository_test.dart test/drift_database_test.dart`
+  from `chronopic_flutter/packages/chronopic_database`
+  `dart analyze packages/chronopic_domain packages/chronopic_database packages/chronopic_media packages/chronopic_ai packages/chronopic_app packages/chronopic_testkit packages/chronopic_ui`
+  `flutter test packages/chronopic_ui apps/chronopic`
+  `flutter analyze packages/chronopic_ui apps/chronopic`
+  `flutter build linux --debug`
+  `git diff --check`
+- Result:
+  all commands passed.
+- Completion audit:
+  Phase 5.5 remains incomplete because the parity matrix still has Open/Partial rows.
+- Remaining:
+  full immersive gallery visual polish,
+  map/timeline browse,
+  AI provider settings form, queue recovery actions, and candidate notification parity,
+  native folder/backup dialog smoke coverage outside widget tests,
+  and Flutter desktop i18n parity.
+
+### 2026-05-08 Step 154
+
+- Continued Phase 5.5 by adding Flutter map and timeline browse modes.
+- Added `browse-mode-control` with Grid, Map, and Timeline modes.
+- Added `map-view` backed by the same visible result set; it lists GPS-backed photos with coordinates and lets the user select a mapped row into the existing detail surface.
+- Added `timeline-view` backed by the same visible result set; it groups photos by local capture date and lets the user select a timeline row into the existing detail surface.
+- Kept map/timeline implementation local to the Flutter UI layer and did not introduce a map SDK dependency for this parity slice.
+- Extended `chronopic_flutter/packages/chronopic_ui/test/chronopic_home_test.dart` to verify:
+  map mode only shows geotagged fixture photos,
+  map row selection updates detail,
+  timeline mode shows both fixture photos,
+  and timeline row selection updates detail.
+- Updated Phase 5.5 records in:
+  `PLAN.md`,
+  `docs/flutter-refactor-phases.md`,
+  `docs/flutter-linux-desktop-parity-matrix.md`,
+  and `docs/superpowers/plans/2026-05-08-flutter-linux-desktop-parity-phase-5-5.md`.
+- Verified this targeted slice with:
+  `flutter test packages/chronopic_ui/test/chronopic_home_test.dart`
+  `dart analyze packages/chronopic_ui`
+- Result:
+  all targeted commands passed.
+- Important audit result:
+  Phase 5.5 remains incomplete.
+- Remaining:
+  full immersive gallery visual polish,
+  AI provider settings form, queue recovery actions, and candidate notification parity,
+  native folder/backup dialog smoke coverage outside widget tests,
+  and Flutter desktop i18n parity.
+
+### 2026-05-08 Step 155
+
+- Continued Phase 5.5 by wiring AI provider settings, queue recovery, and memory candidate actions.
+- Added repository/service support for:
+  updating AI settings,
+  retrying failed AI queue items by moving them back to `pending`,
+  accepting a memory candidate into a real memory,
+  and rejecting a memory candidate.
+- Extended the Flutter AI panel with:
+  `ai-provider-field`,
+  `ai-base-url-field`,
+  `ai-model-field`,
+  `ai-api-key-field`,
+  `save-ai-settings-button`,
+  `retry-ai-queue-button`,
+  visible candidate rows,
+  `accept-candidate-*`,
+  and `reject-candidate-*`.
+- Extended repository, service, and Flutter UI tests for settings update, readiness changes, retrying failed AI items, and accepting a candidate into memory.
+- Updated Phase 5.5 records in:
+  `PLAN.md`,
+  `docs/flutter-refactor-phases.md`,
+  `docs/flutter-linux-desktop-parity-matrix.md`,
+  and `docs/superpowers/plans/2026-05-08-flutter-linux-desktop-parity-phase-5-5.md`.
+- Verified this targeted slice with:
+  `dart test test/repository_test.dart`
+  from `chronopic_flutter/packages/chronopic_database`
+  `dart test packages/chronopic_app/test/app_service_test.dart`
+  `flutter test packages/chronopic_ui/test/chronopic_home_test.dart`
+  `dart analyze packages/chronopic_database packages/chronopic_app packages/chronopic_ui`
+- Result:
+  all targeted commands passed.
+- Important audit result:
+  Phase 5.5 remains incomplete.
+- Remaining:
+  full immersive gallery visual polish,
+  native folder/backup dialog smoke coverage outside widget tests,
+  and Flutter desktop i18n parity.
+
+### 2026-05-08 Step 156
+
+- Continued Phase 5.5 by polishing focused gallery parity.
+- Updated the Flutter gallery dialog to use a dark fullscreen immersive shell.
+- Added gallery affordances:
+  `gallery-dialog`,
+  `gallery-counter`,
+  `gallery-keyboard-hint`,
+  `gallery-filmstrip`,
+  and `gallery-filmstrip-*`.
+- Kept existing button navigation, arrow-key navigation, and Escape close behavior.
+- Extended the Linux desktop parity test to verify the fullscreen gallery shell, counter, keyboard hint, and filmstrip in addition to existing navigation behavior.
+- Updated Phase 5.5 records in:
+  `PLAN.md`,
+  `docs/flutter-refactor-phases.md`,
+  `docs/flutter-linux-desktop-parity-matrix.md`,
+  and `docs/superpowers/plans/2026-05-08-flutter-linux-desktop-parity-phase-5-5.md`.
+- Verified this targeted slice with:
+  `flutter test packages/chronopic_ui/test/linux_desktop_parity_test.dart`
+  `dart analyze packages/chronopic_ui`
+- Result:
+  all targeted commands passed.
+- Important audit result:
+  Phase 5.5 remains incomplete.
+- Remaining:
+  native folder/backup dialog smoke coverage outside widget tests,
+  and Flutter desktop i18n parity.
+
+### 2026-05-08 Step 157
+
+- Continued Phase 5.5 by closing the remaining documented Flutter Linux desktop parity rows.
+- Added scan result separation for imported, updated, skipped, error, and missing counts in `IndexerStats` and the Flutter scan status.
+- Extended Linux scan tests to verify incremental update counts after a changed local file.
+- Added an active-filter summary surface to the Flutter desktop shell so applied search, tag, GPS, AI status, date, favorite, memory, and sort state is visible instead of hidden in controls.
+- Added visible caption/tag validation:
+  caption length,
+  tag length,
+  tag count,
+  and duplicate-tag normalization.
+- Extended the Linux desktop parity E2E to assert visible rollback state for caption, tags, favorite, and datetime edits.
+- Extended backup export E2E to compare exported JSON photos, memories, memoryPhotos, and settings against the live backup snapshot.
+- Documented native folder/save/open dialogs as an accepted headless-test difference for Phase 5.5:
+  Flutter exposes the `file_selector` entry points,
+  and deterministic widget E2E drives typed Linux paths because native portal dialogs are not operable inside Flutter widget tests.
+- Updated Phase 5.5 records in:
+  `PLAN.md`,
+  `docs/flutter-refactor-phases.md`,
+  `docs/flutter-linux-desktop-parity-matrix.md`,
+  and `docs/superpowers/plans/2026-05-08-flutter-linux-desktop-parity-phase-5-5.md`.
+- Verified this targeted slice with:
+  `dart test packages/chronopic_app/test/indexer_service_test.dart packages/chronopic_app/test/linux_desktop_scan_test.dart`
+  `flutter test packages/chronopic_ui/test/linux_desktop_parity_test.dart`
+  `dart analyze packages/chronopic_app packages/chronopic_ui`
+- Result:
+  all targeted commands passed.
+- Next:
+  rerun the full Phase 5.5 local verification gate before marking the phase complete.
+
+### 2026-05-08 Step 158
+
+- Ran the full Phase 5.5 local verification gate after closing the final Linux desktop parity rows.
+- Verified:
+  `dart test packages/chronopic_domain packages/chronopic_media packages/chronopic_ai packages/chronopic_app`
+  `dart test test/repository_test.dart test/drift_database_test.dart`
+  from `chronopic_flutter/packages/chronopic_database`
+  `dart analyze packages/chronopic_domain packages/chronopic_database packages/chronopic_media packages/chronopic_ai packages/chronopic_app packages/chronopic_testkit packages/chronopic_ui`
+  `flutter test packages/chronopic_ui apps/chronopic`
+  `flutter analyze packages/chronopic_ui apps/chronopic`
+  `flutter build linux --debug`
+  `git diff --check`
+- Result:
+  all commands passed.
+- Updated Phase 5.5 records in:
+  `PLAN.md`,
+  `docs/flutter-refactor-phases.md`,
+  and `docs/superpowers/plans/2026-05-08-flutter-linux-desktop-parity-phase-5-5.md`.
+- Final audit result:
+  Phase 5.5 is complete locally against the documented Linux desktop parity gate.
+- Next:
+  review the completed diff, then commit and push the `flutter-refactor-phases` branch when ready.

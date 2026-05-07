@@ -1829,6 +1829,103 @@ Current status:
   `flutter analyze packages/chronopic_ui apps/chronopic`,
   and `flutter build linux --debug`.
 
+### 4.33 Flutter Rewrite Phase 5.5: Linux Desktop Feature Parity And E2E Gate
+
+- Insert this phase before Android/iOS productization.
+- Treat the current Electron desktop app as the reference behavior, but finish Linux Flutter desktop parity first.
+- Keep this phase focused on real local-first desktop behavior rather than mobile permissions or packaging.
+
+Implementation breakdown:
+
+1. Real desktop library loop
+- Add a Flutter Linux path-entry flow for registering a local library directory.
+- Run manual scan through the Dart service layer and desktop media adapter.
+- Preserve incremental scan semantics:
+  imported assets are upserted,
+  unchanged assets are skipped,
+  unsupported files are ignored,
+  and scan results remain visible in the catalog after multiple files are discovered.
+
+2. Core parity actions
+- Wire browse/search/favorite filtering to real service state.
+- Wire detail selection to caption edit, tag edit, rollback, favorite toggle, and add-to-memory actions.
+- Wire backup export, backup preview, and backup restore smoke actions to the Dart backup contract.
+
+3. Linux parity E2E
+- Add a deterministic Flutter test that creates a temporary local directory with supported and unsupported files.
+- Drive the UI through add-library, scan, browse, search, favorite, edit, rollback, memory, and backup controls.
+- Verify the exported backup preserves the same authored/generated fields that matter for Electron-to-Flutter migration.
+
+4. Completion gate
+- Do not start Phase 6 until this phase passes:
+  `dart test packages/chronopic_domain packages/chronopic_media packages/chronopic_ai packages/chronopic_app`,
+  `dart analyze packages/chronopic_domain packages/chronopic_database packages/chronopic_media packages/chronopic_ai packages/chronopic_app packages/chronopic_testkit packages/chronopic_ui`,
+  `flutter test packages/chronopic_ui apps/chronopic`,
+  `flutter analyze packages/chronopic_ui apps/chronopic`,
+  and `flutter build linux --debug`.
+
+Current status:
+
+- Started locally on 2026-05-08.
+- Implementation plan is tracked in [docs/superpowers/plans/2026-05-08-flutter-linux-desktop-parity-phase-5-5.md](docs/superpowers/plans/2026-05-08-flutter-linux-desktop-parity-phase-5-5.md).
+- Electron-vs-Flutter Linux parity gaps are tracked in [docs/flutter-linux-desktop-parity-matrix.md](docs/flutter-linux-desktop-parity-matrix.md).
+- First executable Linux parity slice completed locally on 2026-05-08:
+  repository upsert/edit-history/memory actions,
+  app-service desktop directory scan,
+  real Flutter path-entry/scan controls,
+  caption/tag/favorite/rollback controls,
+  memory actions,
+  backup smoke actions,
+  and temp-directory parity tests.
+- Additional Linux parity work completed locally on 2026-05-08:
+  UI-driven empty-to-scanned library flow by entering a real Linux directory path and clicking `Scan Library`,
+  native folder-picker entry point for first-run library selection,
+  generated thumbnail cache files for scanned local images,
+  local image preview rendering in grid/detail,
+  focused gallery dialog open/close,
+  gallery adjacent navigation through toolbar buttons and keyboard arrows,
+  gallery Escape close behavior,
+  video placeholders in the browse grid,
+  desktop date/time fields for datetime correction,
+  invalid date/time input handling,
+  rollback coverage for caption, tags, favorite, and datetime edits,
+  UI-level caption/tag/favorite/memory/backup smoke coverage,
+  visible tag/GPS/date/sort filter controls,
+  repository coverage for AI status/date/sort filter semantics,
+  Favorites navigation filtering coverage,
+  and explicit JSON backup export/preview/restore through a Linux file path.
+- Backup error coverage now includes malformed JSON handling in both service and Flutter UI tests.
+- Flutter backup UI now includes native `file_selector` save/open picker entry points through `choose-backup-export-path` and `choose-backup-restore-path`.
+- Flutter AI status panel now exposes secret-safe readiness, per-status AI queue counts, and memory candidate count.
+- Flutter Linux desktop now creates a persistent default app service backed by the existing backup JSON contract under the local data directory, and service/UI tests verify that library state, caption/tag edits, favorite state, and memory membership reload in a fresh service or Flutter shell.
+- Flutter memory lifecycle now covers detail editing, rename, description edit, set cover, remove selected photo from memory, and persistence through repository/service/UI parity tests.
+- Flutter detail metadata now shows captured local date/time, local UTC offset, original date text, camera, GPS, MIME, and size; the Linux parity test verifies the visible metadata grid after datetime correction.
+- Flutter browse grid now uses adaptive desktop column counts and has larger-library coverage from an 18-photo scanned Linux fixture directory plus widget-level wide/narrow layout assertions.
+- Flutter detail keyboard parity now covers selected-photo shortcuts for favorite toggle, rollback, and gallery open.
+- Flutter map and timeline browse modes now run from the same visible result set:
+  map mode lists GPS-backed photos and coordinates,
+  while timeline mode groups photos by local capture date.
+- Flutter AI provider settings, failed-queue retry, and memory candidate accept/reject actions are now wired through repository/service/UI tests.
+- Flutter gallery now has a dark fullscreen shell with counter, keyboard hint, filmstrip, button navigation, keyboard navigation, and Escape close coverage.
+- Flutter desktop i18n now includes English/Simplified Chinese UI dictionaries, a visible locale switcher, and Chinese coverage for critical shell/import/backup/memory/browse text.
+- Flutter manual scan status now distinguishes imported, updated, skipped, error, and missing counts.
+- Flutter search/filter UX now exposes an active-filter summary for applied query, tag, GPS, AI status, date, favorite, memory, and sort state.
+- Flutter caption/tag editing now includes visible validation for caption length, tag length, tag count, and duplicate-tag normalization.
+- Flutter Linux parity E2E now asserts visible rollback state for caption, tags, favorite, and datetime edits.
+- Flutter backup export E2E now compares exported JSON photos, memories, memoryPhotos, and settings against the live backup snapshot.
+- Native folder/save/open picker behavior is treated as an accepted headless-test difference for Phase 5.5:
+  the Flutter UI exposes `file_selector` entry points, while deterministic widget E2E drives typed Linux paths because native portal dialogs are not operable inside Flutter widget tests.
+- Final Phase 5.5 verification passed locally on 2026-05-08 with:
+  `dart test packages/chronopic_domain packages/chronopic_media packages/chronopic_ai packages/chronopic_app`,
+  `dart test test/repository_test.dart test/drift_database_test.dart` from [chronopic_flutter/packages/chronopic_database/](chronopic_flutter/packages/chronopic_database/),
+  `dart analyze packages/chronopic_domain packages/chronopic_database packages/chronopic_media packages/chronopic_ai packages/chronopic_app packages/chronopic_testkit packages/chronopic_ui`,
+  `flutter test packages/chronopic_ui apps/chronopic`,
+  `flutter analyze packages/chronopic_ui apps/chronopic`,
+  `flutter build linux --debug`,
+  and `git diff --check`.
+- Phase 5.5 is complete locally against the documented Linux desktop parity gate.
+- Phase 6 Android/iOS productization may start only from this completed Linux desktop baseline.
+
 ## Future Product Backlog
 
 These are intentionally recorded as candidate directions rather than committed phases. They should be promoted into explicit numbered phases only after the current product risk is re-evaluated.

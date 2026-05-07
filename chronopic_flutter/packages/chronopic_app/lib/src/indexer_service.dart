@@ -1,13 +1,19 @@
+import 'dart:convert';
+import 'dart:io';
+import 'dart:typed_data';
+
 import 'package:chronopic_ai/chronopic_ai.dart';
 import 'package:chronopic_database/chronopic_database.dart';
 import 'package:chronopic_domain/chronopic_domain.dart';
 import 'package:chronopic_media/chronopic_media.dart';
+import 'package:image/image.dart' as img;
 
 final class IndexerStats {
   const IndexerStats({
     required this.discovered,
     required this.processed,
     required this.imported,
+    required this.updated,
     required this.duplicates,
     required this.errors,
     required this.skipped,
@@ -17,6 +23,7 @@ final class IndexerStats {
   final int discovered;
   final int processed;
   final int imported;
+  final int updated;
   final int duplicates;
   final int errors;
   final int skipped;
@@ -28,45 +35,69 @@ final class ChronoPicIndexerService {
     required this.repository,
     required this.mediaSource,
     required this.aiClient,
+    this.thumbnailDirectory,
   });
 
   final ChronoPicRepository repository;
   final MediaSourceAdapter mediaSource;
   final ChronoPicAiClient aiClient;
-  final Set<String> _knownAssetIds = <String>{};
-  final Map<String, int> _knownUpdatedAt = <String, int>{};
+  final Directory? thumbnailDirectory;
 
   Future<IndexerStats> scanLibrary() async {
     final assets = await mediaSource.listAssets();
     var imported = 0;
+    var updated = 0;
     var skipped = 0;
     var errors = 0;
     final seen = <String>{};
 
     for (final asset in assets) {
       seen.add(asset.id);
-      final unchanged = _knownAssetIds.contains(asset.id) && _knownUpdatedAt[asset.id] == asset.metadata.updatedAt;
+      final previous = repository.getPhoto(asset.id);
+      final unchanged =
+          previous?.indexState.sourceUpdatedAt == asset.metadata.updatedAt &&
+          previous?.indexState.missingAt == null;
       if (unchanged) {
         skipped += 1;
         continue;
       }
       try {
         final read = await mediaSource.readAsset(asset.id);
-        final ai = await aiClient.analyzePhoto(photoId: asset.id, bytes: read.bytes, mime: asset.metadata.mime ?? mimeFromPath(asset.path));
-        repository.restoreBackup(_singleAssetBackup(asset, ai));
-        _knownAssetIds.add(asset.id);
-        _knownUpdatedAt[asset.id] = asset.metadata.updatedAt;
-        imported += 1;
+        final ai = await aiClient.analyzePhoto(
+          photoId: asset.id,
+          bytes: read.bytes,
+          mime: asset.metadata.mime ?? mimeFromPath(asset.path),
+        );
+        repository.upsertPhotoRecord(
+          _recordForAsset(
+            asset,
+            ai,
+            thumbnailPath: _writeThumbnail(asset, read.bytes),
+          ),
+        );
+        if (previous == null) {
+          imported += 1;
+        } else {
+          updated += 1;
+        }
       } on Object {
         errors += 1;
       }
     }
 
-    final missing = await mediaSource.listMissingAssetIds(_knownAssetIds.difference(seen));
+    final knownIds = repository
+        .listPhotos(const PhotoFilter(limit: 1000000))
+        .map((record) => record.photo.id)
+        .toSet();
+    final missing = await mediaSource.listMissingAssetIds(
+      knownIds.difference(seen),
+    );
+    repository.markMissingAssets(missing);
     return IndexerStats(
       discovered: assets.length,
       processed: assets.length - skipped,
       imported: imported,
+      updated: updated,
       duplicates: 0,
       errors: errors,
       skipped: skipped,
@@ -74,16 +105,20 @@ final class ChronoPicIndexerService {
     );
   }
 
-  ChronoPicBackup _singleAssetBackup(MediaAsset asset, PhotoAiResult ai) {
+  PhotoRecord _recordForAsset(
+    MediaAsset asset,
+    PhotoAiResult ai, {
+    String? thumbnailPath,
+  }) {
     final now = DateTime.now().millisecondsSinceEpoch;
-    final record = PhotoRecord(
+    return PhotoRecord(
       photo: Photo(
         id: asset.id,
         path: asset.path,
         hash: asset.id,
         size: asset.metadata.size,
         mime: asset.metadata.mime ?? mimeFromPath(asset.path),
-        thumbnailPath: null,
+        thumbnailPath: thumbnailPath,
         favorite: false,
         createdAt: now,
         updatedAt: now,
@@ -122,22 +157,20 @@ final class ChronoPicIndexerService {
         missingAt: null,
       ),
     );
-    return ChronoPicBackup(
-      app: 'ChronoPic',
-      schemaVersion: 1,
-      exportedAt: now,
-      settings: const BackupSettings(
-        ai: AiSettings(apiKey: '', baseURL: '', model: '', providerName: 'openai-compatible'),
-        map: MapSettings(apiKey: '', securityJsCode: ''),
-        locale: LocaleSettings(locale: LocaleSetting.enUS, aiOutputLocale: AiOutputLocale.followUi),
-      ),
-      librarySources: const <LibrarySource>[],
-      photos: <PhotoRecord>[record],
-      memories: const <Memory>[],
-      memoryPhotos: const <MemoryPhoto>[],
-      editHistory: const <EditHistory>[],
-      memoryCandidates: const <MemoryCandidate>[],
-    );
+  }
+
+  String? _writeThumbnail(MediaAsset asset, Uint8List bytes) {
+    final directory = thumbnailDirectory;
+    final mime = asset.metadata.mime ?? mimeFromPath(asset.path);
+    if (directory == null || !mime.startsWith('image/')) return null;
+    final decoded = img.decodeImage(bytes);
+    if (decoded == null) return null;
+    directory.createSync(recursive: true);
+    final thumbnail = img.copyResize(decoded, width: 256);
+    final filename =
+        '${base64Url.encode(utf8.encode(asset.id)).replaceAll('=', '')}.jpg';
+    final file = File('${directory.path}/$filename');
+    file.writeAsBytesSync(img.encodeJpg(thumbnail, quality: 82));
+    return file.path;
   }
 }
-

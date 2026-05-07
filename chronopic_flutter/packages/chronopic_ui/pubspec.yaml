@@ -11,6 +11,7 @@ dependencies:
     path: ../chronopic_database
   chronopic_domain:
     path: ../chronopic_domain
+  file_selector: ^1.1.0
   flutter:
     sdk: flutter
 

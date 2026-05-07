@@ -202,6 +202,81 @@ Status:
 - Verified with `flutter test packages/chronopic_ui apps/chronopic`, `flutter analyze packages/chronopic_ui apps/chronopic`, and `flutter build linux --debug`.
 - Dependency constraints were checked with `flutter pub outdated`; direct dependencies are up to date, and newer latest-only versions that are not resolvable under Flutter `3.41.9` stable were not forced.
 
+## Phase 5.5: Linux Desktop Feature Parity And E2E Gate
+
+Purpose: finish the Linux desktop Flutter replacement path before starting Android or iOS productization.
+
+Deliverables:
+
+- Drive the Flutter Linux app from real local desktop actions, not only parity fixtures or inert MVP controls.
+- Wire local directory registration and manual scan through the Dart service layer and desktop media adapter.
+- Preserve incremental scan behavior by appending/upserting records instead of replacing the whole catalog per asset.
+- Support the core desktop workflow in the Flutter UI:
+  first-run library setup,
+  manual scan,
+  browse/search/filter,
+  detail/gallery selection,
+  caption and tag edits,
+  rollback,
+  favorites,
+  memories,
+  backup export,
+  backup preview,
+  and backup restore smoke coverage.
+- Add a Linux desktop parity test that uses a deterministic temporary directory and exercises the UI-driven workflow end to end.
+- Keep Android and iOS work blocked until this Linux parity gate is passing.
+
+Exit gate:
+
+- `flutter test packages/chronopic_ui apps/chronopic`, Dart package tests, analyzer, and `flutter build linux --debug` pass after the real desktop workflow is wired.
+
+Status:
+
+- Started locally on 2026-05-08.
+- First executable Linux parity slice is implemented:
+  local directory scan through the Dart service layer,
+  UI-driven empty-to-scanned library flow by entering a real Linux directory path and clicking `Scan Library`,
+  native folder-picker entry point for first-run library selection,
+  incremental catalog upsert,
+  browse/search over real scanned files,
+  caption/tag/favorite rollback-capable service actions,
+  datetime correction and rollback,
+  generated thumbnail cache files for local image previews,
+  local image preview rendering,
+  video placeholder rendering,
+  focused gallery dialog open/close,
+  gallery adjacent navigation and Escape close behavior,
+  desktop date/time datetime correction controls,
+  invalid date/time input coverage,
+  visible tag/GPS/AI status/date/sort filter controls,
+  memory membership,
+  favorite filtering,
+  explicit JSON backup file export/preview/restore actions,
+  native backup save/open picker entry points,
+  malformed backup JSON error coverage,
+  visible AI readiness, status-count, and memory-candidate surfaces,
+  persistent default desktop state backed by the existing backup JSON contract,
+  restart/reload coverage for library state, caption/tag edits, favorites, and memory membership,
+  memory detail editing, rename, description edit, set-cover, and remove-photo actions,
+  detail metadata grid with captured local date/time, timezone offset, original date text, camera, GPS, MIME, and size,
+  adaptive browse grid columns with larger-library Linux scan coverage,
+  selected-photo keyboard shortcuts for favorite toggle, rollback, and gallery open,
+  map and timeline browse modes driven by the shared visible result set,
+  AI provider settings, failed-queue retry, and memory candidate accept/reject actions,
+  immersive fullscreen gallery chrome with counter, keyboard hint, and filmstrip,
+  English/Simplified Chinese UI dictionaries and a visible locale switcher,
+  imported/updated/skipped/error/missing scan counts,
+  active-filter summary chips,
+  visible caption/tag validation,
+  visible rollback assertions for caption, tags, favorite, and datetime,
+  exported JSON parity comparison,
+  and temp-directory parity tests.
+- Electron-vs-Flutter Linux parity gaps are tracked in [docs/flutter-linux-desktop-parity-matrix.md](flutter-linux-desktop-parity-matrix.md).
+- Native folder/save/open dialogs are an accepted headless-test difference for Phase 5.5:
+  Flutter exposes the `file_selector` entry points, while deterministic widget E2E drives typed Linux paths because native portal dialogs are not operable inside Flutter widget tests.
+- Final Phase 5.5 verification passed locally on 2026-05-08 with Dart tests, database tests, Dart analyzer, Flutter tests, Flutter analyzer, `flutter build linux --debug`, and `git diff --check`.
+- Phase 5.5 is complete locally against the documented Linux desktop parity gate.
+
 ## Phase 6: Android And iOS Productization
 
 Purpose: adapt ChronoPic to mobile permissions, lifecycle, and media-library behavior.

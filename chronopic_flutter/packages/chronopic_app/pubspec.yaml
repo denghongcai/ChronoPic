@@ -13,6 +13,7 @@ dependencies:
     path: ../chronopic_domain
   chronopic_media:
     path: ../chronopic_media
+  image: ^4.8.0
 
 dev_dependencies:
   chronopic_testkit:
