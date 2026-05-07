@@ -1,0 +1,21 @@
+name: chronopic_app
+publish_to: none
+environment:
+  sdk: ^3.11.5
+resolution: workspace
+
+dependencies:
+  chronopic_ai:
+    path: ../chronopic_ai
+  chronopic_database:
+    path: ../chronopic_database
+  chronopic_domain:
+    path: ../chronopic_domain
+  chronopic_media:
+    path: ../chronopic_media
+
+dev_dependencies:
+  chronopic_testkit:
+    path: ../chronopic_testkit
+  lints: ^6.0.0
+  test: ^1.30.0

@@ -1,0 +1,11 @@
+name: chronopic_domain
+publish_to: none
+environment:
+  sdk: ^3.11.5
+resolution: workspace
+
+dev_dependencies:
+  chronopic_testkit:
+    path: ../chronopic_testkit
+  lints: ^6.0.0
+  test: ^1.30.0

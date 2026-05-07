@@ -6,6 +6,11 @@ coverage
 .codex
 test-results
 *.tsbuildinfo
+**/.dart_tool/
+**/.flutter-plugins-dependencies
+**/.pub-cache/
+**/.pub/
+**/build/
 apps/desktop/.electron
 apps/desktop/out
 data

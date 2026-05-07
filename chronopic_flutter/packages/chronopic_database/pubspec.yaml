@@ -1,0 +1,20 @@
+name: chronopic_database
+publish_to: none
+environment:
+  sdk: ^3.11.5
+resolution: workspace
+
+dependencies:
+  chronopic_domain:
+    path: ../chronopic_domain
+  drift: ^2.33.0
+  sqlite3: ^3.3.1
+  sqlite3_flutter_libs: ^0.6.0+eol
+
+dev_dependencies:
+  chronopic_testkit:
+    path: ../chronopic_testkit
+  build_runner: ^2.15.0
+  drift_dev: ^2.33.0
+  lints: ^6.0.0
+  test: ^1.30.0

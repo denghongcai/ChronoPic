@@ -2494,3 +2494,199 @@ This file is the local execution record for ChronoPic. It complements `PLAN.md` 
 - Verification for this planning/documentation review:
   `git diff --check`
 - Next: push the reviewed planning branch and use it as the handoff point for later Flutter rewrite implementation.
+
+### 2026-05-07 Step 125
+
+- Started the Flutter rewrite execution line at `Phase 0: Freeze Parity Contract`.
+- Added `docs/flutter-parity-contract.md` as the first Phase 0 artifact.
+- The parity contract keeps the Electron app as the reference implementation and defines:
+  required workflow parity,
+  current Electron reference tests,
+  backup compatibility baseline,
+  accepted platform differences,
+  and the Phase 0 exit gate.
+- Updated `docs/flutter-refactor-phases.md` to link Phase 0 to the new parity contract.
+- Updated `PLAN.md` with `4.27 Flutter Rewrite Phase 0: Freeze Parity Contract`.
+- Explicitly left Phase 0 incomplete until the sanitized backup fixture, expected-count fixture, and fixture refresh path are added.
+- Next: create `tests/fixtures/flutter-parity/chronopic-backup-v1.json`, its expected-count fixture, and the refresh command/script before starting Dart domain implementation.
+
+### 2026-05-07 Step 126
+
+- Completed the remaining `Phase 0: Freeze Parity Contract` artifacts.
+- Added sanitized Flutter parity fixtures:
+  `tests/fixtures/flutter-parity/chronopic-backup-v1.json`
+  and `tests/fixtures/flutter-parity/chronopic-backup-v1.expected.json`.
+- Added `scripts/write-flutter-parity-fixtures.mjs` and root script `pnpm run fixtures:flutter-parity` so the fixture baseline can be regenerated deterministically.
+- Added `tests/flutter-parity-fixtures.test.ts` to validate fixture counts plus migration-critical authored/generated fields:
+  favorites,
+  memories,
+  memory candidates,
+  authored captions,
+  generated semantic fields,
+  failed AI state,
+  and GPS-bearing records.
+- Updated `docs/flutter-parity-contract.md` and `PLAN.md` so Phase 0 is now marked complete.
+- Verified:
+  `node --check scripts/write-flutter-parity-fixtures.mjs`
+  `node --experimental-strip-types --test tests/flutter-parity-fixtures.test.ts`
+  `git diff --check`
+- Next: start Flutter rewrite Phase 1 by planning Dart domain and backup compatibility against the committed parity fixtures, not by building UI first.
+
+### 2026-05-07 Step 127
+
+- Installed a user-local Flutter SDK without sudo at:
+  `/home/dhc/.local/share/flutter`
+- Linked user commands through:
+  `/home/dhc/.local/bin/flutter`
+  and `/home/dhc/.local/bin/dart`.
+- Confirmed `/home/dhc/.local/bin` is already configured in the shell startup files, so new shells should find the commands.
+- Enabled Linux desktop support with:
+  `flutter config --enable-linux-desktop`
+- Verified installed tool versions:
+  Flutter `3.41.9` on stable,
+  Dart `3.11.5`,
+  DevTools `2.54.2`.
+- Ran `flutter doctor -v`.
+- Result:
+  Flutter SDK and network resources are available,
+  but full Linux desktop builds still need system packages installed with apt/sudo:
+  `ninja-build`,
+  `libgtk-3-dev`,
+  and optionally `mesa-utils` for driver info.
+- Additional doctor gaps:
+  Android command-line tools are missing,
+  and Chrome/Web development is not configured.
+- Next: before building Flutter Linux desktop, install the missing apt packages; before Android work, install Android command-line tools and accept Android licenses.
+
+### 2026-05-07 Step 128
+
+- Re-checked the Flutter environment after the missing apt packages were installed outside this session.
+- Confirmed system packages are installed:
+  `ninja-build`,
+  `libgtk-3-dev`,
+  and `mesa-utils`.
+- Confirmed tool visibility:
+  `/usr/bin/ninja`,
+  GTK `3.24.33` through `pkg-config --modversion gtk+-3.0`,
+  and `/usr/bin/eglinfo`.
+- Re-ran `flutter doctor -v`.
+- Result:
+  Flutter SDK passes,
+  Linux desktop toolchain passes,
+  Linux desktop device is available,
+  and network resources pass.
+- Remaining doctor issues:
+  Android command-line tools are still missing,
+  and Chrome/Web development is not configured.
+- Next: Flutter/Dart Phase 1 and Linux desktop work can proceed; Android-specific work should wait until Android command-line tools are installed and licenses are accepted.
+
+### 2026-05-07 Step 129
+
+- Started executing Flutter rewrite Phase 1 through Phase 5 from the written phase plan.
+- Created the new Dart/Flutter workspace under `chronopic_flutter/` with package boundaries for:
+  domain,
+  database,
+  media,
+  AI,
+  app services,
+  UI,
+  testkit,
+  and the app shell.
+- Queried the active Flutter stable toolchain before finalizing dependency constraints:
+  `flutter upgrade --verify-only` reports Flutter `3.41.9` stable is already current.
+- Queried package freshness with:
+  `flutter pub outdated`.
+- Result:
+  direct dependencies are up to date,
+  and newer latest-only versions such as `test 1.31.1` are not resolvable under the current Flutter stable dependency graph.
+- Kept package constraints on the newest resolvable stable versions instead of forcing incompatible latest versions.
+- Next: complete package implementation and run phase verification.
+
+### 2026-05-07 Step 130
+
+- Completed Flutter Rewrite Phase 1: Dart Domain And Backup Contract.
+- Added `chronopic_domain` with typed Dart models for photos, metadata, semantic state, index state, library sources, edit history, memories, memory candidates, filters, settings, backups, and AI readiness.
+- Added `chronopic_testkit` so Dart tests load the committed Flutter parity fixture from `tests/fixtures/flutter-parity/`.
+- Implemented backup parse, validation, preview counts, and JSON re-emission against the Electron-derived fixture.
+- Verified with:
+  `dart test packages/chronopic_domain`
+  `dart analyze packages/chronopic_domain packages/chronopic_testkit`
+- Next: continue with Drift database and repository parity.
+
+### 2026-05-07 Step 131
+
+- Completed Flutter Rewrite Phase 2: Drift Database And Repositories.
+- Added `chronopic_database` with a repository facade for backup preview/restore/export, photo listing, caption/tag/favorite edits, memories, memory membership, and memory candidates.
+- Added Drift schema/codegen coverage for the first Flutter catalog projection and a separate `chronopic_database_testing.dart` export for package-level Drift tests.
+- Kept app-facing database imports focused on the repository facade so generated Drift row classes do not leak into UI/app package namespaces.
+- Verified with:
+  `dart run build_runner build`
+  `dart test test/repository_test.dart test/drift_database_test.dart`
+  `dart analyze packages/chronopic_database`
+- Note:
+  the Drift runtime test is run from `chronopic_flutter/packages/chronopic_database` so sqlite native asset build hooks are available.
+- Next: continue with media source abstraction.
+
+### 2026-05-07 Step 132
+
+- Completed Flutter Rewrite Phase 3: Media Source Abstraction.
+- Added `chronopic_media` with `MediaSourceAdapter`, media asset metadata, read results, permission state, stable IDs, supported-media filtering, and missing-asset handling.
+- Implemented both deterministic fixture media and a recursive desktop directory adapter.
+- Verified with:
+  `dart test packages/chronopic_media`
+  `dart analyze packages/chronopic_media`
+- Next: continue with the app/indexer and AI service layer.
+
+### 2026-05-07 Step 133
+
+- Completed Flutter Rewrite Phase 4: Indexer And AI Pipeline.
+- Added `chronopic_ai` with disabled, fixture-success, and fixture-failure AI clients.
+- Added `chronopic_app` with backup orchestration and an indexer service that consumes media adapters, skips unchanged assets, records missing assets, and writes AI state through the repository boundary.
+- Verified with:
+  `dart test packages/chronopic_ai packages/chronopic_app`
+  `dart analyze packages/chronopic_ai packages/chronopic_app`
+- Next: continue with the Flutter desktop MVP shell.
+
+### 2026-05-07 Step 134
+
+- Completed Flutter Rewrite Phase 5: Flutter Desktop MVP.
+- Added `chronopic_ui` with the first Flutter Material desktop MVP surface:
+  first-run/library actions,
+  scan action,
+  search/filter controls,
+  photo grid,
+  favorites,
+  memories,
+  detail/edit surface,
+  gallery surface,
+  and backup/restore actions.
+- Added the Linux app shell under `chronopic_flutter/apps/chronopic`.
+- Verified with:
+  `flutter test packages/chronopic_ui apps/chronopic`
+  `flutter analyze packages/chronopic_ui apps/chronopic`
+  `flutter build linux --debug`
+- Result:
+  Linux debug build emits `build/linux/x64/debug/bundle/chronopic`.
+- Remaining environment gaps:
+  Android command-line tools and Chrome/Web are still not configured,
+  but they are outside Phase 1-5 and do not block Linux/Dart verification.
+- Next:
+  Phase 6 should cover Android/iOS productization only after Android tooling and mobile permission work are explicitly started.
+
+### 2026-05-07 Step 135
+
+- Completed the final Flutter Phase 1-5 audit and repository-record update.
+- Updated `PLAN.md` with completed Phase 1 through Phase 5 entries and verification evidence.
+- Updated `docs/flutter-refactor-phases.md` with the local completion status for Phase 1 through Phase 5.
+- Updated `docs/superpowers/plans/2026-05-07-flutter-phase-1-5-implementation.md` so its checklist reflects the completed implementation steps.
+- Updated `.gitignore` for nested Flutter/Dart generated directories:
+  `.dart_tool/`,
+  `.flutter-plugins-dependencies`,
+  `.pub-cache/`,
+  `.pub/`,
+  and `build/`.
+- Re-verified repository formatting with:
+  `git diff --check`
+- Result:
+  no whitespace errors,
+  and generated Flutter/Dart cache and build directories are excluded from the untracked file set.

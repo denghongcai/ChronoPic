@@ -1,0 +1,13 @@
+name: chronopic_ai
+publish_to: none
+environment:
+  sdk: ^3.11.5
+resolution: workspace
+
+dependencies:
+  chronopic_domain:
+    path: ../chronopic_domain
+
+dev_dependencies:
+  lints: ^6.0.0
+  test: ^1.30.0

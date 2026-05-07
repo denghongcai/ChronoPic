@@ -1714,6 +1714,121 @@ Current status:
   `pnpm run e2e:ai`,
   and `pnpm run e2e:accessibility`.
 
+### 4.27 Flutter Rewrite Phase 0: Freeze Parity Contract ✅
+
+- Start the Flutter rewrite line without scaffolding Flutter or Dart packages yet.
+- Treat the current Electron app as the reference implementation until Flutter passes explicit parity gates.
+- Keep this phase focused on migration safety, fixture definition, and acceptance boundaries.
+- Do not change product runtime behavior in this phase.
+
+Implementation breakdown:
+
+1. Parity contract
+- Define the user-visible workflows the Flutter rewrite must preserve:
+  library setup,
+  manual scan,
+  browse/discovery,
+  detail/gallery viewing,
+  editing/rollback,
+  favorites,
+  memories,
+  AI setup and queue,
+  memory candidates,
+  locale/settings,
+  backup/preview/restore,
+  accessibility,
+  and desktop launch.
+- Ground the contract in existing Electron tests and docs rather than inventing new semantics.
+
+2. Reference fixture baseline
+- Create a sanitized Electron backup fixture suitable for Dart parsing tests.
+- Include expected derived counts and key authored/generated fields in a separate expected fixture.
+- Keep fixture data deterministic and free of real user paths, real API keys, or real personal photos.
+
+3. Refresh path
+- Add a documented command or script that can refresh the Electron reference fixture from the current app behavior.
+- Ensure the refresh path uses deterministic fixture media.
+
+4. Handoff to Dart Phase 1
+- Make the Phase 1 Dart domain/backup work point at the parity contract and fixtures.
+- Do not start Dart model implementation until Phase 0 artifacts exist.
+
+Current status:
+
+- Completed locally on 2026-05-07.
+- Added [docs/flutter-parity-contract.md](docs/flutter-parity-contract.md) as the Phase 0 parity contract.
+- Linked Phase 0 from [docs/flutter-refactor-phases.md](docs/flutter-refactor-phases.md).
+- Added sanitized Flutter parity fixtures under [tests/fixtures/flutter-parity/](tests/fixtures/flutter-parity/):
+  [chronopic-backup-v1.json](tests/fixtures/flutter-parity/chronopic-backup-v1.json)
+  and [chronopic-backup-v1.expected.json](tests/fixtures/flutter-parity/chronopic-backup-v1.expected.json).
+- Added [scripts/write-flutter-parity-fixtures.mjs](scripts/write-flutter-parity-fixtures.mjs)
+  and root script `pnpm run fixtures:flutter-parity` to refresh the fixture baseline.
+- Added [tests/flutter-parity-fixtures.test.ts](tests/flutter-parity-fixtures.test.ts)
+  to validate counts and migration-critical authored/generated fields.
+- Verified with:
+  `node --check scripts/write-flutter-parity-fixtures.mjs`,
+  `node --experimental-strip-types --test tests/flutter-parity-fixtures.test.ts`,
+  and `git diff --check`.
+
+### 4.28 Flutter Rewrite Phase 1: Dart Domain And Backup Contract ✅
+
+- Added the Flutter/Dart workspace under [chronopic_flutter/](chronopic_flutter/).
+- Added [chronopic_domain](chronopic_flutter/packages/chronopic_domain/) with platform-neutral models for photos, metadata, semantic state, index state, library sources, edit history, memories, memory candidates, settings, filters, backups, and AI readiness.
+- Added [chronopic_testkit](chronopic_flutter/packages/chronopic_testkit/) to load the committed parity fixtures from [tests/fixtures/flutter-parity/](tests/fixtures/flutter-parity/).
+- Implemented Dart backup parsing, validation, preview counts, JSON re-emission, and fixture-backed compatibility tests.
+- Verified with:
+  `dart test packages/chronopic_domain`
+  and `dart analyze packages/chronopic_domain packages/chronopic_testkit`.
+
+### 4.29 Flutter Rewrite Phase 2: Drift Database And Repositories ✅
+
+- Added [chronopic_database](chronopic_flutter/packages/chronopic_database/) with a repository facade for backup preview/restore/export, photo listing, caption/tag/favorite edits, memory CRUD, memory membership, and memory candidates.
+- Added a Drift schema for `library_sources`, `photos`, `memories`, `memory_photos`, `edit_history`, and `memory_candidates`, plus generated Drift code.
+- Kept the public app-facing database export focused on the repository facade; Drift internals are exposed only through [chronopic_database_testing.dart](chronopic_flutter/packages/chronopic_database/lib/chronopic_database_testing.dart) for package tests.
+- Verified with:
+  `dart run build_runner build`,
+  `dart test test/repository_test.dart test/drift_database_test.dart`,
+  and `dart analyze packages/chronopic_database`.
+- Note: the Drift runtime test is run from `chronopic_flutter/packages/chronopic_database` so sqlite native asset hooks are available.
+
+### 4.30 Flutter Rewrite Phase 3: Media Source Abstraction ✅
+
+- Added [chronopic_media](chronopic_flutter/packages/chronopic_media/) with `MediaSourceAdapter`, media asset metadata, read results, permission state, stable IDs, supported-media filtering, and missing-asset handling.
+- Implemented deterministic fixture media and a desktop directory adapter for recursive local media discovery.
+- Verified with:
+  `dart test packages/chronopic_media`
+  and `dart analyze packages/chronopic_media`.
+
+### 4.31 Flutter Rewrite Phase 4: Indexer And AI Pipeline ✅
+
+- Added [chronopic_ai](chronopic_flutter/packages/chronopic_ai/) with disabled, fixture-success, and fixture-failure AI client implementations.
+- Added [chronopic_app](chronopic_flutter/packages/chronopic_app/) with backup orchestration and an indexer service that consumes media adapters, skips unchanged assets, records missing assets, and writes AI state through the repository boundary.
+- Verified with:
+  `dart test packages/chronopic_ai packages/chronopic_app`
+  and `dart analyze packages/chronopic_ai packages/chronopic_app`.
+
+### 4.32 Flutter Rewrite Phase 5: Flutter Desktop MVP ✅
+
+- Added [chronopic_ui](chronopic_flutter/packages/chronopic_ui/) with the first Flutter Material desktop MVP surface:
+  first-run/library actions,
+  scan action,
+  search/filter controls,
+  photo grid,
+  favorites,
+  memories,
+  detail/edit surface,
+  gallery surface,
+  and backup/restore actions.
+- Added the Linux Flutter app shell under [chronopic_flutter/apps/chronopic/](chronopic_flutter/apps/chronopic/).
+- Queried the current Flutter stable toolchain and package resolver before finalizing dependencies:
+  `flutter upgrade --verify-only` reports Flutter `3.41.9` stable is already current,
+  and `flutter pub outdated` reports direct dependencies are up to date with the newest resolvable stable versions.
+- Kept `test` at `1.30.0` because `1.31.1` is listed as latest but not resolvable under the current Flutter stable dependency graph.
+- Verified with:
+  `flutter test packages/chronopic_ui apps/chronopic`,
+  `flutter analyze packages/chronopic_ui apps/chronopic`,
+  and `flutter build linux --debug`.
+
 ## Future Product Backlog
 
 These are intentionally recorded as candidate directions rather than committed phases. They should be promoted into explicit numbered phases only after the current product risk is re-evaluated.
@@ -1809,7 +1924,7 @@ These are intentionally recorded as candidate directions rather than committed p
 
 - The repository has no existing implementation and can be structured freely.
 - The first pass targets desktop only.
-- A future Flutter rewrite is tracked separately in [docs/flutter-refactor-phases.md](docs/flutter-refactor-phases.md). That plan is a staged rewrite roadmap, not part of the current Electron desktop implementation line until an explicit implementation phase starts.
+- A future Flutter rewrite is tracked separately in [docs/flutter-refactor-phases.md](docs/flutter-refactor-phases.md). Phase 0 is complete in [docs/flutter-parity-contract.md](docs/flutter-parity-contract.md), but Flutter/Dart implementation should start with Phase 1 domain/backup compatibility against the committed parity fixtures.
 - Real AI providers, OCR, vector search, cloud sync, and EXIF writeback remain out of scope.
 - Realtime file watching is intentionally out of scope for this product line; manual `Scan Library` remains the explicit and permanent sync mechanism.
 - Manual `Scan Library` still needs incremental scan semantics:

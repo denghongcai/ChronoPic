@@ -47,6 +47,8 @@ Key boundary rules:
 
 Purpose: define what the Flutter rewrite must preserve before any implementation begins.
 
+Started in [docs/flutter-parity-contract.md](flutter-parity-contract.md).
+
 Deliverables:
 
 - List the current user-visible workflows that must survive the rewrite:
@@ -93,6 +95,11 @@ Exit gate:
 
 - Dart domain tests can parse and re-emit representative Electron backup data without losing authored metadata or generated AI fields.
 
+Status:
+
+- Completed locally on 2026-05-07 in [chronopic_flutter/packages/chronopic_domain/](../chronopic_flutter/packages/chronopic_domain/) and [chronopic_flutter/packages/chronopic_testkit/](../chronopic_flutter/packages/chronopic_testkit/).
+- Verified with `dart test packages/chronopic_domain` and `dart analyze packages/chronopic_domain packages/chronopic_testkit`.
+
 ## Phase 2: Drift Database And Repositories
 
 Purpose: rebuild the local-first catalog projection with typed Dart persistence.
@@ -117,6 +124,12 @@ Exit gate:
 
 - The Dart repository layer produces equivalent snapshots for the reference fixtures and can restore an Electron backup into a clean database.
 
+Status:
+
+- Completed locally on 2026-05-07 in [chronopic_flutter/packages/chronopic_database/](../chronopic_flutter/packages/chronopic_database/).
+- Verified with `dart run build_runner build`, `dart test test/repository_test.dart test/drift_database_test.dart`, and `dart analyze packages/chronopic_database`.
+- Drift runtime tests are run from the database package directory so sqlite native asset hooks are available.
+
 ## Phase 3: Media Source Abstraction
 
 Purpose: separate product indexing semantics from platform media access.
@@ -133,6 +146,11 @@ Deliverables:
 Exit gate:
 
 - Desktop fixtures can be scanned from directories, and mobile fixture adapters can simulate limited-library, missing-asset, and permission-denied states.
+
+Status:
+
+- Completed locally on 2026-05-07 in [chronopic_flutter/packages/chronopic_media/](../chronopic_flutter/packages/chronopic_media/).
+- Verified with `dart test packages/chronopic_media` and `dart analyze packages/chronopic_media`.
 
 ## Phase 4: Indexer And AI Pipeline
 
@@ -158,6 +176,11 @@ Exit gate:
 
 - Indexing and AI service tests cover unchanged files, modified files, missing files, duplicates, failed metadata extraction, disabled AI, failed AI, and successful enrichment.
 
+Status:
+
+- Completed locally on 2026-05-07 in [chronopic_flutter/packages/chronopic_ai/](../chronopic_flutter/packages/chronopic_ai/) and [chronopic_flutter/packages/chronopic_app/](../chronopic_flutter/packages/chronopic_app/).
+- Verified with `dart test packages/chronopic_ai packages/chronopic_app` and `dart analyze packages/chronopic_ai packages/chronopic_app`.
+
 ## Phase 5: Flutter Desktop MVP
 
 Purpose: prove the Flutter app can replace the Electron desktop app for the core workflow.
@@ -172,6 +195,12 @@ Deliverables:
 Exit gate:
 
 - A desktop Flutter build can run the reference fixture workflow end to end and export an equivalent backup.
+
+Status:
+
+- Completed locally on 2026-05-07 as the first Linux desktop MVP shell in [chronopic_flutter/packages/chronopic_ui/](../chronopic_flutter/packages/chronopic_ui/) and [chronopic_flutter/apps/chronopic/](../chronopic_flutter/apps/chronopic/).
+- Verified with `flutter test packages/chronopic_ui apps/chronopic`, `flutter analyze packages/chronopic_ui apps/chronopic`, and `flutter build linux --debug`.
+- Dependency constraints were checked with `flutter pub outdated`; direct dependencies are up to date, and newer latest-only versions that are not resolvable under Flutter `3.41.9` stable were not forced.
 
 ## Phase 6: Android And iOS Productization
 

@@ -19,6 +19,7 @@
     "e2e:packaged": "pnpm exec playwright test -c tests/e2e/playwright.config.ts packaged.spec.ts",
     "e2e:prepare": "pnpm run native:electron",
     "e2e:runtime": "pnpm run e2e:prepare && pnpm exec playwright test -c tests/e2e/playwright.config.ts runtime.spec.ts",
+    "fixtures:flutter-parity": "node scripts/write-flutter-parity-fixtures.mjs",
     "lint": "pnpm run typecheck",
     "native:electron": "rm -f node_modules/.cache/chronopic/native-*.json && pnpm --filter @chronopic/desktop run ensure:native",
     "native:node": "rm -f node_modules/.cache/chronopic/native-*.json && pnpm --filter @chronopic/infra-db rebuild better-sqlite3 --pending=false",

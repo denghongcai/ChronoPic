@@ -1,0 +1,212 @@
+{
+  "app": "ChronoPic",
+  "schemaVersion": 1,
+  "exportedAt": 1715000000000,
+  "settings": {
+    "ai": {
+      "apiKey": "fixture-api-key",
+      "baseURL": "https://models.example.test/v1",
+      "model": "fixture-vision-model",
+      "providerName": "fixture-provider"
+    },
+    "map": {
+      "apiKey": "fixture-amap-key",
+      "securityJsCode": "fixture-amap-security"
+    },
+    "locale": {
+      "locale": "zh-CN",
+      "aiOutputLocale": "zh-CN"
+    }
+  },
+  "librarySources": [
+    {
+      "id": "source-fixture-library",
+      "path": "/fixture/chronopic/library",
+      "isActive": true,
+      "createdAt": 1715000000000,
+      "updatedAt": 1715000000000,
+      "lastScanAt": 1715000060000
+    }
+  ],
+  "photos": [
+    {
+      "photo": {
+        "id": "photo-lake",
+        "path": "/fixture/chronopic/library/backup-lake.png",
+        "hash": "hash-lake",
+        "size": 128,
+        "mime": "image/png",
+        "thumbnailPath": "/fixture/chronopic/thumbs/photo-lake.png",
+        "favorite": true,
+        "createdAt": 1715000000000,
+        "updatedAt": 1715000060000
+      },
+      "metadata": {
+        "photoId": "photo-lake",
+        "datetime": 1715000000000,
+        "lat": 31.2304,
+        "lng": 121.4737,
+        "camera": "FixtureCam 1",
+        "confidence": 0.92,
+        "originalDatetimeText": "2024:05:06 10:00:00"
+      },
+      "semantic": {
+        "photoId": "photo-lake",
+        "labels": [
+          "backup",
+          "lake"
+        ],
+        "caption": "Manual lake caption",
+        "generatedLabels": [
+          "water",
+          "travel"
+        ],
+        "generatedCaption": "Generated lake caption",
+        "summary": "A generated summary for the lake fixture.",
+        "embeddingRef": null,
+        "aiStatus": "completed",
+        "aiProvider": "fixture-provider",
+        "aiModel": "fixture-vision-model",
+        "aiProcessedAt": 1715000060000,
+        "aiError": null
+      },
+      "indexState": {
+        "photoId": "photo-lake",
+        "indexed": true,
+        "aiProcessed": true,
+        "error": null,
+        "lastIndexedAt": 1715000060000,
+        "duplicateOf": null,
+        "sourceUpdatedAt": 1715000000000,
+        "missingAt": null
+      }
+    },
+    {
+      "photo": {
+        "id": "photo-city",
+        "path": "/fixture/chronopic/library/backup-city.png",
+        "hash": "hash-city",
+        "size": 128,
+        "mime": "image/png",
+        "thumbnailPath": "/fixture/chronopic/thumbs/photo-city.png",
+        "favorite": false,
+        "createdAt": 1715000000000,
+        "updatedAt": 1715000060000
+      },
+      "metadata": {
+        "photoId": "photo-city",
+        "datetime": 1715003600000,
+        "lat": null,
+        "lng": null,
+        "camera": "FixtureCam 1",
+        "confidence": 0.7,
+        "originalDatetimeText": null
+      },
+      "semantic": {
+        "photoId": "photo-city",
+        "labels": [
+          "city"
+        ],
+        "caption": null,
+        "generatedLabels": [
+          "street",
+          "architecture"
+        ],
+        "generatedCaption": "Generated city caption",
+        "summary": "A generated summary for the city fixture.",
+        "embeddingRef": null,
+        "aiStatus": "failed",
+        "aiProvider": "fixture-provider",
+        "aiModel": "fixture-vision-model",
+        "aiProcessedAt": null,
+        "aiError": "fixture transient failure"
+      },
+      "indexState": {
+        "photoId": "photo-city",
+        "indexed": true,
+        "aiProcessed": false,
+        "error": null,
+        "lastIndexedAt": 1715000060000,
+        "duplicateOf": null,
+        "sourceUpdatedAt": 1715000000000,
+        "missingAt": null
+      }
+    }
+  ],
+  "memories": [
+    {
+      "id": "memory-weekend",
+      "name": "Fixture Weekend",
+      "description": "A portable memory used for Flutter parity tests.",
+      "coverPhotoId": "photo-lake",
+      "coverThumbnailPath": "/fixture/chronopic/thumbs/photo-lake.png",
+      "photoCount": 1,
+      "generatedName": "Generated Weekend",
+      "generatedDescription": "Generated memory description.",
+      "generatedLabels": [
+        "weekend",
+        "travel"
+      ],
+      "aiStatus": "completed",
+      "aiProvider": "fixture-provider",
+      "aiModel": "fixture-vision-model",
+      "aiProcessedAt": 1715000060000,
+      "aiError": null,
+      "source": "manual",
+      "createdAt": 1715000000000,
+      "updatedAt": 1715000060000
+    }
+  ],
+  "memoryPhotos": [
+    {
+      "memoryId": "memory-weekend",
+      "photoId": "photo-lake",
+      "addedAt": 1715000060000
+    }
+  ],
+  "editHistory": [
+    {
+      "id": "edit-caption-lake",
+      "photoId": "photo-lake",
+      "fieldName": "caption",
+      "previousValue": null,
+      "nextValue": "Manual lake caption",
+      "createdAt": 1715000060000,
+      "rolledBackAt": null
+    },
+    {
+      "id": "edit-tags-lake",
+      "photoId": "photo-lake",
+      "fieldName": "labels",
+      "previousValue": "[]",
+      "nextValue": "[\"backup\",\"lake\"]",
+      "createdAt": 1715000060001,
+      "rolledBackAt": null
+    }
+  ],
+  "memoryCandidates": [
+    {
+      "id": "candidate-city-lake",
+      "signature": "fixture:mixed:city-lake",
+      "title": "Fixture Trip",
+      "description": "Candidate generated from place and semantic fixture signals.",
+      "reason": "The fixture photos share a close import window and travel labels.",
+      "confidence": 0.81,
+      "source": "mixed",
+      "status": "pending",
+      "photoIds": [
+        "photo-lake",
+        "photo-city"
+      ],
+      "coverPhotoId": "photo-lake",
+      "coverThumbnailPath": "/fixture/chronopic/thumbs/photo-lake.png",
+      "generatedLabels": [
+        "travel",
+        "city"
+      ],
+      "acceptedMemoryId": null,
+      "createdAt": 1715000060000,
+      "updatedAt": 1715000060000
+    }
+  ]
+}

@@ -1,0 +1,37 @@
+{
+  "schemaVersion": 1,
+  "counts": {
+    "sourceCount": 1,
+    "photoCount": 2,
+    "memoryCount": 1,
+    "memoryPhotoCount": 1,
+    "editHistoryCount": 2,
+    "memoryCandidateCount": 1
+  },
+  "keyFields": {
+    "locale": "zh-CN",
+    "aiOutputLocale": "zh-CN",
+    "favoritePhotoIds": [
+      "photo-lake"
+    ],
+    "memoryIds": [
+      "memory-weekend"
+    ],
+    "memoryCandidateIds": [
+      "candidate-city-lake"
+    ],
+    "authoredCaptionPhotoIds": [
+      "photo-lake"
+    ],
+    "generatedSemanticPhotoIds": [
+      "photo-lake",
+      "photo-city"
+    ],
+    "failedAIPhotoIds": [
+      "photo-city"
+    ],
+    "gpsPhotoIds": [
+      "photo-lake"
+    ]
+  }
+}

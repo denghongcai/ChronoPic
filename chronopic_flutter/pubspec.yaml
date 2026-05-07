@@ -1,0 +1,14 @@
+name: chronopic_flutter_workspace
+publish_to: none
+environment:
+  sdk: ^3.11.5
+
+workspace:
+  - packages/chronopic_domain
+  - packages/chronopic_database
+  - packages/chronopic_ai
+  - packages/chronopic_app
+  - packages/chronopic_media
+  - packages/chronopic_testkit
+  - packages/chronopic_ui
+  - apps/chronopic

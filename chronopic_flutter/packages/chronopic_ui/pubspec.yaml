@@ -1,0 +1,23 @@
+name: chronopic_ui
+publish_to: none
+environment:
+  sdk: ^3.11.5
+resolution: workspace
+
+dependencies:
+  chronopic_app:
+    path: ../chronopic_app
+  chronopic_database:
+    path: ../chronopic_database
+  chronopic_domain:
+    path: ../chronopic_domain
+  flutter:
+    sdk: flutter
+
+dev_dependencies:
+  chronopic_testkit:
+    path: ../chronopic_testkit
+  flutter_test:
+    sdk: flutter
+  lints: ^6.0.0
+

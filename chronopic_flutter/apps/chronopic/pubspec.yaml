@@ -1,0 +1,20 @@
+name: chronopic
+publish_to: none
+environment:
+  sdk: ^3.11.5
+resolution: workspace
+
+dependencies:
+  chronopic_ui:
+    path: ../../packages/chronopic_ui
+  flutter:
+    sdk: flutter
+
+dev_dependencies:
+  flutter_lints: ^6.0.0
+  flutter_test:
+    sdk: flutter
+  lints: ^6.0.0
+
+flutter:
+  uses-material-design: true
