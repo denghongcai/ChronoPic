@@ -1809,6 +1809,7 @@ These are intentionally recorded as candidate directions rather than committed p
 
 - The repository has no existing implementation and can be structured freely.
 - The first pass targets desktop only.
+- A future Flutter rewrite is tracked separately in [docs/flutter-refactor-phases.md](docs/flutter-refactor-phases.md). That plan is a staged rewrite roadmap, not part of the current Electron desktop implementation line until an explicit implementation phase starts.
 - Real AI providers, OCR, vector search, cloud sync, and EXIF writeback remain out of scope.
 - Realtime file watching is intentionally out of scope for this product line; manual `Scan Library` remains the explicit and permanent sync mechanism.
 - Manual `Scan Library` still needs incremental scan semantics:

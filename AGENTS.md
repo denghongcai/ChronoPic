@@ -2460,3 +2460,37 @@ This file is the local execution record for ChronoPic. It complements `PLAN.md` 
   `git diff --check`
 - Result: the local workflow guard passes with the v6 pnpm action setup.
 - Next: commit/push this CI fix and wait for main CI again before tagging the release.
+
+### 2026-05-07 Step 123
+
+- Created the `flutter-refactor-phases` branch from `main` for Flutter rewrite planning.
+- Added `docs/flutter-refactor-phases.md` with the staged rewrite phases:
+  parity contract,
+  Dart domain and backup contract,
+  Drift database and repositories,
+  media source abstraction,
+  indexer and AI pipeline,
+  Flutter desktop MVP,
+  Android/iOS productization,
+  and release/migration cutover.
+- Added a short `PLAN.md` assumption pointing to the Flutter plan while keeping the current Electron desktop plan as the active implementation line.
+- Verification for this planning-only change:
+  `git diff --check`
+- Next: review the phase plan, then commit/push the planning branch when requested.
+
+### 2026-05-07 Step 124
+
+- Reviewed the Flutter phase plan before publishing the planning branch.
+- No blocking product-order issues were found in the phase sequence:
+  parity contract,
+  Dart domain/backup,
+  Drift persistence,
+  media adapters,
+  indexer/AI,
+  Flutter desktop MVP,
+  mobile productization,
+  and release/migration remain in the right order.
+- Tightened document quality by converting repository-path references in `docs/flutter-refactor-phases.md` and the `PLAN.md` Flutter-plan pointer into Markdown links.
+- Verification for this planning/documentation review:
+  `git diff --check`
+- Next: push the reviewed planning branch and use it as the handoff point for later Flutter rewrite implementation.
