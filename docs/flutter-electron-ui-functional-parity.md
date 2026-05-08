@@ -39,6 +39,8 @@
   up to date; newer dev/transitive packages are outside the current resolvable
   set.
 - Implementation commit: `223d9e8`.
+- Handoff: branch `flutter-refactor-phases` was pushed through evidence commit
+  `50bba7c`.
 
 ## Closure Order
 
