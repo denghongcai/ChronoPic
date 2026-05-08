@@ -17,15 +17,21 @@ void main() {
       ChronoPicHome(service: ChronoPicAppService(repository)),
     );
 
+    expect(find.byKey(const Key('desktop-sidebar')), findsOneWidget);
     expect(find.text('ChronoPic Flutter'), findsOneWidget);
     expect(find.text('Add Library'), findsOneWidget);
     expect(find.text('Scan Library'), findsOneWidget);
     expect(find.text('Search and filters'), findsOneWidget);
-    expect(find.text('Export Backup'), findsOneWidget);
-    expect(find.text('Preview Restore'), findsOneWidget);
-    expect(find.text('Restore Backup'), findsOneWidget);
-    expect(find.text('Memories'), findsOneWidget);
+    expect(find.text('Memories'), findsWidgets);
     expect(find.textContaining('Favorite'), findsWidgets);
+
+    await tester.tap(find.byKey(const Key('settings-nav')));
+    await tester.pump();
+    expect(find.text('Export Backup File'), findsOneWidget);
+    expect(find.text('Preview Backup File'), findsOneWidget);
+    expect(find.text('Restore Backup File'), findsOneWidget);
+    await tester.tap(find.byKey(const Key('all-photos-nav')));
+    await tester.pump();
 
     final lakeCard = find.byKey(const Key('photo-card-photo-lake'));
     await tester.ensureVisible(lakeCard);
@@ -33,7 +39,6 @@ void main() {
     await tester.pump();
     expect(find.text('Detail view and gallery view'), findsOneWidget);
     expect(find.text('Edit caption'), findsOneWidget);
-    expect(find.text('Add to Memory'), findsOneWidget);
   });
 
   testWidgets('adapts the desktop photo grid to available width', (
@@ -54,11 +59,11 @@ void main() {
     await tester.pumpWidget(
       ChronoPicHome(service: ChronoPicAppService(repository)),
     );
-    expect(_photoGridColumns(tester), 5);
+    expect(_photoGridColumns(tester), 4);
 
     tester.view.physicalSize = const Size(840, 1200);
     await tester.pump();
-    expect(_photoGridColumns(tester), 3);
+    expect(_photoGridColumns(tester), 2);
   });
 
   testWidgets('supports desktop keyboard shortcuts from detail selection', (
@@ -140,7 +145,7 @@ void main() {
     await tester.pump();
     expect(
       find.text('/fixture/chronopic/library/backup-city.png'),
-      findsOneWidget,
+      findsWidgets,
     );
   });
 
@@ -161,6 +166,8 @@ void main() {
     });
 
     await tester.pumpWidget(ChronoPicHome(service: service));
+    await tester.tap(find.byKey(const Key('notifications-nav')));
+    await tester.pump();
     expect(find.byKey(const Key('memory-candidate-count')), findsOneWidget);
     expect(
       find.byKey(const Key('memory-candidate-candidate-city-lake')),
@@ -223,8 +230,12 @@ void main() {
     expect(find.text('添加图库'), findsOneWidget);
     expect(find.text('扫描图库'), findsOneWidget);
     expect(find.text('搜索和筛选'), findsOneWidget);
-    expect(find.text('导出备份'), findsOneWidget);
+    await tester.tap(find.byKey(const Key('settings-nav')));
+    await tester.pump();
+    expect(find.text('导出备份文件'), findsOneWidget);
     expect(find.text('回忆'), findsWidgets);
+    await tester.tap(find.byKey(const Key('all-photos-nav')));
+    await tester.pump();
     expect(find.text('网格'), findsOneWidget);
     expect(find.text('地图'), findsOneWidget);
     expect(find.text('时间线'), findsOneWidget);

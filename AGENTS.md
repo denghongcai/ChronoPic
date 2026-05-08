@@ -3542,3 +3542,90 @@ This file is the local execution record for ChronoPic. It complements `PLAN.md` 
   Phase 5.5 is complete locally against the documented Linux desktop parity gate.
 - Next:
   review the completed diff, then commit and push the `flutter-refactor-phases` branch when ready.
+
+### 2026-05-08 Step 159
+
+- Started the `Flutter Desktop UI Refine And Component Parity Phase`.
+- User explicitly rejected the current Flutter UI quality as unusable and approved a complete, non-compromised desktop UI refine.
+- Audited the Electron UI reference and current Flutter UI structure:
+  Electron has a product-oriented sidebar/page model,
+  while Flutter had a 2300+ line `chronopic_home.dart` combining shell, filters, settings, AI, backup, detail, gallery, and memory flows.
+- Added design spec:
+  `docs/superpowers/specs/2026-05-08-flutter-desktop-ui-refine-design.md`.
+- Added implementation plan:
+  `docs/superpowers/plans/2026-05-08-flutter-desktop-ui-refine.md`.
+- Updated phase records in:
+  `PLAN.md`
+  and `docs/flutter-refactor-phases.md`.
+- Next:
+  split the Flutter UI into focused modules, then rebuild the desktop shell around the Electron-aligned information architecture.
+
+### 2026-05-08 Step 160
+
+- Completed the first full implementation of the `Flutter Desktop UI Refine And Component Parity Phase`.
+- Reduced `chronopic_flutter/packages/chronopic_ui/lib/src/chronopic_home.dart` to the desktop orchestration boundary:
+  app service calls,
+  controller lifetime,
+  page routing,
+  selection/filter state,
+  and action handlers.
+- Split Flutter desktop rendering into focused part modules under:
+  `browse/`,
+  `detail/`,
+  `filters/`,
+  `gallery/`,
+  `home/`,
+  `l10n/`,
+  `memories/`,
+  `settings/`,
+  `shell/`,
+  and `theme/`.
+- Rebuilt the desktop shell around the Electron-aligned information architecture:
+  persistent left sidebar,
+  home browse surface,
+  dedicated Memories page,
+  Memory Detail page,
+  Settings page,
+  Notifications/AI work queue page,
+  focused detail inspector,
+  and fullscreen gallery dialog.
+- Moved backup, AI settings, locale, source list, and library statistics out of the default browse surface and into Settings/Notifications.
+- Preserved Phase 5.5 behavior and stable test keys while updating tests to navigate through the new page model.
+- Added `ChronoPicAppService.setMemoryCover` so the memory detail page can promote the selected photo to a memory cover through the app-service boundary instead of reaching around it.
+- Fixed the default-size app widget launch test by making the first-run setup panel responsive and by asserting stable shell/action keys instead of assuming duplicate visible button text is unique.
+- Dependency audit:
+  `flutter pub outdated` reports all direct dependencies are at the newest resolvable versions;
+  newer transitive/dev versions are listed as not mutually compatible with the current resolved toolchain.
+- Verification scenes from `docs/agent-verification-script.md` mapped to Flutter desktop:
+  Scene 1 launch/first impression via `flutter test packages/chronopic_ui apps/chronopic` plus Linux bundle smoke launch,
+  Scene 2 first-run/library setup via widget/parity tests,
+  Scene 3 scan and browse via Linux parity tests,
+  Scene 4 focused viewing via gallery/detail parity tests,
+  Scene 5 edits/favorites/rollback via Linux parity tests,
+  Scene 6 memories via Linux parity tests,
+  Scene 7 restart persistence via Linux parity tests,
+  Scene 8 settings/locale/AI via widget/parity tests,
+  and Scene 9 notifications/AI queue via widget/parity tests.
+- Runtime screenshot note:
+  the Linux bundle launched to a Dart VM service with `timeout 12s ./build/linux/x64/debug/bundle/chronopic`,
+  but screenshot capture was skipped because this environment does not have `xvfb-run`,
+  `import`,
+  `gnome-screenshot`,
+  or `scrot`.
+- Verified:
+  `dart test packages/chronopic_domain packages/chronopic_media packages/chronopic_ai packages/chronopic_app`
+  `dart test test/repository_test.dart test/drift_database_test.dart`
+  from `chronopic_flutter/packages/chronopic_database`
+  `dart analyze packages/chronopic_domain packages/chronopic_database packages/chronopic_media packages/chronopic_ai packages/chronopic_app packages/chronopic_testkit packages/chronopic_ui`
+  `dart analyze packages/chronopic_app packages/chronopic_ui`
+  `flutter test packages/chronopic_ui apps/chronopic`
+  `flutter analyze packages/chronopic_ui apps/chronopic`
+  `flutter build linux --debug`
+  `flutter pub outdated`
+  `timeout 12s ./build/linux/x64/debug/bundle/chronopic`
+  `git diff --check`
+- Result:
+  all verification commands passed except the intentional Linux smoke launch timeout used to close the app after successful startup;
+  screenshot capture was skipped for the missing-tool reason above.
+- Next:
+  commit and push the completed `flutter-refactor-phases` branch.

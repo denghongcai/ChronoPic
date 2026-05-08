@@ -1926,6 +1926,82 @@ Current status:
 - Phase 5.5 is complete locally against the documented Linux desktop parity gate.
 - Phase 6 Android/iOS productization may start only from this completed Linux desktop baseline.
 
+### 4.34 Flutter Desktop UI Refine And Component Parity Phase
+
+- Treat the current Electron desktop UI as the product-quality reference for the Flutter Linux desktop shell.
+- Refine the Flutter UI before mobile work:
+  the current Phase 5.5 surface is behavior-complete but still reads like a dense Material test harness.
+- Split `chronopic_home.dart` into focused UI modules for:
+  localization,
+  theme,
+  shell/sidebar/page routing,
+  home browse,
+  library controls,
+  filters,
+  grid/map/timeline browse,
+  detail editing,
+  gallery,
+  memories,
+  settings,
+  AI status,
+  and backup controls.
+- Rebuild Flutter desktop information architecture around the Electron structure:
+  persistent left sidebar,
+  home page,
+  memories page,
+  memory detail page,
+  settings page,
+  notifications/AI work queue page,
+  browse toolbar,
+  and focused viewer.
+- Preserve every Phase 5.5 behavior and stable test key unless the matching test is intentionally updated in the same slice.
+- Keep this phase desktop-focused:
+  no Android/iOS UI or media permission work until the Flutter desktop UI is product-quality.
+- Design spec:
+  [docs/superpowers/specs/2026-05-08-flutter-desktop-ui-refine-design.md](docs/superpowers/specs/2026-05-08-flutter-desktop-ui-refine-design.md)
+- Implementation plan:
+  [docs/superpowers/plans/2026-05-08-flutter-desktop-ui-refine.md](docs/superpowers/plans/2026-05-08-flutter-desktop-ui-refine.md)
+- Current status:
+  complete locally on 2026-05-08.
+- Implementation result:
+  `chronopic_home.dart` is now the service/state orchestration shell,
+  and Flutter UI rendering is split across focused modules for shell,
+  home,
+  filters,
+  browse,
+  detail,
+  gallery,
+  memories,
+  settings,
+  localization,
+  and theme.
+- The default home surface now follows the Electron information architecture:
+  persistent desktop sidebar,
+  dedicated Memories,
+  Memory Detail,
+  Settings,
+  and Notifications pages,
+  compact library/search/filter controls,
+  focused detail inspector,
+  and fullscreen gallery dialog.
+- Verification:
+  `dart test packages/chronopic_domain packages/chronopic_media packages/chronopic_ai packages/chronopic_app`,
+  `dart test test/repository_test.dart test/drift_database_test.dart` from [chronopic_flutter/packages/chronopic_database/](chronopic_flutter/packages/chronopic_database/),
+  `dart analyze packages/chronopic_domain packages/chronopic_database packages/chronopic_media packages/chronopic_ai packages/chronopic_app packages/chronopic_testkit packages/chronopic_ui`,
+  `flutter test packages/chronopic_ui apps/chronopic`,
+  `flutter analyze packages/chronopic_ui apps/chronopic`,
+  `flutter build linux --debug`,
+  `flutter pub outdated`,
+  Linux bundle smoke launch with `timeout 12s ./build/linux/x64/debug/bundle/chronopic`,
+  and `git diff --check`.
+- Dependency audit:
+  `flutter pub outdated` reports all direct dependencies are already at the newest resolvable versions;
+  newer transitive/dev versions are not mutually compatible with the current resolved toolchain.
+- Runtime screenshot note:
+  the Linux bundle launched to the Dart VM service locally,
+  but this environment lacks `xvfb-run` / `import` / `gnome-screenshot` / `scrot`,
+  so desktop screenshot capture was skipped with the reason recorded in `AGENTS.md`.
+
 ## Future Product Backlog
 
 These are intentionally recorded as candidate directions rather than committed phases. They should be promoted into explicit numbered phases only after the current product risk is re-evaluated.

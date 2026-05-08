@@ -205,15 +205,15 @@ final class ChronoPicAppService {
     return memory;
   }
 
-  void removePhotoFromMemory(String memoryId, String photoId) {
-    repository.removePhotoFromMemory(memoryId, photoId);
-    _persistIfConfigured();
-  }
-
   Memory setMemoryCover(String memoryId, String photoId) {
     final memory = repository.setMemoryCover(memoryId, photoId);
     _persistIfConfigured();
     return memory;
+  }
+
+  void removePhotoFromMemory(String memoryId, String photoId) {
+    repository.removePhotoFromMemory(memoryId, photoId);
+    _persistIfConfigured();
   }
 
   void _loadPersistedBackup() {

@@ -145,10 +145,14 @@ void main() {
     expect(find.text('city.png'), findsOneWidget);
     expect(find.text('clip.mp4'), findsOneWidget);
     expect(find.text('notes.txt'), findsNothing);
+    await tester.tap(find.byKey(const Key('notifications-nav')));
+    await tester.pump();
     expect(find.text('AI readiness: incomplete'), findsOneWidget);
     expect(find.byKey(const Key('ai-status-count-disabled')), findsOneWidget);
     expect(find.text('AI disabled: 3'), findsOneWidget);
     expect(find.text('Memory candidates: 0'), findsOneWidget);
+    await tester.tap(find.byKey(const Key('all-photos-nav')));
+    await tester.pump();
     expect(
       find.byKey(Key('media-preview-${lake.absolute.path}')),
       findsOneWidget,
@@ -495,6 +499,8 @@ void main() {
     await tester.tap(find.byKey(const Key('all-photos-nav')));
     await tester.pump();
 
+    await tester.tap(find.byKey(const Key('memories-nav')));
+    await tester.pump();
     await tester.enterText(
       find.byKey(const Key('memory-name-field')),
       'Linux Trip',
@@ -554,6 +560,8 @@ void main() {
     await tester.tap(lakeCard);
     await tester.pump();
 
+    await tester.tap(find.byKey(const Key('settings-nav')));
+    await tester.pump();
     final backupFile = File('${directory.path}/chronopic-backup.json');
     await tester.enterText(
       find.byKey(const Key('backup-path-field')),
@@ -578,6 +586,11 @@ void main() {
       find.textContaining('Preview restore: 2 photos, 1 memories'),
       findsOneWidget,
     );
+    await tester.tap(find.byKey(const Key('all-photos-nav')));
+    await tester.pump();
+    await tester.ensureVisible(lakeCard);
+    await tester.tap(lakeCard);
+    await tester.pump();
     await tester.enterText(
       find.byKey(const Key('caption-field')),
       'Unsaved after export',
@@ -589,6 +602,8 @@ void main() {
       service.getPhoto(lake.absolute.path)?.semantic.caption,
       'Unsaved after export',
     );
+    await tester.tap(find.byKey(const Key('settings-nav')));
+    await tester.pump();
     await tester.ensureVisible(find.byKey(const Key('restore-backup-file')));
     await tester.tap(find.byKey(const Key('restore-backup-file')));
     await tester.pump();
@@ -710,11 +725,11 @@ void main() {
     await tester.pumpWidget(ChronoPicHome(service: service));
     expect(service.listPhotos(const PhotoFilter(limit: 100)).length, 18);
     expect(find.byKey(const Key('photo-grid')), findsOneWidget);
-    expect(_photoGridColumns(tester), 5);
+    expect(_photoGridColumns(tester), 4);
 
     tester.view.physicalSize = const Size(840, 1200);
     await tester.pump();
-    expect(_photoGridColumns(tester), 3);
+    expect(_photoGridColumns(tester), 2);
   });
 }
 

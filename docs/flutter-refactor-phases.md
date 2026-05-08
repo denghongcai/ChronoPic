@@ -277,6 +277,67 @@ Status:
 - Final Phase 5.5 verification passed locally on 2026-05-08 with Dart tests, database tests, Dart analyzer, Flutter tests, Flutter analyzer, `flutter build linux --debug`, and `git diff --check`.
 - Phase 5.5 is complete locally against the documented Linux desktop parity gate.
 
+## Phase 5.6: Flutter Desktop UI Refine And Component Parity
+
+Purpose: turn the behavior-complete Flutter Linux desktop shell into a product-quality desktop UI before mobile work starts.
+
+Deliverables:
+
+- Treat the Electron desktop UI as the reference information architecture for Flutter desktop.
+- Split the current large Flutter UI file into focused modules for:
+  localization,
+  theme,
+  shell/sidebar/page routing,
+  home browse,
+  library controls,
+  filters,
+  browse surfaces,
+  detail editing,
+  gallery,
+  memories,
+  settings,
+  AI status,
+  and backup controls.
+- Rebuild Flutter desktop around:
+  persistent sidebar,
+  home page,
+  memories page,
+  memory detail page,
+  settings page,
+  notifications/AI work queue page,
+  browse toolbar,
+  and focused viewer.
+- Preserve the full Phase 5.5 Linux desktop parity gate.
+- Add layout/page tests so future work cannot collapse the UI back into a single test-shell surface.
+
+Status:
+
+- Complete locally on 2026-05-08.
+- Design spec:
+  [docs/superpowers/specs/2026-05-08-flutter-desktop-ui-refine-design.md](superpowers/specs/2026-05-08-flutter-desktop-ui-refine-design.md).
+- Implementation plan:
+  [docs/superpowers/plans/2026-05-08-flutter-desktop-ui-refine.md](superpowers/plans/2026-05-08-flutter-desktop-ui-refine.md).
+- Implementation result:
+  Flutter desktop now uses an Electron-aligned persistent sidebar,
+  home browse page,
+  memories page,
+  memory detail page,
+  settings page,
+  notifications/AI work queue page,
+  focused detail inspector,
+  and fullscreen gallery dialog.
+- Verification:
+  the full Phase 5.5 local gate still passes after the UI refine,
+  including Dart package tests,
+  database tests,
+  Dart analyzer,
+  Flutter widget/parity tests,
+  Flutter analyzer,
+  Linux debug build,
+  dependency audit,
+  Linux bundle smoke launch,
+  and `git diff --check`.
+
 ## Phase 6: Android And iOS Productization
 
 Purpose: adapt ChronoPic to mobile permissions, lifecycle, and media-library behavior.
