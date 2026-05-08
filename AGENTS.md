@@ -5096,7 +5096,9 @@ This file is the local execution record for ChronoPic. It complements `PLAN.md` 
   the Phase 5.7 matrix has no remaining unexamined `Gap` rows;
   remaining visual differences are documented as accepted renderer or
   fixture-content differences.
+- Implementation commit:
+  `223d9e8`
+  (`Align Flutter desktop with Electron UI flows`).
 - Next:
-  commit the implementation,
-  write the implementation commit into the matrix `Fix Commit` column,
-  and push `flutter-refactor-phases`.
+  push `flutter-refactor-phases` after committing the matrix/doc update that
+  records `223d9e8`.

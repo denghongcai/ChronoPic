@@ -617,7 +617,7 @@ Current row order:
   Progress:
   - Every matrix row is now either `Accepted Difference` with a written reason or has no remaining concrete `Gap`.
   - Electron and Flutter evidence paths are recorded for all 13 surfaces.
-  - The `Fix Commit` column remains pending until the implementation commit is created.
+  - The `Fix Commit` column records implementation commit `223d9e8`.
 
 - [ ] **Step 5: Commit and push**
 
