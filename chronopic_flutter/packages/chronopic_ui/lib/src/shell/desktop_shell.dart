@@ -5,13 +5,12 @@ final class _DesktopShell extends StatelessWidget {
     required this.activePage,
     required this.child,
     required this.favoriteOnly,
+    required this.immersive,
     required this.labels,
-    required this.locale,
     required this.memories,
     required this.notificationCount,
     required this.onAllPhotos,
     required this.onFavorites,
-    required this.onLocaleChanged,
     required this.onMemories,
     required this.onMemorySelected,
     required this.onNotifications,
@@ -23,13 +22,12 @@ final class _DesktopShell extends StatelessWidget {
   final _DesktopPage activePage;
   final Widget child;
   final bool favoriteOnly;
+  final bool immersive;
   final UiStrings labels;
-  final UiLocale locale;
   final List<Memory> memories;
   final int notificationCount;
   final VoidCallback onAllPhotos;
   final VoidCallback onFavorites;
-  final ValueChanged<UiLocale> onLocaleChanged;
   final VoidCallback onMemories;
   final ValueChanged<String> onMemorySelected;
   final VoidCallback onNotifications;
@@ -39,6 +37,16 @@ final class _DesktopShell extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (immersive) {
+      return Scaffold(
+        backgroundColor: Colors.grey.shade700,
+        body: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Center(child: child),
+        ),
+      );
+    }
+
     return Scaffold(
       body: Row(
         children: [
@@ -46,12 +54,10 @@ final class _DesktopShell extends StatelessWidget {
             activePage: activePage,
             favoriteOnly: favoriteOnly,
             labels: labels,
-            locale: locale,
             memories: memories,
             notificationCount: notificationCount,
             onAllPhotos: onAllPhotos,
             onFavorites: onFavorites,
-            onLocaleChanged: onLocaleChanged,
             onMemories: onMemories,
             onMemorySelected: onMemorySelected,
             onNotifications: onNotifications,
@@ -61,7 +67,8 @@ final class _DesktopShell extends StatelessWidget {
           Expanded(
             child: Column(
               children: [
-                _StatusBanner(status: status),
+                if (_showStatusBanner(labels, status))
+                  _StatusBanner(labels: labels, status: status),
                 Expanded(
                   child: SingleChildScrollView(
                     padding: const EdgeInsets.all(24),
@@ -87,12 +94,10 @@ final class _DesktopSidebar extends StatelessWidget {
     required this.activePage,
     required this.favoriteOnly,
     required this.labels,
-    required this.locale,
     required this.memories,
     required this.notificationCount,
     required this.onAllPhotos,
     required this.onFavorites,
-    required this.onLocaleChanged,
     required this.onMemories,
     required this.onMemorySelected,
     required this.onNotifications,
@@ -103,12 +108,10 @@ final class _DesktopSidebar extends StatelessWidget {
   final _DesktopPage activePage;
   final bool favoriteOnly;
   final UiStrings labels;
-  final UiLocale locale;
   final List<Memory> memories;
   final int notificationCount;
   final VoidCallback onAllPhotos;
   final VoidCallback onFavorites;
-  final ValueChanged<UiLocale> onLocaleChanged;
   final VoidCallback onMemories;
   final ValueChanged<String> onMemorySelected;
   final VoidCallback onNotifications;
@@ -161,7 +164,7 @@ final class _DesktopSidebar extends StatelessWidget {
                           style: Theme.of(context).textTheme.titleMedium,
                         ),
                         Text(
-                          'Local-first memory library',
+                          labels.librarySubtitle,
                           overflow: TextOverflow.ellipsis,
                           style: TextStyle(
                             color: Colors.grey.shade500,
@@ -171,10 +174,15 @@ final class _DesktopSidebar extends StatelessWidget {
                       ],
                     ),
                   ),
+                  _SidebarNotificationButton(
+                    active: activePage == _DesktopPage.notifications,
+                    badge: notificationCount,
+                    onPressed: onNotifications,
+                  ),
                 ],
               ),
               const SizedBox(height: 28),
-              const _SidebarLabel('Library'),
+              _SidebarLabel(labels.librarySection),
               _SidebarItem(
                 active: activePage == _DesktopPage.home && !favoriteOnly,
                 icon: Icons.photo_library_outlined,
@@ -190,12 +198,11 @@ final class _DesktopSidebar extends StatelessWidget {
                 onPressed: onFavorites,
               ),
               _SidebarItem(
-                active: activePage == _DesktopPage.notifications,
-                badge: notificationCount,
-                icon: Icons.notifications_none,
-                keyName: 'notifications-nav',
-                label: labels.notifications,
-                onPressed: onNotifications,
+                active: false,
+                icon: Icons.schedule_outlined,
+                keyName: 'recent-nav',
+                label: _localized(labels, 'Recent', '最近'),
+                onPressed: onAllPhotos,
               ),
               _SidebarItem(
                 active: activePage == _DesktopPage.settings,
@@ -237,16 +244,92 @@ final class _DesktopSidebar extends StatelessWidget {
                   ],
                 ),
               ),
-              const Divider(),
-              LocaleSelector(
-                labels: labels,
-                locale: locale,
-                onChanged: onLocaleChanged,
+              const Divider(height: 20),
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton.icon(
+                  key: const Key('create-memory-sidebar-button'),
+                  onPressed: onMemories,
+                  icon: const Icon(Icons.add, size: 18),
+                  label: Text(labels.createMemory),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: Colors.grey.shade800,
+                    side: BorderSide(color: Colors.grey.shade200),
+                    backgroundColor: Colors.white,
+                    elevation: 2,
+                    shadowColor: Colors.black.withValues(alpha: 0.08),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(999),
+                    ),
+                  ),
+                ),
               ),
             ],
           ),
         ),
       ),
+    );
+  }
+}
+
+final class _SidebarNotificationButton extends StatelessWidget {
+  const _SidebarNotificationButton({
+    required this.active,
+    required this.badge,
+    required this.onPressed,
+  });
+
+  final bool active;
+  final int badge;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        Material(
+          color: active ? Colors.black : Colors.white,
+          shape: const CircleBorder(),
+          elevation: 2,
+          shadowColor: Colors.black.withValues(alpha: 0.12),
+          child: InkWell(
+            key: const Key('notifications-nav'),
+            customBorder: const CircleBorder(),
+            onTap: onPressed,
+            child: Padding(
+              padding: const EdgeInsets.all(9),
+              child: Icon(
+                Icons.notifications_none,
+                color: active ? Colors.white : Colors.grey.shade700,
+                size: 20,
+              ),
+            ),
+          ),
+        ),
+        if (badge > 0)
+          Positioned(
+            right: -3,
+            top: -5,
+            child: Container(
+              constraints: const BoxConstraints(minWidth: 18),
+              padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+              decoration: BoxDecoration(
+                color: Colors.pink.shade500,
+                borderRadius: BorderRadius.circular(999),
+              ),
+              child: Text(
+                badge > 9 ? '9+' : '$badge',
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 10,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+            ),
+          ),
+      ],
     );
   }
 }
@@ -280,11 +363,9 @@ final class _SidebarItem extends StatelessWidget {
     required this.keyName,
     required this.label,
     required this.onPressed,
-    this.badge = 0,
   });
 
   final bool active;
-  final int badge;
   final IconData icon;
   final String keyName;
   final String label;
@@ -319,27 +400,6 @@ final class _SidebarItem extends StatelessWidget {
                     ),
                   ),
                 ),
-                if (badge > 0)
-                  Container(
-                    constraints: const BoxConstraints(minWidth: 22),
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 6,
-                      vertical: 2,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Colors.red.shade500,
-                      borderRadius: BorderRadius.circular(999),
-                    ),
-                    child: Text(
-                      badge > 9 ? '9+' : '$badge',
-                      textAlign: TextAlign.center,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 11,
-                        fontWeight: FontWeight.w800,
-                      ),
-                    ),
-                  ),
               ],
             ),
           ),
@@ -350,12 +410,16 @@ final class _SidebarItem extends StatelessWidget {
 }
 
 final class _StatusBanner extends StatelessWidget {
-  const _StatusBanner({required this.status});
+  const _StatusBanner({required this.labels, required this.status});
 
+  final UiStrings labels;
   final String status;
 
   @override
   Widget build(BuildContext context) {
+    final visibleStatus = status == uiStrings[UiLocale.en]!.scanIdle
+        ? labels.scanIdle
+        : status;
     return Container(
       key: const Key('scan-status'),
       width: double.infinity,
@@ -370,7 +434,7 @@ final class _StatusBanner extends StatelessWidget {
           const SizedBox(width: 10),
           Expanded(
             child: Text(
-              status,
+              visibleStatus,
               overflow: TextOverflow.ellipsis,
               style: TextStyle(color: Colors.grey.shade700, fontSize: 13),
             ),
@@ -379,4 +443,9 @@ final class _StatusBanner extends StatelessWidget {
       ),
     );
   }
+}
+
+bool _showStatusBanner(UiStrings labels, String status) {
+  return status != labels.scanIdle &&
+      status != uiStrings[UiLocale.en]!.scanIdle;
 }

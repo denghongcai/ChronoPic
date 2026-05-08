@@ -933,7 +933,7 @@ export class ChronoPicDatabase {
         `SELECT id, photo_id, field_name, previous_value, next_value, created_at, rolled_back_at
          FROM edit_history
          WHERE rolled_back_at IS NULL ${photoId ? "AND photo_id = ?" : ""}
-         ORDER BY created_at DESC
+         ORDER BY created_at DESC, rowid DESC
          LIMIT 1`
       )
       .get(...(photoId ? [photoId] : [])) as
@@ -955,7 +955,9 @@ export class ChronoPicDatabase {
     const transaction = this.db.transaction(() => {
       if (row.field_name === "labels") {
         this.db.prepare("UPDATE semantic SET labels = ? WHERE photo_id = ?").run(row.previous_value ?? "[]", row.photo_id);
-      } else {
+      } else if (row.field_name === "caption") {
+        this.db.prepare("UPDATE semantic SET caption = ? WHERE photo_id = ?").run(row.previous_value, row.photo_id);
+      } else if (row.field_name === "datetime") {
         this.db
           .prepare("UPDATE metadata SET datetime = ? WHERE photo_id = ?")
           .run(row.previous_value ? Number(row.previous_value) : null, row.photo_id);
@@ -973,7 +975,7 @@ export class ChronoPicDatabase {
   listEditHistory(photoId: string): EditHistory[] {
     const rows = this.db
       .prepare(
-        "SELECT id, photo_id, field_name, previous_value, next_value, created_at, rolled_back_at FROM edit_history WHERE photo_id = ? ORDER BY created_at DESC"
+        "SELECT id, photo_id, field_name, previous_value, next_value, created_at, rolled_back_at FROM edit_history WHERE photo_id = ? ORDER BY created_at DESC, rowid DESC"
       )
       .all(photoId) as Array<{
       id: string;

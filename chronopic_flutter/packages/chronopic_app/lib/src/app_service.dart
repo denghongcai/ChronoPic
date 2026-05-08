@@ -109,6 +109,18 @@ final class ChronoPicAppService {
     return settings;
   }
 
+  BackupSettings updateMapSettings(MapSettings mapSettings) {
+    final settings = repository.updateMapSettings(mapSettings);
+    _persistIfConfigured();
+    return settings;
+  }
+
+  BackupSettings updateLocaleSettings(LocaleSettings localeSettings) {
+    final settings = repository.updateLocaleSettings(localeSettings);
+    _persistIfConfigured();
+    return settings;
+  }
+
   Map<AiPipelineStatus, int> getAiStatusCounts() {
     final counts = <AiPipelineStatus, int>{
       for (final status in AiPipelineStatus.values) status: 0,

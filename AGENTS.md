@@ -3651,3 +3651,1452 @@ This file is the local execution record for ChronoPic. It complements `PLAN.md` 
 - Next:
   implement the Electron reference screenshot capture and Flutter Xvfb/scrot capture harness,
   then use the matrix to drive focused Flutter UI/function fixes.
+
+### 2026-05-08 Step 162
+
+- Started executing Phase 5.7.
+- Added Electron reference capture script:
+  `scripts/capture-electron-parity.mjs`.
+- Added Flutter Linux capture harness:
+  `chronopic_flutter/tool/capture_flutter_parity.sh`.
+- Added a `CHRONOPIC_CAPTURE_SURFACE` environment hook to Flutter desktop so the real Linux bundle can open deterministic first-run, populated, map, timeline, detail, gallery, favorites, memories, memory-detail, settings, notifications, Chinese-locale, and restart-persistence surfaces without a window automation dependency.
+- Verified Electron reference capture with:
+  `pnpm run e2e:prepare`
+  `node scripts/capture-electron-parity.mjs`
+- Verified Flutter capture with:
+  `dart analyze packages/chronopic_ui`
+  `bash tool/capture_flutter_parity.sh empty-home`
+  `bash tool/capture_flutter_parity.sh all`
+- Screenshot evidence:
+  Electron screenshots under `test-results/flutter-electron-parity/electron/`
+  and Flutter screenshots under `test-results/flutter-electron-parity/flutter/`.
+- Updated `docs/flutter-electron-ui-functional-parity.md` with the first screenshot-backed gap matrix.
+- Current gap summary:
+  first-run/home hierarchy,
+  populated browse hierarchy,
+  map/timeline presentation,
+  detail first-viewport visibility,
+  gallery metadata richness,
+  memories list candidate section,
+  memory detail story/chapter layout,
+  settings AI/map grouping,
+  notifications queue/candidate layout,
+  Chinese locale after aligned surfaces,
+  and restart persistence visual state.
+- Next:
+  fix the highest-impact Flutter home/browse/detail/settings/memory gaps,
+  then recapture both sides and update the matrix.
+
+### 2026-05-08 Step 163
+
+- Implemented the first Phase 5.7 Flutter alignment slice for shell/home/browse/detail.
+- Changed the Flutter first-run home from a dense setup+filter page into a hero-first surface with recent-memory/discovery hierarchy.
+- Changed populated home so recent memories lead the page, browse/search/filter controls are more compact, and the photo grid is visible at 1280x720.
+- Removed the always-on wide right detail column from the normal browse flow so the gallery is no longer squeezed by selection state.
+- Added a capture-only detail-first state and rebuilt `DetailSurface` into a wide media-plus-inspector layout with metadata, favorite, rollback, caption, tag, and datetime controls visible in the first viewport.
+- Updated responsive grid expectations after removing the persistent detail column:
+  wide desktop now uses five columns instead of four.
+- Updated the parity matrix with the improved first-run, populated browse, detail, favorites, and restart-persistence evidence.
+- Verified:
+  `dart analyze packages/chronopic_ui`
+  `flutter test packages/chronopic_ui/test/chronopic_home_test.dart`
+  `flutter test packages/chronopic_ui/test/linux_desktop_parity_test.dart`
+  `flutter test packages/chronopic_ui/test/chronopic_home_test.dart packages/chronopic_ui/test/linux_desktop_parity_test.dart`
+  `bash tool/capture_flutter_parity.sh all`
+  `bash tool/capture_flutter_parity.sh detail`
+- Screenshot evidence:
+  refreshed Flutter screenshots under `test-results/flutter-electron-parity/flutter/`,
+  with key reviewed files:
+  `01-empty-home.png`,
+  `02-populated-grid.png`,
+  and `05-detail.png`.
+- Result:
+  Task 5 in the Phase 5.7 implementation plan is complete,
+  and the detail screenshot is now a valid first-viewport comparison surface.
+- Next:
+  continue Task 6 and Task 7 by aligning gallery metadata/filmstrip,
+  memory list/detail product surfaces,
+  settings grouping,
+  notifications/AI queue layout,
+  and locale parity.
+
+### 2026-05-08 Step 164
+
+- Continued Phase 5.7 page-level alignment for memories.
+- Reworked the Flutter memories list into two Electron-aligned panels:
+  AI-assisted grouping candidates,
+  and browse memory collections.
+- Moved memory candidate accept/reject actions into the memories page while preserving the existing notification-page actions and service methods.
+- Reworked memory detail from a flat form/action panel into a cover-led detail hero plus a story-outline/chapter panel.
+- Fixed the deterministic `memory-detail` capture state so title and description controllers are initialized when the app opens directly into that surface.
+- Verified:
+  `dart analyze packages/chronopic_ui`
+  `flutter test packages/chronopic_ui/test/chronopic_home_test.dart packages/chronopic_ui/test/linux_desktop_parity_test.dart`
+  `bash tool/capture_flutter_parity.sh memories-list`
+  `bash tool/capture_flutter_parity.sh memory-detail`
+- Screenshot evidence:
+  refreshed Flutter `08-memories-list.png`
+  and `09-memory-detail.png`
+  under `test-results/flutter-electron-parity/flutter/`.
+- Updated:
+  `docs/flutter-electron-ui-functional-parity.md`
+  and `docs/superpowers/plans/2026-05-08-flutter-electron-ui-functional-parity.md`.
+- Result:
+  memories list/detail are closer to Electron's product structure,
+  but still remain open gaps until visual media treatment, read-first editing, and action placement are fully aligned.
+- Next:
+  align notifications so it becomes a queue/candidate center with settings handoff,
+  then align settings AI/map grouping and gallery filmstrip metadata.
+
+### 2026-05-09 Step 165
+
+- Continued Phase 5.7 page-level alignment for notifications and settings.
+- Moved editable AI configuration out of Notifications and into Settings so Notifications behaves like Electron's queue/candidate review center.
+- Added map settings persistence through:
+  `ChronoPicRepository.updateMapSettings`,
+  `ChronoPicAppService.updateMapSettings`,
+  and the Flutter settings UI.
+- Reworked Notifications into two summary cards:
+  AI queue,
+  and memory candidates,
+  with handoffs to Settings and Memories.
+- Reordered Settings so the first viewport follows Electron more closely:
+  library settings,
+  language,
+  backup/restore,
+  then AI settings,
+  with map settings and source/stat sections below.
+- Tightened tests so candidate accept/reject is verified from Memories and AI/map configuration is verified from Settings.
+- Fixed the Flutter capture harness so it can capture multiple named surfaces in one command,
+  for example:
+  `bash tool/capture_flutter_parity.sh settings notifications`.
+- Verified:
+  `dart analyze packages/chronopic_domain packages/chronopic_database packages/chronopic_app packages/chronopic_ui`
+  `dart test packages/chronopic_app`
+  `flutter test packages/chronopic_ui/test/chronopic_home_test.dart packages/chronopic_ui/test/linux_desktop_parity_test.dart`
+  `bash -n chronopic_flutter/tool/capture_flutter_parity.sh`
+  `bash tool/capture_flutter_parity.sh settings notifications`
+- Screenshot evidence:
+  refreshed Flutter `10-settings.png`
+  and `11-notifications.png`
+  under `test-results/flutter-electron-parity/flutter/`.
+- Updated:
+  `docs/flutter-electron-ui-functional-parity.md`,
+  `docs/superpowers/plans/2026-05-08-flutter-electron-ui-functional-parity.md`,
+  `PLAN.md`,
+  and `docs/flutter-refactor-phases.md`.
+- Result:
+  Notifications and Settings are now structurally closer to Electron,
+  but the matrix rows remain open until section density, wording, and exact first-viewport composition are finalized.
+- Next:
+  continue Task 6 for gallery filmstrip/metadata and focused viewer affordances,
+  then recapture all 13 Flutter surfaces.
+
+### 2026-05-09 Step 166
+
+- Completed the focused Phase 5.7 Task 6 pass for gallery/detail/favorites/editing parity coverage.
+- Added stronger gallery assertions in `linux_desktop_parity_test.dart` for:
+  gallery metadata,
+  memory/tag badge,
+  detail-view affordance,
+  filmstrip,
+  and `D` key return-to-detail behavior.
+- Reworked the Flutter fullscreen gallery so it now shows:
+  a `Gallery View` label,
+  counter,
+  `Detail View` action,
+  readable bottom metadata scrim,
+  captured date,
+  memory/tag badge,
+  keyboard hint,
+  and labeled gallery strip with item count.
+- Fixed compact video thumbnail rendering so filmstrip thumbnails and small grid cells no longer overflow in tests.
+- Verified:
+  `dart analyze packages/chronopic_ui`
+  `flutter test packages/chronopic_ui/test/linux_desktop_parity_test.dart`
+  `flutter test packages/chronopic_ui/test/chronopic_home_test.dart`
+  `bash tool/capture_flutter_parity.sh gallery`
+- Screenshot evidence:
+  refreshed Flutter `06-gallery.png`
+  under `test-results/flutter-electron-parity/flutter/`.
+- Updated:
+  `docs/flutter-electron-ui-functional-parity.md`
+  and `docs/superpowers/plans/2026-05-08-flutter-electron-ui-functional-parity.md`.
+- Result:
+  Task 6 is complete in the implementation plan,
+  but the gallery matrix row remains open until final Electron-level visual/card framing is accepted or fully matched.
+- Next:
+  finish Task 7 by tightening remaining locale/map/timeline/page-level gaps,
+  then run a full 13-surface recapture.
+
+### 2026-05-09 Step 167
+
+- Continued Phase 5.7 Task 7 by tightening map and timeline first-viewport parity.
+- Reworked Flutter map browse from a simple GPS list into a desktop disabled/provider-failure map canvas with:
+  mapped-photo count,
+  map-provider status,
+  placeholder route/marker treatment,
+  and GPS photo selection below the canvas.
+- Reworked Flutter timeline browse from a simple list into a timeline-specific hierarchy with:
+  Year/Month/Day scope chips,
+  date range summary,
+  dated-photo count,
+  grouped cards,
+  and selectable photo cards.
+- Fixed the Flutter screenshot harness parity size:
+  `tool/capture_flutter_parity.sh` now captures 1440x920,
+  and the Linux runner default window now opens at 1440x920 so screenshots no longer contain black unused areas.
+- Expanded widget coverage for the new map disabled canvas and timeline scope controls.
+- Verified:
+  `dart analyze packages/chronopic_ui`
+  `flutter test packages/chronopic_ui/test/chronopic_home_test.dart packages/chronopic_ui/test/linux_desktop_parity_test.dart`
+  `bash -n chronopic_flutter/tool/capture_flutter_parity.sh`
+  `bash tool/capture_flutter_parity.sh map timeline`
+- Screenshot evidence:
+  refreshed Flutter `03-map.png`
+  and `04-timeline.png`
+  under `test-results/flutter-electron-parity/flutter/`.
+- Updated:
+  `docs/flutter-electron-ui-functional-parity.md`,
+  `docs/superpowers/plans/2026-05-08-flutter-electron-ui-functional-parity.md`,
+  `PLAN.md`,
+  and `docs/flutter-refactor-phases.md`.
+- Result:
+  map and timeline are now screenshot-backed first-viewport parity improvements,
+  but the matrix rows remain open until exact Electron card/chip/banner treatment is matched or accepted.
+- Next:
+  continue Task 7 with locale parity and remaining page-level polish,
+  then rerun the full 13-surface capture.
+
+### 2026-05-09 Step 168
+
+- Continued Phase 5.7 Task 7 by tightening Chinese-locale first-viewport parity.
+- Localized the visible Flutter home/shell surfaces that were still hard-coded in English:
+  sidebar subtitle and section label,
+  scan idle status,
+  discovery/recent-memory labels,
+  new-memory card,
+  memory count/custom-cover badges,
+  browse result count,
+  filter labels,
+  AI status choices,
+  sort/date controls,
+  active-filter prefix,
+  and visible detail-panel heading/actions.
+- Added widget assertions that the Chinese shell shows the localized scan status, library label, subtitle, recent-memory heading, new-memory card, and filter controls.
+- Verified:
+  `dart analyze packages/chronopic_ui`
+  `flutter test packages/chronopic_ui/test/chronopic_home_test.dart packages/chronopic_ui/test/linux_desktop_parity_test.dart`
+  `bash tool/capture_flutter_parity.sh zh-locale`
+- Screenshot evidence:
+  refreshed Flutter `12-zh-locale.png`
+  under `test-results/flutter-electron-parity/flutter/`.
+- Updated:
+  `docs/flutter-electron-ui-functional-parity.md`,
+  `docs/superpowers/plans/2026-05-08-flutter-electron-ui-functional-parity.md`,
+  `PLAN.md`,
+  and `docs/flutter-refactor-phases.md`.
+- Result:
+  Chinese first-viewport parity is materially improved,
+  but the row remains open because the app title still identifies the Flutter build,
+  source fixture memory/photo text remains authored data,
+  and Electron's selected-photo banner differs from Flutter's detail-panel placement.
+- Next:
+  run a broader full-surface recapture and decide whether the remaining visual differences are accepted differences or need another UI pass.
+
+### 2026-05-09 Step 169
+
+- Re-ran the full Flutter parity capture after aligning the Linux window size with Electron.
+- Confirmed every Flutter evidence screenshot is now 1440x920:
+  `01-empty-home.png`,
+  `02-populated-grid.png`,
+  `03-map.png`,
+  `04-timeline.png`,
+  `05-detail.png`,
+  `06-gallery.png`,
+  `07-favorites.png`,
+  `08-memories-list.png`,
+  `09-memory-detail.png`,
+  `10-settings.png`,
+  `11-notifications.png`,
+  `12-zh-locale.png`,
+  and `13-restart-persistence.png`.
+- Fixed the app-shell widget test so it no longer assumes persistent test state is empty and instead verifies stable shell navigation.
+- Verified:
+  `bash tool/capture_flutter_parity.sh all`
+  `file test-results/flutter-electron-parity/flutter/*.png`
+  `flutter analyze packages/chronopic_ui apps/chronopic`
+  `flutter test apps/chronopic`
+  `git diff --check`
+- Updated:
+  `docs/flutter-electron-ui-functional-parity.md`.
+- Result:
+  Flutter screenshot evidence is now dimensionally comparable to Electron across all tracked surfaces,
+  and the app package smoke test is stable against persistent state.
+- Next:
+  continue closing the remaining `Gap` rows by either matching the exact Electron card/chip/banner treatments or documenting accepted platform differences.
+
+### 2026-05-09 Step 170
+
+- Continued Phase 5.7 Settings parity.
+- Replaced the simple Flutter language segmented control on the Settings page with an Electron-aligned language card:
+  interface language select,
+  AI output language select,
+  and a `Save Language Settings` action.
+- Added real locale-setting persistence through:
+  `ChronoPicRepository.updateLocaleSettings`,
+  `ChronoPicAppService.updateLocaleSettings`,
+  and the Flutter settings/shell handlers.
+- Kept ordinary parity captures in English by leaving the UI locale controlled by current UI/capture state rather than forcing the raw fixture backup locale onto every loaded surface.
+- Fixed a responsive overflow in the new AI-output locale select by making both dropdowns expanded.
+- Expanded widget coverage so changing to Chinese writes `LocaleSetting.zhCN` into backup settings and the Settings page exposes both locale controls plus the save action.
+- Verified:
+  `dart analyze packages/chronopic_database packages/chronopic_app packages/chronopic_ui`
+  `flutter test packages/chronopic_ui/test/chronopic_home_test.dart packages/chronopic_ui/test/linux_desktop_parity_test.dart`
+  `bash tool/capture_flutter_parity.sh settings`
+- Screenshot evidence:
+  refreshed Flutter `10-settings.png`
+  under `test-results/flutter-electron-parity/flutter/`.
+- Updated:
+  `docs/flutter-electron-ui-functional-parity.md`
+  and `docs/superpowers/plans/2026-05-08-flutter-electron-ui-functional-parity.md`.
+- Result:
+  Settings language controls now match Electron's functional shape more closely,
+  while remaining Settings gaps are mostly section density, AI readiness card treatment, and backup action grouping.
+- Next:
+  continue with one of the remaining high-impact visual gaps:
+  backup/AI settings card treatment,
+  empty/populated home card composition,
+  or memory card media treatment.
+
+### 2026-05-09 Step 171
+
+- Continued Phase 5.7 Map parity after comparing the Electron and Flutter `03-map.png` screenshots.
+- Reworked Flutter's disabled-map canvas from a dark simulated route/map into an Electron-aligned pale failure surface:
+  centered `MAP ERROR` label,
+  `Map view failed to initialize` title,
+  AMap-unavailable detail copy,
+  and a retained mapped-count stat.
+- Removed the duplicate in-panel Map header so the failed map surface is the first visual object inside the browse result panel, closer to the Electron first viewport.
+- Kept the GPS photo selection list below the failed-map canvas and updated the widget test to scroll to that list before selecting a mapped photo.
+- Verified:
+  `dart analyze packages/chronopic_ui`
+  `flutter test packages/chronopic_ui/test/chronopic_home_test.dart`
+  `bash tool/capture_flutter_parity.sh map`
+- Screenshot evidence:
+  refreshed Flutter `03-map.png`
+  under `test-results/flutter-electron-parity/flutter/`.
+- Updated:
+  `PLAN.md`,
+  `docs/flutter-refactor-phases.md`,
+  `docs/flutter-electron-ui-functional-parity.md`,
+  and `docs/superpowers/plans/2026-05-08-flutter-electron-ui-functional-parity.md`.
+- Result:
+  Map disabled-state styling and copy are now much closer to Electron,
+  while the row remains open because top-of-page density and discovery-chip layout still differ.
+- Next:
+  continue with Timeline selected-photo/banner treatment or the home/grid discovery-chip/card composition.
+
+### 2026-05-09 Step 172
+
+- Continued Phase 5.7 Timeline parity after comparing Electron and Flutter `04-timeline.png`.
+- Reworked Flutter's Timeline surface away from the dark hero treatment and toward Electron's light timeline card:
+  Year/Month/Day scope chips,
+  compact `Select` action,
+  `TIMELINE SCOPE` summary strip,
+  `SELECTED PHOTO` banner with `Open Detail`,
+  month grouping,
+  and selected-card highlighting.
+- Threaded the selected photo into `TimelineBrowseView` so the timeline surface can show the current timeline focus instead of only listing grouped media.
+- Updated widget coverage to assert the new `TIMELINE SCOPE` strip, selected-photo banner, and open-detail action while preserving map/timeline photo selection behavior.
+- Verified:
+  `dart analyze packages/chronopic_ui`
+  `flutter test packages/chronopic_ui/test/chronopic_home_test.dart`
+  `bash tool/capture_flutter_parity.sh timeline`
+- Screenshot evidence:
+  refreshed Flutter `04-timeline.png`
+  under `test-results/flutter-electron-parity/flutter/`.
+- Updated:
+  `PLAN.md`,
+  `docs/flutter-refactor-phases.md`,
+  `docs/flutter-electron-ui-functional-parity.md`,
+  and `docs/superpowers/plans/2026-05-08-flutter-electron-ui-functional-parity.md`.
+- Result:
+  Timeline now has the key Electron visible structures,
+  while the row remains open because exact top-of-page discovery-chip density and card proportions still differ.
+- Next:
+  continue with home/grid discovery-chip/card composition or memory card media treatment.
+
+### 2026-05-09 Step 173
+
+- Continued Phase 5.7 Home/Grid parity after comparing Electron and Flutter populated-grid screenshots.
+- Added an Electron-like `SELECTED PHOTO` banner above the Flutter waterfall grid when a photo is selected.
+- Scoped the banner to waterfall-style browse surfaces so populated grid, favorites, and restart-persistence captures gain the Electron selection affordance without adding the same banner to Map or Timeline, which have their own surface-specific structures.
+- Updated widget coverage to assert the new `browse-selected-photo-banner` after selecting a grid photo.
+- Verified:
+  `dart analyze packages/chronopic_ui`
+  `flutter test packages/chronopic_ui/test/chronopic_home_test.dart`
+  `flutter test packages/chronopic_ui/test/linux_desktop_parity_test.dart`
+  `bash tool/capture_flutter_parity.sh populated-grid favorites restart-persistence`
+- Screenshot evidence:
+  refreshed Flutter `02-populated-grid.png`,
+  `07-favorites.png`,
+  and `13-restart-persistence.png`
+  under `test-results/flutter-electron-parity/flutter/`.
+- Updated:
+  `PLAN.md`,
+  `docs/flutter-refactor-phases.md`,
+  `docs/flutter-electron-ui-functional-parity.md`,
+  and `docs/superpowers/plans/2026-05-08-flutter-electron-ui-functional-parity.md`.
+- Result:
+  Waterfall-style browse surfaces now share the key Electron selected-photo affordance,
+  while remaining browse gaps are mostly discovery-chip density, Select/Filter affordance placement, media-card proportions, and thumbnail fallback treatment.
+- Next:
+  continue with memory card media treatment or the remaining Electron-style discovery/search/filter composition.
+
+### 2026-05-09 Step 174
+
+- Continued Phase 5.7 memory card media parity after comparing Electron and Flutter memory-list/detail screenshots.
+- Reworked shared Flutter memory cover fallback treatment:
+  memory covers now render as framed media-style surfaces with a subtle image fallback marker and edge label instead of large centered book icons on gradient blocks.
+- Reused the same cover treatment across:
+  home recent-memory cards,
+  memory list collection cards,
+  memory detail hero cover,
+  and memory detail story/chapter cards.
+- Preserved the existing memory editing and management contract:
+  title/description fields,
+  save,
+  add to memory,
+  set cover,
+  and remove from memory remain available and test-covered.
+- Expanded widget coverage to assert the reusable `memory-cover-memory-weekend` surface is present in the desktop shell.
+- Verified:
+  `dart analyze packages/chronopic_ui`
+  `flutter test packages/chronopic_ui/test/chronopic_home_test.dart`
+  `flutter test packages/chronopic_ui/test/linux_desktop_parity_test.dart`
+  `bash tool/capture_flutter_parity.sh memories-list memory-detail populated-grid`
+- Screenshot evidence:
+  refreshed Flutter `08-memories-list.png`,
+  `09-memory-detail.png`,
+  and `02-populated-grid.png`
+  under `test-results/flutter-electron-parity/flutter/`.
+- Updated:
+  `PLAN.md`,
+  `docs/flutter-refactor-phases.md`,
+  `docs/flutter-electron-ui-functional-parity.md`,
+  and `docs/superpowers/plans/2026-05-08-flutter-electron-ui-functional-parity.md`.
+- Result:
+  Memory media fallback treatment is closer to Electron,
+  while memory rows remain open because Electron's detail page is more read-first,
+  actions are icon-positioned differently,
+  and card proportions still differ.
+- Next:
+  continue with read-first memory detail treatment or the remaining Electron-style discovery/search/filter composition.
+
+### 2026-05-09 Step 175
+
+- Continued Phase 5.7 memory detail parity.
+- Reworked the Flutter memory detail first viewport from a form-led layout into a read-first hero:
+  large framed cover,
+  compact top-right cover/remove actions,
+  display title,
+  cover status,
+  description display card,
+  and lightweight navigation/add actions.
+- Moved editable memory metadata and membership controls into a lower `Memory management` panel so existing save/add/set-cover/remove behavior remains available but no longer dominates the Electron-comparison first viewport.
+- Updated the Linux desktop parity test to scroll to the lower `add-to-memory-button` before tapping it, matching the new layout.
+- Verified:
+  `dart analyze packages/chronopic_ui`
+  `flutter test packages/chronopic_ui/test/chronopic_home_test.dart packages/chronopic_ui/test/linux_desktop_parity_test.dart`
+  `bash tool/capture_flutter_parity.sh memory-detail memories-list`
+- Screenshot evidence:
+  refreshed Flutter `09-memory-detail.png`
+  and `08-memories-list.png`
+  under `test-results/flutter-electron-parity/flutter/`.
+- Updated:
+  `PLAN.md`,
+  `docs/flutter-refactor-phases.md`,
+  `docs/flutter-electron-ui-functional-parity.md`,
+  and `docs/superpowers/plans/2026-05-08-flutter-electron-ui-functional-parity.md`.
+- Result:
+  Memory detail now matches Electron's read-first hierarchy much more closely,
+  while remaining differences are mostly timestamp formatting,
+  exact icon placement,
+  and chapter-card proportions.
+- Next:
+  continue with Electron-style discovery/search/filter composition or remaining Settings/Notifications card-density polish.
+
+### 2026-05-09 Step 176
+
+- Ran the broader Flutter-side Phase 5.7 Task 7 verification after the recent map, timeline, grid, and memory-detail refinements.
+- Verified:
+  `dart analyze packages/chronopic_app packages/chronopic_ui`
+  `flutter test packages/chronopic_ui apps/chronopic`
+  `bash tool/capture_flutter_parity.sh all`
+  `file test-results/flutter-electron-parity/flutter/*.png`
+- Result:
+  analysis passed,
+  Flutter package/app tests passed,
+  all 13 Flutter parity screenshots were recaptured,
+  and every refreshed Flutter PNG is 1440x920.
+- Updated:
+  `PLAN.md`,
+  `docs/flutter-refactor-phases.md`,
+  and `docs/superpowers/plans/2026-05-08-flutter-electron-ui-functional-parity.md`.
+- Note:
+  Phase 5.7 is still not complete because the parity matrix still contains `Gap` rows and the full two-side Task 8 gate has not been run after the latest Flutter changes.
+- Next:
+  continue remaining Flutter visual polish or run the Electron-side gate when ready to assess final closure.
+
+### 2026-05-09 Step 177
+
+- Ran the Electron-side Phase 5.7 Task 8 gate after the Flutter-side recapture.
+- `pnpm run e2e:runtime` initially failed because rapid same-millisecond edits could make `rollbackLatestEdit` roll back the wrong edit-history row.
+- Fixed the real persistence bug in `packages/infra-db/src/index.ts`:
+  rollback now orders ties by insertion order with `rowid DESC`,
+  handles `caption` separately from `datetime`,
+  and list history uses the same deterministic ordering.
+- Added regression coverage in `tests/backup.test.ts` for rapid caption/tag/datetime edits with identical timestamps.
+- Fixed the i18n E2E harness in `tests/e2e/i18n.spec.ts` so it runs against the built Electron app instead of forcing a Vite dev-server URL during the release-style gate; it now also uses an isolated `CHRONOPIC_USER_DATA_DIR`.
+- Verified:
+  `pnpm run native:node`
+  `node --experimental-strip-types --test tests/backup.test.ts`
+  `pnpm run e2e:runtime`
+  `pnpm run e2e:backup`
+  `pnpm run e2e:ai`
+  `pnpm exec playwright test -c tests/e2e/playwright.config.ts i18n.spec.ts`
+  `node scripts/capture-electron-parity.mjs`
+  `file test-results/flutter-electron-parity/electron/*.png`
+  `pnpm test`
+  `pnpm typecheck`
+  `pnpm build`
+- Result:
+  Electron unit/type/build, runtime E2E, backup E2E, AI E2E, i18n E2E,
+  and screenshot capture all pass;
+  all 13 Electron parity screenshots are 1440x920.
+- Updated:
+  `PLAN.md`,
+  `docs/flutter-refactor-phases.md`,
+  and `docs/superpowers/plans/2026-05-08-flutter-electron-ui-functional-parity.md`.
+- Note:
+  Phase 5.7 still remains open because `docs/flutter-electron-ui-functional-parity.md`
+  still contains `Gap` rows that need either additional visual/function work or explicit accepted-difference decisions.
+- Next:
+  audit the matrix row by row and decide whether to continue polishing remaining gaps or record accepted platform differences.
+
+### 2026-05-09 Step 178
+
+- Continued Phase 5.7 Detail inspector parity after comparing Electron and Flutter `05-detail.png`.
+- Reworked Flutter's detail capture state from a plain inline detail panel into an Electron-like focused dark viewer:
+  large media canvas,
+  right-side inspector,
+  keyboard hint,
+  and gallery strip.
+- Wired focused detail header controls to real behavior instead of visual placeholders:
+  the add button routes the selected photo into the memory flow,
+  the close button exits the focused detail state,
+  and the gallery button opens the existing gallery dialog.
+- Added widget regression coverage for the focused detail surface, filmstrip, and actionable add/close controls.
+- Verified:
+  `dart analyze packages/chronopic_ui`
+  `flutter test packages/chronopic_ui/test/chronopic_home_test.dart packages/chronopic_ui/test/linux_desktop_parity_test.dart`
+  `bash tool/capture_flutter_parity.sh detail`
+- Screenshot evidence:
+  refreshed Flutter `05-detail.png`
+  under `test-results/flutter-electron-parity/flutter/`.
+- Updated:
+  `PLAN.md`,
+  `docs/flutter-refactor-phases.md`,
+  `docs/flutter-electron-ui-functional-parity.md`,
+  and `docs/superpowers/plans/2026-05-08-flutter-electron-ui-functional-parity.md`.
+- Result:
+  Detail parity is materially closer to Electron's focused viewer model,
+  while the row remains open for inspector card hierarchy,
+  AI insight blocks,
+  exact top-button treatment,
+  and media fallback edge rendering.
+- Next:
+  continue row-by-row polishing of the remaining matrix gaps before closing Phase 5.7.
+
+### 2026-05-09 Step 179
+
+- Continued Phase 5.7 Detail inspector parity after reviewing the refreshed Flutter `05-detail.png`.
+- Removed the remaining normal Flutter desktop chrome from the focused detail evidence path:
+  the detail capture now uses an immersive shell without the sidebar,
+  status banner,
+  or browse toolbar.
+- Reworked the focused detail inspector into a closer Electron-style read-first hierarchy:
+  filename header,
+  AI health pill,
+  metadata metric cards,
+  and an AI insights card backed by existing semantic metadata
+  (`generatedCaption`, `summary`, `generatedLabels`, `aiStatus`, and `aiError`).
+- Preserved the editing path by keeping caption, tag, datetime, favorite,
+  rollback,
+  and gallery actions inside the focused inspector scroll area.
+- Extended widget regression coverage for the focused detail inspector grid and AI insights.
+- Verified:
+  `dart analyze packages/chronopic_ui`
+  `flutter test packages/chronopic_ui/test/chronopic_home_test.dart packages/chronopic_ui/test/linux_desktop_parity_test.dart`
+  `bash tool/capture_flutter_parity.sh detail`
+  `file test-results/flutter-electron-parity/flutter/05-detail.png`
+- Screenshot evidence:
+  refreshed Flutter `05-detail.png`
+  under `test-results/flutter-electron-parity/flutter/`,
+  confirmed as 1440x920.
+- Updated:
+  `PLAN.md`,
+  `docs/flutter-refactor-phases.md`,
+  `docs/flutter-electron-ui-functional-parity.md`,
+  and `docs/superpowers/plans/2026-05-08-flutter-electron-ui-functional-parity.md`.
+- Result:
+  the Detail row is now much closer to Electron's focused overlay and inspector composition,
+  while the parity matrix still keeps it open for exact button treatment,
+  fallback media edge rendering,
+  and lower edit-field scroll positioning.
+- Next:
+  continue with the remaining matrix rows rather than closing Phase 5.7.
+
+### 2026-05-09 Step 180
+
+- Continued Phase 5.7 Fullscreen gallery parity after comparing Electron and Flutter `06-gallery.png`.
+- Reworked Flutter gallery layout to better match Electron's focused viewer hierarchy:
+  a bordered dark media frame,
+  metadata below the image instead of a large gray scrim,
+  a visible Open Inspector action,
+  and a separate framed gallery-strip container.
+- Preserved the existing gallery behavior:
+  previous/next buttons,
+  filmstrip selection,
+  `D` / Open Inspector returning to detail,
+  and `Esc` close remain covered by existing widget tests.
+- Verified:
+  `dart analyze packages/chronopic_ui`
+  `flutter test packages/chronopic_ui/test/chronopic_home_test.dart packages/chronopic_ui/test/linux_desktop_parity_test.dart`
+  `bash tool/capture_flutter_parity.sh gallery`
+  `file test-results/flutter-electron-parity/flutter/06-gallery.png`
+- Screenshot evidence:
+  refreshed Flutter `06-gallery.png`
+  under `test-results/flutter-electron-parity/flutter/`,
+  confirmed as 1440x920.
+- Updated:
+  `PLAN.md`,
+  `docs/flutter-refactor-phases.md`,
+  `docs/flutter-electron-ui-functional-parity.md`,
+  and `docs/superpowers/plans/2026-05-08-flutter-electron-ui-functional-parity.md`.
+- Result:
+  Gallery parity is closer to Electron's viewer composition,
+  while the row remains open for exact top chrome,
+  media fallback edge rendering,
+  and button styling.
+- Next:
+  continue with remaining browse/home/settings/notifications matrix gaps.
+
+### 2026-05-09 Step 181
+
+- Continued Phase 5.7 populated browse, favorites, and restart-persistence parity after comparing Electron and Flutter `02-populated-grid.png`.
+- Added a functional Electron-like discovery lens row to the populated Flutter home/browse surface:
+  Map switches to map browse,
+  Timeline switches to timeline browse,
+  and the Memory chip opens the corresponding memory detail page.
+- Kept the discovery lens out of empty first-run state so the first-run screen does not gain extra non-reference controls.
+- Extended widget coverage so the discovery chips are present in populated state and each chip navigates to a real surface.
+- Cleaned up the timeline test interaction by ensuring the offscreen timeline card is visible before tapping it.
+- Verified:
+  `dart analyze packages/chronopic_ui`
+  `flutter test packages/chronopic_ui/test/chronopic_home_test.dart packages/chronopic_ui/test/linux_desktop_parity_test.dart`
+  `bash tool/capture_flutter_parity.sh populated-grid favorites restart-persistence`
+  `file test-results/flutter-electron-parity/flutter/02-populated-grid.png test-results/flutter-electron-parity/flutter/07-favorites.png test-results/flutter-electron-parity/flutter/13-restart-persistence.png`
+- Screenshot evidence:
+  refreshed Flutter `02-populated-grid.png`,
+  `07-favorites.png`,
+  and `13-restart-persistence.png`
+  under `test-results/flutter-electron-parity/flutter/`,
+  all confirmed as 1440x920.
+- Updated:
+  `PLAN.md`,
+  `docs/flutter-refactor-phases.md`,
+  `docs/flutter-electron-ui-functional-parity.md`,
+  and `docs/superpowers/plans/2026-05-08-flutter-electron-ui-functional-parity.md`.
+- Result:
+  browse-related surfaces now match Electron's discovery-lens model more closely,
+  while the matrix remains open for exact Select/Filter affordances,
+  card proportions,
+  and thumbnail fallback styling.
+- Next:
+  continue with remaining Settings and Notifications density/action gaps,
+  or tighten media card proportions and fallback styling.
+
+### 2026-05-09 Step 182
+
+- Continued Phase 5.7 Settings and Notifications parity after comparing Electron and Flutter `10-settings.png` / `11-notifications.png`.
+- Reworked Flutter Notifications into an Electron-like outer container with two separate cards:
+  AI queue and Memory candidates.
+- Preserved notification behavior:
+  `Enrich Queue` still retries failed AI queue items,
+  and `Refresh Suggestions` still routes to memory review.
+- Reworked Flutter Settings first viewport:
+  library controls now lead with Electron-like primary actions,
+  backup uses an `Export, Backup, and Restore` section with `LOCAL JSON` and three primary backup actions,
+  and AI settings now show an `AI Enrichment` section with a readiness card and secret-safe `PRESENT` pills.
+- Preserved existing functional controls:
+  path-based library add,
+  path-based backup export/restore,
+  AI settings editing,
+  and map settings editing remain available and covered.
+- Updated widget tests so offscreen save controls are scrolled into view before tapping after the settings layout changed.
+- Verified:
+  `dart analyze packages/chronopic_ui`
+  `flutter test packages/chronopic_ui/test/chronopic_home_test.dart packages/chronopic_ui/test/linux_desktop_parity_test.dart`
+  `bash tool/capture_flutter_parity.sh settings notifications`
+  `file test-results/flutter-electron-parity/flutter/10-settings.png test-results/flutter-electron-parity/flutter/11-notifications.png`
+- Screenshot evidence:
+  refreshed Flutter `10-settings.png`
+  and `11-notifications.png`
+  under `test-results/flutter-electron-parity/flutter/`,
+  both confirmed as 1440x920.
+- Updated:
+  `PLAN.md`,
+  `docs/flutter-refactor-phases.md`,
+  `docs/flutter-electron-ui-functional-parity.md`,
+  and `docs/superpowers/plans/2026-05-08-flutter-electron-ui-functional-parity.md`.
+- Result:
+  Settings and Notifications are materially closer to Electron's first-viewport hierarchy,
+  while matrix rows remain open for exact chip/button color semantics,
+  lower settings panels,
+  and page/sidebar branding.
+- Next:
+  continue with media card proportions/fallback styling or run a row-by-row matrix audit before the next full two-side gate.
+
+### 2026-05-09 Step 183
+
+- Continued Phase 5.7 media-card parity after comparing Flutter populated-grid output against Electron's larger media cards.
+- Reworked the Flutter photo grid density from a high-density 5-column desktop grid to a lower-density 3-column desktop grid with larger cards.
+- Reworked photo cards from separate white preview/text cards into Electron-like media cards:
+  full-card media/fallback surface,
+  bottom gradient metadata layer,
+  prominent title,
+  favorite marker,
+  and selected amber border.
+- Improved missing-media fallback from a flat white placeholder to a soft gradient media surface.
+- Updated adaptive-grid tests to reflect the new desktop media-card contract:
+  3 columns on wide desktop,
+  1 column on the narrow 840px fixture viewport.
+- Verified:
+  `dart analyze packages/chronopic_ui`
+  `flutter test packages/chronopic_ui/test/chronopic_home_test.dart packages/chronopic_ui/test/linux_desktop_parity_test.dart`
+  `bash tool/capture_flutter_parity.sh populated-grid favorites restart-persistence`
+  `file test-results/flutter-electron-parity/flutter/02-populated-grid.png test-results/flutter-electron-parity/flutter/07-favorites.png test-results/flutter-electron-parity/flutter/13-restart-persistence.png`
+- Screenshot evidence:
+  refreshed Flutter `02-populated-grid.png`,
+  `07-favorites.png`,
+  and `13-restart-persistence.png`
+  under `test-results/flutter-electron-parity/flutter/`,
+  all confirmed as 1440x920.
+- Updated:
+  `PLAN.md`,
+  `docs/flutter-refactor-phases.md`,
+  `docs/flutter-electron-ui-functional-parity.md`,
+  and `docs/superpowers/plans/2026-05-08-flutter-electron-ui-functional-parity.md`.
+- Result:
+  populated/favorites/restart media hierarchy is closer to Electron's large-card treatment,
+  while rows remain open for exact filter affordances,
+  crop height,
+  and fallback edge treatment.
+- Next:
+  run a row-by-row matrix audit and decide whether remaining differences need more UI work or documented accepted-difference treatment before the next full two-side gate.
+
+### 2026-05-09 Step 184
+
+- Continued Phase 5.7 global shell and first-run parity after reviewing the refreshed Flutter screenshots.
+- Aligned Flutter desktop brand chrome with Electron:
+  app title now displays `ChronoPic`,
+  and the sidebar subtitle now displays `Photo workspace`.
+- Updated the Flutter app shell widget test and home widget test to assert the Electron-aligned app title.
+- Re-ran a full Flutter parity capture after the brand change so all 13 Flutter evidence screenshots use the aligned shell chrome.
+- Tightened first-run primary action naming and behavior:
+  the hero now uses `Add Folder` for the folder-picker action,
+  while the lower library toolbar still keeps the explicit path-based `Add Library` action.
+- Verified:
+  `dart analyze packages/chronopic_ui apps/chronopic`
+  `flutter test packages/chronopic_ui apps/chronopic`
+  `bash tool/capture_flutter_parity.sh all`
+  `file test-results/flutter-electron-parity/flutter/*.png`
+  `bash tool/capture_flutter_parity.sh empty-home`
+  `file test-results/flutter-electron-parity/flutter/01-empty-home.png`
+- Screenshot evidence:
+  all 13 Flutter parity screenshots were refreshed under `test-results/flutter-electron-parity/flutter/`
+  and confirmed as 1440x920 after the brand update;
+  `01-empty-home.png` was refreshed again after the `Add Folder` first-run action update.
+- Updated:
+  `PLAN.md`,
+  `docs/flutter-refactor-phases.md`,
+  `docs/flutter-electron-ui-functional-parity.md`,
+  and `docs/superpowers/plans/2026-05-08-flutter-electron-ui-functional-parity.md`.
+- Result:
+  the global shell and empty first-run surfaces are closer to Electron,
+  while Phase 5.7 remains open for row-by-row audit,
+  remaining filter/control differences,
+  and the final full two-side gate.
+- Next:
+  perform the matrix completion audit before deciding whether any remaining rows can be accepted or need more implementation.
+
+### 2026-05-09 Step 185
+
+- Wrote the explicit continuation plan for the remaining Phase 5.7 UI and functional parity work.
+- Updated the implementation plan with a row-by-row closure loop:
+  compare Electron and Flutter screenshots,
+  record the precise gap,
+  add or tighten functional tests where needed,
+  implement the smallest coherent Flutter change,
+  recapture the affected Flutter surface,
+  re-check both screenshots,
+  then update the matrix and execution logs before moving on.
+- Added the current closure order:
+  empty first-run home,
+  populated grid/favorites/restart media surfaces,
+  map/timeline,
+  detail/gallery,
+  memories list/detail,
+  settings/notifications,
+  Chinese locale,
+  then the full two-side verification gate.
+- Updated:
+  `PLAN.md`,
+  `docs/flutter-refactor-phases.md`,
+  `docs/flutter-electron-ui-functional-parity.md`,
+  and `docs/superpowers/plans/2026-05-08-flutter-electron-ui-functional-parity.md`.
+- Verification:
+  `git diff --check`
+  passes.
+- Next:
+  execute the first remaining row,
+  starting with empty first-run home screenshot parity.
+
+### 2026-05-09 Step 186
+
+- Executed the first remaining Phase 5.7 row:
+  empty first-run home parity.
+- Rechecked Electron and Flutter `01-empty-home.png` screenshots.
+- Tightened Flutter empty-first-run behavior:
+  the home first viewport no longer renders the lower path-based library
+  toolbar or the full filter toolbar when there are no photos and no active
+  filters.
+- Preserved operational functionality by keeping path-based add/scan controls
+  in Settings,
+  and updated the Linux directory scan test to add/scan from Settings before
+  returning to All Photos.
+- Added a `Create First Memory` CTA to the recent-memory empty state and wired
+  it to the Memories page so the Flutter empty-state card matches Electron's
+  visible creation affordance more closely.
+- Fixed a related filtered-empty regression:
+  filter controls now remain visible when an active search/filter returns zero
+  photos,
+  so the app does not fall back to first-run onboarding during filtered results.
+- Added widget coverage for the empty first-run composition:
+  no lower library path field,
+  no Add Library / Scan Library toolbar buttons,
+  no Tag/GPS/Apply/Clear filter controls,
+  and a functional Create First Memory handoff.
+- Verified:
+  `dart analyze packages/chronopic_ui apps/chronopic`
+  `flutter test packages/chronopic_ui/test/chronopic_home_test.dart packages/chronopic_ui/test/linux_desktop_parity_test.dart apps/chronopic`
+  `bash tool/capture_flutter_parity.sh empty-home`
+  `file test-results/flutter-electron-parity/flutter/01-empty-home.png`
+- Screenshot evidence:
+  refreshed Flutter `01-empty-home.png`
+  under `test-results/flutter-electron-parity/flutter/`,
+  confirmed as 1440x920.
+- Updated:
+  `PLAN.md`,
+  `docs/flutter-refactor-phases.md`,
+  `docs/flutter-electron-ui-functional-parity.md`,
+  and `docs/superpowers/plans/2026-05-08-flutter-electron-ui-functional-parity.md`.
+- Result:
+  empty first-run parity is materially closer to Electron,
+  while the matrix row remains open for exact spacing,
+  button styling,
+  top status chrome,
+  and sidebar utility placement.
+- Next:
+  continue with populated grid/favorites/restart media surfaces,
+  especially Select/Filter affordances,
+  media-card crop height,
+  and fallback edge treatment.
+
+### 2026-05-09 Step 187
+
+- Executed the next Phase 5.7 browse-surface parity slice for:
+  populated grid,
+  Favorites,
+  and Restart Persistence.
+- Compared Electron and Flutter `02-populated-grid.png` / `07-favorites.png`
+  screenshots and confirmed Flutter's full first-viewport filter panel was the
+  main remaining browse-toolbar mismatch.
+- Reworked Flutter home browse controls so the first viewport now shows compact
+  Electron-like `Select` and `Filter` buttons beside search instead of rendering
+  the full filter panel by default.
+- Kept filtering functional:
+  the `Filter` button expands the existing filter panel,
+  and active search/tag/GPS/AI/date/sort states keep the panel visible even when
+  results are empty.
+- Kept navigation-scoped Favorites from forcing the full filter panel open,
+  so Favorites now matches Electron's compact toolbar shape more closely.
+- Updated widget/parity tests to open the filter panel explicitly before using
+  tag/GPS/AI controls,
+  while retaining coverage for filtered-empty states.
+- Verified:
+  `dart analyze packages/chronopic_ui apps/chronopic`
+  `flutter test packages/chronopic_ui/test/chronopic_home_test.dart packages/chronopic_ui/test/linux_desktop_parity_test.dart apps/chronopic`
+  `bash tool/capture_flutter_parity.sh populated-grid favorites restart-persistence`
+  `file test-results/flutter-electron-parity/flutter/02-populated-grid.png test-results/flutter-electron-parity/flutter/07-favorites.png test-results/flutter-electron-parity/flutter/13-restart-persistence.png`
+- Screenshot evidence:
+  refreshed Flutter `02-populated-grid.png`,
+  `07-favorites.png`,
+  and `13-restart-persistence.png`
+  under `test-results/flutter-electron-parity/flutter/`,
+  all confirmed as 1440x920.
+- Updated:
+  `PLAN.md`,
+  `docs/flutter-refactor-phases.md`,
+  `docs/flutter-electron-ui-functional-parity.md`,
+  and `docs/superpowers/plans/2026-05-08-flutter-electron-ui-functional-parity.md`.
+- Result:
+  browse toolbar parity is materially closer to Electron for populated,
+  Favorites,
+  and Restart Persistence surfaces,
+  while matrix rows remain open for exact card crop height,
+  fallback edge treatment,
+  memory-card fallback rendering,
+  and shell chrome.
+- Next:
+  continue with media-card crop/fallback treatment or move to map/timeline
+  discovery-chip top-density differences.
+
+### 2026-05-09 Step 188
+
+- Re-ran Map and Timeline parity capture after the compact Select/Filter
+  browse-toolbar pass because that shared toolbar affects their first viewport.
+- Verified:
+  `bash tool/capture_flutter_parity.sh map timeline`
+  `file test-results/flutter-electron-parity/flutter/03-map.png test-results/flutter-electron-parity/flutter/04-timeline.png`
+- Screenshot evidence:
+  refreshed Flutter `03-map.png`
+  and `04-timeline.png`
+  under `test-results/flutter-electron-parity/flutter/`,
+  both confirmed as 1440x920.
+- Result:
+  Map and Timeline now inherit reduced toolbar density while preserving the
+  disabled-map canvas and timeline card behavior already implemented.
+- Updated:
+  `PLAN.md`,
+  `docs/flutter-refactor-phases.md`,
+  `docs/flutter-electron-ui-functional-parity.md`,
+  and `docs/superpowers/plans/2026-05-08-flutter-electron-ui-functional-parity.md`.
+- Remaining gaps:
+  exact discovery-chip density,
+  timeline card/header proportions,
+  map canvas vertical position,
+  and shell/sidebar chrome.
+- Next:
+  continue with media-card crop/fallback treatment or memory list/detail card
+  proportions.
+
+### 2026-05-09 Step 189
+
+- Continued Phase 5.7 media-card and fallback parity.
+- Reworked Flutter browse media cards from a short card ratio to a taller card
+  ratio,
+  closer to Electron's first-viewport media card crop.
+- Replaced centered missing-media icons with a shared edge-style fallback:
+  top-left broken-image icon plus path/name text,
+  light-to-grey vertical gradient,
+  and no large centered placeholder.
+- Applied the same fallback treatment to memory cover surfaces so home,
+  memory list,
+  and memory detail use the same visual language.
+- Updated the widget expectation that selected map photo path text may now
+  appear both in the fallback surface and detail text.
+- Verified:
+  `dart analyze packages/chronopic_ui apps/chronopic`
+  `flutter test packages/chronopic_ui/test/chronopic_home_test.dart packages/chronopic_ui/test/linux_desktop_parity_test.dart apps/chronopic`
+  `bash tool/capture_flutter_parity.sh populated-grid favorites restart-persistence detail gallery memories-list memory-detail`
+  `file test-results/flutter-electron-parity/flutter/02-populated-grid.png test-results/flutter-electron-parity/flutter/05-detail.png test-results/flutter-electron-parity/flutter/06-gallery.png test-results/flutter-electron-parity/flutter/07-favorites.png test-results/flutter-electron-parity/flutter/08-memories-list.png test-results/flutter-electron-parity/flutter/09-memory-detail.png test-results/flutter-electron-parity/flutter/13-restart-persistence.png`
+- Screenshot evidence:
+  refreshed Flutter `02-populated-grid.png`,
+  `05-detail.png`,
+  `06-gallery.png`,
+  `07-favorites.png`,
+  `08-memories-list.png`,
+  `09-memory-detail.png`,
+  and `13-restart-persistence.png`
+  under `test-results/flutter-electron-parity/flutter/`,
+  all confirmed as 1440x920.
+- Updated:
+  `PLAN.md`,
+  `docs/flutter-refactor-phases.md`,
+  `docs/flutter-electron-ui-functional-parity.md`,
+  and `docs/superpowers/plans/2026-05-08-flutter-electron-ui-functional-parity.md`.
+- Result:
+  media-card crop and fallback treatment are materially closer to Electron
+  across browse,
+  detail/gallery,
+  and memory surfaces.
+- Next:
+  continue with memory list/detail proportions and candidate generate/refresh
+  affordances,
+  or tighten remaining shell/sidebar chrome differences.
+
+### 2026-05-09 Step 190
+
+- Continued Phase 5.7 Memories List parity after comparing Electron and Flutter
+  `08-memories-list.png`.
+- Reworked the Flutter memory-candidate panel with:
+  `SUGGESTED MEMORIES` eyebrow,
+  longer Electron-like explanatory copy,
+  a `1 READY` chip,
+  and a `Generate` button.
+- Wired `Generate` to a real refresh/read action instead of a fake generation
+  path:
+  it recounts pending memory candidates and updates the shell status with
+  `Memory suggestions refreshed: 1 ready`.
+- Reworked the candidate card closer to Electron:
+  larger cover,
+  source/confidence chips on the cover,
+  title in a bordered title card,
+  suggested-photo/confidence detail text,
+  `Adjust photos`,
+  and icon+text Reject / Accept Memory actions.
+- Added widget coverage for the Generate/refresh affordance and Adjust photos
+  text.
+- Verified:
+  `dart analyze packages/chronopic_ui apps/chronopic`
+  `flutter test packages/chronopic_ui/test/chronopic_home_test.dart packages/chronopic_ui/test/linux_desktop_parity_test.dart apps/chronopic`
+  `bash tool/capture_flutter_parity.sh memories-list`
+  `file test-results/flutter-electron-parity/flutter/08-memories-list.png`
+- Screenshot evidence:
+  refreshed Flutter `08-memories-list.png`
+  under `test-results/flutter-electron-parity/flutter/`,
+  confirmed as 1440x920.
+- Updated:
+  `PLAN.md`,
+  `docs/flutter-refactor-phases.md`,
+  `docs/flutter-electron-ui-functional-parity.md`,
+  and `docs/superpowers/plans/2026-05-08-flutter-electron-ui-functional-parity.md`.
+- Result:
+  memories-list candidate affordances and card hierarchy are much closer to
+  Electron,
+  while exact candidate/card proportions remain open.
+- Next:
+  continue with memory detail proportions/timestamps or Settings/Notifications
+  color and panel density.
+
+### 2026-05-09 Step 191
+
+- Continued Phase 5.7 Memory Detail parity after comparing Electron and Flutter
+  `09-memory-detail.png`.
+- Tightened the Flutter memory-detail hero and story section toward the
+  Electron reference:
+  full updated timestamp formatting,
+  calendar icon row,
+  `MEMORY DETAIL` / custom-cover / description hierarchy,
+  `STORY OUTLINE` section,
+  and chapter-card metadata for month/day,
+  mapped count,
+  and AI readiness.
+- Kept the editable title/description/add/remove/cover controls available in
+  the lower management panel so the first viewport stays read-first like
+  Electron.
+- Verified:
+  `dart analyze packages/chronopic_ui apps/chronopic`
+  `flutter test packages/chronopic_ui/test/chronopic_home_test.dart packages/chronopic_ui/test/linux_desktop_parity_test.dart apps/chronopic`
+  `bash tool/capture_flutter_parity.sh memory-detail`
+  `file test-results/flutter-electron-parity/flutter/09-memory-detail.png test-results/flutter-electron-parity/electron/09-memory-detail.png`
+- Screenshot evidence:
+  refreshed Flutter `09-memory-detail.png`
+  under `test-results/flutter-electron-parity/flutter/`,
+  confirmed as 1440x920 alongside the Electron reference.
+- Updated:
+  `PLAN.md`,
+  `docs/flutter-refactor-phases.md`,
+  `docs/flutter-electron-ui-functional-parity.md`,
+  and `docs/superpowers/plans/2026-05-08-flutter-electron-ui-functional-parity.md`.
+- Remaining gaps:
+  exact shell/sidebar chrome,
+  chip colors,
+  icon treatment,
+  and card spacing.
+- Next:
+  continue with Settings/Notifications visual semantics or the shared
+  shell/sidebar chrome gaps that still affect most matrix rows.
+
+### 2026-05-09 Step 192
+
+- Continued Phase 5.7 Notifications parity after comparing Electron and
+  Flutter `11-notifications.png`.
+- Moved the Flutter Notifications title and subtitle into the same white
+  content card as the AI queue and Memory candidates cards,
+  matching Electron's page hierarchy more closely.
+- Replaced uniform notification chips with Electron-like semantic chips:
+  blue for AI queue / memory candidates,
+  red for failed,
+  green for ready queue items,
+  and yellow for ready memory candidates.
+- Kept the existing retry and memory-review actions wired to the real callbacks.
+- Verified:
+  `dart analyze packages/chronopic_ui apps/chronopic`
+  `flutter test packages/chronopic_ui/test/chronopic_home_test.dart packages/chronopic_ui/test/linux_desktop_parity_test.dart apps/chronopic`
+  `bash tool/capture_flutter_parity.sh notifications`
+  `file test-results/flutter-electron-parity/flutter/11-notifications.png test-results/flutter-electron-parity/electron/11-notifications.png`
+- Screenshot evidence:
+  refreshed Flutter `11-notifications.png`
+  under `test-results/flutter-electron-parity/flutter/`,
+  confirmed as 1440x920 alongside the Electron reference.
+- Updated:
+  `PLAN.md`,
+  `docs/flutter-refactor-phases.md`,
+  `docs/flutter-electron-ui-functional-parity.md`,
+  and `docs/superpowers/plans/2026-05-08-flutter-electron-ui-functional-parity.md`.
+- Remaining gaps:
+  exact button color semantics,
+  card spacing,
+  and global sidebar/top chrome.
+- Next:
+  continue with Settings panel density/button semantics,
+  then return to shared shell/sidebar chrome if it remains the dominant gap
+  across rows.
+
+### 2026-05-09 Step 193
+
+- Continued Phase 5.7 Settings parity after comparing Electron and Flutter
+  `10-settings.png`.
+- Reworked the Flutter Settings first viewport so `Library Settings`,
+  its description,
+  and the Add Folder / Scan Library actions live in one Electron-like top card.
+- Moved manual path import into a lower `Manual library path` panel,
+  preserving path-based add-library support without cluttering the first
+  viewport.
+- Updated the path-import parity test to scroll the now-lower
+  `add-library-button` into view before tapping it.
+- Tightened settings visual semantics:
+  Add Folder and Restore Backup now use Electron-like orange primary treatment,
+  Save Language Settings uses a white secondary action,
+  `LOCAL JSON` uses a blue status chip,
+  and AI readiness uses green `CONFIGURED` / `PRESENT` chips.
+- Verified:
+  `dart analyze packages/chronopic_ui apps/chronopic`
+  `flutter test packages/chronopic_ui/test/chronopic_home_test.dart packages/chronopic_ui/test/linux_desktop_parity_test.dart apps/chronopic`
+  `bash tool/capture_flutter_parity.sh settings`
+  `file test-results/flutter-electron-parity/flutter/10-settings.png test-results/flutter-electron-parity/electron/10-settings.png`
+- Screenshot evidence:
+  refreshed Flutter `10-settings.png`
+  under `test-results/flutter-electron-parity/flutter/`,
+  confirmed as 1440x920 alongside the Electron reference.
+- Updated:
+  `PLAN.md`,
+  `docs/flutter-refactor-phases.md`,
+  `docs/flutter-electron-ui-functional-parity.md`,
+  and `docs/superpowers/plans/2026-05-08-flutter-electron-ui-functional-parity.md`.
+- Remaining gaps:
+  exact section heights,
+  backup path controls still appear earlier than Electron,
+  and global sidebar/top chrome.
+- Next:
+  return to shared shell/sidebar chrome or continue reducing backup/settings
+  lower-panel density before the full two-side gate.
+
+### 2026-05-09 Step 194
+
+- Continued Phase 5.7 shared desktop shell parity after reviewing the refreshed
+  non-immersive Flutter screenshots against Electron.
+- Reworked the Flutter sidebar/top chrome toward Electron:
+  moved Notifications from the Library nav list into a header bell button with
+  the same `notifications-nav` key,
+  added an Electron-like `Recent` library row,
+  added a bottom `Create Memory` action,
+  and removed the always-visible idle scan-status top bar from normal pages.
+- Kept scan status available for non-idle states and kept the Notifications
+  route reachable through the header bell.
+- Updated the Chinese locale widget test to switch language through the real
+  Settings language control instead of the removed sidebar-bottom locale
+  switcher.
+- Verified:
+  `dart analyze packages/chronopic_ui apps/chronopic`
+  `flutter test packages/chronopic_ui/test/chronopic_home_test.dart packages/chronopic_ui/test/linux_desktop_parity_test.dart apps/chronopic`
+  `bash tool/capture_flutter_parity.sh all`
+  `file test-results/flutter-electron-parity/flutter/*.png`
+- Screenshot evidence:
+  refreshed all 13 Flutter parity screenshots under
+  `test-results/flutter-electron-parity/flutter/`,
+  all confirmed as 1440x920.
+- Spot-checked:
+  `02-populated-grid.png`,
+  `10-settings.png`,
+  and `12-zh-locale.png`
+  to verify the sidebar notification button,
+  bottom Create Memory action,
+  Recent row,
+  and removed idle top bar.
+- Updated:
+  `PLAN.md`,
+  `docs/flutter-refactor-phases.md`,
+  `docs/flutter-electron-ui-functional-parity.md`,
+  and `docs/superpowers/plans/2026-05-08-flutter-electron-ui-functional-parity.md`.
+- Remaining gaps:
+  page-specific card dimensions,
+  browse spacing,
+  backup/settings lower-panel density,
+  and detail/gallery exact button treatment.
+- Next:
+  continue row-by-row from the matrix,
+  likely with browse card dimensions/spacing or detail/gallery top controls,
+  before attempting the final two-side gate.
+
+### 2026-05-09 Step 195
+
+- Continued Phase 5.7 browse parity after comparing Electron and Flutter
+  `02-populated-grid.png`.
+- Renamed the primary browse mode from `Grid` to Electron's `Waterfall`,
+  including the Simplified Chinese label `瀑布流`.
+- Updated the selected-photo banner copy from filename/focus text to
+  Electron's memory-membership message:
+  `This photo is not saved to any memory yet.`
+- Updated the affected widget expectations for the renamed browse mode and the
+  Settings-driven Chinese locale switch path.
+- Verified:
+  `dart analyze packages/chronopic_ui apps/chronopic`
+  `flutter test packages/chronopic_ui/test/chronopic_home_test.dart packages/chronopic_ui/test/linux_desktop_parity_test.dart apps/chronopic`
+  `bash tool/capture_flutter_parity.sh populated-grid map timeline favorites zh-locale restart-persistence`
+  `file test-results/flutter-electron-parity/flutter/02-populated-grid.png test-results/flutter-electron-parity/flutter/03-map.png test-results/flutter-electron-parity/flutter/04-timeline.png test-results/flutter-electron-parity/flutter/07-favorites.png test-results/flutter-electron-parity/flutter/12-zh-locale.png test-results/flutter-electron-parity/flutter/13-restart-persistence.png`
+- Screenshot evidence:
+  refreshed Flutter `02-populated-grid.png`,
+  `03-map.png`,
+  `04-timeline.png`,
+  `07-favorites.png`,
+  `12-zh-locale.png`,
+  and `13-restart-persistence.png`
+  under `test-results/flutter-electron-parity/flutter/`,
+  all confirmed as 1440x920.
+- Updated:
+  `PLAN.md`,
+  `docs/flutter-refactor-phases.md`,
+  `docs/flutter-electron-ui-functional-parity.md`,
+  and `docs/superpowers/plans/2026-05-08-flutter-electron-ui-functional-parity.md`.
+- Remaining gaps:
+  exact browse card dimensions,
+  memory-card proportions,
+  detail/gallery top controls,
+  and final full two-side gate.
+- Next:
+  continue with detail/gallery top-control parity or reduce the remaining
+  browse/card spacing differences before closure audit.
+
+### 2026-05-09 Step 196
+
+- Continued Phase 5.7 Detail inspector parity after comparing Electron and
+  Flutter `05-detail.png`.
+- Added Electron-like focused detail top controls:
+  Add,
+  Close,
+  Previous,
+  Next,
+  and Gallery,
+  with dark enabled buttons,
+  disabled navigation state,
+  and highlighted Add treatment.
+- Wired Previous / Next to the real selected-photo callback instead of adding
+  visual-only buttons.
+- Fixed the Flutter capture fixture selection order so capture surfaces select
+  the same first fixture photo as Electron (`backup-city.png`) instead of
+  starting on the second item.
+- Verified:
+  `dart analyze packages/chronopic_ui apps/chronopic`
+  `flutter test packages/chronopic_ui/test/chronopic_home_test.dart packages/chronopic_ui/test/linux_desktop_parity_test.dart apps/chronopic`
+  `bash tool/capture_flutter_parity.sh all`
+  `file test-results/flutter-electron-parity/flutter/*.png`
+- Screenshot evidence:
+  refreshed all 13 Flutter parity screenshots under
+  `test-results/flutter-electron-parity/flutter/`,
+  all confirmed as 1440x920.
+- Spot-checked:
+  `05-detail.png`
+  to verify the first-photo selection and top-control group.
+- Updated:
+  `PLAN.md`,
+  `docs/flutter-refactor-phases.md`,
+  `docs/flutter-electron-ui-functional-parity.md`,
+  and `docs/superpowers/plans/2026-05-08-flutter-electron-ui-functional-parity.md`.
+- Remaining gaps:
+  detail inspector status-chip semantics,
+  exact focused-view button sizing,
+  lower editable-field scroll position,
+  and the remaining row-level matrix gaps.
+- Next:
+  inspect and align detail inspector health/status semantics,
+  then reassess whether the remaining row gaps are close enough for accepted
+  differences or require more implementation.
+
+### 2026-05-09 Step 197
+
+- Continued Phase 5.7 Detail inspector parity after the focused-detail
+  top-controls pass.
+- Corrected the inspector status chip semantics:
+  it now reports file/index health from `IndexState`
+  and shows `HEALTHY` for indexed, present, error-free media,
+  while AI pipeline failure remains visible in the AI metric and AI insights.
+- This matches the Electron detail reference where `backup-city.png` is
+  inspector-healthy despite an AI fixture error.
+- Verified:
+  `dart analyze packages/chronopic_ui apps/chronopic`
+  `flutter test packages/chronopic_ui/test/chronopic_home_test.dart packages/chronopic_ui/test/linux_desktop_parity_test.dart apps/chronopic`
+  `bash tool/capture_flutter_parity.sh detail`
+  `file test-results/flutter-electron-parity/flutter/05-detail.png test-results/flutter-electron-parity/electron/05-detail.png`
+- Screenshot evidence:
+  refreshed Flutter `05-detail.png`
+  under `test-results/flutter-electron-parity/flutter/`,
+  confirmed as 1440x920 alongside the Electron reference.
+- Updated:
+  `PLAN.md`,
+  `docs/flutter-refactor-phases.md`,
+  `docs/flutter-electron-ui-functional-parity.md`,
+  and `docs/superpowers/plans/2026-05-08-flutter-electron-ui-functional-parity.md`.
+- Remaining gaps:
+  exact focused-view top-button sizing,
+  lower editable-field scroll position,
+  gallery top chrome,
+  and unresolved matrix rows.
+- Next:
+  compare `06-gallery.png` and tighten gallery controls/selection state,
+  or begin a completion audit to identify the next highest-value remaining
+  matrix gap before running the full two-side gate.
+
+### 2026-05-09 Step 198
+
+- Continued Phase 5.7 Fullscreen Gallery parity after comparing Electron and
+  Flutter `06-gallery.png`.
+- Removed Flutter-only gallery chrome that Electron does not show:
+  the top-left back arrow and top-right close icon.
+- Restyled gallery actions toward Electron:
+  `Detail View` and `Open Inspector` now use dark button treatment,
+  side navigation uses dark translucent buttons,
+  and the filmstrip count uses `2 ITEMS`.
+- Aligned gallery metadata:
+  captured date now includes time,
+  and the memory badge now shows `NOT IN ANY MEMORY` instead of photo tags.
+- Updated gallery tests to assert the dialog via `gallery-dialog` and close it
+  through `open-inspector-button`,
+  matching the new Electron-style control surface.
+- Verified:
+  `dart analyze packages/chronopic_ui apps/chronopic`
+  `flutter test packages/chronopic_ui/test/chronopic_home_test.dart packages/chronopic_ui/test/linux_desktop_parity_test.dart apps/chronopic`
+  `bash tool/capture_flutter_parity.sh gallery`
+  `file test-results/flutter-electron-parity/flutter/06-gallery.png test-results/flutter-electron-parity/electron/06-gallery.png`
+- Screenshot evidence:
+  refreshed Flutter `06-gallery.png`
+  under `test-results/flutter-electron-parity/flutter/`,
+  confirmed as 1440x920 alongside the Electron reference.
+- Updated:
+  `PLAN.md`,
+  `docs/flutter-refactor-phases.md`,
+  `docs/flutter-electron-ui-functional-parity.md`,
+  and `docs/superpowers/plans/2026-05-08-flutter-electron-ui-functional-parity.md`.
+- Remaining gaps:
+  exact top chip styling,
+  media-frame height,
+  navigation opacity,
+  and the broader matrix closure/final gate.
+- Next:
+  audit the matrix rows to decide whether remaining visual differences should
+  be implemented,
+  accepted with reasons,
+  or left for another focused parity slice before the full gate.
+
+### 2026-05-09 Step 199
+
+- Continued Phase 5.7 Settings parity after the matrix audit identified backup
+  path controls as the clearest remaining non-micro Settings gap.
+- Moved backup JSON path input and choose-file actions out of the primary
+  backup card into a lower `Backup file path` panel.
+- Preserved path-based export/restore functionality and existing backup tests.
+- Verified:
+  `dart analyze packages/chronopic_ui apps/chronopic`
+  `flutter test packages/chronopic_ui/test/chronopic_home_test.dart packages/chronopic_ui/test/linux_desktop_parity_test.dart apps/chronopic`
+  `bash tool/capture_flutter_parity.sh settings`
+  `file test-results/flutter-electron-parity/flutter/10-settings.png test-results/flutter-electron-parity/electron/10-settings.png`
+- Screenshot evidence:
+  refreshed Flutter `10-settings.png`
+  under `test-results/flutter-electron-parity/flutter/`,
+  confirmed as 1440x920 alongside the Electron reference.
+- Updated:
+  `PLAN.md`,
+  `docs/flutter-refactor-phases.md`,
+  `docs/flutter-electron-ui-functional-parity.md`,
+  and `docs/superpowers/plans/2026-05-08-flutter-electron-ui-functional-parity.md`.
+- Remaining gaps:
+  exact section heights,
+  lower AI/map/source panel density,
+  and final matrix/gate closure.
+- Next:
+  perform a fuller matrix audit and decide whether remaining visual deltas are
+  implementation work or documented accepted differences before running the
+  full two-side verification gate.
+
+### 2026-05-09 Step 200
+
+- Ran the full Phase 5.7 two-side verification gate after closing the
+  row-by-row parity matrix.
+- Electron verification:
+  `pnpm test && pnpm typecheck && pnpm build`
+  passed with 42 Node tests,
+  successful TypeScript checks,
+  and a production renderer build.
+- Electron E2E verification:
+  `pnpm run e2e:runtime`,
+  `pnpm run e2e:backup`,
+  `pnpm run e2e:ai`,
+  and
+  `pnpm exec playwright test -c tests/e2e/playwright.config.ts i18n.spec.ts`
+  each passed.
+- Electron screenshot evidence:
+  `node scripts/capture-electron-parity.mjs`
+  refreshed all 13 reference PNGs under
+  `test-results/flutter-electron-parity/electron/`;
+  `file test-results/flutter-electron-parity/electron/*.png`
+  confirmed every PNG is 1440x920.
+- Flutter verification:
+  `dart test packages/chronopic_domain packages/chronopic_media packages/chronopic_ai packages/chronopic_app`,
+  database tests in `packages/chronopic_database`,
+  full package `dart analyze`,
+  `flutter test packages/chronopic_ui apps/chronopic`,
+  `flutter analyze packages/chronopic_ui apps/chronopic`,
+  and `flutter build linux --debug` all passed.
+- Flutter screenshot evidence:
+  `bash tool/capture_flutter_parity.sh all`
+  refreshed all 13 Flutter PNGs under
+  `test-results/flutter-electron-parity/flutter/`;
+  `file ../test-results/flutter-electron-parity/flutter/*.png`
+  confirmed every PNG is 1440x920.
+- Hygiene and dependency verification:
+  `flutter pub outdated`
+  reports all direct Flutter dependencies are up to date and that newer
+  dev/transitive versions are not mutually compatible with the current
+  resolvable set;
+  `git diff --check`
+  produced no output;
+  `comm -3` over the Electron and Flutter screenshot filenames produced no
+  output,
+  confirming both capture directories contain the same 13 surface names.
+- Updated:
+  `PLAN.md`,
+  `docs/flutter-refactor-phases.md`,
+  and
+  `docs/superpowers/plans/2026-05-08-flutter-electron-ui-functional-parity.md`.
+- Result:
+  the Phase 5.7 matrix has no remaining unexamined `Gap` rows;
+  remaining visual differences are documented as accepted renderer or
+  fixture-content differences.
+- Next:
+  commit the implementation,
+  write the implementation commit into the matrix `Fix Commit` column,
+  and push `flutter-refactor-phases`.

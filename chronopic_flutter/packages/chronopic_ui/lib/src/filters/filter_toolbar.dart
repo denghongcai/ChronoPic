@@ -35,73 +35,77 @@ final class FilterToolbar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    const denseDecoration = InputDecoration(
+      isDense: true,
+      contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 11),
+    );
     return _Panel(
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.all(10),
       child: Wrap(
-        spacing: 12,
-        runSpacing: 12,
+        spacing: 10,
+        runSpacing: 8,
         crossAxisAlignment: WrapCrossAlignment.center,
         children: [
           SizedBox(
-            width: 170,
+            width: 128,
             child: TextField(
               key: const Key('tag-filter-field'),
               controller: tagController,
-              decoration: const InputDecoration(labelText: 'Tag'),
+              decoration: denseDecoration.copyWith(labelText: labels.tag),
             ),
           ),
           FilterChip(
             key: const Key('gps-filter-chip'),
             selected: gpsOnly,
-            label: const Text('GPS only'),
+            label: Text(labels.gpsOnly),
             onSelected: onGpsOnlyChanged,
           ),
           DropdownButton<AiPipelineStatus?>(
             key: const Key('ai-status-filter-control'),
             value: aiStatus,
             onChanged: onAiStatusChanged,
-            items: const [
-              DropdownMenuItem(value: null, child: Text('AI: any')),
+            items: [
+              DropdownMenuItem(value: null, child: Text(labels.aiAny)),
               DropdownMenuItem(
                 value: AiPipelineStatus.disabled,
-                child: Text('AI: disabled'),
+                child: Text(labels.aiDisabled),
               ),
               DropdownMenuItem(
                 value: AiPipelineStatus.pending,
-                child: Text('AI: pending'),
+                child: Text(labels.aiPending),
               ),
               DropdownMenuItem(
                 value: AiPipelineStatus.processing,
-                child: Text('AI: processing'),
+                child: Text(labels.aiProcessing),
               ),
               DropdownMenuItem(
                 value: AiPipelineStatus.completed,
-                child: Text('AI: completed'),
+                child: Text(labels.aiCompleted),
               ),
               DropdownMenuItem(
                 value: AiPipelineStatus.failed,
-                child: Text('AI: failed'),
+                child: Text(labels.aiFailed),
               ),
             ],
           ),
           SizedBox(
-            width: 145,
+            width: 118,
             child: TextField(
               key: const Key('from-date-filter-field'),
               controller: fromDateController,
-              decoration: const InputDecoration(
-                labelText: 'From date',
+              decoration: denseDecoration.copyWith(
+                labelText: labels.fromDate,
                 hintText: 'YYYY-MM-DD',
               ),
             ),
           ),
           SizedBox(
-            width: 145,
+            width: 118,
             child: TextField(
               key: const Key('to-date-filter-field'),
               controller: toDateController,
-              decoration: const InputDecoration(
-                labelText: 'To date',
+              decoration: denseDecoration.copyWith(
+                labelText: labels.toDate,
                 hintText: 'YYYY-MM-DD',
               ),
             ),
@@ -112,18 +116,18 @@ final class FilterToolbar extends StatelessWidget {
             onChanged: (value) {
               if (value != null) onSortByChanged(value);
             },
-            items: const [
+            items: [
               DropdownMenuItem(
                 value: PhotoSortBy.datetime,
-                child: Text('Sort: datetime'),
+                child: Text(labels.sortDatetime),
               ),
               DropdownMenuItem(
                 value: PhotoSortBy.path,
-                child: Text('Sort: path'),
+                child: Text(labels.sortPath),
               ),
               DropdownMenuItem(
                 value: PhotoSortBy.updatedAt,
-                child: Text('Sort: updated'),
+                child: Text(labels.sortUpdated),
               ),
             ],
           ),
@@ -133,9 +137,15 @@ final class FilterToolbar extends StatelessWidget {
             onChanged: (value) {
               if (value != null) onSortDirectionChanged(value);
             },
-            items: const [
-              DropdownMenuItem(value: SortDirection.desc, child: Text('Desc')),
-              DropdownMenuItem(value: SortDirection.asc, child: Text('Asc')),
+            items: [
+              DropdownMenuItem(
+                value: SortDirection.desc,
+                child: Text(labels.desc),
+              ),
+              DropdownMenuItem(
+                value: SortDirection.asc,
+                child: Text(labels.asc),
+              ),
             ],
           ),
           FilledButton(

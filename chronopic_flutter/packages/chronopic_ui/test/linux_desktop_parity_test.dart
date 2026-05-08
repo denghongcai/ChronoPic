@@ -109,16 +109,22 @@ void main() {
     final service = ChronoPicAppService(repository);
 
     await tester.pumpWidget(ChronoPicHome(service: service));
-    expect(find.text('First run library setup'), findsOneWidget);
+    expect(find.text('Start with a local folder'), findsOneWidget);
     expect(
       find.byKey(const Key('choose-library-folder-button')),
       findsOneWidget,
     );
+    expect(find.byKey(const Key('library-path-field')), findsNothing);
+
+    await tester.tap(find.byKey(const Key('settings-nav')));
+    await tester.pump();
+    expect(find.text('Add Library'), findsOneWidget);
 
     await tester.enterText(
       find.byKey(const Key('library-path-field')),
       directory.path,
     );
+    await tester.ensureVisible(find.byKey(const Key('add-library-button')));
     await tester.tap(find.byKey(const Key('add-library-button')));
     await tester.pump();
     expect(find.textContaining('Added library:'), findsOneWidget);
@@ -141,16 +147,17 @@ void main() {
       find.textContaining('Scan complete: 3 imported, 0 updated, 0 skipped'),
       findsOneWidget,
     );
+    await tester.tap(find.byKey(const Key('all-photos-nav')));
+    await tester.pump();
     expect(find.text('lake.jpg'), findsOneWidget);
     expect(find.text('city.png'), findsOneWidget);
     expect(find.text('clip.mp4'), findsOneWidget);
     expect(find.text('notes.txt'), findsNothing);
     await tester.tap(find.byKey(const Key('notifications-nav')));
     await tester.pump();
-    expect(find.text('AI readiness: incomplete'), findsOneWidget);
-    expect(find.byKey(const Key('ai-status-count-disabled')), findsOneWidget);
-    expect(find.text('AI disabled: 3'), findsOneWidget);
+    expect(find.byKey(const Key('notification-center-panel')), findsOneWidget);
     expect(find.text('Memory candidates: 0'), findsOneWidget);
+    expect(find.byKey(const Key('ai-provider-field')), findsNothing);
     await tester.tap(find.byKey(const Key('all-photos-nav')));
     await tester.pump();
     expect(
@@ -191,6 +198,9 @@ void main() {
     expect(find.byKey(const Key('gallery-counter')), findsOneWidget);
     expect(find.byKey(const Key('gallery-keyboard-hint')), findsOneWidget);
     expect(find.byKey(const Key('gallery-filmstrip')), findsOneWidget);
+    expect(find.byKey(const Key('gallery-captured-at')), findsOneWidget);
+    expect(find.byKey(const Key('gallery-memory-badge')), findsOneWidget);
+    expect(find.byKey(const Key('open-inspector-button')), findsOneWidget);
     expect(find.byKey(Key('gallery-title-${first.photo.id}')), findsOneWidget);
     expect(
       find.byKey(Key('gallery-filmstrip-${second.photo.id}')),
@@ -209,9 +219,17 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.byKey(Key('gallery-title-${second.photo.id}')), findsOneWidget);
 
+    await tester.sendKeyEvent(LogicalKeyboardKey.keyD);
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('gallery-dialog')), findsNothing);
+
+    await tester.tap(find.byKey(const Key('open-gallery-button')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('gallery-dialog')), findsOneWidget);
+
     await tester.sendKeyEvent(LogicalKeyboardKey.escape);
     await tester.pumpAndSettle();
-    expect(find.byKey(const Key('close-gallery-button')), findsNothing);
+    expect(find.byKey(const Key('gallery-dialog')), findsNothing);
     expect(find.text(second.photo.path), findsOneWidget);
   });
 
@@ -295,8 +313,8 @@ void main() {
     );
     await tester.tap(find.byKey(const Key('open-gallery-button')));
     await tester.pumpAndSettle();
-    expect(find.byKey(const Key('close-gallery-button')), findsOneWidget);
-    await tester.tap(find.byKey(const Key('close-gallery-button')));
+    expect(find.byKey(const Key('gallery-dialog')), findsOneWidget);
+    await tester.tap(find.byKey(const Key('open-inspector-button')));
     await tester.pumpAndSettle();
     await tester.ensureVisible(find.byKey(const Key('rollback-button')));
     await tester.tap(find.byKey(const Key('rollback-button')));
@@ -403,6 +421,10 @@ void main() {
     await tester.pump();
     expect(find.text('city.png'), findsOneWidget);
 
+    final filterToggle = find.byKey(const Key('filter-toggle-button'));
+    await tester.ensureVisible(filterToggle);
+    await tester.tap(filterToggle);
+    await tester.pump();
     final tagFilterField = find.byKey(const Key('tag-filter-field'));
     final applyFilterButton = find.byKey(const Key('apply-filter-button'));
     final clearFilterButton = find.byKey(const Key('clear-filter-button'));
@@ -507,6 +529,7 @@ void main() {
     );
     await tester.tap(find.byKey(const Key('create-memory-button')));
     await tester.pump();
+    await tester.ensureVisible(find.byKey(const Key('add-to-memory-button')));
     await tester.tap(find.byKey(const Key('add-to-memory-button')));
     await tester.pump();
     expect(service.createBackup().memories.single.name, 'Linux Trip');
@@ -725,11 +748,11 @@ void main() {
     await tester.pumpWidget(ChronoPicHome(service: service));
     expect(service.listPhotos(const PhotoFilter(limit: 100)).length, 18);
     expect(find.byKey(const Key('photo-grid')), findsOneWidget);
-    expect(_photoGridColumns(tester), 4);
+    expect(_photoGridColumns(tester), 3);
 
     tester.view.physicalSize = const Size(840, 1200);
     await tester.pump();
-    expect(_photoGridColumns(tester), 2);
+    expect(_photoGridColumns(tester), 1);
   });
 }
 

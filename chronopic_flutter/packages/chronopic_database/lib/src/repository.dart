@@ -158,6 +158,26 @@ final class ChronoPicRepository {
     return _settings!;
   }
 
+  BackupSettings updateMapSettings(MapSettings mapSettings) {
+    final current = createBackup().settings;
+    _settings = BackupSettings(
+      ai: current.ai,
+      map: mapSettings,
+      locale: current.locale,
+    );
+    return _settings!;
+  }
+
+  BackupSettings updateLocaleSettings(LocaleSettings localeSettings) {
+    final current = createBackup().settings;
+    _settings = BackupSettings(
+      ai: current.ai,
+      map: current.map,
+      locale: localeSettings,
+    );
+    return _settings!;
+  }
+
   List<PhotoRecord> listPhotos([PhotoFilter filter = const PhotoFilter()]) {
     final records = _photos.values.where((record) {
       if (filter.favorite != null && record.photo.favorite != filter.favorite) {

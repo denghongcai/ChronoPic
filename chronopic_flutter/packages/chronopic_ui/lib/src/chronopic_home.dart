@@ -52,16 +52,23 @@ final class _ChronoPicHomeState extends State<ChronoPicHome> {
   final TextEditingController _aiBaseUrlController = TextEditingController();
   final TextEditingController _aiModelController = TextEditingController();
   final TextEditingController _aiApiKeyController = TextEditingController();
+  final TextEditingController _mapApiKeyController = TextEditingController();
+  final TextEditingController _mapSecurityJsCodeController =
+      TextEditingController();
+  final GlobalKey<NavigatorState> _navigatorKey = GlobalKey<NavigatorState>();
 
   _DesktopPage _page = _DesktopPage.home;
   BrowseMode _browseMode = BrowseMode.waterfall;
   UiLocale _locale = UiLocale.en;
+  AiOutputLocale _aiOutputLocale = AiOutputLocale.followUi;
   PhotoRecord? _selected;
   ChronoPicBackup? _lastBackup;
   BackupRestorePreview? _restorePreview;
   bool _aiSettingsLoaded = false;
   bool _favoriteOnly = false;
   bool _gpsOnly = false;
+  bool _detailCaptureFirst = false;
+  bool _filterPanelOpen = false;
   bool _scanning = false;
   String _query = '';
   String? _tagFilter;
@@ -72,6 +79,12 @@ final class _ChronoPicHomeState extends State<ChronoPicHome> {
   SortDirection _sortDirection = SortDirection.desc;
   String? _selectedMemoryId;
   String _status = 'Scan progress: idle';
+
+  @override
+  void initState() {
+    super.initState();
+    _applyCaptureSurfaceFromEnvironment();
+  }
 
   @override
   void dispose() {
@@ -91,6 +104,8 @@ final class _ChronoPicHomeState extends State<ChronoPicHome> {
     _aiBaseUrlController.dispose();
     _aiModelController.dispose();
     _aiApiKeyController.dispose();
+    _mapApiKeyController.dispose();
+    _mapSecurityJsCodeController.dispose();
     super.dispose();
   }
 
@@ -111,9 +126,11 @@ final class _ChronoPicHomeState extends State<ChronoPicHome> {
         (aiStatusCounts[AiPipelineStatus.failed] ?? 0) +
         (aiStatusCounts[AiPipelineStatus.pending] ?? 0) +
         (aiStatusCounts[AiPipelineStatus.processing] ?? 0);
+    final immersiveDetail = _detailCaptureFirst && _selected != null;
 
     return MaterialApp(
       debugShowCheckedModeBanner: false,
+      navigatorKey: _navigatorKey,
       title: labels.appTitle,
       theme: ChronoPicTheme.light(),
       home: Builder(
@@ -123,13 +140,12 @@ final class _ChronoPicHomeState extends State<ChronoPicHome> {
           child: _DesktopShell(
             activePage: _page,
             favoriteOnly: _favoriteOnly,
+            immersive: immersiveDetail,
             labels: labels,
-            locale: _locale,
             memories: memories,
             notificationCount: notificationCount,
             onAllPhotos: _showAllPhotos,
             onFavorites: _showFavorites,
-            onLocaleChanged: (locale) => setState(() => _locale = locale),
             onMemorySelected: _selectMemory,
             onMemories: () => setState(() => _page = _DesktopPage.memories),
             onNotifications: () =>
@@ -166,10 +182,14 @@ final class _ChronoPicHomeState extends State<ChronoPicHome> {
     switch (_page) {
       case _DesktopPage.memories:
         return MemoryListPage(
+          candidates: memoryCandidates,
           labels: labels,
           memories: memories,
           memoryNameController: _memoryNameController,
+          onAcceptCandidate: _acceptMemoryCandidate,
           onCreateMemory: _createMemory,
+          onGenerateCandidates: _refreshMemoryCandidates,
+          onRejectCandidate: _rejectMemoryCandidate,
           onSelectMemory: _selectMemory,
         );
       case _DesktopPage.memoryDetail:
@@ -187,23 +207,34 @@ final class _ChronoPicHomeState extends State<ChronoPicHome> {
         );
       case _DesktopPage.settings:
         return SettingsPage(
+          aiOutputLocale: _aiOutputLocale,
           aiReadiness: aiReadiness,
           aiStatusCounts: aiStatusCounts,
+          apiKeyController: _aiApiKeyController,
           backupPathController: _backupPathController,
+          baseUrlController: _aiBaseUrlController,
           labels: labels,
           libraryPathController: _libraryPathController,
           locale: _locale,
+          mapApiKeyController: _mapApiKeyController,
+          mapSecurityJsCodeController: _mapSecurityJsCodeController,
           memories: memories,
+          modelController: _aiModelController,
           onAddLibrary: _addLibrary,
           onChooseBackupExportPath: _chooseBackupExportPath,
           onChooseBackupRestorePath: _chooseBackupRestorePath,
           onChooseLibraryFolder: _chooseLibraryFolder,
           onExportBackup: _exportBackup,
-          onLocaleChanged: (locale) => setState(() => _locale = locale),
+          onAiOutputLocaleChanged: _saveAiOutputLocale,
+          onLocaleChanged: _saveUiLocale,
           onPreviewRestore: _previewRestore,
           onRestoreBackup: _restoreBackup,
+          onSaveAiSettings: _saveAiSettings,
+          onSaveLocaleSettings: _saveCurrentLocaleSettings,
+          onSaveMapSettings: _saveMapSettings,
           onScanLibrary: _scanLibrary,
           photos: _service.listPhotos(const PhotoFilter(limit: 1000000)),
+          providerController: _aiProviderController,
           restorePreview: _restorePreview,
           scanning: _scanning,
           sources: _service.listLibrarySources(),
@@ -212,17 +243,11 @@ final class _ChronoPicHomeState extends State<ChronoPicHome> {
         return NotificationPage(
           aiReadiness: aiReadiness,
           aiStatusCounts: aiStatusCounts,
-          apiKeyController: _aiApiKeyController,
-          baseUrlController: _aiBaseUrlController,
           candidates: memoryCandidates,
           labels: labels,
-          modelController: _aiModelController,
-          onAcceptCandidate: _acceptMemoryCandidate,
-          onRejectCandidate: _rejectMemoryCandidate,
           onRetryQueue: _retryAiQueue,
-          onSaveSettings: _saveAiSettings,
           onSettings: () => setState(() => _page = _DesktopPage.settings),
-          providerController: _aiProviderController,
+          onViewMemories: () => setState(() => _page = _DesktopPage.memories),
         );
       case _DesktopPage.home:
         return HomePage(
@@ -232,16 +257,24 @@ final class _ChronoPicHomeState extends State<ChronoPicHome> {
           captionController: _captionController,
           dateController: _dateController,
           favoriteOnly: _favoriteOnly,
+          filterPanelOpen: _filterPanelOpen,
           fromDateController: _fromDateFilterController,
           gpsOnly: _gpsOnly,
           labels: labels,
           libraryPathController: _libraryPathController,
+          detailFirst: _detailCaptureFirst,
           memories: memories,
           onAddLibrary: _addLibrary,
+          onAddToMemory: _openMemoryActionForSelectedPhoto,
           onBrowseModeChanged: (mode) => setState(() => _browseMode = mode),
           onChooseLibraryFolder: _chooseLibraryFolder,
+          onCloseFocusedDetail: _closeFocusedDetail,
           onClearFilters: _clearFilters,
+          onCreateFirstMemory: () =>
+              setState(() => _page = _DesktopPage.memories),
           onFilterApply: _applyFilters,
+          onFilterPanelToggle: () =>
+              setState(() => _filterPanelOpen = !_filterPanelOpen),
           onGpsOnlyChanged: (value) => setState(() => _gpsOnly = value),
           onAiStatusChanged: (value) => setState(() => _aiStatusFilter = value),
           onOpenGallery: _openGallery,
@@ -250,6 +283,7 @@ final class _ChronoPicHomeState extends State<ChronoPicHome> {
           onSaveTags: _saveTags,
           onScanLibrary: _scanLibrary,
           onSearchChanged: (value) => setState(() => _query = value),
+          onSelectMemory: _selectMemory,
           onSelectPhoto: _selectPhoto,
           onSortByChanged: (value) => setState(() => _sortBy = value),
           onSortDirectionChanged: (value) =>
@@ -335,12 +369,45 @@ final class _ChronoPicHomeState extends State<ChronoPicHome> {
 
   void _loadAiSettingsOnce() {
     if (_aiSettingsLoaded) return;
-    final settings = _service.createBackup().settings.ai;
+    final backupSettings = _service.createBackup().settings;
+    final settings = backupSettings.ai;
+    final mapSettings = backupSettings.map;
     _aiProviderController.text = settings.providerName;
     _aiBaseUrlController.text = settings.baseURL;
     _aiModelController.text = settings.model;
     _aiApiKeyController.text = settings.apiKey;
+    _mapApiKeyController.text = mapSettings.apiKey;
+    _mapSecurityJsCodeController.text = mapSettings.securityJsCode;
     _aiSettingsLoaded = true;
+  }
+
+  void _saveUiLocale(UiLocale locale) {
+    _saveLocaleSettings(locale: locale, aiOutputLocale: _aiOutputLocale);
+  }
+
+  void _saveAiOutputLocale(AiOutputLocale aiOutputLocale) {
+    _saveLocaleSettings(locale: _locale, aiOutputLocale: aiOutputLocale);
+  }
+
+  void _saveCurrentLocaleSettings() {
+    _saveLocaleSettings(locale: _locale, aiOutputLocale: _aiOutputLocale);
+  }
+
+  void _saveLocaleSettings({
+    required UiLocale locale,
+    required AiOutputLocale aiOutputLocale,
+  }) {
+    final saved = _service.updateLocaleSettings(
+      LocaleSettings(
+        locale: _domainLocaleFromUi(locale),
+        aiOutputLocale: aiOutputLocale,
+      ),
+    );
+    setState(() {
+      _locale = _uiLocaleFromDomain(saved.locale.locale);
+      _aiOutputLocale = saved.locale.aiOutputLocale;
+      _status = _localized(_l10n, 'Language settings saved', '语言设置已保存');
+    });
   }
 
   void _showAllPhotos() {
@@ -361,11 +428,101 @@ final class _ChronoPicHomeState extends State<ChronoPicHome> {
 
   void _selectPhoto(PhotoRecord record) {
     setState(() {
-      _selected = record;
-      _captionController.text = record.semantic.caption ?? '';
-      _tagsController.text = record.semantic.labels.join(', ');
-      _setDatetimeControllers(record.metadata.datetime);
+      _setSelectedPhoto(record);
     });
+  }
+
+  void _closeFocusedDetail() {
+    setState(() => _detailCaptureFirst = false);
+  }
+
+  void _openMemoryActionForSelectedPhoto() {
+    if (_selected == null) return;
+    if (_selectedMemoryId != null) {
+      _addSelectedToMemory();
+      return;
+    }
+    setState(() {
+      _detailCaptureFirst = false;
+      _page = _DesktopPage.memories;
+      _status = 'Choose a memory for the selected photo';
+    });
+  }
+
+  void _setSelectedPhoto(PhotoRecord record) {
+    _selected = record;
+    _captionController.text = record.semantic.caption ?? '';
+    _tagsController.text = record.semantic.labels.join(', ');
+    _setDatetimeControllers(record.metadata.datetime);
+  }
+
+  void _applyCaptureSurfaceFromEnvironment() {
+    final surface = Platform.environment['CHRONOPIC_CAPTURE_SURFACE']?.trim();
+    if (surface == null || surface.isEmpty) return;
+
+    final photos = _service.listPhotos(
+      const PhotoFilter(
+        sortBy: PhotoSortBy.path,
+        sortDirection: SortDirection.asc,
+        limit: 1000,
+      ),
+    );
+    final selected = photos.isEmpty ? null : photos.first;
+    if (selected != null) _setSelectedPhoto(selected);
+
+    final memories = _service.listMemories();
+    final firstMemory = memories.isEmpty ? null : memories.first;
+
+    switch (surface) {
+      case 'empty-home':
+      case 'populated-grid':
+      case 'restart-persistence':
+        _page = _DesktopPage.home;
+        _browseMode = BrowseMode.waterfall;
+      case 'map':
+        _page = _DesktopPage.home;
+        _browseMode = BrowseMode.map;
+      case 'timeline':
+        _page = _DesktopPage.home;
+        _browseMode = BrowseMode.timeline;
+      case 'detail':
+        _page = _DesktopPage.home;
+        _browseMode = BrowseMode.waterfall;
+        _detailCaptureFirst = true;
+      case 'gallery':
+        _page = _DesktopPage.home;
+        _browseMode = BrowseMode.waterfall;
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          final navigatorContext = _navigatorKey.currentContext;
+          if (mounted && _selected != null && navigatorContext != null) {
+            _openGallery(navigatorContext);
+          }
+        });
+      case 'favorites':
+        _page = _DesktopPage.home;
+        _favoriteOnly = true;
+        _browseMode = BrowseMode.waterfall;
+      case 'memories-list':
+        _page = _DesktopPage.memories;
+      case 'memory-detail':
+        _page = _DesktopPage.memoryDetail;
+        _selectedMemoryId = firstMemory?.id;
+        if (firstMemory != null) {
+          _memoryTitleController.text = firstMemory.name;
+          _memoryDescriptionController.text = firstMemory.description ?? '';
+        }
+      case 'settings':
+        _page = _DesktopPage.settings;
+      case 'notifications':
+        _page = _DesktopPage.notifications;
+      case 'zh-locale':
+        _page = _DesktopPage.home;
+        _locale = UiLocale.zh;
+        _browseMode = BrowseMode.waterfall;
+      default:
+        _page = _DesktopPage.home;
+        _browseMode = BrowseMode.waterfall;
+    }
   }
 
   void _addLibrary() {
@@ -650,6 +807,11 @@ final class _ChronoPicHomeState extends State<ChronoPicHome> {
     });
   }
 
+  void _refreshMemoryCandidates() {
+    final ready = _service.listMemoryCandidates().length;
+    setState(() => _status = 'Memory suggestions refreshed: $ready ready');
+  }
+
   void _selectMemory(String memoryId) {
     final memory = _service.getMemory(memoryId);
     setState(() {
@@ -778,6 +940,16 @@ final class _ChronoPicHomeState extends State<ChronoPicHome> {
     setState(() => _status = 'Saved AI settings');
   }
 
+  void _saveMapSettings() {
+    _service.updateMapSettings(
+      MapSettings(
+        apiKey: _mapApiKeyController.text.trim(),
+        securityJsCode: _mapSecurityJsCodeController.text.trim(),
+      ),
+    );
+    setState(() => _status = 'Saved map settings');
+  }
+
   void _retryAiQueue() {
     final count = _service.retryFailedAiQueue();
     setState(() => _status = 'Retried $count failed AI items');
@@ -858,6 +1030,50 @@ String _formatDate(DateTime dateTime) {
 
 String _formatTime(DateTime dateTime) {
   return '${dateTime.hour.toString().padLeft(2, '0')}:${dateTime.minute.toString().padLeft(2, '0')}';
+}
+
+const _monthNames = [
+  'January',
+  'February',
+  'March',
+  'April',
+  'May',
+  'June',
+  'July',
+  'August',
+  'September',
+  'October',
+  'November',
+  'December',
+];
+
+String _monthYear(DateTime dateTime) {
+  return '${_monthNames[dateTime.month - 1]} ${dateTime.year}';
+}
+
+String _monthDay(DateTime dateTime) {
+  return '${_monthNames[dateTime.month - 1]} ${dateTime.day}';
+}
+
+String _formatLongDateTime(DateTime dateTime) {
+  final hour12 = dateTime.hour % 12 == 0 ? 12 : dateTime.hour % 12;
+  final minute = dateTime.minute.toString().padLeft(2, '0');
+  final period = dateTime.hour >= 12 ? 'PM' : 'AM';
+  return '${_monthNames[dateTime.month - 1]} ${dateTime.day}, ${dateTime.year}, $hour12:$minute $period';
+}
+
+UiLocale _uiLocaleFromDomain(LocaleSetting locale) {
+  return switch (locale) {
+    LocaleSetting.zhCN => UiLocale.zh,
+    LocaleSetting.enUS => UiLocale.en,
+  };
+}
+
+LocaleSetting _domainLocaleFromUi(UiLocale locale) {
+  return switch (locale) {
+    UiLocale.zh => LocaleSetting.zhCN,
+    UiLocale.en => LocaleSetting.enUS,
+  };
 }
 
 String _basename(String path) => path.split(Platform.pathSeparator).last;

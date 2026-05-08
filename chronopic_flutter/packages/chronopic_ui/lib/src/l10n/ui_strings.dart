@@ -12,6 +12,11 @@ final class UiStrings {
     required this.favorites,
     required this.memories,
     required this.language,
+    required this.languageDescription,
+    required this.interfaceLanguage,
+    required this.aiOutputLanguage,
+    required this.followInterfaceLanguage,
+    required this.saveLanguageSettings,
     required this.notifications,
     required this.settings,
     required this.libraryFolderPath,
@@ -34,6 +39,35 @@ final class UiStrings {
     required this.grid,
     required this.map,
     required this.timeline,
+    required this.librarySection,
+    required this.librarySubtitle,
+    required this.discover,
+    required this.highlights,
+    required this.recentMemories,
+    required this.newMemory,
+    required this.newMemoryDescription,
+    required this.photosUnit,
+    required this.customCover,
+    required this.noDescription,
+    required this.itemsUnit,
+    required this.matchesUnit,
+    required this.tag,
+    required this.gpsOnly,
+    required this.aiAny,
+    required this.aiDisabled,
+    required this.aiPending,
+    required this.aiProcessing,
+    required this.aiCompleted,
+    required this.aiFailed,
+    required this.fromDate,
+    required this.toDate,
+    required this.sortDatetime,
+    required this.sortPath,
+    required this.sortUpdated,
+    required this.desc,
+    required this.asc,
+    required this.activeFilters,
+    required this.scanIdle,
   });
 
   final String appTitle;
@@ -44,6 +78,11 @@ final class UiStrings {
   final String favorites;
   final String memories;
   final String language;
+  final String languageDescription;
+  final String interfaceLanguage;
+  final String aiOutputLanguage;
+  final String followInterfaceLanguage;
+  final String saveLanguageSettings;
   final String notifications;
   final String settings;
   final String libraryFolderPath;
@@ -66,11 +105,40 @@ final class UiStrings {
   final String grid;
   final String map;
   final String timeline;
+  final String librarySection;
+  final String librarySubtitle;
+  final String discover;
+  final String highlights;
+  final String recentMemories;
+  final String newMemory;
+  final String newMemoryDescription;
+  final String photosUnit;
+  final String customCover;
+  final String noDescription;
+  final String itemsUnit;
+  final String matchesUnit;
+  final String tag;
+  final String gpsOnly;
+  final String aiAny;
+  final String aiDisabled;
+  final String aiPending;
+  final String aiProcessing;
+  final String aiCompleted;
+  final String aiFailed;
+  final String fromDate;
+  final String toDate;
+  final String sortDatetime;
+  final String sortPath;
+  final String sortUpdated;
+  final String desc;
+  final String asc;
+  final String activeFilters;
+  final String scanIdle;
 }
 
 const Map<UiLocale, UiStrings> uiStrings = <UiLocale, UiStrings>{
   UiLocale.en: UiStrings(
-    appTitle: 'ChronoPic Flutter',
+    appTitle: 'ChronoPic',
     exportBackup: 'Export Backup',
     previewRestore: 'Preview Restore',
     restoreBackup: 'Restore Backup',
@@ -78,6 +146,12 @@ const Map<UiLocale, UiStrings> uiStrings = <UiLocale, UiStrings>{
     favorites: 'Favorites',
     memories: 'Memories',
     language: 'Language',
+    languageDescription:
+        'Choose the interface language and the language used by future AI suggestions.',
+    interfaceLanguage: 'Interface Language',
+    aiOutputLanguage: 'AI Output Language',
+    followInterfaceLanguage: 'Follow interface language',
+    saveLanguageSettings: 'Save Language Settings',
     notifications: 'Notifications',
     settings: 'Settings',
     libraryFolderPath: 'Library folder path',
@@ -97,12 +171,41 @@ const Map<UiLocale, UiStrings> uiStrings = <UiLocale, UiStrings>{
     createMemory: 'Create Memory',
     addToMemory: 'Add to Memory',
     clearMemoryFilter: 'Clear Memory Filter',
-    grid: 'Grid',
+    grid: 'Waterfall',
     map: 'Map',
     timeline: 'Timeline',
+    librarySection: 'Library',
+    librarySubtitle: 'Photo workspace',
+    discover: 'Discover',
+    highlights: 'Highlights',
+    recentMemories: 'Recent Memories',
+    newMemory: 'New Memory',
+    newMemoryDescription: 'Create a new memory from your library.',
+    photosUnit: 'photos',
+    customCover: 'Custom cover',
+    noDescription: 'No description',
+    itemsUnit: 'items',
+    matchesUnit: 'matches',
+    tag: 'Tag',
+    gpsOnly: 'GPS only',
+    aiAny: 'AI: any',
+    aiDisabled: 'AI: disabled',
+    aiPending: 'AI: pending',
+    aiProcessing: 'AI: processing',
+    aiCompleted: 'AI: completed',
+    aiFailed: 'AI: failed',
+    fromDate: 'From date',
+    toDate: 'To date',
+    sortDatetime: 'Sort: datetime',
+    sortPath: 'Sort: path',
+    sortUpdated: 'Sort: updated',
+    desc: 'Desc',
+    asc: 'Asc',
+    activeFilters: 'Active filters:',
+    scanIdle: 'Scan progress: idle',
   ),
   UiLocale.zh: UiStrings(
-    appTitle: 'ChronoPic Flutter',
+    appTitle: 'ChronoPic',
     exportBackup: '导出备份',
     previewRestore: '预览恢复',
     restoreBackup: '恢复备份',
@@ -110,6 +213,11 @@ const Map<UiLocale, UiStrings> uiStrings = <UiLocale, UiStrings>{
     favorites: '收藏',
     memories: '回忆',
     language: '语言',
+    languageDescription: '选择界面语言，以及未来 AI 建议使用的输出语言。',
+    interfaceLanguage: '界面语言',
+    aiOutputLanguage: 'AI 输出语言',
+    followInterfaceLanguage: '跟随界面语言',
+    saveLanguageSettings: '保存语言设置',
     notifications: '通知',
     settings: '设置',
     libraryFolderPath: '图库文件夹路径',
@@ -129,8 +237,37 @@ const Map<UiLocale, UiStrings> uiStrings = <UiLocale, UiStrings>{
     createMemory: '创建回忆',
     addToMemory: '加入回忆',
     clearMemoryFilter: '清除回忆筛选',
-    grid: '网格',
+    grid: '瀑布流',
     map: '地图',
     timeline: '时间线',
+    librarySection: '资料库',
+    librarySubtitle: '照片工作区',
+    discover: '发现',
+    highlights: '精选',
+    recentMemories: '最近记忆',
+    newMemory: '新建记忆',
+    newMemoryDescription: '从资料库创建新的记忆。',
+    photosUnit: '张照片',
+    customCover: '自定义封面',
+    noDescription: '暂无描述',
+    itemsUnit: '项',
+    matchesUnit: '个匹配',
+    tag: '标签',
+    gpsOnly: '仅 GPS',
+    aiAny: 'AI：全部',
+    aiDisabled: 'AI：已停用',
+    aiPending: 'AI：待处理',
+    aiProcessing: 'AI：处理中',
+    aiCompleted: 'AI：已完成',
+    aiFailed: 'AI：失败',
+    fromDate: '开始日期',
+    toDate: '结束日期',
+    sortDatetime: '排序：时间',
+    sortPath: '排序：路径',
+    sortUpdated: '排序：更新',
+    desc: '降序',
+    asc: '升序',
+    activeFilters: '当前筛选：',
+    scanIdle: '扫描进度：空闲',
   ),
 };

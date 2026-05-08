@@ -3,13 +3,13 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  testWidgets('launches ChronoPic Flutter app shell', (tester) async {
+  testWidgets('launches ChronoPic app shell', (tester) async {
     app.main();
     await tester.pumpAndSettle();
 
-    expect(find.text('ChronoPic Flutter'), findsOneWidget);
+    expect(find.text('ChronoPic'), findsOneWidget);
     expect(find.byKey(const Key('desktop-sidebar')), findsOneWidget);
-    expect(find.text('First run library setup'), findsOneWidget);
-    expect(find.byKey(const Key('add-library-button')), findsOneWidget);
+    expect(find.byKey(const Key('all-photos-nav')), findsOneWidget);
+    expect(find.byKey(const Key('settings-nav')), findsOneWidget);
   });
 }

@@ -159,6 +159,38 @@ test("backup export and restore preserves settings, edits, favorites, memories, 
   targetDb.close();
 });
 
+test("rollbackLatestEdit uses insertion order for rapid edits with matching timestamps", () => {
+  const photoPath = path.join(os.tmpdir(), "chronopic-rollback-photo.png");
+  const db = new ChronoPicDatabase(tempDbPath("rollback-order"));
+  const service = createService(db);
+  const originalNow = Date.now;
+
+  try {
+    Date.now = () => 1_800_000_000_000;
+    db.addLibrarySource(path.dirname(photoPath));
+    db.upsertPhotoRecord(createPhotoPayload(photoPath));
+
+    service.updatePhotoCaption("photo-1", "Rapid caption");
+    service.updatePhotoTags("photo-1", ["runtime", "qa"]);
+    service.updatePhotoDatetime("photo-1", 1_714_521_600_000);
+
+    const afterDatetimeRollback = service.rollbackLatestEdit("photo-1");
+    assert.equal(afterDatetimeRollback?.metadata.datetime, 1_715_000_000_000);
+    assert.equal(afterDatetimeRollback?.semantic.caption, "Rapid caption");
+    assert.deepEqual(afterDatetimeRollback?.semantic.labels, ["runtime", "qa"]);
+
+    const afterLabelsRollback = service.rollbackLatestEdit("photo-1");
+    assert.equal(afterLabelsRollback?.semantic.caption, "Rapid caption");
+    assert.deepEqual(afterLabelsRollback?.semantic.labels, []);
+
+    const afterCaptionRollback = service.rollbackLatestEdit("photo-1");
+    assert.equal(afterCaptionRollback?.semantic.caption, null);
+  } finally {
+    Date.now = originalNow;
+    db.close();
+  }
+});
+
 test("backup restore preview reports conflicts against existing library state", () => {
   const photoPath = path.join(os.tmpdir(), "chronopic-backup-conflict.png");
   const backup: ChronoPicBackup = {

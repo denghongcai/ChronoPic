@@ -88,10 +88,16 @@ final class _Panel extends StatelessWidget {
 }
 
 final class _SectionHeader extends StatelessWidget {
-  const _SectionHeader({required this.title, this.description, this.trailing});
+  const _SectionHeader({
+    required this.title,
+    this.description,
+    this.eyebrow,
+    this.trailing,
+  });
 
   final String title;
   final String? description;
+  final String? eyebrow;
   final Widget? trailing;
 
   @override
@@ -103,6 +109,18 @@ final class _SectionHeader extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              if (eyebrow != null) ...[
+                Text(
+                  eyebrow!,
+                  style: TextStyle(
+                    color: Colors.grey.shade600,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 4,
+                  ),
+                ),
+                const SizedBox(height: 8),
+              ],
               Text(title, style: Theme.of(context).textTheme.titleLarge),
               if (description != null) ...[
                 const SizedBox(height: 4),

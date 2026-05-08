@@ -1,15 +1,20 @@
 import { expect, test, _electron as electron } from "@playwright/test";
+import fs from "node:fs/promises";
+import os from "node:os";
+import path from "node:path";
 
 test.describe("ChronoPic i18n smoke", () => {
   let electronApp: Awaited<ReturnType<typeof electron["launch"]>>;
 
   test.beforeAll(async () => {
+    const { VITE_DEV_SERVER_URL: _viteDevServerUrl, ...baseEnv } = process.env;
+    const userDataDir = await fs.mkdtemp(path.join(os.tmpdir(), "chronopic-i18n-userdata-"));
     electronApp = await electron.launch({
       args: ["apps/desktop/dist/main/main.js"],
       env: {
-        ...process.env,
+        ...baseEnv,
+        CHRONOPIC_USER_DATA_DIR: userDataDir,
         ELECTRON_DISABLE_SANDBOX: "1",
-        VITE_DEV_SERVER_URL: "http://localhost:5173",
       },
     });
   });

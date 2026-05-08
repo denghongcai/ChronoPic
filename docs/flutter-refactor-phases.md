@@ -364,13 +364,140 @@ Deliverables:
 
 Status:
 
-- Planned locally on 2026-05-08.
+- Local parity gate closed on 2026-05-09;
+  commit/push remains the final handoff step.
+- Electron and Flutter screenshot harnesses are available.
+- First Flutter shell/home/browse/detail alignment slice is implemented and verified;
+- gallery/detail/favorites/editing alignment task is implemented and verified;
+- memory list/detail alignment is partially implemented and verified;
+- notifications/settings alignment is partially implemented and verified;
+- map/timeline first-viewport alignment is partially implemented and verified,
+  including an Electron-like pale disabled-map canvas in the Flutter Map surface
+  and an Electron-like light timeline card with selected-photo banner in the Flutter Timeline surface;
+- Chinese locale first-viewport alignment is partially implemented and verified;
+- all 13 Flutter parity screenshots have been recaptured at the Electron reference size of 1440x920;
+  no unexamined `Gap` rows remain in the parity matrix.
 - Parity matrix:
   [docs/flutter-electron-ui-functional-parity.md](flutter-electron-ui-functional-parity.md).
+- Populated-grid, favorites, and restart-persistence Flutter surfaces now show
+  an Electron-like selected-photo banner above the grid when a photo is selected.
+- Detail capture now uses an immersive Electron-like focused dark viewer with
+  a large media canvas, right-side metric-card inspector, AI insights,
+  gallery strip, keyboard hint, and real add/close/gallery actions instead of
+  a plain inline detail page or normal Flutter shell chrome.
+- Gallery capture now uses a bordered dark media frame, metadata below the
+  image instead of a large scrim, an Open Inspector action, and a separate
+  framed gallery strip closer to Electron's viewer hierarchy.
+- Populated browse, favorites, and restart-persistence surfaces now include a
+  functional Electron-like discovery lens row where Map, Timeline, and Memory
+  chips navigate to real app surfaces instead of acting as visual-only hints.
+- Notifications now use an Electron-like outer container with separate AI queue
+  and Memory candidates cards while preserving retry and memory-review actions.
+- Notifications now also place the page title inside the white content card and
+  use Electron-like blue/red/green/yellow semantic chips for AI queue,
+  failed,
+  ready,
+  and memory candidate states.
+- Settings now use Electron-like primary library actions, backup action grouping
+  with `LOCAL JSON`, and an AI Enrichment readiness card with `PRESENT` pills
+  while preserving path-based backup/restore and secret-safe AI editing.
+- Settings now also keeps the first viewport focused on the Electron-like
+  Library Settings card with Add Folder and Scan Library,
+  moves manual path import into a lower panel,
+  and uses Electron-like orange/white/blue/green action and status semantics
+  for restore,
+  language save,
+  backup format,
+  and AI readiness.
+- Shared desktop shell chrome now moves notifications into the sidebar header,
+  replaces the previous Notifications nav row with an Electron-like Recent row,
+  adds a bottom Create Memory action,
+  and hides the idle scan status bar so non-immersive pages start at the same
+  top content position as Electron.
+- Browse controls now use Electron's `Waterfall` label instead of `Grid`,
+  including the Simplified Chinese `瀑布流` label,
+  and the selected-photo banner now uses Electron's memory-membership copy.
+- Focused detail capture now selects the same first fixture photo as Electron
+  and exposes Electron-like add,
+  close,
+  previous,
+  next,
+  and Gallery top controls with dark/disabled/highlight states.
+- Focused detail inspector status now reports file/index health as `HEALTHY`
+  while keeping AI failure information in AI-specific fields,
+  matching Electron's inspector semantics.
+- Fullscreen gallery now removes the extra back/X controls,
+  uses dark Detail View/Open Inspector actions,
+  shows date plus time,
+  uses Electron's `NOT IN ANY MEMORY` and `2 ITEMS` copy,
+  and keeps the dark framed media/filmstrip hierarchy.
+- Settings backup JSON path controls now live in a lower file-path panel so the
+  first viewport matches Electron's backup card density while preserving
+  path-based export/restore workflows.
+- Browse media cards now use a lower-density desktop grid, larger cards,
+  bottom gradient metadata, and improved missing-media fallback so populated,
+  favorites, and restart-persistence evidence more closely matches Electron's
+  media-card hierarchy.
+- Global Flutter desktop brand chrome now matches Electron's `ChronoPic` /
+  `Photo workspace` labels instead of identifying the rewrite as
+  `ChronoPic Flutter`.
+- Empty first-run now uses `Add Folder` as the primary folder-picker action
+  while preserving the explicit path-based `Add Library` control below.
+- Empty first-run now also removes lower empty-library path/filter controls
+  from the first viewport,
+  keeps path-based add/scan functionality in Settings,
+  adds a `Create First Memory` CTA to the recent-memory empty state,
+  and keeps filters visible when active filters return zero photos.
+- Populated grid,
+  Favorites,
+  and Restart Persistence now use Electron-like compact `Select` / `Filter`
+  browse-toolbar affordances by default,
+  while the full filter panel remains available behind `Filter` and stays
+  visible for active search/tag/GPS/AI/date/sort states.
+- Map and Timeline screenshots were recaptured after the compact toolbar pass,
+  so both now inherit reduced first-viewport toolbar density while preserving
+  the disabled-map and timeline-card behavior already implemented.
+- Browse media cards now use a taller card ratio,
+  and photo/memory fallback surfaces now share an Electron-like edge treatment
+  with top path/name text instead of a centered broken-image icon.
+- Memories list now has an Electron-like `SUGGESTED MEMORIES` header,
+  a real Generate/refresh affordance,
+  title-card candidate treatment,
+  `Adjust photos`,
+  and candidate accept/reject actions aligned more closely with Electron.
+- Memory list/detail/home cards now use framed media-style cover fallback
+  treatment instead of centered icon-only gradient blocks.
+- Memory detail now uses a read-first hero with compact actions and moves
+  editable metadata controls into a lower management panel.
+- Memory detail now also uses Electron-like updated timestamp formatting,
+  a `STORY OUTLINE` section,
+  and chapter-card metadata for month/day,
+  mapped count,
+  and AI readiness.
+- Full Flutter-side verification for this phase has been rerun with
+  `dart analyze packages/chronopic_app packages/chronopic_ui`,
+  `flutter test packages/chronopic_ui apps/chronopic`,
+  `bash tool/capture_flutter_parity.sh all`,
+  and a `file` check confirming all 13 Flutter PNGs are 1440x920.
+- Electron-side verification has also been rerun:
+  `pnpm test`,
+  `pnpm typecheck`,
+  `pnpm build`,
+  `pnpm run e2e:runtime`,
+  `pnpm run e2e:backup`,
+  `pnpm run e2e:ai`,
+  `pnpm exec playwright test -c tests/e2e/playwright.config.ts i18n.spec.ts`,
+  `node scripts/capture-electron-parity.mjs`,
+  and a `file` check confirming all 13 Electron PNGs are 1440x920.
+  The Electron gate exposed and now covers a deterministic edit-history rollback
+  fix for rapid same-millisecond edits.
 - Acceptance spec:
   [docs/superpowers/specs/2026-05-08-flutter-electron-ui-functional-parity.md](superpowers/specs/2026-05-08-flutter-electron-ui-functional-parity.md).
 - Implementation plan:
   [docs/superpowers/plans/2026-05-08-flutter-electron-ui-functional-parity.md](superpowers/plans/2026-05-08-flutter-electron-ui-functional-parity.md).
+- Next execution plan:
+  commit and push the `flutter-refactor-phases` branch after recording the
+  implementation commit in the parity matrix.
 
 ## Phase 6: Android And iOS Productization
 

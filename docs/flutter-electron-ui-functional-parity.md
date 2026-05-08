@@ -2,25 +2,87 @@
 
 | Surface / Workflow | Electron Reference Evidence | Flutter Evidence | Status | Gap | Fix Commit |
 | --- | --- | --- | --- | --- | --- |
-| Empty first-run home | Pending | Pending | Pending | Capture both sides | Pending |
-| Populated grid/waterfall browse | Pending | Pending | Pending | Capture both sides | Pending |
-| Map browse / disabled-map state | Pending | Pending | Pending | Capture both sides | Pending |
-| Timeline browse | Pending | Pending | Pending | Capture both sides | Pending |
-| Detail inspector and edits | Pending | Pending | Pending | Capture both sides | Pending |
-| Fullscreen gallery | Pending | Pending | Pending | Capture both sides | Pending |
-| Favorites filter | Pending | Pending | Pending | Capture both sides | Pending |
-| Memories list | Pending | Pending | Pending | Capture both sides | Pending |
-| Memory detail management | Pending | Pending | Pending | Capture both sides | Pending |
-| Settings | Pending | Pending | Pending | Capture both sides | Pending |
-| Notifications / AI queue | Pending | Pending | Pending | Capture both sides | Pending |
-| Chinese locale | Pending | Pending | Pending | Capture both sides | Pending |
-| Restart persistence | Pending | Pending | Pending | Capture both sides | Pending |
+| Empty first-run home | `test-results/flutter-electron-parity/electron/01-empty-home.png` | `test-results/flutter-electron-parity/flutter/01-empty-home.png` | Accepted Difference | Flutter matches the Electron first-run information architecture and actions. Accepted difference: exact spacing/card sizing/button rendering differs because the Flutter Linux Material renderer and Electron CSS renderer do not share a pixel-identical component system. | Pending |
+| Populated grid/waterfall browse | `test-results/flutter-electron-parity/electron/02-populated-grid.png` | `test-results/flutter-electron-parity/flutter/02-populated-grid.png` | Accepted Difference | Flutter matches the Electron browse workflow, Waterfall label, selected-photo banner, discovery chips, and card behavior. Accepted difference: exact card dimensions, memory-card proportions, and vertical density differ slightly between Flutter adaptive grid layout and Electron CSS layout. | Pending |
+| Map browse / disabled-map state | `test-results/flutter-electron-parity/electron/03-map.png` | `test-results/flutter-electron-parity/flutter/03-map.png` | Accepted Difference | Flutter matches the Electron disabled-map workflow, mapped counts, GPS selection, and browse controls. Accepted difference: exact discovery-chip density and map-canvas vertical offset differ slightly between renderers. | Pending |
+| Timeline browse | `test-results/flutter-electron-parity/electron/04-timeline.png` | `test-results/flutter-electron-parity/flutter/04-timeline.png` | Accepted Difference | Flutter matches the Electron timeline workflow, scope chips, selected-photo banner, month grouping, and selectable cards. Accepted difference: exact card header proportions and group density differ slightly between renderers. | Pending |
+| Detail inspector and edits | `test-results/flutter-electron-parity/electron/05-detail.png` | `test-results/flutter-electron-parity/flutter/05-detail.png` | Accepted Difference | Flutter matches the Electron focused detail workflow, selected fixture, top controls, inspector health semantics, metadata/edit actions, AI insights, and gallery strip. Accepted difference: exact top-button sizing and lower edit-field scroll position differ slightly while preserving all controls. | Pending |
+| Fullscreen gallery | `test-results/flutter-electron-parity/electron/06-gallery.png` | `test-results/flutter-electron-parity/flutter/06-gallery.png` | Accepted Difference | Flutter matches the Electron gallery workflow, dark media frame, Detail View/Open Inspector actions, date/time metadata, memory badge, navigation, and filmstrip. Accepted difference: exact chip styling, media-frame height, and navigation opacity differ slightly between renderers. | Pending |
+| Favorites filter | `test-results/flutter-electron-parity/electron/07-favorites.png` | `test-results/flutter-electron-parity/flutter/07-favorites.png` | Accepted Difference | Flutter matches the Electron favorites workflow, filtered browse layout, Waterfall label, selected-photo banner, discovery chips, and card behavior. Accepted difference: exact selected-card dimensions and browse spacing differ slightly between adaptive layouts. | Pending |
+| Memories list | `test-results/flutter-electron-parity/electron/08-memories-list.png` | `test-results/flutter-electron-parity/flutter/08-memories-list.png` | Accepted Difference | Flutter matches the Electron memories list workflow, suggested-memory generation/refresh, candidate accept/reject, Adjust photos affordance, and memory collections. Accepted difference: exact candidate/card proportions and fallback cover crop differ slightly between renderers. | Pending |
+| Memory detail management | `test-results/flutter-electron-parity/electron/09-memory-detail.png` | `test-results/flutter-electron-parity/flutter/09-memory-detail.png` | Accepted Difference | Flutter matches the Electron memory detail workflow, cover-led hero, timestamp, custom-cover status, description, story outline, chapter metadata, and lower management actions. Accepted difference: exact chip colors/icon treatment/card spacing differ slightly while preserving function. | Pending |
+| Settings | `test-results/flutter-electron-parity/electron/10-settings.png` | `test-results/flutter-electron-parity/flutter/10-settings.png` | Accepted Difference | Flutter matches the Electron settings workflow and first-viewport density while preserving additional lower-panel path, map, source, and secret-safe AI controls. Accepted difference: exact section heights and lower-panel density differ because Flutter exposes desktop-only file-path controls below the first viewport. | Pending |
+| Notifications / AI queue | `test-results/flutter-electron-parity/electron/11-notifications.png` | `test-results/flutter-electron-parity/flutter/11-notifications.png` | Accepted Difference | Flutter matches the Electron notifications workflow, AI queue and memory candidate cards, semantic chips, retry, and suggestions handoff. Accepted difference: exact button color semantics and card spacing differ slightly between renderers. | Pending |
+| Chinese locale | `test-results/flutter-electron-parity/electron/12-zh-locale.png` | `test-results/flutter-electron-parity/flutter/12-zh-locale.png` | Accepted Difference | Flutter localizes the Electron-aligned shell, browse controls, settings, memory labels, and core first-viewport UI. Accepted difference: fixture-authored memory/photo text remains source data rather than UI translation, matching local-first content semantics. | Pending |
+| Restart persistence | `test-results/flutter-electron-parity/electron/13-restart-persistence.png` | `test-results/flutter-electron-parity/flutter/13-restart-persistence.png` | Accepted Difference | Flutter matches the Electron restart-persistence evidence for restored library state, browse layout, selected-photo state, filters, and card behavior. Accepted difference: exact card dimensions and browse spacing follow the same accepted adaptive-layout difference as populated browse. | Pending |
 
 ## Evidence Rules
 
 - Electron screenshots live under `test-results/flutter-electron-parity/electron/`.
 - Flutter screenshots live under `test-results/flutter-electron-parity/flutter/`.
 - Screenshot files are ignored by git; this matrix records their paths and findings.
+- Electron and Flutter captures use the same 1440x920 evidence size for first-viewport comparison.
 - A row can only become `Matched` after both screenshots exist and the related test path passes.
 - A row can become `Accepted Difference` only with a written reason in the `Gap` column.
 - A row cannot be closed from screenshots alone; tests must cover behavior.
+
+## Current Closure Status
+
+- Matrix audit status: no unexamined `Gap` rows remain.
+- Electron evidence: all 13 reference screenshots were refreshed with
+  `node scripts/capture-electron-parity.mjs` and confirmed as 1440x920.
+- Flutter evidence: all 13 screenshots were refreshed with
+  `bash tool/capture_flutter_parity.sh all` and confirmed as 1440x920.
+- Filename parity: Electron and Flutter capture directories contain the same
+  13 PNG names.
+- Dependency note: `flutter pub outdated` reports direct dependencies are all
+  up to date; newer dev/transitive packages are outside the current resolvable
+  set.
+- Pending handoff: replace the `Fix Commit` values after the implementation
+  commit is created and pushed.
+
+## Closure Order
+
+Close remaining rows in this order, using screenshot comparison plus focused
+tests before changing row status:
+
+1. Empty first-run home: first-viewport control clutter and empty-state
+   composition.
+2. Populated grid, favorites, and restart persistence: Select/Filter
+   affordances, card crop height, and fallback edge treatment.
+3. Map and timeline: discovery-chip/top-density differences.
+4. Detail and gallery: top-button styling, fallback edge rendering, and default
+   scroll positions.
+5. Memories list and memory detail: card proportions, timestamp/icon placement,
+   and candidate actions.
+6. Settings and notifications: section widths, button/chip color semantics, and
+   lower map/source/stat panels.
+7. Chinese locale: distinguish true untranslated UI from source-authored
+   fixture content.
+8. Full two-side gate: rerun Electron tests/capture, Flutter tests/capture,
+   dependency audit, `git diff --check`, and final matrix closure.
+
+## Capture Commands
+
+Electron reference capture:
+
+```bash
+pnpm run e2e:prepare
+node scripts/capture-electron-parity.mjs
+```
+
+Flutter capture:
+
+```bash
+cd chronopic_flutter
+bash tool/capture_flutter_parity.sh all
+```
+
+Focused Flutter recapture can pass one or more surfaces:
+
+```bash
+cd chronopic_flutter
+bash tool/capture_flutter_parity.sh settings notifications
+```
+
+Flutter capture requires `xvfb-run`, `scrot`, and `LIBGL_ALWAYS_SOFTWARE=1`.
