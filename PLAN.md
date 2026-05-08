@@ -1992,15 +1992,15 @@ Current status:
   `flutter analyze packages/chronopic_ui apps/chronopic`,
   `flutter build linux --debug`,
   `flutter pub outdated`,
-  Linux bundle smoke launch with `timeout 12s ./build/linux/x64/debug/bundle/chronopic`,
+  Linux bundle screenshot smoke launch with
+  `xvfb-run -a -s "-screen 0 1600x1200x24"` and `LIBGL_ALWAYS_SOFTWARE=1`,
   and `git diff --check`.
 - Dependency audit:
   `flutter pub outdated` reports all direct dependencies are already at the newest resolvable versions;
   newer transitive/dev versions are not mutually compatible with the current resolved toolchain.
-- Runtime screenshot note:
-  the Linux bundle launched to the Dart VM service locally,
-  but this environment lacks `xvfb-run` / `import` / `gnome-screenshot` / `scrot`,
-  so desktop screenshot capture was skipped with the reason recorded in `AGENTS.md`.
+- Runtime screenshot evidence:
+  `test-results/flutter-ui-refine-xvfb-window.png` captured the Linux debug bundle first-run desktop window at 1280x720.
+  The screenshot is intentionally kept under the ignored `test-results/` directory.
 
 ## Future Product Backlog
 

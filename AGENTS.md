@@ -3606,12 +3606,15 @@ This file is the local execution record for ChronoPic. It complements `PLAN.md` 
   Scene 7 restart persistence via Linux parity tests,
   Scene 8 settings/locale/AI via widget/parity tests,
   and Scene 9 notifications/AI queue via widget/parity tests.
-- Runtime screenshot note:
-  the Linux bundle launched to a Dart VM service with `timeout 12s ./build/linux/x64/debug/bundle/chronopic`,
-  but screenshot capture was skipped because this environment does not have `xvfb-run`,
-  `import`,
-  `gnome-screenshot`,
-  or `scrot`.
+- Runtime screenshot evidence:
+  after `xvfb-run` and `scrot` were installed locally,
+  the Linux debug bundle launched under Xvfb with `LIBGL_ALWAYS_SOFTWARE=1`
+  and produced `test-results/flutter-ui-refine-xvfb-window.png`.
+  The 1280x720 capture shows the real Linux app window with the persistent sidebar,
+  first-run setup panel,
+  library toolbar,
+  browse mode controls,
+  and filter panel.
 - Verified:
   `dart test packages/chronopic_domain packages/chronopic_media packages/chronopic_ai packages/chronopic_app`
   `dart test test/repository_test.dart test/drift_database_test.dart`
@@ -3622,10 +3625,10 @@ This file is the local execution record for ChronoPic. It complements `PLAN.md` 
   `flutter analyze packages/chronopic_ui apps/chronopic`
   `flutter build linux --debug`
   `flutter pub outdated`
-  `timeout 12s ./build/linux/x64/debug/bundle/chronopic`
+  `xvfb-run -a -s "-screen 0 1600x1200x24" ... scrot -a 0,0,1280,720 test-results/flutter-ui-refine-xvfb-window.png`
   `git diff --check`
 - Result:
-  all verification commands passed except the intentional Linux smoke launch timeout used to close the app after successful startup;
-  screenshot capture was skipped for the missing-tool reason above.
+  all verification commands passed;
+  the Xvfb/scrot runtime screenshot now covers the previously skipped desktop visual evidence.
 - Next:
   commit and push the completed `flutter-refactor-phases` branch.

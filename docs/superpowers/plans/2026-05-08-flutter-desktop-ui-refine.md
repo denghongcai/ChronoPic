@@ -137,6 +137,12 @@ git diff --check
 Closeout note:
 commit/push is performed after this plan is marked with implementation and verification evidence.
 
+Screenshot follow-up:
+after `xvfb-run` and `scrot` became available locally,
+the Linux debug bundle was launched under Xvfb with `LIBGL_ALWAYS_SOFTWARE=1`,
+and the real app window was captured at
+`test-results/flutter-ui-refine-xvfb-window.png`.
+
 ## Self-Review
 
 - Spec coverage: every design requirement maps to tasks 2-9.

@@ -335,7 +335,7 @@ Status:
   Flutter analyzer,
   Linux debug build,
   dependency audit,
-  Linux bundle smoke launch,
+  Linux bundle Xvfb/scrot screenshot smoke launch,
   and `git diff --check`.
 
 ## Phase 6: Android And iOS Productization
