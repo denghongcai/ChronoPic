@@ -338,6 +338,40 @@ Status:
   Linux bundle Xvfb/scrot screenshot smoke launch,
   and `git diff --check`.
 
+## Phase 5.7: Flutter Electron UI And Functional Parity
+
+Purpose: continue desktop UI and feature alignment by comparing Electron and Flutter with repeatable tests and screenshots before mobile work starts.
+
+Deliverables:
+
+- Add Electron reference screenshot capture for the current desktop app.
+- Add Flutter Linux screenshot capture under Xvfb/scrot with deterministic app state.
+- Maintain a parity matrix covering:
+  first-run home,
+  populated browse,
+  map,
+  timeline,
+  detail/editing,
+  gallery,
+  favorites,
+  memories,
+  settings,
+  notifications/AI,
+  Chinese locale,
+  and restart persistence.
+- Fix Flutter UI and functional gaps in focused slices and rerun both Electron and Flutter verification after each slice.
+- Keep screenshots under ignored `test-results/` and record paths/results in `AGENTS.md`.
+
+Status:
+
+- Planned locally on 2026-05-08.
+- Parity matrix:
+  [docs/flutter-electron-ui-functional-parity.md](flutter-electron-ui-functional-parity.md).
+- Acceptance spec:
+  [docs/superpowers/specs/2026-05-08-flutter-electron-ui-functional-parity.md](superpowers/specs/2026-05-08-flutter-electron-ui-functional-parity.md).
+- Implementation plan:
+  [docs/superpowers/plans/2026-05-08-flutter-electron-ui-functional-parity.md](superpowers/plans/2026-05-08-flutter-electron-ui-functional-parity.md).
+
 ## Phase 6: Android And iOS Productization
 
 Purpose: adapt ChronoPic to mobile permissions, lifecycle, and media-library behavior.

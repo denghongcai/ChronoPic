@@ -3632,3 +3632,22 @@ This file is the local execution record for ChronoPic. It complements `PLAN.md` 
   the Xvfb/scrot runtime screenshot now covers the previously skipped desktop visual evidence.
 - Next:
   commit and push the completed `flutter-refactor-phases` branch.
+
+### 2026-05-08 Step 161
+
+- Planned the next desktop-first phase:
+  `Flutter Electron UI And Functional Parity Phase`.
+- User clarified that the next work should continue UI and feature alignment,
+  and that alignment should repeatedly compare Electron and Flutter through tests and screenshots.
+- Added the durable parity matrix:
+  `docs/flutter-electron-ui-functional-parity.md`.
+- Added the acceptance spec:
+  `docs/superpowers/specs/2026-05-08-flutter-electron-ui-functional-parity.md`.
+- Added the implementation plan:
+  `docs/superpowers/plans/2026-05-08-flutter-electron-ui-functional-parity.md`.
+- Updated phase records in:
+  `PLAN.md`
+  and `docs/flutter-refactor-phases.md`.
+- Next:
+  implement the Electron reference screenshot capture and Flutter Xvfb/scrot capture harness,
+  then use the matrix to drive focused Flutter UI/function fixes.

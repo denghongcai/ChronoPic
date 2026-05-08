@@ -2002,6 +2002,39 @@ Current status:
   `test-results/flutter-ui-refine-xvfb-window.png` captured the Linux debug bundle first-run desktop window at 1280x720.
   The screenshot is intentionally kept under the ignored `test-results/` directory.
 
+### 4.35 Flutter Electron UI And Functional Parity Phase
+
+- Continue desktop-first work before Phase 6 mobile productization.
+- Treat Electron as the reference product surface and Flutter Linux desktop as the candidate implementation.
+- Align UI and functionality through a repeated loop:
+  capture Electron screenshots,
+  capture Flutter screenshots,
+  compare them in a parity matrix,
+  fix concrete gaps,
+  then rerun both sides' tests and screenshots.
+- Required reference surfaces:
+  empty first-run home,
+  populated grid/waterfall browse,
+  map or disabled-map state,
+  timeline,
+  detail inspector and editing,
+  fullscreen gallery,
+  favorites,
+  memories list,
+  memory detail,
+  settings,
+  notifications/AI queue,
+  Chinese locale,
+  and restart persistence.
+- Add durable parity matrix:
+  [docs/flutter-electron-ui-functional-parity.md](docs/flutter-electron-ui-functional-parity.md)
+- Add acceptance spec:
+  [docs/superpowers/specs/2026-05-08-flutter-electron-ui-functional-parity.md](docs/superpowers/specs/2026-05-08-flutter-electron-ui-functional-parity.md)
+- Add implementation plan:
+  [docs/superpowers/plans/2026-05-08-flutter-electron-ui-functional-parity.md](docs/superpowers/plans/2026-05-08-flutter-electron-ui-functional-parity.md)
+- Current status:
+  planned locally on 2026-05-08.
+
 ## Future Product Backlog
 
 These are intentionally recorded as candidate directions rather than committed phases. They should be promoted into explicit numbered phases only after the current product risk is re-evaluated.
