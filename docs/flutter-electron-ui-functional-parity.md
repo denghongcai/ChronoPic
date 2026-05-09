@@ -52,8 +52,8 @@
   and
   `test-results/flutter-electron-parity/compare/13-restart-persistence-compare.png`.
 - Phase 5.8 handoff:
-  branch `flutter-refactor-phases` was pushed through evidence commit
-  `fb01fe5`.
+  branch `flutter-refactor-phases` was pushed after the gallery activation
+  implementation and evidence commits.
 
 ## Closure Order
 

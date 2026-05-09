@@ -614,9 +614,9 @@
   - Implementation commit `7efb12e` records the Electron and Flutter gallery
     activation changes.
   - Matrix rows now reference `7efb12e` for the four reopened surfaces.
-  - Evidence commit `fb01fe5` records the phase closure.
+  - Follow-up evidence and handoff commits record the phase closure.
   - `git push` updated `github.com:denghongcai/ChronoPic.git`
-    branch `flutter-refactor-phases` from `a7c1f49` to `fb01fe5`.
+    branch `flutter-refactor-phases`.
 
 ## Self-Review
 

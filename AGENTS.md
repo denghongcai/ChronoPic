@@ -5220,11 +5220,10 @@ This file is the local execution record for ChronoPic. It complements `PLAN.md` 
 - Completed the Phase 5.8 git handoff.
 - Committed the implementation:
   `7efb12e Align gallery overlay activation`.
-- Committed the matrix/evidence update:
+- Committed the matrix/evidence update, followed by handoff documentation:
   `fb01fe5 Record gallery overlay parity evidence`.
 - Pushed branch `flutter-refactor-phases` to
-  `github.com:denghongcai/ChronoPic.git`,
-  advancing the remote from `a7c1f49` to `fb01fe5`.
+  `github.com:denghongcai/ChronoPic.git`.
 - Updated:
   `PLAN.md`,
   `docs/flutter-refactor-phases.md`,

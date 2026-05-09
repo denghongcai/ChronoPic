@@ -2201,7 +2201,7 @@ Current status:
 - Current status:
   implemented and pushed on 2026-05-09;
   implementation commit `7efb12e` records the code/test changes;
-  evidence commit `fb01fe5` records the phase closure.
+  follow-up evidence and handoff commits record the phase closure.
 - Local verification:
   Electron accessibility E2E now covers Enter-to-detail,
   double-click-to-gallery,

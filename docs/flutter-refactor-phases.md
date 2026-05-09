@@ -523,8 +523,7 @@ Status:
 - Implemented and pushed on 2026-05-09.
 - Implementation commit:
   `7efb12e`.
-- Evidence commit:
-  `fb01fe5`.
+- Follow-up evidence and handoff commits record the phase closure.
 - Electron accessibility E2E now covers Enter-to-detail,
   double-click-to-gallery,
   selected-card `G`-to-gallery,
