@@ -2391,8 +2391,49 @@ These are intentionally recorded as candidate directions rather than committed p
   `flutter build apk --debug`,
   and Android emulator smoke on `emulator-5554`.
 - Remaining before Phase 7 cutover:
+  complete Phase 6.5 mobile deep E2E verification;
   run the iOS build/run gate from macOS/Xcode;
   then handle release signing,
+  mobile privacy disclosures,
+  and migration/cutover packaging.
+
+### 6.5 Flutter Mobile Deep E2E Verification
+
+- Implementation plan:
+  [docs/superpowers/plans/2026-05-09-flutter-mobile-deep-e2e-verification.md](docs/superpowers/plans/2026-05-09-flutter-mobile-deep-e2e-verification.md)
+- Scope:
+  deepen mobile validation after Phase 6 by adding a repeatable Android
+  emulator E2E runner,
+  Flutter integration coverage for app-owned mobile workflows,
+  stable mobile test hooks,
+  durable screenshot/XML/backup evidence,
+  and an explicit iOS macOS/Xcode verification gate.
+- Current status:
+  planned on 2026-05-09 after Phase 6 Android smoke passed.
+  No implementation work is marked complete yet.
+- Execution order:
+  first create the mobile E2E evidence matrix,
+  then add stable mobile test hooks,
+  then automate Android permission/import/restart/backup checks,
+  then add app-owned integration tests for edit/favorite/memory/detail/gallery/search/settings flows,
+  then record iOS requirements and close out the phase.
+- Constraint:
+  Android permission dialogs and selected-photo picker flows must be driven by
+  `adb`/`uiautomator` because they are outside Flutter's widget tree.
+  iOS remains pending until macOS/Xcode evidence exists.
+- Exit gate:
+  Android deep E2E is repeatable from a clean emulator state and covers denied,
+  limited,
+  full-access,
+  restart persistence,
+  metadata backup restore,
+  and key app-owned workflows.
+  iOS evidence is either completed from macOS/Xcode or explicitly recorded as
+  pending with exact commands and required screenshots.
+- Remaining before Phase 7 cutover:
+  execute this phase,
+  run iOS verification from macOS/Xcode when available,
+  then proceed to release signing,
   mobile privacy disclosures,
   and migration/cutover packaging.
 

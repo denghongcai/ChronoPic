@@ -696,8 +696,69 @@ Status:
 
 Remaining before Phase 7 cutover:
 
+- Complete Phase 6.5 mobile deep E2E verification.
 - Run `flutter build ios --debug --no-codesign` and `flutter run` from
   macOS/Xcode against an iOS target.
+- Complete release signing, mobile privacy disclosures, and migration packaging.
+
+## Phase 6.5: Flutter Mobile Deep E2E Verification
+
+Purpose: deepen mobile validation after Phase 6 smoke so Phase 7 release and
+cutover work starts from repeatable Android evidence and explicit iOS gates.
+
+Implementation plan:
+
+- [docs/superpowers/plans/2026-05-09-flutter-mobile-deep-e2e-verification.md](superpowers/plans/2026-05-09-flutter-mobile-deep-e2e-verification.md)
+
+Deliverables:
+
+- Create a durable mobile E2E evidence matrix for Android and iOS.
+- Add stable mobile test hooks for app-owned workflows without changing product
+  behavior.
+- Add a repeatable Android emulator runner for clean-state permission,
+  media-fixture,
+  import,
+  restart,
+  screenshot,
+  XML,
+  and backup-restore evidence.
+- Add Flutter integration tests for app-owned mobile workflows:
+  browse,
+  detail/gallery,
+  metadata edits,
+  favorites,
+  memories,
+  search/filter/sort,
+  locale/settings,
+  and persistence.
+- Keep iOS verification explicit:
+  scaffolded/configured code is not enough;
+  macOS/Xcode screenshots and command output are required before iOS is marked
+  complete.
+
+Exit gate:
+
+- Android deep E2E can run repeatedly from a clean emulator state and produces
+  screenshot/XML/backup evidence for denied,
+  limited,
+  full-access,
+  restart persistence,
+  metadata backup restore,
+  and app-owned workflow coverage.
+- iOS deep E2E is either verified from macOS/Xcode or clearly recorded as a
+  pending gate with exact commands and required evidence.
+- Existing Electron and Flutter Linux desktop gates still pass after the mobile
+  E2E additions.
+
+Status:
+
+- Planned on 2026-05-09 after Phase 6 Android smoke passed.
+- Implementation has not started.
+
+Remaining before Phase 7 cutover:
+
+- Execute the Phase 6.5 plan.
+- Run the iOS macOS/Xcode gate when available.
 - Complete release signing, mobile privacy disclosures, and migration packaging.
 
 ## Phase 7: Release, Migration, And Cutover

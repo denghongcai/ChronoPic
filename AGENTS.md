@@ -5883,3 +5883,25 @@ This file is the local execution record for ChronoPic. It complements `PLAN.md` 
   and `git diff --check`.
 - Next:
   commit and push the Android smoke fix and documentation update.
+
+### 2026-05-09 Step 221
+
+- Added a new planned phase after Phase 6 and before Phase 7:
+  `Phase 6.5: Flutter Mobile Deep E2E Verification`.
+- Created the dedicated implementation plan:
+  `docs/superpowers/plans/2026-05-09-flutter-mobile-deep-e2e-verification.md`.
+- Updated `PLAN.md` and `docs/flutter-refactor-phases.md` so the mobile deep
+  E2E phase is now a tracked gate before release/migration cutover work.
+- Phase 6.5 scope:
+  Android clean-state E2E runner,
+  stable mobile test hooks,
+  app-owned Flutter integration tests for edit/favorite/memory/detail/gallery/search/settings flows,
+  durable screenshot/XML/backup evidence,
+  and explicit iOS macOS/Xcode evidence requirements.
+- Current status:
+  planning only;
+  no Phase 6.5 implementation items are marked complete.
+- Verification:
+  `git diff --check` passed.
+- Next:
+  commit this phase-plan update when requested.
