@@ -6057,7 +6057,8 @@ This file is the local execution record for ChronoPic. It complements `PLAN.md` 
   focused detail controls were not reliably tappable on a 430px mobile viewport,
   and restored app instances did not load persisted locale settings.
 - Fixed those defects by:
-  moving photo-card activation to Flutter's `onDoubleTap`,
+  keeping photo-card selection on raw pointer down,
+  using pointer-event timestamps for double-tap detection,
   adding a narrow-layout branch for focused detail,
   and loading persisted locale settings on app startup while preserving the
   screenshot-specific `zh-locale` override.
@@ -6091,3 +6092,45 @@ This file is the local execution record for ChronoPic. It complements `PLAN.md` 
   run Xcode, iOS simulators, or iOS signing.
 - Next:
   run the full Phase 6.5 closeout verification suite and update phase status.
+
+### 2026-05-10 Step 228
+
+- Implemented Phase 6.5 Task 7:
+  closeout verification and phase status update.
+- Re-ran the full required closeout suite:
+  `pnpm test`,
+  `pnpm typecheck`,
+  `pnpm build`,
+  `pnpm run e2e:accessibility`,
+  `pnpm run e2e:runtime`,
+  `pnpm run e2e:prepare && pnpm exec playwright test -c tests/e2e/playwright.config.ts i18n.spec.ts`,
+  `cd chronopic_flutter && dart analyze packages/chronopic_media packages/chronopic_app packages/chronopic_ui apps/chronopic`,
+  `cd chronopic_flutter && dart test packages/chronopic_media/test packages/chronopic_app/test`,
+  `cd chronopic_flutter && flutter test packages/chronopic_ui/test/chronopic_home_test.dart packages/chronopic_ui/test/linux_desktop_parity_test.dart packages/chronopic_ui/test/mobile_productization_test.dart`,
+  `cd chronopic_flutter/apps/chronopic && flutter build apk --debug`,
+  `cd chronopic_flutter/apps/chronopic && flutter test integration_test/mobile_deep_e2e_test.dart -d emulator-5554`,
+  and
+  `ANDROID_DEVICE_ID=emulator-5554 chronopic_flutter/tool/mobile_e2e/android_deep_e2e.sh`.
+- All commands passed.
+- Rechecked Android shell-runner evidence after the run:
+  first-run,
+  denied,
+  full access,
+  limited access,
+  permissions,
+  restart,
+  restore,
+  and backup JSON assertions all passed.
+- During closeout, fixed two regressions exposed by the broader suite:
+  parity fixtures with `zh-CN` settings are now explicitly converted to English
+  for English UI tests,
+  and photo-card single/double tap uses raw pointer timestamps so single-click
+  selection remains immediate while double-click opens focused detail reliably
+  on both widget tests and Android integration tests.
+- Updated `PLAN.md`,
+  `docs/flutter-refactor-phases.md`,
+  `docs/mobile-e2e-verification.md`,
+  and the Phase 6.5 implementation plan to mark the phase complete locally.
+- Remaining:
+  iOS live evidence still requires macOS/Xcode before iOS can be called
+  release-verified.

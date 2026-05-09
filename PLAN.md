@@ -2409,13 +2409,13 @@ These are intentionally recorded as candidate directions rather than committed p
   durable screenshot/XML/backup evidence,
   and an explicit iOS macOS/Xcode verification gate.
 - Current status:
-  in progress.
+  completed locally on 2026-05-10.
   The evidence matrix,
   stable mobile hooks,
   Android permission/import/restart/backup runner,
-  and app-owned Android integration workflow test have landed locally.
-  Remaining work:
-  record the iOS macOS/Xcode gate and run full phase closeout verification.
+  app-owned Android integration workflow test,
+  iOS macOS/Xcode evidence gate,
+  and full closeout verification have landed locally.
 - Execution order:
   first create the mobile E2E evidence matrix,
   then add stable mobile test hooks,
@@ -2436,8 +2436,8 @@ These are intentionally recorded as candidate directions rather than committed p
   iOS evidence is either completed from macOS/Xcode or explicitly recorded as
   pending with exact commands and required screenshots.
 - Remaining before Phase 7 cutover:
-  execute this phase,
-  run iOS verification from macOS/Xcode when available,
+  run iOS verification from macOS/Xcode when available before treating iOS as
+  release-verified,
   then proceed to release signing,
   mobile privacy disclosures,
   and migration/cutover packaging.

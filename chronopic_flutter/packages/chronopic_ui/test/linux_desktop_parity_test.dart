@@ -696,9 +696,7 @@ void main() {
     });
     addTearDown(() => directory.delete(recursive: true));
     final dataFile = File('${directory.path}/chronopic-state.json');
-    final backup = ChronoPicBackup.fromJson(
-      FlutterParityFixtures.readBackupJson(),
-    );
+    final backup = _fixtureBackup();
     final firstService = ChronoPicAppService(
       ChronoPicRepository(),
       persistencePath: dataFile.path,
@@ -776,6 +774,31 @@ void main() {
     await tester.pump();
     expect(_photoGridColumns(tester), 1);
   });
+}
+
+ChronoPicBackup _fixtureBackup({
+  LocaleSetting locale = LocaleSetting.enUS,
+  AiOutputLocale aiOutputLocale = AiOutputLocale.followUi,
+}) {
+  final backup = ChronoPicBackup.fromJson(
+    FlutterParityFixtures.readBackupJson(),
+  );
+  return ChronoPicBackup(
+    app: backup.app,
+    schemaVersion: backup.schemaVersion,
+    exportedAt: backup.exportedAt,
+    settings: BackupSettings(
+      ai: backup.settings.ai,
+      map: backup.settings.map,
+      locale: LocaleSettings(locale: locale, aiOutputLocale: aiOutputLocale),
+    ),
+    librarySources: backup.librarySources,
+    photos: backup.photos,
+    memories: backup.memories,
+    memoryPhotos: backup.memoryPhotos,
+    editHistory: backup.editHistory,
+    memoryCandidates: backup.memoryCandidates,
+  );
 }
 
 int _photoGridColumns(WidgetTester tester) {

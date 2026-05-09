@@ -486,7 +486,7 @@ git commit -m "Record iOS mobile E2E gate"
 - Modify: `docs/mobile-e2e-verification.md`
 - Modify: `AGENTS.md`
 
-- [ ] **Step 1: Run full verification**
+- [x] **Step 1: Run full verification**
 
 Run:
 
@@ -512,7 +512,7 @@ Run the Android shell runner:
 ANDROID_DEVICE_ID=emulator-5554 chronopic_flutter/tool/mobile_e2e/android_deep_e2e.sh
 ```
 
-- [ ] **Step 2: Update phase status**
+- [x] **Step 2: Update phase status**
 
 Update `PLAN.md` and `docs/flutter-refactor-phases.md`:
 
@@ -523,7 +523,7 @@ Update `PLAN.md` and `docs/flutter-refactor-phases.md`:
 - iOS macOS/Xcode gate status,
 - remaining Phase 7 cutover requirements.
 
-- [ ] **Step 3: Final docs check**
+- [x] **Step 3: Final docs check**
 
 Run:
 
@@ -533,7 +533,7 @@ git diff --check
 
 Expected: exit 0.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add PLAN.md docs/flutter-refactor-phases.md docs/mobile-e2e-verification.md AGENTS.md chronopic_flutter

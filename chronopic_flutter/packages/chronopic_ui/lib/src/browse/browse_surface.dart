@@ -125,7 +125,7 @@ final class PhotoGrid extends StatelessWidget {
           itemBuilder: (context, index) {
             final record = photos[index];
             return PhotoCardTile(
-              key: Key('photo-card-${record.photo.id}'),
+              key: ValueKey<String>('photo-card-state-${record.photo.id}'),
               labels: labels,
               onOpenDetail: () => onOpenDetail(record),
               onSelect: () => onSelectPhoto(record),
@@ -160,99 +160,115 @@ final class PhotoCardTile extends StatefulWidget {
 }
 
 final class _PhotoCardTileState extends State<PhotoCardTile> {
+  Duration? _lastPointerDownAt;
+
+  void _handlePointerDown(PointerDownEvent event) {
+    final now = event.timeStamp;
+    final isDoubleTap =
+        _lastPointerDownAt != null &&
+        now - _lastPointerDownAt! <= const Duration(milliseconds: 320);
+    _lastPointerDownAt = isDoubleTap ? null : now;
+    widget.onSelect();
+    if (isDoubleTap) widget.onOpenDetail();
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Card(
-      clipBehavior: Clip.antiAlias,
-      color: Colors.black,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(20),
-        side: BorderSide(
-          color: widget.selected ? Colors.amber.shade700 : Colors.grey.shade200,
-          width: widget.selected ? 2 : 1,
-        ),
-      ),
-      child: KeyedSubtree(
-        key: const ValueKey<String>('mobile-open-detail'),
-        child: InkWell(
-          onTap: widget.onSelect,
-          onDoubleTap: () {
-            widget.onSelect();
-            widget.onOpenDetail();
-          },
-          child: Stack(
-            fit: StackFit.expand,
-            children: [
-              MediaPreview(record: widget.record, fit: BoxFit.cover),
-              const DecoratedBox(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: [
-                      Color(0x00ffffff),
-                      Color(0x22f6f0e8),
-                      Color(0xdd1d1a16),
-                    ],
-                    stops: [0.35, 0.62, 1],
+    return Listener(
+      key: Key('photo-card-${widget.record.photo.id}'),
+      behavior: HitTestBehavior.opaque,
+      onPointerDown: _handlePointerDown,
+      child: Semantics(
+        button: true,
+        onTap: widget.onSelect,
+        child: Card(
+          clipBehavior: Clip.antiAlias,
+          color: Colors.black,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+            side: BorderSide(
+              color: widget.selected
+                  ? Colors.amber.shade700
+                  : Colors.grey.shade200,
+              width: widget.selected ? 2 : 1,
+            ),
+          ),
+          child: KeyedSubtree(
+            key: const ValueKey<String>('mobile-open-detail'),
+            child: Stack(
+              fit: StackFit.expand,
+              children: [
+                MediaPreview(record: widget.record, fit: BoxFit.cover),
+                const DecoratedBox(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [
+                        Color(0x00ffffff),
+                        Color(0x22f6f0e8),
+                        Color(0xdd1d1a16),
+                      ],
+                      stops: [0.35, 0.62, 1],
+                    ),
                   ),
                 ),
-              ),
-              Positioned(
-                left: 16,
-                right: 16,
-                bottom: 14,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      widget.record.semantic.caption ??
-                          _basename(widget.record.photo.path),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 18,
-                        fontWeight: FontWeight.w900,
-                      ),
-                    ),
-                    const SizedBox(height: 6),
-                    Row(
-                      children: [
-                        Icon(
-                          widget.record.photo.favorite
-                              ? Icons.star
-                              : Icons.star_border,
-                          color: widget.record.photo.favorite
-                              ? Colors.amber.shade700
-                              : Colors.white70,
-                          size: 16,
+                Positioned(
+                  left: 16,
+                  right: 16,
+                  bottom: 14,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        widget.record.semantic.caption ??
+                            _basename(widget.record.photo.path),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 18,
+                          fontWeight: FontWeight.w900,
                         ),
-                        const SizedBox(width: 6),
-                        Expanded(
-                          child: Text(
-                            widget.record.metadata.datetime == null
-                                ? _localized(widget.labels, 'No date', '无日期')
-                                : _formatDate(
-                                    DateTime.fromMillisecondsSinceEpoch(
-                                      widget.record.metadata.datetime!,
-                                    ).toLocal(),
-                                  ),
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                              color: Colors.white70,
-                              fontSize: 12,
-                              fontWeight: FontWeight.w600,
+                      ),
+                      const SizedBox(height: 6),
+                      Row(
+                        children: [
+                          Icon(
+                            widget.record.photo.favorite
+                                ? Icons.star
+                                : Icons.star_border,
+                            color: widget.record.photo.favorite
+                                ? Colors.amber.shade700
+                                : Colors.white70,
+                            size: 16,
+                          ),
+                          const SizedBox(width: 6),
+                          Expanded(
+                            child: Text(
+                              widget.record.metadata.datetime == null
+                                  ? _localized(widget.labels, 'No date', '无日期')
+                                  : _formatDate(
+                                      DateTime.fromMillisecondsSinceEpoch(
+                                        widget.record.metadata.datetime!,
+                                      ).toLocal(),
+                                    ),
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                color: Colors.white70,
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                              ),
                             ),
                           ),
-                        ),
-                      ],
-                    ),
-                  ],
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),

@@ -53,9 +53,7 @@ void main() {
   });
 
   testWidgets('renders the Flutter desktop MVP surfaces', (tester) async {
-    final backup = ChronoPicBackup.fromJson(
-      FlutterParityFixtures.readBackupJson(),
-    );
+    final backup = _fixtureBackup();
     final repository = ChronoPicRepository()..restoreBackup(backup);
     tester.view.physicalSize = const Size(1600, 1200);
     tester.view.devicePixelRatio = 1;
@@ -122,9 +120,7 @@ void main() {
   testWidgets('adapts the desktop photo grid to available width', (
     tester,
   ) async {
-    final backup = ChronoPicBackup.fromJson(
-      FlutterParityFixtures.readBackupJson(),
-    );
+    final backup = _fixtureBackup();
     final repository = ChronoPicRepository()..restoreBackup(backup);
 
     tester.view.physicalSize = const Size(1600, 1200);
@@ -147,9 +143,7 @@ void main() {
   testWidgets('supports desktop keyboard shortcuts from detail selection', (
     tester,
   ) async {
-    final backup = ChronoPicBackup.fromJson(
-      FlutterParityFixtures.readBackupJson(),
-    );
+    final backup = _fixtureBackup();
     final repository = ChronoPicRepository()..restoreBackup(backup);
     final service = ChronoPicAppService(repository);
 
@@ -193,9 +187,7 @@ void main() {
   testWidgets(
     'renders focused detail with actionable memory and close controls',
     (tester) async {
-      final backup = ChronoPicBackup.fromJson(
-        FlutterParityFixtures.readBackupJson(),
-      );
+      final backup = _fixtureBackup();
       final repository = ChronoPicRepository()..restoreBackup(backup);
       final photos = ChronoPicAppService(
         repository,
@@ -269,9 +261,7 @@ void main() {
   testWidgets('renders map and timeline browse modes from shared results', (
     tester,
   ) async {
-    final backup = ChronoPicBackup.fromJson(
-      FlutterParityFixtures.readBackupJson(),
-    );
+    final backup = _fixtureBackup();
     final repository = ChronoPicRepository()..restoreBackup(backup);
 
     tester.view.physicalSize = const Size(1600, 1200);
@@ -331,9 +321,7 @@ void main() {
   testWidgets('supports AI settings, queue retry, and candidate actions', (
     tester,
   ) async {
-    final backup = ChronoPicBackup.fromJson(
-      FlutterParityFixtures.readBackupJson(),
-    );
+    final backup = _fixtureBackup();
     final repository = ChronoPicRepository()..restoreBackup(backup);
     final service = ChronoPicAppService(repository);
 
@@ -431,9 +419,7 @@ void main() {
   testWidgets('switches critical Flutter desktop shell text to Chinese', (
     tester,
   ) async {
-    final backup = ChronoPicBackup.fromJson(
-      FlutterParityFixtures.readBackupJson(),
-    );
+    final backup = _fixtureBackup();
     final repository = ChronoPicRepository()..restoreBackup(backup);
     final service = ChronoPicAppService(repository);
 
@@ -481,9 +467,7 @@ void main() {
   testWidgets('localizes Flutter desktop app-owned surfaces in Chinese', (
     tester,
   ) async {
-    final backup = ChronoPicBackup.fromJson(
-      FlutterParityFixtures.readBackupJson(),
-    );
+    final backup = _fixtureBackup();
     final repository = ChronoPicRepository()..restoreBackup(backup);
     final service = ChronoPicAppService(repository);
 
@@ -663,4 +647,29 @@ int _photoGridColumns(WidgetTester tester) {
   final delegate =
       grid.gridDelegate as SliverGridDelegateWithFixedCrossAxisCount;
   return delegate.crossAxisCount;
+}
+
+ChronoPicBackup _fixtureBackup({
+  LocaleSetting locale = LocaleSetting.enUS,
+  AiOutputLocale aiOutputLocale = AiOutputLocale.followUi,
+}) {
+  final backup = ChronoPicBackup.fromJson(
+    FlutterParityFixtures.readBackupJson(),
+  );
+  return ChronoPicBackup(
+    app: backup.app,
+    schemaVersion: backup.schemaVersion,
+    exportedAt: backup.exportedAt,
+    settings: BackupSettings(
+      ai: backup.settings.ai,
+      map: backup.settings.map,
+      locale: LocaleSettings(locale: locale, aiOutputLocale: aiOutputLocale),
+    ),
+    librarySources: backup.librarySources,
+    photos: backup.photos,
+    memories: backup.memories,
+    memoryPhotos: backup.memoryPhotos,
+    editHistory: backup.editHistory,
+    memoryCandidates: backup.memoryCandidates,
+  );
 }

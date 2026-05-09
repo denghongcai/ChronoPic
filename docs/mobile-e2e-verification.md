@@ -108,12 +108,51 @@ flutter test integration_test/mobile_deep_e2e_test.dart -d emulator-5554
   search/filter/sort controls,
   locale settings persistence after a restored app instance.
 - Red/green defects caught by the integration test:
-  card double-tap had to use the framework double-tap gesture instead of
-  widget-local rebuild-sensitive timing,
+  card double-tap had to use raw pointer timestamps so selection remains
+  immediate and double-tap does not depend on slow device wall-clock timing,
   focused detail needed a narrow-layout branch so mobile close controls remain
   tappable,
   and app startup now loads persisted locale settings rather than only AI/map
   settings.
+
+### Phase 6.5 Closeout Verification
+
+2026-05-10 closeout result:
+
+- `pnpm test`:
+  passed, 42 Node tests.
+- `pnpm typecheck`:
+  passed.
+- `pnpm build`:
+  passed, Electron renderer bundle emitted.
+- `pnpm run e2e:accessibility`:
+  passed, 1 Playwright test.
+- `pnpm run e2e:runtime`:
+  passed, 1 Playwright test.
+- `pnpm run e2e:prepare && pnpm exec playwright test -c tests/e2e/playwright.config.ts i18n.spec.ts`:
+  passed, 1 Playwright test.
+- `cd chronopic_flutter && dart analyze packages/chronopic_media packages/chronopic_app packages/chronopic_ui apps/chronopic`:
+  passed with no issues.
+- `cd chronopic_flutter && dart test packages/chronopic_media/test packages/chronopic_app/test`:
+  passed, 16 Dart tests.
+- `cd chronopic_flutter && flutter test packages/chronopic_ui/test/chronopic_home_test.dart packages/chronopic_ui/test/linux_desktop_parity_test.dart packages/chronopic_ui/test/mobile_productization_test.dart`:
+  passed, 17 Flutter widget/parity tests.
+- `cd chronopic_flutter/apps/chronopic && flutter build apk --debug`:
+  passed.
+- `cd chronopic_flutter/apps/chronopic && flutter test integration_test/mobile_deep_e2e_test.dart -d emulator-5554`:
+  passed, 1 integration test.
+- `ANDROID_DEVICE_ID=emulator-5554 chronopic_flutter/tool/mobile_e2e/android_deep_e2e.sh`:
+  passed, exit 0.
+- Post-run evidence assertions:
+  `01-first-run.xml` contains `Choose Photos`,
+  `02-denied.xml` contains the denied recovery copy,
+  `03-full-access.xml` contains the 2-photo full-access import count,
+  `04-limited-access.xml` contains the 2-photo limited-access import count,
+  `04-permissions.txt` confirms selected-photo permission granted while full
+  image permission is false,
+  `05-restart.xml` contains `Select`,
+  `06-restore.xml` contains `2 items`,
+  and `backup.json` contains exactly 2 photos.
 
 ### iOS macOS/Xcode Gate
 

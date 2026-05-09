@@ -752,8 +752,8 @@ Exit gate:
 
 Status:
 
-- In progress.
-- Completed so far:
+- Completed locally on 2026-05-10.
+- Completed:
   mobile E2E evidence matrix,
   stable mobile workflow hooks,
   Android permission/import/restart/backup runner,
@@ -764,14 +764,17 @@ Status:
   memories,
   search/filter/sort,
   locale/settings,
-  and restored-state persistence.
-- Remaining:
-  record the iOS macOS/Xcode evidence gate and run the full Phase 6.5 closeout
-  verification suite.
+  restored-state persistence,
+  iOS macOS/Xcode evidence gate documentation,
+  and the full Phase 6.5 closeout verification suite.
+- iOS remains `Blocked` for live execution until macOS/Xcode evidence is
+  available, but the Phase 6.5 gate is recorded with exact commands and
+  required screenshots.
 
 Remaining before Phase 7 cutover:
 
-- Finish the remaining Phase 6.5 gate and closeout verification.
+- Run the iOS macOS/Xcode gate when available before treating iOS as
+  release-verified.
 - Run the iOS macOS/Xcode gate when available.
 - Complete release signing, mobile privacy disclosures, and migration packaging.
 
