@@ -2355,9 +2355,15 @@ These are intentionally recorded as candidate directions rather than committed p
   mobile scan orchestration,
   mobile onboarding,
   Android user-state toolchain,
-  and Android debug APK build are complete.
-  Android real-device smoke remains blocked because `flutter devices` lists no
-  Android emulator or physical Android device.
+  Android debug APK build,
+  and Android emulator smoke are complete.
+  Android smoke passed on `emulator-5554`
+  (`Android SDK built for x86_64`,
+  Android 16/API 36) for denied permission recovery,
+  selected-photo limited access,
+  full-access import,
+  restart persistence,
+  and metadata backup restore.
   iOS runner metadata and photo-library usage descriptions are scaffolded and
   statically reviewed,
   but iOS real-device verification requires macOS/Xcode.
@@ -2382,13 +2388,9 @@ These are intentionally recorded as candidate directions rather than committed p
   Flutter regression gates pass with Dart analyze,
   Dart package tests,
   Flutter UI/parity tests,
-  and `flutter build apk --debug`.
+  `flutter build apk --debug`,
+  and Android emulator smoke on `emulator-5554`.
 - Remaining before Phase 7 cutover:
-  connect an Android emulator or physical device and run the denied,
-  limited,
-  full-access,
-  restart-persistence,
-  and backup-restore smoke checks;
   run the iOS build/run gate from macOS/Xcode;
   then handle release signing,
   mobile privacy disclosures,

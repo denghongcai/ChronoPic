@@ -676,8 +676,14 @@ Status:
   and NDK `28.2.13676358`.
 - `flutter build apk --debug` passes and emits
   `chronopic_flutter/apps/chronopic/build/app/outputs/flutter-apk/app-debug.apk`.
-- Android real-device smoke is still blocked because `flutter devices` lists no
-  Android emulator or physical Android device on this workstation.
+- Android emulator smoke passed on `emulator-5554`
+  (`Android SDK built for x86_64`,
+  Android 16/API 36):
+  denied permission recovery,
+  selected-photo limited access,
+  full-access import,
+  restart persistence,
+  and metadata backup restore.
 - iOS is scaffolded and statically reviewed here, but its real-device exit gate
   requires macOS/Xcode and must not be marked complete from Linux-only evidence.
 - Desktop parity remains green after Phase 6:
@@ -690,8 +696,6 @@ Status:
 
 Remaining before Phase 7 cutover:
 
-- Run Android denied/limited/full-access, restart-persistence, and backup-restore
-  smoke checks on a real Android emulator or device.
 - Run `flutter build ios --debug --no-codesign` and `flutter run` from
   macOS/Xcode against an iOS target.
 - Complete release signing, mobile privacy disclosures, and migration packaging.

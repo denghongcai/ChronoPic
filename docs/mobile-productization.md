@@ -102,9 +102,15 @@ Captured on 2026-05-09 during Phase 6 Task 5.
   build-tools `36.0.0`,
   Java `/home/dhc/.local/share/jdks/temurin-17/bin/java`,
   and accepted Android licenses.
-- `flutter devices` still lists only:
-  `Linux (desktop)`.
-- No Android emulator or physical Android device is currently connected.
+- `flutter devices` now lists:
+  `Android SDK built for x86 64 (mobile) • emulator-5554 • android-x64 • Android 16 (API 36) (emulator)`,
+  and `Linux (desktop)`.
+- Android emulator used for smoke:
+  AVD `chronopic_api36`,
+  API `36`,
+  model `Android SDK built for x86_64`,
+  Android release `16`,
+  boot property `sys.boot_completed=1`.
 
 ### APK Build
 
@@ -120,28 +126,70 @@ Result:
 - Passed.
 - Output:
   `chronopic_flutter/apps/chronopic/build/app/outputs/flutter-apk/app-debug.apk`.
-- Artifact size on this workstation:
-  `146M`.
+- Artifact size on this workstation after the emulator-smoke fix:
+  `163M`.
 
 ### Android Device Smoke
 
 Status:
 
-- Blocked.
+- Passed on the local Android emulator.
 
-Reason:
+Device:
 
-- No Android emulator or physical Android device is listed by `flutter devices`.
+- `emulator-5554`
+- Model:
+  `Android SDK built for x86_64`
+- Android:
+  `16`
+- API:
+  `36`
 
-Unverified until an Android device is available:
+Smoke evidence:
 
-- Android device model/API level.
-- Denied photo-permission recovery UI on a real device.
-- Selected-photo limited-access UI on a real device.
-- Full photo-library scan on a real device.
-- Restart persistence on Android.
-- Backup export/restore on Android.
-- Indexed asset count from Android photo-library import.
+- Denied permission:
+  tapping `Choose Photos`,
+  then `DON'T ALLOW`,
+  shows
+  `Photo library permission denied. Open settings to grant access.`
+- Full access:
+  two PNG assets were pushed under
+  `/sdcard/Pictures/ChronoPicSmoke`,
+  media-scanned,
+  then imported after `ALLOW ALL`;
+  result:
+  `Photo library scan complete: 2 imported, 0 updated, 0 skipped, 0 errors, 0 missing`.
+- Limited access:
+  after clearing app data,
+  `ALLOW LIMITED ACCESS` opened Android's selected-photo picker;
+  selecting both smoke photos and tapping `Allow (2)` produced:
+  `Limited photo access: 2 imported, 0 updated, 0 skipped, 0 errors, 0 missing`.
+  Permission state confirmed with
+  `READ_MEDIA_VISUAL_USER_SELECTED=true`,
+  `READ_MEDIA_IMAGES=false`,
+  and `READ_MEDIA_VIDEO=false`.
+- Restart persistence:
+  after `adb shell am force-stop com.example.chronopic` and relaunch,
+  the app returned to the existing browse surface with the `Select` action
+  instead of the first-run-only state.
+- Backup restore:
+  the automatic metadata backup at
+  `/data/user/0/com.example.chronopic/code_cache/.local/share/chronopic_flutter/chronopic-backup.json`
+  contained `2` photos and `1` library source.
+  After clearing app data,
+  injecting that JSON back into the default backup path,
+  and relaunching,
+  the app again returned to the existing browse surface.
+
+Implementation note:
+
+- The first full-access emulator scan exposed Android thumbnail decode failures
+  as `0 imported, 2 errors`.
+  The fix keeps Android asset entities cached across list/read calls,
+  falls back from empty `originBytes` to file bytes,
+  surfaces the last scan error,
+  and treats thumbnail decode failures as a missing thumbnail rather than an
+  import failure.
 
 ## Phase 6 Closeout Gate
 
@@ -171,9 +219,13 @@ Mobile platform gates:
 - `flutter build apk --debug`:
   passed.
 - `flutter devices`:
-  only `Linux (desktop)` is connected.
-- `flutter run -d <android-device-id>`:
-  not run because no Android emulator or physical device is connected.
+  lists `emulator-5554` and `Linux (desktop)`.
+- Android emulator smoke:
+  denied permission,
+  limited selected-photo access,
+  full access import,
+  restart persistence,
+  and metadata backup restore passed on `emulator-5554`.
 - iOS run/build:
   not run because this Linux workstation cannot provide Xcode,
   iOS simulators,

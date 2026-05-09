@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:developer' as developer;
 import 'dart:io';
 import 'dart:typed_data';
 
@@ -18,6 +19,7 @@ final class IndexerStats {
     required this.errors,
     required this.skipped,
     required this.missing,
+    this.lastError,
   });
 
   final int discovered;
@@ -28,6 +30,7 @@ final class IndexerStats {
   final int errors;
   final int skipped;
   final int missing;
+  final String? lastError;
 }
 
 enum ScanRunState { idle, running, paused, completed, failed }
@@ -91,6 +94,7 @@ final class ChronoPicIndexerService {
     var updated = 0;
     var skipped = 0;
     var errors = 0;
+    String? lastError;
     final seen = <String>{};
     _report(
       ScanRunState.running,
@@ -120,6 +124,7 @@ final class ChronoPicIndexerService {
         );
         continue;
       }
+      String? message;
       try {
         final read = await mediaSource.readAsset(asset.id);
         final ai = await aiClient.analyzePhoto(
@@ -139,7 +144,15 @@ final class ChronoPicIndexerService {
         } else {
           updated += 1;
         }
-      } on Object {
+      } on Object catch (error, stackTrace) {
+        message = 'Failed to import ${asset.id}: $error';
+        lastError = message;
+        developer.log(
+          message,
+          name: 'chronopic.indexer',
+          error: error,
+          stackTrace: stackTrace,
+        );
         errors += 1;
       }
       final counters = _ScanCounters(
@@ -153,6 +166,7 @@ final class ChronoPicIndexerService {
         counters,
         discovered: assets.length,
         missing: 0,
+        message: message,
       );
       if (await shouldPause?.call() == true) {
         _report(
@@ -160,8 +174,14 @@ final class ChronoPicIndexerService {
           counters,
           discovered: assets.length,
           missing: 0,
+          message: lastError,
         );
-        return _stats(counters, discovered: assets.length, missing: 0);
+        return _stats(
+          counters,
+          discovered: assets.length,
+          missing: 0,
+          lastError: lastError,
+        );
       }
     }
 
@@ -185,7 +205,12 @@ final class ChronoPicIndexerService {
       discovered: assets.length,
       missing: missing.length,
     );
-    return _stats(counters, discovered: assets.length, missing: missing.length);
+    return _stats(
+      counters,
+      discovered: assets.length,
+      missing: missing.length,
+      lastError: lastError,
+    );
   }
 
   PhotoRecord _recordForAsset(
@@ -246,7 +271,18 @@ final class ChronoPicIndexerService {
     final directory = thumbnailDirectory;
     final mime = asset.metadata.mime ?? mimeFromPath(asset.path);
     if (directory == null || !mime.startsWith('image/')) return null;
-    final decoded = img.decodeImage(bytes);
+    final img.Image? decoded;
+    try {
+      decoded = img.decodeImage(bytes);
+    } on Object catch (error, stackTrace) {
+      developer.log(
+        'Failed to decode thumbnail for ${asset.id}',
+        name: 'chronopic.indexer',
+        error: error,
+        stackTrace: stackTrace,
+      );
+      return null;
+    }
     if (decoded == null) return null;
     directory.createSync(recursive: true);
     final thumbnail = img.copyResize(decoded, width: 256);
@@ -283,6 +319,7 @@ final class ChronoPicIndexerService {
     _ScanCounters counters, {
     required int discovered,
     required int missing,
+    String? lastError,
   }) {
     return IndexerStats(
       discovered: discovered,
@@ -293,6 +330,7 @@ final class ChronoPicIndexerService {
       errors: counters.errors,
       skipped: counters.skipped,
       missing: missing,
+      lastError: lastError,
     );
   }
 }

@@ -1,5 +1,7 @@
+import 'dart:io';
 import 'dart:typed_data';
 
+import 'package:chronopic_ai/chronopic_ai.dart';
 import 'package:chronopic_app/chronopic_app.dart';
 import 'package:chronopic_database/chronopic_database.dart';
 import 'package:chronopic_domain/chronopic_domain.dart';
@@ -128,6 +130,7 @@ void main() {
 
     expect(first.imported, 1);
     expect(first.errors, 1);
+    expect(first.lastError, contains('asset-failed'));
     expect(service.listPhotos(const PhotoFilter(limit: 10)), hasLength(1));
 
     final retrySource = FixtureMediaSource(
@@ -146,18 +149,52 @@ void main() {
     expect(retry.skipped, 1);
     expect(retry.imported, 1);
     expect(retry.errors, 0);
+    expect(retry.lastError, isNull);
     expect(service.listPhotos(const PhotoFilter(limit: 10)), hasLength(2));
+  });
+
+  test('imports image assets even when thumbnail decoding fails', () async {
+    final repository = ChronoPicRepository();
+    final thumbnailDirectory = Directory.systemTemp.createTempSync(
+      'chronopic-thumbnails-',
+    );
+    addTearDown(() {
+      if (thumbnailDirectory.existsSync()) {
+        thumbnailDirectory.deleteSync(recursive: true);
+      }
+    });
+    final indexer = ChronoPicIndexerService(
+      repository: repository,
+      mediaSource: FixtureMediaSource(
+        assets: <MediaAsset>[_asset('asset-image', mime: 'image/png')],
+        bytesById: <String, Uint8List>{
+          'asset-image': Uint8List.fromList(<int>[1, 2, 3]),
+        },
+      ),
+      aiClient: const DisabledAiClient(),
+      thumbnailDirectory: thumbnailDirectory,
+    );
+
+    final stats = await indexer.scanLibrary();
+
+    expect(stats.imported, 1);
+    expect(stats.errors, 0);
+    expect(repository.getPhoto('asset-image')?.photo.thumbnailPath, isNull);
   });
 }
 
-MediaAsset _asset(String id, {int updatedAt = 1000}) {
+MediaAsset _asset(
+  String id, {
+  int updatedAt = 1000,
+  String mime = 'video/mp4',
+}) {
   return MediaAsset(
     id: id,
     path: 'asset://$id',
     metadata: MediaAssetMetadata(
       size: 1,
       updatedAt: updatedAt,
-      mime: 'video/mp4',
+      mime: mime,
       datetime: updatedAt,
     ),
   );

@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:photo_manager/photo_manager.dart';
@@ -6,7 +7,9 @@ import 'media_source.dart';
 import 'photo_library_gateway.dart';
 
 final class PhotoManagerGateway implements PhotoLibraryGateway {
-  const PhotoManagerGateway();
+  PhotoManagerGateway();
+
+  final Map<String, AssetEntity> _entitiesById = <String, AssetEntity>{};
 
   @override
   Future<PhotoLibraryPermissionSnapshot> requestPermission() async {
@@ -25,18 +28,26 @@ final class PhotoManagerGateway implements PhotoLibraryGateway {
     );
     if (paths.isEmpty) return const <PhotoLibraryAsset>[];
     final entities = await paths.first.getAssetListPaged(page: 0, size: 100000);
+    _entitiesById
+      ..clear()
+      ..addEntries(entities.map((entity) => MapEntry(entity.id, entity)));
     return entities.map(_assetFromEntity).toList();
   }
 
   @override
   Future<Uint8List?> readAssetBytes(String assetId) async {
-    final entity = await AssetEntity.fromId(assetId);
-    return entity?.originBytes;
+    final entity = _entitiesById[assetId] ?? await AssetEntity.fromId(assetId);
+    if (entity == null) return null;
+    final originBytes = await entity.originBytes;
+    if (originBytes != null && originBytes.isNotEmpty) return originBytes;
+    final File? file = await entity.file;
+    final fileBytes = await file?.readAsBytes();
+    return fileBytes?.isNotEmpty == true ? fileBytes : originBytes;
   }
 
   @override
   Future<PhotoLibraryAsset?> statAsset(String assetId) async {
-    final entity = await AssetEntity.fromId(assetId);
+    final entity = _entitiesById[assetId] ?? await AssetEntity.fromId(assetId);
     return entity == null ? null : _assetFromEntity(entity);
   }
 

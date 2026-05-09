@@ -688,7 +688,7 @@ final class _ChronoPicHomeState extends State<ChronoPicHome> {
     });
     final source =
         widget.mobileMediaSourceFactory?.call() ??
-        MobilePhotoLibraryMediaSource(const PhotoManagerGateway());
+        MobilePhotoLibraryMediaSource(PhotoManagerGateway());
     try {
       final stats = await _service.scanMediaSource(
         'photo-library',
@@ -741,8 +741,8 @@ final class _ChronoPicHomeState extends State<ChronoPicHome> {
     };
     return _localized(
       _l10n,
-      '$state: ${progress.processed}/${progress.discovered} processed, ${progress.imported} imported',
-      '$state：已处理 ${progress.processed}/${progress.discovered}，已导入 ${progress.imported} 个',
+      '$state: ${progress.processed}/${progress.discovered} processed, ${progress.imported} imported${progress.message == null ? '' : ', ${progress.message}'}',
+      '$state：已处理 ${progress.processed}/${progress.discovered}，已导入 ${progress.imported} 个${progress.message == null ? '' : '，${progress.message}'}',
     );
   }
 
@@ -755,8 +755,8 @@ final class _ChronoPicHomeState extends State<ChronoPicHome> {
         : _tr('Photo library scan complete', '照片图库扫描完成');
     return _localized(
       _l10n,
-      '$prefix: ${stats.imported} imported, ${stats.updated} updated, ${stats.skipped} skipped, ${stats.errors} errors, ${stats.missing} missing',
-      '$prefix：${stats.imported} 个已导入，${stats.updated} 个已更新，${stats.skipped} 个已跳过，${stats.errors} 个错误，${stats.missing} 个缺失',
+      '$prefix: ${stats.imported} imported, ${stats.updated} updated, ${stats.skipped} skipped, ${stats.errors} errors, ${stats.missing} missing${stats.lastError == null ? '' : ', ${stats.lastError}'}',
+      '$prefix：${stats.imported} 个已导入，${stats.updated} 个已更新，${stats.skipped} 个已跳过，${stats.errors} 个错误，${stats.missing} 个缺失${stats.lastError == null ? '' : '，${stats.lastError}'}',
     );
   }
 

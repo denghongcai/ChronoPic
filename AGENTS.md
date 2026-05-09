@@ -5828,3 +5828,58 @@ This file is the local execution record for ChronoPic. It complements `PLAN.md` 
   but Android real-device smoke remains blocked until an Android emulator or
   physical device is connected.
 - iOS real-device verification remains blocked until macOS/Xcode is available.
+
+### 2026-05-09 Step 220
+
+- Continued Phase 6 after adding a local Android emulator:
+  AVD `chronopic_api36`,
+  `emulator-5554`,
+  `Android SDK built for x86_64`,
+  Android 16/API 36.
+- Reproduced the Android full-access scan failure:
+  the app discovered two media-store assets but reported
+  `0 imported, 2 errors`.
+- Traced the failure to thumbnail generation:
+  Android asset bytes could trigger `image.decodeImage` null assertions inside
+  `_writeThumbnail`, which was incorrectly causing the whole asset import to
+  fail.
+- Fixed the Android import path:
+  `PhotoManagerGateway` now keeps the `AssetEntity` instances returned by
+  `listAssets()` available for later reads,
+  falls back from empty `originBytes` to `AssetEntity.file.readAsBytes()`,
+  the indexer records the last resource-level scan error,
+  and thumbnail decode failures now return `null` thumbnail instead of failing
+  the import.
+- Added a regression test for image assets whose thumbnail decode fails:
+  the asset is still imported with no thumbnail and no scan error.
+- Verified Android emulator smoke:
+  denied permission shows the recoverable denied state;
+  full access imports two smoke PNGs with
+  `2 imported, 0 errors`;
+  limited selected-photo access imports the same two assets with
+  `READ_MEDIA_VISUAL_USER_SELECTED=true` and full media permissions false;
+  force-stop/relaunch returns to the existing browse surface;
+  injecting the automatic metadata backup after `pm clear` restores the browse
+  surface from the backup JSON.
+- Updated:
+  `PLAN.md`,
+  `docs/flutter-refactor-phases.md`,
+  `docs/mobile-productization.md`,
+  and
+  `docs/superpowers/plans/2026-05-09-flutter-phase-6-mobile-productization.md`
+  with the new Android emulator evidence.
+- Final verification passed:
+  `pnpm test`,
+  `pnpm typecheck`,
+  `pnpm build`,
+  `pnpm run e2e:accessibility`,
+  `pnpm run e2e:runtime`,
+  `pnpm run e2e:prepare && pnpm exec playwright test -c tests/e2e/playwright.config.ts i18n.spec.ts`,
+  `cd chronopic_flutter && dart analyze packages/chronopic_app packages/chronopic_media packages/chronopic_ui apps/chronopic`,
+  `cd chronopic_flutter && dart test packages/chronopic_media/test packages/chronopic_app/test`,
+  `cd chronopic_flutter && flutter test packages/chronopic_ui/test/chronopic_home_test.dart packages/chronopic_ui/test/linux_desktop_parity_test.dart packages/chronopic_ui/test/mobile_productization_test.dart`,
+  `cd chronopic_flutter/apps/chronopic && flutter build apk --debug`,
+  Android emulator denied/full/limited/restart/backup smoke on `emulator-5554`,
+  and `git diff --check`.
+- Next:
+  commit and push the Android smoke fix and documentation update.

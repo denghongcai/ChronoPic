@@ -833,7 +833,7 @@ flutter build apk --debug
 
 Expected: debug APK builds.
 
-- [ ] **Step 3: Run Android smoke on device**
+- [x] **Step 3: Run Android smoke on device**
 
 Run:
 
@@ -851,8 +851,14 @@ Manual smoke:
 - Export and restore a backup; confirm original media files are referenced, not copied.
 
 Current status on 2026-05-09:
-blocked because `flutter devices` lists only the Linux desktop target and no
-Android emulator or physical Android device.
+passed on `emulator-5554`
+(`Android SDK built for x86_64`,
+Android 16/API 36).
+Denied permission recovery,
+selected-photo limited access,
+full-access import,
+restart persistence,
+and metadata backup restore were all smoked on the emulator.
 
 - [x] **Step 4: Record evidence**
 
@@ -979,9 +985,8 @@ For iOS, do not mark the real-device gate complete on Linux. Record the macOS/Xc
 
 Current status on 2026-05-09:
 `flutter build apk --debug` passes,
-`flutter devices` lists only Linux desktop,
-Android real-device `flutter run` is blocked until an Android emulator or
-physical device is connected,
+`flutter devices` lists `emulator-5554` and Linux desktop,
+Android emulator smoke passed on `emulator-5554`,
 and iOS remains a macOS/Xcode verification gate.
 
 - [x] **Step 4: Update phase docs**
