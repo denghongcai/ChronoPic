@@ -89,7 +89,7 @@ Use `permission_handler:^12.0.1` only if a task proves `photo_manager` cannot co
 - Modify: `docs/mobile-productization.md`
 - Modify: `AGENTS.md`
 
-- [ ] **Step 1: Record the current toolchain state**
+- [x] **Step 1: Record the current toolchain state**
 
 Run:
 
@@ -105,7 +105,7 @@ Expected:
 - Android toolchain may report missing command-line tools or licenses; record the exact output in `docs/mobile-productization.md`.
 - iOS toolchain is expected to be unavailable on Linux; record it as a verification constraint, not as a product pass.
 
-- [ ] **Step 2: Generate mobile runners without replacing app source**
+- [x] **Step 2: Generate mobile runners without replacing app source**
 
 Run:
 
@@ -120,7 +120,7 @@ Expected:
 - `lib/main.dart` remains the existing ChronoPic entrypoint.
 - `pubspec.yaml` keeps the workspace dependency on `chronopic_ui`.
 
-- [ ] **Step 3: Add platform permission declarations**
+- [x] **Step 3: Add platform permission declarations**
 
 Update `chronopic_flutter/apps/chronopic/android/app/src/main/AndroidManifest.xml` with these permissions:
 
@@ -140,7 +140,7 @@ Update `chronopic_flutter/apps/chronopic/ios/Runner/Info.plist` with:
 <string>ChronoPic does not write originals, but this permission may be needed for future export workflows.</string>
 ```
 
-- [ ] **Step 4: Verify scaffold health**
+- [x] **Step 4: Verify scaffold health**
 
 Run:
 
@@ -155,7 +155,7 @@ Expected:
 - Existing Linux desktop parity tests still pass.
 - Any Android build failure is recorded separately and does not regress desktop.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add chronopic_flutter/apps/chronopic/android chronopic_flutter/apps/chronopic/ios docs/mobile-productization.md AGENTS.md

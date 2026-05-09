@@ -5564,3 +5564,43 @@ This file is the local execution record for ChronoPic. It complements `PLAN.md` 
   then begin Task 1 with `flutter doctor -v`,
   `flutter devices`,
   and Android/iOS runner generation.
+
+### 2026-05-09 Step 213
+
+- Started Phase 6 execution from:
+  `docs/superpowers/plans/2026-05-09-flutter-phase-6-mobile-productization.md`.
+- Ran the Task 1 toolchain gate:
+  `cd chronopic_flutter && flutter doctor -v`
+  and
+  `cd chronopic_flutter && flutter devices`.
+- Toolchain result:
+  Flutter stable `3.41.9`,
+  Dart `3.11.5`,
+  and Linux desktop are available.
+  Android SDK is detected at `/usr/lib/android-sdk`,
+  but Android `cmdline-tools` are missing.
+  Only the Linux desktop device is currently connected.
+  iOS remains a Linux-host constraint and cannot be real-device verified here.
+- Generated Android and iOS runners with:
+  `cd chronopic_flutter/apps/chronopic && flutter create --platforms=android,ios --project-name chronopic .`
+- Preserved the existing Flutter app entrypoint:
+  `chronopic_flutter/apps/chronopic/lib/main.dart`
+  still launches `ChronoPicHome`.
+- Added Android photo/media permissions in:
+  `chronopic_flutter/apps/chronopic/android/app/src/main/AndroidManifest.xml`.
+- Added iOS photo-library usage descriptions in:
+  `chronopic_flutter/apps/chronopic/ios/Runner/Info.plist`.
+- Created:
+  `docs/mobile-productization.md`
+  to record mobile toolchain state,
+  platform scaffolding,
+  permissions,
+  and the iOS verification constraint.
+- Verification passed:
+  `cd chronopic_flutter && dart analyze packages/chronopic_ui apps/chronopic`
+  and
+  `cd chronopic_flutter && flutter test packages/chronopic_ui/test/chronopic_home_test.dart packages/chronopic_ui/test/linux_desktop_parity_test.dart`.
+- Follow-up:
+  Task 1 still needs its commit,
+  then Phase 6 should continue into Task 2 with red tests for the mobile
+  photo-library media source.
