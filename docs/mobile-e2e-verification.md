@@ -23,12 +23,12 @@ after Phase 6 mobile productization and before Phase 7 release/cutover.
 | Full photo-library access | Import count and browse UI after scan | Passed | `.tmp/mobile-e2e/android/03-full-access.png`, `.xml` |
 | Restart persistence | Relaunch screenshot showing browse state, not first-run state | Passed | `.tmp/mobile-e2e/android/05-restart.png`, `.xml` |
 | Metadata backup restore | Backup JSON summary and relaunch screenshot after restore | Passed | `.tmp/mobile-e2e/android/backup.json`, `06-restore.png`, `.xml` |
-| Edit metadata | Caption/tags/datetime changed, persisted after relaunch | Pending | |
-| Favorite toggle | Favorite state visible and persisted after relaunch | Pending | |
-| Memory lifecycle | Create memory, add photo, cover, rename/description, remove photo | Pending | |
-| Detail/gallery overlay | Open detail/gallery from mobile browse and close it | Pending | |
-| Search/filter/sort | Query/filter result changes visible on mobile layout | Pending | |
-| Locale/settings persistence | Locale or settings update survives relaunch | Pending | |
+| Edit metadata | Caption/tags/datetime changed, persisted after relaunch | Passed | `flutter test integration_test/mobile_deep_e2e_test.dart -d emulator-5554` |
+| Favorite toggle | Favorite state visible and persisted after relaunch | Passed | `flutter test integration_test/mobile_deep_e2e_test.dart -d emulator-5554` |
+| Memory lifecycle | Create memory, add photo, cover, rename/description, remove photo | Passed | `flutter test integration_test/mobile_deep_e2e_test.dart -d emulator-5554` |
+| Detail/gallery overlay | Open detail/gallery from mobile browse and close it | Passed | `flutter test integration_test/mobile_deep_e2e_test.dart -d emulator-5554` |
+| Search/filter/sort | Query/filter result changes visible on mobile layout | Passed | `flutter test integration_test/mobile_deep_e2e_test.dart -d emulator-5554` |
+| Locale/settings persistence | Locale or settings update survives relaunch | Passed | `flutter test integration_test/mobile_deep_e2e_test.dart -d emulator-5554` |
 
 ## iOS Required Scenarios
 
@@ -86,3 +86,31 @@ Expected skeleton evidence:
   `05-restart.xml` contains `Select`.
 - Restore assertion:
   `06-restore.xml` contains `Select` and `2 items`.
+
+### Android App-Owned Integration Test
+
+```bash
+cd chronopic_flutter/apps/chronopic
+flutter test integration_test/mobile_deep_e2e_test.dart -d emulator-5554
+```
+
+2026-05-10 app-owned workflow result:
+
+- Result:
+  `02:25 +1: All tests passed!`
+- Coverage:
+  restored mobile catalog browse,
+  detail overlay open/close,
+  gallery overlay open/close,
+  favorite persistence,
+  caption/tag/datetime edit persistence,
+  memory create/add/cover/rename/description/remove,
+  search/filter/sort controls,
+  locale settings persistence after a restored app instance.
+- Red/green defects caught by the integration test:
+  card double-tap had to use the framework double-tap gesture instead of
+  widget-local rebuild-sensitive timing,
+  focused detail needed a narrow-layout branch so mobile close controls remain
+  tappable,
+  and app startup now loads persisted locale settings rather than only AI/map
+  settings.

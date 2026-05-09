@@ -752,12 +752,26 @@ Exit gate:
 
 Status:
 
-- Planned on 2026-05-09 after Phase 6 Android smoke passed.
-- Implementation has not started.
+- In progress.
+- Completed so far:
+  mobile E2E evidence matrix,
+  stable mobile workflow hooks,
+  Android permission/import/restart/backup runner,
+  and app-owned Android integration test coverage for browse,
+  detail/gallery,
+  edits,
+  favorite,
+  memories,
+  search/filter/sort,
+  locale/settings,
+  and restored-state persistence.
+- Remaining:
+  record the iOS macOS/Xcode evidence gate and run the full Phase 6.5 closeout
+  verification suite.
 
 Remaining before Phase 7 cutover:
 
-- Execute the Phase 6.5 plan.
+- Finish the remaining Phase 6.5 gate and closeout verification.
 - Run the iOS macOS/Xcode gate when available.
 - Complete release signing, mobile privacy disclosures, and migration packaging.
 

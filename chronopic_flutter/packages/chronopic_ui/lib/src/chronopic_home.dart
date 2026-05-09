@@ -78,7 +78,8 @@ final class _ChronoPicHomeState extends State<ChronoPicHome> {
   PhotoRecord? _selected;
   ChronoPicBackup? _lastBackup;
   BackupRestorePreview? _restorePreview;
-  bool _aiSettingsLoaded = false;
+  bool _persistedSettingsLoaded = false;
+  bool _localeSurfaceOverride = false;
   bool _favoriteOnly = false;
   bool _gpsOnly = false;
   bool _detailCaptureFirst = false;
@@ -125,7 +126,7 @@ final class _ChronoPicHomeState extends State<ChronoPicHome> {
 
   @override
   Widget build(BuildContext context) {
-    _loadAiSettingsOnce();
+    _loadPersistedSettingsOnce();
     final labels = _l10n;
     final photos = _visiblePhotos();
     final memories = _service.listMemories();
@@ -452,18 +453,27 @@ final class _ChronoPicHomeState extends State<ChronoPicHome> {
     return KeyEventResult.ignored;
   }
 
-  void _loadAiSettingsOnce() {
-    if (_aiSettingsLoaded) return;
+  void _loadPersistedSettingsOnce() {
+    if (_persistedSettingsLoaded) return;
     final backupSettings = _service.createBackup().settings;
     final settings = backupSettings.ai;
     final mapSettings = backupSettings.map;
+    final localeSettings = backupSettings.locale;
     _aiProviderController.text = settings.providerName;
     _aiBaseUrlController.text = settings.baseURL;
     _aiModelController.text = settings.model;
     _aiApiKeyController.text = settings.apiKey;
     _mapApiKeyController.text = mapSettings.apiKey;
     _mapSecurityJsCodeController.text = mapSettings.securityJsCode;
-    _aiSettingsLoaded = true;
+    if (!_localeSurfaceOverride) {
+      _locale = _uiLocaleFromDomain(localeSettings.locale);
+      _aiOutputLocale = localeSettings.aiOutputLocale;
+      if (_status == uiStrings[UiLocale.en]!.scanIdle ||
+          _status == uiStrings[UiLocale.zh]!.scanIdle) {
+        _status = uiStrings[_locale]!.scanIdle;
+      }
+    }
+    _persistedSettingsLoaded = true;
   }
 
   void _saveUiLocale(UiLocale locale) {
@@ -611,6 +621,7 @@ final class _ChronoPicHomeState extends State<ChronoPicHome> {
       case 'zh-locale':
         _page = _DesktopPage.home;
         _locale = UiLocale.zh;
+        _localeSurfaceOverride = true;
         _status = uiStrings[UiLocale.zh]!.scanIdle;
         _browseMode = BrowseMode.waterfall;
       default:

@@ -394,7 +394,7 @@ git commit -m "Automate Android permission and import E2E"
 - Modify: `docs/mobile-e2e-verification.md`
 - Modify: `AGENTS.md`
 
-- [ ] **Step 1: Enable Flutter integration tests**
+- [x] **Step 1: Enable Flutter integration tests**
 
 If `integration_test` is missing, add:
 
@@ -404,7 +404,7 @@ dev_dependencies:
     sdk: flutter
 ```
 
-- [ ] **Step 2: Create the integration test**
+- [x] **Step 2: Create the integration test**
 
 Create `chronopic_flutter/apps/chronopic/integration_test/mobile_deep_e2e_test.dart` with tests that use the existing app entrypoint and stable keys to verify:
 
@@ -418,7 +418,7 @@ Create `chronopic_flutter/apps/chronopic/integration_test/mobile_deep_e2e_test.d
 
 Use `IntegrationTestWidgetsFlutterBinding.ensureInitialized()` and target only app-owned UI. Do not try to drive Android permission dialogs from this Dart test.
 
-- [ ] **Step 3: Run the integration test**
+- [x] **Step 3: Run the integration test**
 
 Run:
 
@@ -429,7 +429,7 @@ flutter test integration_test/mobile_deep_e2e_test.dart -d emulator-5554
 
 Expected: passes on the Android emulator.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add chronopic_flutter/apps/chronopic/pubspec.yaml chronopic_flutter/apps/chronopic/integration_test/mobile_deep_e2e_test.dart docs/mobile-e2e-verification.md AGENTS.md

@@ -182,22 +182,150 @@ final class _FocusedDetailSurface extends StatelessWidget {
     final next = index >= 0 && index < photos.length - 1
         ? photos[index + 1]
         : null;
+    Widget actions() {
+      return Wrap(
+        spacing: 8,
+        runSpacing: 8,
+        crossAxisAlignment: WrapCrossAlignment.center,
+        children: [
+          KeyedSubtree(
+            key: const ValueKey<String>('mobile-add-to-memory'),
+            child: _FocusedViewerButton(
+              key: const Key('focused-detail-add-button'),
+              onPressed: onAddToMemory,
+              icon: const Icon(Icons.add),
+              highlighted: true,
+            ),
+          ),
+          _FocusedViewerButton(
+            key: const Key('focused-detail-close-button'),
+            onPressed: onCloseFocused,
+            icon: const Icon(Icons.close),
+          ),
+          _FocusedViewerButton(
+            key: const Key('focused-detail-previous-button'),
+            onPressed: previous == null ? null : () => onSelectPhoto(previous),
+            icon: const Icon(Icons.arrow_back),
+          ),
+          _FocusedViewerButton(
+            key: const Key('focused-detail-next-button'),
+            onPressed: next == null ? null : () => onSelectPhoto(next),
+            icon: const Icon(Icons.arrow_forward),
+          ),
+          KeyedSubtree(
+            key: const ValueKey<String>('mobile-open-gallery'),
+            child: FilledButton(
+              key: const Key('focused-detail-gallery-button'),
+              onPressed: () => onOpenGallery(context),
+              style: FilledButton.styleFrom(
+                backgroundColor: Colors.grey.shade900,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 18,
+                  vertical: 14,
+                ),
+              ),
+              child: Text(_localized(labels, 'Gallery', '图库')),
+            ),
+          ),
+        ],
+      );
+    }
+
+    Widget preview() {
+      return DecoratedBox(
+        decoration: BoxDecoration(
+          color: Colors.black,
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(color: Colors.white12),
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(24),
+          child: Center(
+            child: Padding(
+              padding: const EdgeInsets.all(12),
+              child: MediaPreview(record: record, fit: BoxFit.contain),
+            ),
+          ),
+        ),
+      );
+    }
+
+    Widget footer() {
+      return Wrap(
+        spacing: 12,
+        runSpacing: 8,
+        crossAxisAlignment: WrapCrossAlignment.center,
+        alignment: WrapAlignment.spaceBetween,
+        children: [
+          Text(
+            _localized(
+              labels,
+              'Esc close • Left/Right navigate • G gallery',
+              'Esc 关闭 • 左/右导航 • G 图库',
+            ),
+            style: const TextStyle(color: Colors.white70),
+          ),
+          Chip(
+            label: Text(
+              _localized(
+                labels,
+                '${photos.length} items',
+                '${photos.length} 项',
+              ),
+            ),
+          ),
+        ],
+      );
+    }
+
+    Widget inspector({required BorderRadius borderRadius}) {
+      return DecoratedBox(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: borderRadius,
+        ),
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(20),
+          child: _FocusedDetailInspector(
+            captionController: captionController,
+            dateController: dateController,
+            labels: labels,
+            onOpenGallery: () => onOpenGallery(context),
+            onRollback: onRollback,
+            onSaveCaption: onSaveCaption,
+            onSaveDatetime: onSaveDatetime,
+            onSaveTags: onSaveTags,
+            onToggleFavorite: onToggleFavorite,
+            record: record,
+            tagsController: tagsController,
+            timeController: timeController,
+          ),
+        ),
+      );
+    }
+
     return Card(
       key: const Key('focused-detail-view'),
       clipBehavior: Clip.antiAlias,
       color: Colors.black,
       margin: EdgeInsets.zero,
-      child: SizedBox(
-        height: 780,
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.all(18),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          if (constraints.maxWidth < 760) {
+            final availableHeight = (MediaQuery.sizeOf(context).height - 32)
+                .clamp(520.0, 780.0);
+            return SizedBox(
+              height: availableHeight,
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(14),
                 child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Row(
+                    Wrap(
+                      spacing: 10,
+                      runSpacing: 8,
+                      crossAxisAlignment: WrapCrossAlignment.center,
                       children: [
                         Chip(
                           label: Text(
@@ -205,7 +333,6 @@ final class _FocusedDetailSurface extends StatelessWidget {
                           ),
                           side: const BorderSide(color: Colors.white24),
                         ),
-                        const SizedBox(width: 10),
                         Text(
                           '$displayIndex / ${photos.length}',
                           style: const TextStyle(
@@ -214,143 +341,87 @@ final class _FocusedDetailSurface extends StatelessWidget {
                             fontWeight: FontWeight.w800,
                           ),
                         ),
-                        const Spacer(),
-                        KeyedSubtree(
-                          key: const ValueKey<String>('mobile-add-to-memory'),
-                          child: _FocusedViewerButton(
-                            key: const Key('focused-detail-add-button'),
-                            onPressed: onAddToMemory,
-                            icon: const Icon(Icons.add),
-                            highlighted: true,
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        _FocusedViewerButton(
-                          key: const Key('focused-detail-close-button'),
-                          onPressed: onCloseFocused,
-                          icon: const Icon(Icons.close),
-                        ),
-                        const SizedBox(width: 8),
-                        _FocusedViewerButton(
-                          key: const Key('focused-detail-previous-button'),
-                          onPressed: previous == null
-                              ? null
-                              : () => onSelectPhoto(previous),
-                          icon: const Icon(Icons.arrow_back),
-                        ),
-                        const SizedBox(width: 8),
-                        _FocusedViewerButton(
-                          key: const Key('focused-detail-next-button'),
-                          onPressed: next == null
-                              ? null
-                              : () => onSelectPhoto(next),
-                          icon: const Icon(Icons.arrow_forward),
-                        ),
-                        const SizedBox(width: 8),
-                        KeyedSubtree(
-                          key: const ValueKey<String>('mobile-open-gallery'),
-                          child: FilledButton(
-                            key: const Key('focused-detail-gallery-button'),
-                            onPressed: () => onOpenGallery(context),
-                            style: FilledButton.styleFrom(
-                              backgroundColor: Colors.grey.shade900,
-                              foregroundColor: Colors.white,
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 18,
-                                vertical: 14,
-                              ),
-                            ),
-                            child: Text(_localized(labels, 'Gallery', '图库')),
-                          ),
-                        ),
+                        actions(),
                       ],
-                    ),
-                    const SizedBox(height: 16),
-                    Expanded(
-                      child: DecoratedBox(
-                        decoration: BoxDecoration(
-                          color: Colors.black,
-                          borderRadius: BorderRadius.circular(24),
-                          border: Border.all(color: Colors.white12),
-                        ),
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(24),
-                          child: Center(
-                            child: Padding(
-                              padding: const EdgeInsets.all(12),
-                              child: MediaPreview(
-                                record: record,
-                                fit: BoxFit.contain,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
                     ),
                     const SizedBox(height: 14),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            _localized(
-                              labels,
-                              'Esc close • Left/Right navigate • G gallery',
-                              'Esc 关闭 • 左/右导航 • G 图库',
-                            ),
-                            style: const TextStyle(color: Colors.white70),
-                          ),
-                        ),
-                        Chip(
-                          label: Text(
-                            _localized(
-                              labels,
-                              '${photos.length} items',
-                              '${photos.length} 项',
-                            ),
-                          ),
-                        ),
-                      ],
+                    SizedBox(
+                      height: 280,
+                      width: double.infinity,
+                      child: preview(),
                     ),
+                    const SizedBox(height: 14),
+                    footer(),
                     const SizedBox(height: 12),
                     _FocusedFilmstrip(
                       labels: labels,
                       photos: photos,
                       selected: record,
                     ),
+                    const SizedBox(height: 14),
+                    inspector(borderRadius: BorderRadius.circular(24)),
                   ],
                 ),
               ),
-            ),
-            SizedBox(
-              width: 395,
-              child: DecoratedBox(
-                decoration: const BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.horizontal(
-                    left: Radius.circular(24),
+            );
+          }
+          return SizedBox(
+            height: 780,
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.all(18),
+                    child: Column(
+                      children: [
+                        Row(
+                          children: [
+                            Chip(
+                              label: Text(
+                                _localized(labels, 'Detail View', '详情视图'),
+                              ),
+                              side: const BorderSide(color: Colors.white24),
+                            ),
+                            const SizedBox(width: 10),
+                            Text(
+                              '$displayIndex / ${photos.length}',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 18,
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
+                            const Spacer(),
+                            actions(),
+                          ],
+                        ),
+                        const SizedBox(height: 16),
+                        Expanded(child: preview()),
+                        const SizedBox(height: 14),
+                        footer(),
+                        const SizedBox(height: 12),
+                        _FocusedFilmstrip(
+                          labels: labels,
+                          photos: photos,
+                          selected: record,
+                        ),
+                      ],
+                    ),
                   ),
                 ),
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.all(20),
-                  child: _FocusedDetailInspector(
-                    captionController: captionController,
-                    dateController: dateController,
-                    labels: labels,
-                    onOpenGallery: () => onOpenGallery(context),
-                    onRollback: onRollback,
-                    onSaveCaption: onSaveCaption,
-                    onSaveDatetime: onSaveDatetime,
-                    onSaveTags: onSaveTags,
-                    onToggleFavorite: onToggleFavorite,
-                    record: record,
-                    tagsController: tagsController,
-                    timeController: timeController,
+                SizedBox(
+                  width: 395,
+                  child: inspector(
+                    borderRadius: const BorderRadius.horizontal(
+                      left: Radius.circular(24),
+                    ),
                   ),
                 ),
-              ),
+              ],
             ),
-          ],
-        ),
+          );
+        },
       ),
     );
   }

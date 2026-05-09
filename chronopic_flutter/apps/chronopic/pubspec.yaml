@@ -11,8 +11,18 @@ dependencies:
     sdk: flutter
 
 dev_dependencies:
+  chronopic_app:
+    path: ../../packages/chronopic_app
+  chronopic_database:
+    path: ../../packages/chronopic_database
+  chronopic_domain:
+    path: ../../packages/chronopic_domain
+  chronopic_media:
+    path: ../../packages/chronopic_media
   flutter_lints: ^6.0.0
   flutter_test:
+    sdk: flutter
+  integration_test:
     sdk: flutter
   lints: ^6.0.0
 

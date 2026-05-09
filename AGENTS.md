@@ -6033,3 +6033,39 @@ This file is the local execution record for ChronoPic. It complements `PLAN.md` 
   and backup-restore scenarios are marked `Passed` with artifact paths.
 - Next:
   add app-owned Flutter integration workflow tests for edit/favorite/memory/detail/gallery/search/settings coverage.
+
+### 2026-05-10 Step 226
+
+- Implemented Phase 6.5 Task 5:
+  app-owned mobile workflow integration tests.
+- Added `integration_test` to the Flutter app and declared the direct app-owned
+  test dependencies used by
+  `chronopic_flutter/apps/chronopic/integration_test/mobile_deep_e2e_test.dart`.
+- Wrote the integration test against a restored real `ChronoPicAppService`
+  backup and existing mobile stable keys.
+- The test verifies:
+  restored mobile browse,
+  detail overlay open/close,
+  gallery overlay open/close,
+  favorite persistence,
+  caption/tag/datetime edit persistence,
+  memory create/add/cover/rename/description/remove,
+  search/filter/sort controls,
+  and locale settings after a restored app instance.
+- Followed red/green verification:
+  the first runs exposed that double-tap detail opening was rebuild-sensitive,
+  focused detail controls were not reliably tappable on a 430px mobile viewport,
+  and restored app instances did not load persisted locale settings.
+- Fixed those defects by:
+  moving photo-card activation to Flutter's `onDoubleTap`,
+  adding a narrow-layout branch for focused detail,
+  and loading persisted locale settings on app startup while preserving the
+  screenshot-specific `zh-locale` override.
+- Verification passed:
+  `cd chronopic_flutter/apps/chronopic && flutter test integration_test/mobile_deep_e2e_test.dart -d emulator-5554`
+  and
+  `cd chronopic_flutter && dart analyze packages/chronopic_ui apps/chronopic`.
+- Updated `docs/mobile-e2e-verification.md` so app-owned Android scenarios are
+  marked `Passed` with the integration-test command as evidence.
+- Next:
+  record the iOS deep E2E gate and then run Phase 6.5 closeout verification.

@@ -125,6 +125,7 @@ final class PhotoGrid extends StatelessWidget {
           itemBuilder: (context, index) {
             final record = photos[index];
             return PhotoCardTile(
+              key: Key('photo-card-${record.photo.id}'),
               labels: labels,
               onOpenDetail: () => onOpenDetail(record),
               onSelect: () => onSelectPhoto(record),
@@ -140,6 +141,7 @@ final class PhotoGrid extends StatelessWidget {
 
 final class PhotoCardTile extends StatefulWidget {
   const PhotoCardTile({
+    super.key,
     required this.labels,
     required this.onOpenDetail,
     required this.onSelect,
@@ -158,22 +160,9 @@ final class PhotoCardTile extends StatefulWidget {
 }
 
 final class _PhotoCardTileState extends State<PhotoCardTile> {
-  DateTime? _lastTapAt;
-
-  void _handleTap() {
-    final now = DateTime.now();
-    final isDoubleTap =
-        _lastTapAt != null &&
-        now.difference(_lastTapAt!) <= const Duration(milliseconds: 320);
-    _lastTapAt = isDoubleTap ? null : now;
-    widget.onSelect();
-    if (isDoubleTap) widget.onOpenDetail();
-  }
-
   @override
   Widget build(BuildContext context) {
     return Card(
-      key: Key('photo-card-${widget.record.photo.id}'),
       clipBehavior: Clip.antiAlias,
       color: Colors.black,
       shape: RoundedRectangleBorder(
@@ -186,7 +175,11 @@ final class _PhotoCardTileState extends State<PhotoCardTile> {
       child: KeyedSubtree(
         key: const ValueKey<String>('mobile-open-detail'),
         child: InkWell(
-          onTap: _handleTap,
+          onTap: widget.onSelect,
+          onDoubleTap: () {
+            widget.onSelect();
+            widget.onOpenDetail();
+          },
           child: Stack(
             fit: StackFit.expand,
             children: [

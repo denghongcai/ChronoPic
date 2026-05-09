@@ -2409,8 +2409,13 @@ These are intentionally recorded as candidate directions rather than committed p
   durable screenshot/XML/backup evidence,
   and an explicit iOS macOS/Xcode verification gate.
 - Current status:
-  planned on 2026-05-09 after Phase 6 Android smoke passed.
-  No implementation work is marked complete yet.
+  in progress.
+  The evidence matrix,
+  stable mobile hooks,
+  Android permission/import/restart/backup runner,
+  and app-owned Android integration workflow test have landed locally.
+  Remaining work:
+  record the iOS macOS/Xcode gate and run full phase closeout verification.
 - Execution order:
   first create the mobile E2E evidence matrix,
   then add stable mobile test hooks,
