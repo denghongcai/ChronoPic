@@ -5989,3 +5989,47 @@ This file is the local execution record for ChronoPic. It complements `PLAN.md` 
 - Next:
   commit the runner skeleton,
   then automate Android permission and import checks.
+
+### 2026-05-10 Step 225
+
+- Implemented Phase 6.5 Task 4:
+  Android permission and import E2E automation.
+- Extended `chronopic_flutter/tool/mobile_e2e/android_deep_e2e.sh` with:
+  reusable `dump_ui`,
+  `assert_ui_contains`,
+  and `tap` helpers,
+  XML-driven button tapping,
+  bounded `adb install`,
+  bounded `uiautomator`/screenshot capture,
+  screen wake/keyguard handling,
+  app-state and runtime-permission resets,
+  media fixture preparation,
+  denied/full/limited permission flows,
+  restart persistence,
+  and metadata backup restore.
+- The runner now removes old ChronoPic smoke media directories before injecting
+  the two Phase 6.5 PNG fixtures so full-access imports are deterministic.
+- Verified the full Android runner with:
+  `ANDROID_DEVICE_ID=emulator-5554 chronopic_flutter/tool/mobile_e2e/android_deep_e2e.sh`.
+- Result:
+  command exited 0 and generated evidence under `.tmp/mobile-e2e/android`:
+  `02-denied`,
+  `03-full-access`,
+  `04-limited-access`,
+  `04-permissions.txt`,
+  `05-restart`,
+  `06-restore`,
+  and `backup.json`.
+- Evidence checks performed after the run:
+  the denied/full/limited/restart/restore XML files contain their expected UI
+  text,
+  `04-permissions.txt` confirms selected-photo permission is granted while
+  full image permission is false,
+  and `backup.json` contains exactly 2 photos.
+- Updated `docs/mobile-e2e-verification.md` so Android denied,
+  limited,
+  full-access,
+  restart,
+  and backup-restore scenarios are marked `Passed` with artifact paths.
+- Next:
+  add app-owned Flutter integration workflow tests for edit/favorite/memory/detail/gallery/search/settings coverage.

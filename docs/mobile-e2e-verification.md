@@ -18,11 +18,11 @@ after Phase 6 mobile productization and before Phase 7 release/cutover.
 
 | Scenario | Required Evidence | Status | Notes |
 | --- | --- | --- | --- |
-| Permission denied recovery | Screenshot and UI text showing recoverable denied state | Pending | |
-| Limited selected-photo access | Permission dump plus import count | Pending | |
-| Full photo-library access | Import count and browse UI after scan | Pending | |
-| Restart persistence | Relaunch screenshot showing browse state, not first-run state | Pending | |
-| Metadata backup restore | Backup JSON summary and relaunch screenshot after restore | Pending | |
+| Permission denied recovery | Screenshot and UI text showing recoverable denied state | Passed | `.tmp/mobile-e2e/android/02-denied.png`, `.xml` |
+| Limited selected-photo access | Permission dump plus import count | Passed | `.tmp/mobile-e2e/android/04-limited-access.png`, `.xml`, `04-permissions.txt` |
+| Full photo-library access | Import count and browse UI after scan | Passed | `.tmp/mobile-e2e/android/03-full-access.png`, `.xml` |
+| Restart persistence | Relaunch screenshot showing browse state, not first-run state | Passed | `.tmp/mobile-e2e/android/05-restart.png`, `.xml` |
+| Metadata backup restore | Backup JSON summary and relaunch screenshot after restore | Passed | `.tmp/mobile-e2e/android/backup.json`, `06-restore.png`, `.xml` |
 | Edit metadata | Caption/tags/datetime changed, persisted after relaunch | Pending | |
 | Favorite toggle | Favorite state visible and persisted after relaunch | Pending | |
 | Memory lifecycle | Create memory, add photo, cover, rename/description, remove photo | Pending | |
@@ -63,6 +63,26 @@ Expected skeleton evidence:
   exit 0 after APK build/install,
   two PNG media fixtures pushed,
   app launched,
-  and first-run evidence captured.
+  first-run evidence captured,
+  permission/import/restart/restore scenarios verified,
+  and backup JSON validated with 2 photos.
 - First-run assertion:
   `01-first-run.xml` contains `Choose Photos`.
+- Permission denied assertion:
+  `02-denied.xml` contains
+  `Photo library permission denied. Open settings to grant access.`
+- Full access assertion:
+  `03-full-access.xml` contains
+  `Photo library scan complete: 2 imported, 0 updated, 0 skipped, 0 errors, 0 missing`
+- Limited access assertion:
+  `04-limited-access.xml` contains
+  `Limited photo access: 2 imported, 0 updated, 0 skipped, 0 errors, 0 missing`
+- Permission dump assertions:
+  `04-permissions.txt` contains
+  `android.permission.READ_MEDIA_VISUAL_USER_SELECTED: granted=true`
+  and
+  `android.permission.READ_MEDIA_IMAGES: granted=false`.
+- Restart assertion:
+  `05-restart.xml` contains `Select`.
+- Restore assertion:
+  `06-restore.xml` contains `Select` and `2 items`.

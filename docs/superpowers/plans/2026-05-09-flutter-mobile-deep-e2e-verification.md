@@ -279,7 +279,7 @@ git commit -m "Add Android mobile E2E runner"
 - Modify: `docs/mobile-e2e-verification.md`
 - Modify: `AGENTS.md`
 
-- [ ] **Step 1: Add reusable shell assertions**
+- [x] **Step 1: Add reusable shell assertions**
 
 Add functions to the runner:
 
@@ -302,7 +302,7 @@ tap() {
 }
 ```
 
-- [ ] **Step 2: Automate denied permission**
+- [x] **Step 2: Automate denied permission**
 
 Use `tap 308 1173` for `Choose Photos`, then `tap 540 1516` for `DON'T ALLOW`.
 
@@ -312,7 +312,7 @@ Assert:
 assert_ui_contains "02-denied" "Photo library permission denied. Open settings to grant access."
 ```
 
-- [ ] **Step 3: Automate full access**
+- [x] **Step 3: Automate full access**
 
 After `pm clear` and relaunch, tap `Choose Photos`, then tap `ALLOW ALL` at `540 1360`.
 
@@ -322,7 +322,7 @@ Assert:
 assert_ui_contains "03-full-access" "Photo library scan complete: 2 imported, 0 updated, 0 skipped, 0 errors, 0 missing"
 ```
 
-- [ ] **Step 4: Automate limited selected access**
+- [x] **Step 4: Automate limited selected access**
 
 After `pm clear` and relaunch, tap `Choose Photos`, tap `ALLOW LIMITED ACCESS` at `540 1202`, select two picker tiles, and tap `Allow (2)`.
 
@@ -335,7 +335,7 @@ grep -F "android.permission.READ_MEDIA_VISUAL_USER_SELECTED: granted=true" "$OUT
 grep -F "android.permission.READ_MEDIA_IMAGES: granted=false" "$OUT_DIR/04-permissions.txt"
 ```
 
-- [ ] **Step 5: Automate restart and backup restore**
+- [x] **Step 5: Automate restart and backup restore**
 
 For restart:
 
@@ -362,7 +362,7 @@ dump_ui "06-restore"
 assert_ui_contains "06-restore" "Select"
 ```
 
-- [ ] **Step 6: Verify runner**
+- [x] **Step 6: Verify runner**
 
 Run:
 
@@ -376,7 +376,7 @@ Expected:
 - Evidence files under `.tmp/mobile-e2e/android`.
 - Matrix updated with denied/full/limited/restart/backup evidence.
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add chronopic_flutter/tool/mobile_e2e/android_deep_e2e.sh docs/mobile-e2e-verification.md AGENTS.md
