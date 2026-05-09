@@ -127,6 +127,7 @@ final class SettingsPage extends StatelessWidget {
           aiStatusCounts: aiStatusCounts,
           apiKeyController: apiKeyController,
           baseUrlController: baseUrlController,
+          labels: labels,
           modelController: modelController,
           onSaveSettings: onSaveAiSettings,
           providerController: providerController,
@@ -141,6 +142,7 @@ final class SettingsPage extends StatelessWidget {
         const SizedBox(height: 18),
         MapSettingsPanel(
           apiKeyController: mapApiKeyController,
+          labels: labels,
           onSaveSettings: onSaveMapSettings,
           securityJsCodeController: mapSecurityJsCodeController,
         ),
@@ -153,7 +155,12 @@ final class SettingsPage extends StatelessWidget {
         const SizedBox(height: 18),
         SourcesPanel(labels: labels, sources: sources),
         const SizedBox(height: 18),
-        _StatsGrid(photos: photos, memories: memories, sources: sources),
+        _StatsGrid(
+          labels: labels,
+          photos: photos,
+          memories: memories,
+          sources: sources,
+        ),
       ],
     );
   }
@@ -178,10 +185,13 @@ final class SettingsLibraryPanel extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const _SectionHeader(
-            title: 'Library Settings',
-            description:
-                'Manage your library sources and indexing preferences.',
+          _SectionHeader(
+            title: _localized(labels, 'Library Settings', '资料库设置'),
+            description: _localized(
+              labels,
+              'Manage your library sources and indexing preferences.',
+              '管理资料库来源和索引偏好。',
+            ),
           ),
           const SizedBox(height: 24),
           Wrap(
@@ -448,12 +458,19 @@ final class BackupPanel extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const _SectionHeader(
-            title: 'Export, Backup, and Restore',
-            description:
-                'Export the local ChronoPic projection and restore it into another desktop data directory.',
+          _SectionHeader(
+            title: _localized(
+              labels,
+              'Export, Backup, and Restore',
+              '导出、备份和恢复',
+            ),
+            description: _localized(
+              labels,
+              'Export the local ChronoPic projection and restore it into another desktop data directory.',
+              '导出本地 ChronoPic 投影，并将其恢复到另一个桌面数据目录。',
+            ),
             trailing: _SettingsStatusChip(
-              label: 'LOCAL JSON',
+              label: _localized(labels, 'LOCAL JSON', '本地 JSON'),
               tone: _Tone.info,
             ),
           ),
@@ -491,13 +508,21 @@ final class BackupPanel extends StatelessWidget {
           ),
           const SizedBox(height: 12),
           Text(
-            'Backups include ChronoPic metadata, memories, favorites, generated fields, and settings. Original media files are referenced by path, not copied.',
+            _localized(
+              labels,
+              'Backups include ChronoPic metadata, memories, favorites, generated fields, and settings. Original media files are referenced by path, not copied.',
+              '备份包含 ChronoPic 元数据、记忆、收藏、生成字段和设置。原始媒体文件按路径引用，不会复制。',
+            ),
             style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
           ),
           if (restorePreview != null) ...[
             const SizedBox(height: 12),
             Text(
-              'Restore preview: ${restorePreview!.photoCount} photos, ${restorePreview!.memoryCount} memories',
+              _localized(
+                labels,
+                'Restore preview: ${restorePreview!.photoCount} photos, ${restorePreview!.memoryCount} memories',
+                '恢复预览：${restorePreview!.photoCount} 张照片，${restorePreview!.memoryCount} 个记忆',
+              ),
             ),
           ],
         ],
@@ -582,13 +607,21 @@ final class SourcesPanel extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _SectionHeader(
-            title: 'Library sources',
-            trailing: Chip(label: Text('${sources.length} active')),
+            title: _localized(labels, 'Library sources', '资料库来源'),
+            trailing: Chip(
+              label: Text(
+                _localized(
+                  labels,
+                  '${sources.length} active',
+                  '${sources.length} 个启用',
+                ),
+              ),
+            ),
           ),
           const SizedBox(height: 12),
           if (sources.isEmpty)
             Text(
-              'No folders registered yet.',
+              _localized(labels, 'No folders registered yet.', '尚未注册文件夹。'),
               style: TextStyle(color: Colors.grey.shade600),
             )
           else
@@ -596,7 +629,13 @@ final class SourcesPanel extends StatelessWidget {
               ListTile(
                 leading: const Icon(Icons.folder_outlined),
                 title: Text(source.path),
-                subtitle: Text('Last scan: ${source.lastScanAt ?? 'never'}'),
+                subtitle: Text(
+                  _localized(
+                    labels,
+                    'Last scan: ${source.lastScanAt ?? 'never'}',
+                    '上次扫描：${source.lastScanAt ?? '从未'}',
+                  ),
+                ),
               ),
         ],
       ),
@@ -610,6 +649,7 @@ final class AiSettingsPanel extends StatelessWidget {
     required this.aiStatusCounts,
     required this.apiKeyController,
     required this.baseUrlController,
+    required this.labels,
     required this.modelController,
     required this.onSaveSettings,
     required this.providerController,
@@ -619,6 +659,7 @@ final class AiSettingsPanel extends StatelessWidget {
   final Map<AiPipelineStatus, int> aiStatusCounts;
   final TextEditingController apiKeyController;
   final TextEditingController baseUrlController;
+  final UiStrings labels;
   final TextEditingController modelController;
   final VoidCallback onSaveSettings;
   final TextEditingController providerController;
@@ -630,11 +671,16 @@ final class AiSettingsPanel extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _SectionHeader(
-            title: 'AI Enrichment',
-            description:
-                'Configure the OpenAI-compatible endpoint used for photo and memory semantic enrichment.',
+            title: _localized(labels, 'AI Enrichment', 'AI 增强'),
+            description: _localized(
+              labels,
+              'Configure the OpenAI-compatible endpoint used for photo and memory semantic enrichment.',
+              '配置用于照片和记忆语义增强的 OpenAI 兼容端点。',
+            ),
             trailing: _SettingsStatusChip(
-              label: aiReadiness.configured ? 'CONFIGURED' : 'INCOMPLETE',
+              label: aiReadiness.configured
+                  ? _localized(labels, 'CONFIGURED', '已配置')
+                  : _localized(labels, 'INCOMPLETE', '不完整'),
               tone: aiReadiness.configured ? _Tone.success : _Tone.danger,
             ),
           ),
@@ -650,12 +696,26 @@ final class AiSettingsPanel extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 _SectionHeader(
-                  title:
-                      'AI readiness: ${aiReadiness.configured ? 'configured' : 'incomplete'}',
-                  description:
-                      'AI enrichment can run for photo metadata, memory summaries, and reviewable memory suggestions.',
+                  title: aiReadiness.configured
+                      ? _localized(
+                          labels,
+                          'AI readiness: configured',
+                          'AI 就绪状态：已配置',
+                        )
+                      : _localized(
+                          labels,
+                          'AI readiness: incomplete',
+                          'AI 就绪状态：不完整',
+                        ),
+                  description: _localized(
+                    labels,
+                    'AI enrichment can run for photo metadata, memory summaries, and reviewable memory suggestions.',
+                    'AI 增强可用于照片元数据、记忆摘要和可审核的记忆建议。',
+                  ),
                   trailing: _SettingsStatusChip(
-                    label: aiReadiness.configured ? 'CONFIGURED' : 'INCOMPLETE',
+                    label: aiReadiness.configured
+                        ? _localized(labels, 'CONFIGURED', '已配置')
+                        : _localized(labels, 'INCOMPLETE', '不完整'),
                     tone: aiReadiness.configured ? _Tone.success : _Tone.danger,
                   ),
                 ),
@@ -665,20 +725,28 @@ final class AiSettingsPanel extends StatelessWidget {
                   runSpacing: 10,
                   children: [
                     _ReadinessPill(
-                      label: 'API Key',
+                      label: _localized(labels, 'API Key', 'API 密钥'),
+                      missingLabel: _localized(labels, 'MISSING', '缺失'),
                       present: apiKeyController.text.isNotEmpty,
+                      presentLabel: _localized(labels, 'PRESENT', '存在'),
                     ),
                     _ReadinessPill(
-                      label: 'Base URL',
+                      label: _localized(labels, 'Base URL', 'Base URL'),
+                      missingLabel: _localized(labels, 'MISSING', '缺失'),
                       present: baseUrlController.text.isNotEmpty,
+                      presentLabel: _localized(labels, 'PRESENT', '存在'),
                     ),
                     _ReadinessPill(
-                      label: 'Model',
+                      label: _localized(labels, 'Model', '模型'),
+                      missingLabel: _localized(labels, 'MISSING', '缺失'),
                       present: modelController.text.isNotEmpty,
+                      presentLabel: _localized(labels, 'PRESENT', '存在'),
                     ),
                     _ReadinessPill(
-                      label: 'Provider',
+                      label: _localized(labels, 'Provider', '服务商'),
+                      missingLabel: _localized(labels, 'MISSING', '缺失'),
                       present: providerController.text.isNotEmpty,
+                      presentLabel: _localized(labels, 'PRESENT', '存在'),
                     ),
                   ],
                 ),
@@ -688,7 +756,11 @@ final class AiSettingsPanel extends StatelessWidget {
           const SizedBox(height: 14),
           if (aiReadiness.missingFields.isNotEmpty)
             Text(
-              'Missing: ${aiReadiness.missingFields.join(', ')}',
+              _localized(
+                labels,
+                'Missing: ${aiReadiness.missingFields.join(', ')}',
+                '缺少：${aiReadiness.missingFields.join(', ')}',
+              ),
               key: const Key('ai-readiness-missing-fields'),
             ),
           const SizedBox(height: 12),
@@ -700,7 +772,11 @@ final class AiSettingsPanel extends StatelessWidget {
                 Chip(
                   key: Key('ai-status-count-${status.name}'),
                   label: Text(
-                    'AI ${status.name}: ${aiStatusCounts[status] ?? 0}',
+                    _localized(
+                      labels,
+                      'AI ${status.name}: ${aiStatusCounts[status] ?? 0}',
+                      'AI ${status.name}：${aiStatusCounts[status] ?? 0}',
+                    ),
                   ),
                 ),
             ],
@@ -715,7 +791,9 @@ final class AiSettingsPanel extends StatelessWidget {
                 child: TextField(
                   key: const Key('ai-provider-field'),
                   controller: providerController,
-                  decoration: const InputDecoration(labelText: 'Provider'),
+                  decoration: InputDecoration(
+                    labelText: _localized(labels, 'Provider', '服务商'),
+                  ),
                 ),
               ),
               SizedBox(
@@ -731,7 +809,9 @@ final class AiSettingsPanel extends StatelessWidget {
                 child: TextField(
                   key: const Key('ai-model-field'),
                   controller: modelController,
-                  decoration: const InputDecoration(labelText: 'Model'),
+                  decoration: InputDecoration(
+                    labelText: _localized(labels, 'Model', '模型'),
+                  ),
                 ),
               ),
               SizedBox(
@@ -740,14 +820,16 @@ final class AiSettingsPanel extends StatelessWidget {
                   key: const Key('ai-api-key-field'),
                   controller: apiKeyController,
                   obscureText: true,
-                  decoration: const InputDecoration(labelText: 'API key'),
+                  decoration: InputDecoration(
+                    labelText: _localized(labels, 'API key', 'API 密钥'),
+                  ),
                 ),
               ),
               FilledButton.icon(
                 key: const Key('save-ai-settings-button'),
                 onPressed: onSaveSettings,
                 icon: const Icon(Icons.save_outlined),
-                label: const Text('Save AI Settings'),
+                label: Text(_localized(labels, 'Save AI Settings', '保存 AI 设置')),
               ),
             ],
           ),
@@ -760,11 +842,13 @@ final class AiSettingsPanel extends StatelessWidget {
 final class MapSettingsPanel extends StatelessWidget {
   const MapSettingsPanel({
     required this.apiKeyController,
+    required this.labels,
     required this.onSaveSettings,
     required this.securityJsCodeController,
   });
 
   final TextEditingController apiKeyController;
+  final UiStrings labels;
   final VoidCallback onSaveSettings;
   final TextEditingController securityJsCodeController;
 
@@ -774,10 +858,13 @@ final class MapSettingsPanel extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const _SectionHeader(
-            title: 'Map settings',
-            description:
-                'Configure map credentials used by the desktop map surface when an online provider is enabled.',
+          _SectionHeader(
+            title: _localized(labels, 'Map settings', '地图设置'),
+            description: _localized(
+              labels,
+              'Configure map credentials used by the desktop map surface when an online provider is enabled.',
+              '配置启用在线地图服务时桌面地图界面使用的凭据。',
+            ),
           ),
           const SizedBox(height: 14),
           Wrap(
@@ -790,7 +877,9 @@ final class MapSettingsPanel extends StatelessWidget {
                   key: const Key('map-api-key-field'),
                   controller: apiKeyController,
                   obscureText: true,
-                  decoration: const InputDecoration(labelText: 'Map API key'),
+                  decoration: InputDecoration(
+                    labelText: _localized(labels, 'Map API key', '地图 API 密钥'),
+                  ),
                 ),
               ),
               SizedBox(
@@ -799,8 +888,12 @@ final class MapSettingsPanel extends StatelessWidget {
                   key: const Key('map-security-js-code-field'),
                   controller: securityJsCodeController,
                   obscureText: true,
-                  decoration: const InputDecoration(
-                    labelText: 'Map security JS code',
+                  decoration: InputDecoration(
+                    labelText: _localized(
+                      labels,
+                      'Map security JS code',
+                      '地图安全 JS 代码',
+                    ),
                   ),
                 ),
               ),
@@ -808,7 +901,7 @@ final class MapSettingsPanel extends StatelessWidget {
                 key: const Key('save-map-settings-button'),
                 onPressed: onSaveSettings,
                 icon: const Icon(Icons.save_outlined),
-                label: const Text('Save Map Settings'),
+                label: Text(_localized(labels, 'Save Map Settings', '保存地图设置')),
               ),
             ],
           ),
@@ -819,10 +912,17 @@ final class MapSettingsPanel extends StatelessWidget {
 }
 
 final class _ReadinessPill extends StatelessWidget {
-  const _ReadinessPill({required this.label, required this.present});
+  const _ReadinessPill({
+    required this.label,
+    required this.missingLabel,
+    required this.present,
+    required this.presentLabel,
+  });
 
   final String label;
+  final String missingLabel;
   final bool present;
+  final String presentLabel;
 
   @override
   Widget build(BuildContext context) {
@@ -832,7 +932,7 @@ final class _ReadinessPill extends StatelessWidget {
       ),
       backgroundColor: present ? Colors.green.shade50 : Colors.red.shade50,
       label: Text(
-        '$label  ${present ? 'PRESENT' : 'MISSING'}',
+        '$label  ${present ? presentLabel : missingLabel}',
         style: TextStyle(
           color: present ? Colors.green.shade700 : Colors.red.shade700,
           fontWeight: FontWeight.w800,
@@ -897,41 +997,74 @@ final class NotificationCenterPanel extends StatelessWidget {
             ),
             const SizedBox(height: 6),
             Text(
-              'Review pending AI metadata and suggested memories.',
+              _localized(
+                labels,
+                'Review pending AI metadata and suggested memories.',
+                '查看待处理 AI 元数据和建议记忆。',
+              ),
               style: TextStyle(color: Colors.grey.shade700),
             ),
             const SizedBox(height: 26),
             _NotificationCard(
-              title: 'AI queue',
+              title: _localized(labels, 'AI queue', 'AI 队列'),
               description: pending + failed == 0
-                  ? 'No AI queue items need attention.'
-                  : 'Outstanding AI items are waiting in the library queue.',
-              footnote:
-                  'Generated captions, summaries, tags, and memory suggestions stay reviewable and separate from your edits.',
+                  ? _localized(
+                      labels,
+                      'No AI queue items need attention.',
+                      '当前没有需要处理的 AI 队列项目。',
+                    )
+                  : _localized(
+                      labels,
+                      'Outstanding AI items are waiting in the library queue.',
+                      '待处理 AI 项目正在资料库队列中等待。',
+                    ),
+              footnote: _localized(
+                labels,
+                'Generated captions, summaries, tags, and memory suggestions stay reviewable and separate from your edits.',
+                '生成的标题、摘要、标签和记忆建议会保持可审核，并与用户编辑分开保存。',
+              ),
               chips: [
-                const _NotificationChipData('AI QUEUE', _Tone.info),
-                _NotificationChipData('$failed FAILED', _Tone.danger),
-                _NotificationChipData('$ready READY', _Tone.success),
+                _NotificationChipData(
+                  _localized(labels, 'AI QUEUE', 'AI 队列'),
+                  _Tone.info,
+                ),
+                _NotificationChipData(
+                  _localized(labels, '$failed FAILED', '$failed 个失败'),
+                  _Tone.danger,
+                ),
+                _NotificationChipData(
+                  _localized(labels, '$ready READY', '$ready 条就绪'),
+                  _Tone.success,
+                ),
               ],
-              actionLabel: 'Enrich Queue',
+              actionLabel: _localized(labels, 'Enrich Queue', '丰富队列'),
               actionKey: const Key('retry-ai-queue-button'),
               onAction: onRetryQueue,
             ),
             const SizedBox(height: 24),
             _NotificationCard(
-              title: 'Memory candidates',
-              description:
-                  '$ready suggested memories are waiting for review in Memories.',
+              title: _localized(labels, 'Memory candidates', '记忆候选'),
+              description: _localized(
+                labels,
+                '$ready suggested memories are waiting for review in Memories.',
+                '$ready 条建议记忆正在记忆页等待审核。',
+              ),
               chips: [
-                const _NotificationChipData('MEMORY CANDIDATES', _Tone.info),
-                _NotificationChipData('$ready READY', _Tone.warning),
+                _NotificationChipData(
+                  _localized(labels, 'MEMORY CANDIDATES', '记忆候选'),
+                  _Tone.info,
+                ),
+                _NotificationChipData(
+                  _localized(labels, '$ready READY', '$ready 条就绪'),
+                  _Tone.warning,
+                ),
               ],
-              actionLabel: 'Refresh Suggestions',
+              actionLabel: _localized(labels, 'Refresh Suggestions', '刷新建议'),
               actionKey: const Key('view-memory-candidates-button'),
               onAction: onViewMemories,
             ),
             Text(
-              'Memory candidates: $ready',
+              _localized(labels, 'Memory candidates: $ready', '记忆候选：$ready'),
               key: const Key('memory-candidate-count'),
               style: const TextStyle(fontSize: 0),
             ),
@@ -1083,11 +1216,13 @@ final class _TintedChip extends StatelessWidget {
 
 final class _StatsGrid extends StatelessWidget {
   const _StatsGrid({
+    required this.labels,
     required this.memories,
     required this.photos,
     required this.sources,
   });
 
+  final UiStrings labels;
   final List<Memory> memories;
   final List<PhotoRecord> photos;
   final List<LibrarySource> sources;
@@ -1095,11 +1230,23 @@ final class _StatsGrid extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final stats = [
-      ('Photos', photos.length, Icons.photo_library_outlined),
-      ('Memories', memories.length, Icons.auto_stories_outlined),
-      ('Sources', sources.length, Icons.folder_outlined),
       (
-        'Favorites',
+        _localized(labels, 'Photos', '照片'),
+        photos.length,
+        Icons.photo_library_outlined,
+      ),
+      (
+        _localized(labels, 'Memories', '记忆'),
+        memories.length,
+        Icons.auto_stories_outlined,
+      ),
+      (
+        _localized(labels, 'Sources', '来源'),
+        sources.length,
+        Icons.folder_outlined,
+      ),
+      (
+        _localized(labels, 'Favorites', '收藏'),
         photos.where((record) => record.photo.favorite).length,
         Icons.star_border,
       ),

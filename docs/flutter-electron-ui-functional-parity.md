@@ -13,7 +13,7 @@
 | Memory detail management | `test-results/flutter-electron-parity/electron/09-memory-detail.png` | `test-results/flutter-electron-parity/flutter/09-memory-detail.png` | Accepted Difference | Flutter matches the Electron memory detail workflow, cover-led hero, timestamp, custom-cover status, description, story outline, chapter metadata, and lower management actions. Accepted difference: exact chip colors/icon treatment/card spacing differ slightly while preserving function. | `223d9e8` |
 | Settings | `test-results/flutter-electron-parity/electron/10-settings.png` | `test-results/flutter-electron-parity/flutter/10-settings.png` | Accepted Difference | Flutter matches the Electron settings workflow and first-viewport density while preserving additional lower-panel path, map, source, and secret-safe AI controls. Accepted difference: exact section heights and lower-panel density differ because Flutter exposes desktop-only file-path controls below the first viewport. | `223d9e8` |
 | Notifications / AI queue | `test-results/flutter-electron-parity/electron/11-notifications.png` | `test-results/flutter-electron-parity/flutter/11-notifications.png` | Accepted Difference | Flutter matches the Electron notifications workflow, AI queue and memory candidate cards, semantic chips, retry, and suggestions handoff. Accepted difference: exact button color semantics and card spacing differ slightly between renderers. | `223d9e8` |
-| Chinese locale | `test-results/flutter-electron-parity/electron/12-zh-locale.png` | `test-results/flutter-electron-parity/flutter/12-zh-locale.png` | Accepted Difference | Flutter localizes the Electron-aligned shell, browse controls, settings, memory labels, and core first-viewport UI. Accepted difference: fixture-authored memory/photo text remains source data rather than UI translation, matching local-first content semantics. | `223d9e8` |
+| Chinese locale | `test-results/flutter-electron-parity/electron/12-zh-locale.png` | `test-results/flutter-electron-parity/flutter/12-zh-locale.png` | Accepted Difference | Phase 5.10 localizes app-owned Flutter zh UI across selected-photo banners, active filter labels, status messages, Detail/Gallery controls, memory actions, settings actions, notifications, map controls, and timeline actions. Accepted difference: fixture-authored filenames, captions, memory names, imported descriptions, tags, and AI text remain source data rather than translated UI. | Pending local commit |
 | Restart persistence | `test-results/flutter-electron-parity/electron/13-restart-persistence.png` | `test-results/flutter-electron-parity/flutter/13-restart-persistence.png` | Accepted Difference | Restored photo cards preserve the same selected-photo and detail-first double-click/double-tap activation contract after restart. Accepted difference: exact card dimensions and browse spacing follow the same adaptive-layout difference as populated browse. | `96ba222` |
 
 ## Evidence Rules
@@ -29,8 +29,8 @@
 ## Current Closure Status
 
 - Matrix audit status:
-  Phase 5.8 viewer activation correction is locally closed after focused tests
-  and refreshed Detail/Gallery screenshot comparison.
+  Phase 5.9 completed the full feature/UI review pass, and Phase 5.10 closed
+  the remaining confirmed Chinese-locale gap.
 - Electron evidence: all 13 reference screenshots were refreshed with
   `node scripts/capture-electron-parity.mjs` and confirmed as 1440x920.
 - Flutter evidence: all 13 screenshots were refreshed with
@@ -44,7 +44,7 @@
 - Handoff: branch `flutter-refactor-phases` was pushed through evidence commit
   `50bba7c`.
 - Current follow-up plan:
-  [docs/superpowers/plans/2026-05-09-gallery-overlay-activation-parity.md](superpowers/plans/2026-05-09-gallery-overlay-activation-parity.md).
+  [docs/superpowers/plans/2026-05-09-flutter-visible-string-localization-parity.md](superpowers/plans/2026-05-09-flutter-visible-string-localization-parity.md).
 - Phase 5.8 screenshot comparison artifacts:
   `test-results/flutter-electron-parity/compare/02-populated-grid-compare.png`,
   `test-results/flutter-electron-parity/compare/05-detail-compare.png`,
@@ -53,27 +53,20 @@
 - Phase 5.8 handoff:
   branch `flutter-refactor-phases` now includes correction commit `96ba222`,
   which restores the Electron detail-first activation contract.
+- Phase 5.9 handoff:
+  `docs/flutter-electron-feature-ui-review.md` records all 13 reviewed
+  surfaces and finding `FUI-001`.
+- Phase 5.10 handoff:
+  `FUI-001` is closed with Flutter zh app-owned string coverage,
+  refreshed focused Flutter screenshots,
+  refreshed Electron references,
+  and regenerated compare artifacts for affected surfaces.
 
-## Closure Order
+## Remaining Closure Order
 
-Close remaining rows in this order, using screenshot comparison plus focused
-tests before changing row status:
-
-1. Empty first-run home: first-viewport control clutter and empty-state
-   composition.
-2. Populated grid, favorites, and restart persistence: Select/Filter
-   affordances, card crop height, and fallback edge treatment.
-3. Map and timeline: discovery-chip/top-density differences.
-4. Detail and gallery: top-button styling, fallback edge rendering, and default
-   scroll positions.
-5. Memories list and memory detail: card proportions, timestamp/icon placement,
-   and candidate actions.
-6. Settings and notifications: section widths, button/chip color semantics, and
-   lower map/source/stat panels.
-7. Chinese locale: distinguish true untranslated UI from source-authored
-   fixture content.
-8. Full two-side gate: rerun Electron tests/capture, Flutter tests/capture,
-   dependency audit, `git diff --check`, and final matrix closure.
+No `Gap` rows remain in this matrix as of the local Phase 5.10 verification.
+Future review passes should continue to compare each feature/UI surface against
+the Electron reference before promoting new work into implementation phases.
 
 ## Capture Commands
 

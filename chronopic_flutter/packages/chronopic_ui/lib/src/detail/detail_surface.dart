@@ -199,9 +199,11 @@ final class _FocusedDetailSurface extends StatelessWidget {
                   children: [
                     Row(
                       children: [
-                        const Chip(
-                          label: Text('Detail View'),
-                          side: BorderSide(color: Colors.white24),
+                        Chip(
+                          label: Text(
+                            _localized(labels, 'Detail View', '详情视图'),
+                          ),
+                          side: const BorderSide(color: Colors.white24),
                         ),
                         const SizedBox(width: 10),
                         Text(
@@ -253,7 +255,7 @@ final class _FocusedDetailSurface extends StatelessWidget {
                               vertical: 14,
                             ),
                           ),
-                          child: const Text('Gallery'),
+                          child: Text(_localized(labels, 'Gallery', '图库')),
                         ),
                       ],
                     ),
@@ -282,17 +284,33 @@ final class _FocusedDetailSurface extends StatelessWidget {
                     const SizedBox(height: 14),
                     Row(
                       children: [
-                        const Expanded(
+                        Expanded(
                           child: Text(
-                            'Esc close • Left/Right navigate • G gallery',
-                            style: TextStyle(color: Colors.white70),
+                            _localized(
+                              labels,
+                              'Esc close • Left/Right navigate • G gallery',
+                              'Esc 关闭 • 左/右导航 • G 图库',
+                            ),
+                            style: const TextStyle(color: Colors.white70),
                           ),
                         ),
-                        Chip(label: Text('${photos.length} items')),
+                        Chip(
+                          label: Text(
+                            _localized(
+                              labels,
+                              '${photos.length} items',
+                              '${photos.length} 项',
+                            ),
+                          ),
+                        ),
                       ],
                     ),
                     const SizedBox(height: 12),
-                    _FocusedFilmstrip(photos: photos, selected: record),
+                    _FocusedFilmstrip(
+                      labels: labels,
+                      photos: photos,
+                      selected: record,
+                    ),
                   ],
                 ),
               ),
@@ -402,9 +420,9 @@ final class _FocusedDetailInspector extends StatelessWidget {
       children: [
         Row(
           children: [
-            const Text(
-              'INSPECTOR',
-              style: TextStyle(
+            Text(
+              _localized(labels, 'INSPECTOR', '检查器'),
+              style: const TextStyle(
                 fontSize: 12,
                 fontWeight: FontWeight.w900,
                 letterSpacing: 3,
@@ -412,7 +430,7 @@ final class _FocusedDetailInspector extends StatelessWidget {
               ),
             ),
             const Spacer(),
-            _InspectorHealthPill(indexState: record.indexState),
+            _InspectorHealthPill(indexState: record.indexState, labels: labels),
           ],
         ),
         const SizedBox(height: 10),
@@ -434,7 +452,7 @@ final class _FocusedDetailInspector extends StatelessWidget {
           children: [
             _InspectorMetricCard(
               icon: Icons.folder_open,
-              label: 'PATH',
+              label: _localized(labels, 'PATH', '路径'),
               value: record.photo.path,
             ),
             _InspectorMetricCard(
@@ -444,21 +462,23 @@ final class _FocusedDetailInspector extends StatelessWidget {
             ),
             _InspectorMetricCard(
               icon: Icons.schedule,
-              label: 'DATETIME',
+              label: _localized(labels, 'DATETIME', '日期时间'),
               value: record.metadata.datetime == null
-                  ? 'Unavailable'
+                  ? _localized(labels, 'Unavailable', '不可用')
                   : '${_formatDate(DateTime.fromMillisecondsSinceEpoch(record.metadata.datetime!).toLocal()).replaceAll('-', '/')} ${_formatTime(DateTime.fromMillisecondsSinceEpoch(record.metadata.datetime!).toLocal())}',
             ),
             _InspectorMetricCard(
               icon: Icons.photo_camera_outlined,
-              label: 'CAMERA',
-              value: record.metadata.camera ?? 'Unavailable',
+              label: _localized(labels, 'CAMERA', '相机'),
+              value:
+                  record.metadata.camera ??
+                  _localized(labels, 'Unavailable', '不可用'),
             ),
             _InspectorMetricCard(
               icon: Icons.location_on_outlined,
               label: 'GPS',
               value: record.metadata.lat == null || record.metadata.lng == null
-                  ? 'Unavailable'
+                  ? _localized(labels, 'Unavailable', '不可用')
                   : '${record.metadata.lat}, ${record.metadata.lng}',
             ),
             _InspectorMetricCard(
@@ -471,7 +491,7 @@ final class _FocusedDetailInspector extends StatelessWidget {
           ],
         ),
         const SizedBox(height: 14),
-        _AiInsightCard(record: record),
+        _AiInsightCard(labels: labels, record: record),
         const SizedBox(height: 14),
         Wrap(
           spacing: 10,
@@ -520,9 +540,10 @@ final class _FocusedDetailInspector extends StatelessWidget {
 }
 
 final class _InspectorHealthPill extends StatelessWidget {
-  const _InspectorHealthPill({required this.indexState});
+  const _InspectorHealthPill({required this.indexState, required this.labels});
 
   final IndexState indexState;
+  final UiStrings labels;
 
   @override
   Widget build(BuildContext context) {
@@ -538,7 +559,9 @@ final class _InspectorHealthPill extends StatelessWidget {
       ),
       backgroundColor: healthy ? Colors.green.shade50 : Colors.red.shade50,
       label: Text(
-        healthy ? 'HEALTHY' : 'FAILED',
+        healthy
+            ? _localized(labels, 'HEALTHY', '正常')
+            : _localized(labels, 'FAILED', '失败'),
         style: TextStyle(
           color: healthy ? Colors.green.shade700 : Colors.red.shade700,
           fontWeight: FontWeight.w800,
@@ -600,8 +623,9 @@ final class _InspectorMetricCard extends StatelessWidget {
 }
 
 final class _AiInsightCard extends StatelessWidget {
-  const _AiInsightCard({required this.record});
+  const _AiInsightCard({required this.labels, required this.record});
 
+  final UiStrings labels;
   final PhotoRecord record;
 
   @override
@@ -621,9 +645,9 @@ final class _AiInsightCard extends StatelessWidget {
         children: [
           const Icon(Icons.auto_awesome, size: 20),
           const SizedBox(height: 10),
-          const Text(
-            'AI INSIGHTS',
-            style: TextStyle(
+          Text(
+            _localized(labels, 'AI INSIGHTS', 'AI 洞察'),
+            style: const TextStyle(
               color: Color(0xff83766d),
               fontSize: 11,
               fontWeight: FontWeight.w900,
@@ -632,18 +656,22 @@ final class _AiInsightCard extends StatelessWidget {
           ),
           const SizedBox(height: 12),
           _InsightText(
-            label: 'GENERATED CAPTION',
-            value: semantic.generatedCaption ?? 'Not generated yet',
+            label: _localized(labels, 'GENERATED CAPTION', '生成标题'),
+            value:
+                semantic.generatedCaption ??
+                _localized(labels, 'Not generated yet', '尚未生成'),
           ),
           _InsightText(
-            label: 'SUMMARY',
-            value: semantic.summary ?? 'No generated summary.',
+            label: _localized(labels, 'SUMMARY', '摘要'),
+            value:
+                semantic.summary ??
+                _localized(labels, 'No generated summary.', '暂无生成摘要。'),
           ),
           if (semantic.generatedLabels.isNotEmpty) ...[
             const SizedBox(height: 8),
-            const Text(
-              'GENERATED TAGS',
-              style: TextStyle(
+            Text(
+              _localized(labels, 'GENERATED TAGS', '生成标签'),
+              style: const TextStyle(
                 color: Color(0xff83766d),
                 fontSize: 11,
                 fontWeight: FontWeight.w900,
@@ -666,7 +694,7 @@ final class _AiInsightCard extends StatelessWidget {
           if (semantic.aiError != null) ...[
             const SizedBox(height: 10),
             _InsightText(
-              label: 'LAST AI ERROR',
+              label: _localized(labels, 'LAST AI ERROR', '最近 AI 错误'),
               value: semantic.aiError!,
               accentColor: Colors.red.shade700,
             ),
@@ -812,8 +840,13 @@ final class _FocusedEditFields extends StatelessWidget {
 }
 
 final class _FocusedFilmstrip extends StatelessWidget {
-  const _FocusedFilmstrip({required this.photos, required this.selected});
+  const _FocusedFilmstrip({
+    required this.labels,
+    required this.photos,
+    required this.selected,
+  });
 
+  final UiStrings labels;
   final List<PhotoRecord> photos;
   final PhotoRecord selected;
 
@@ -825,9 +858,9 @@ final class _FocusedFilmstrip extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'GALLERY STRIP',
-            style: TextStyle(
+          Text(
+            _localized(labels, 'GALLERY STRIP', '图库胶片条'),
+            style: const TextStyle(
               color: Colors.white70,
               fontSize: 12,
               fontWeight: FontWeight.w800,

@@ -5292,3 +5292,206 @@ This file is the local execution record for ChronoPic. It complements `PLAN.md` 
   `docs/superpowers/plans/2026-05-09-gallery-overlay-activation-parity.md`.
 - Next:
   commit and push the corrected documentation handoff.
+
+### 2026-05-09 Step 206
+
+- Started Phase 5.9 Full Feature UI Parity Review after user requested the
+  same evidence-first approach across all feature and UI points.
+- Locked the method:
+  Electron reference code/runtime first,
+  Flutter code comparison second,
+  behavior tests third,
+  refreshed screenshots fourth,
+  then explicit `Matched`,
+  `Accepted Difference`,
+  or `Gap` decisions.
+- Created the review implementation plan:
+  `docs/superpowers/plans/2026-05-09-feature-ui-parity-review.md`.
+- Created the detailed review report:
+  `docs/flutter-electron-feature-ui-review.md`.
+- Updated:
+  `PLAN.md`
+  and
+  `docs/flutter-refactor-phases.md`
+  with the new review phase.
+- Current evidence state:
+  Electron has all 13 parity screenshots from the latest capture;
+  Flutter currently has only the recently refreshed focused surfaces in
+  `test-results/flutter-electron-parity/flutter/`.
+- Next:
+  refresh all 13 Flutter screenshots,
+  regenerate all 13 side-by-side compare artifacts,
+  then review each matrix surface in order.
+
+### 2026-05-09 Step 207
+
+- Refreshed Phase 5.9 evidence:
+  Electron all 13 parity screenshots,
+  Flutter all 13 parity screenshots,
+  all 13 side-by-side compare images,
+  and a contact sheet for first-pass visual inspection.
+- Reviewed all 13 surfaces against code,
+  tests,
+  and screenshots:
+  empty home,
+  populated grid,
+  map,
+  timeline,
+  detail,
+  gallery,
+  favorites,
+  memories list,
+  memory detail,
+  settings,
+  notifications,
+  Chinese locale,
+  and restart persistence.
+- Updated `docs/flutter-electron-feature-ui-review.md` with per-surface
+  decisions.
+- Confirmed that the previous Detail/Gallery interaction issue is now aligned:
+  double-click/double-tap enters focused Detail first,
+  and Gallery is the second mode inside the viewer.
+- Found one confirmed remaining parity gap:
+  Flutter zh mode still contains app-owned English UI strings.
+  The screenshot evidence is
+  `test-results/flutter-electron-parity/compare/12-zh-locale-compare.png`,
+  where the selected-photo banner remains English in Flutter.
+- Static review found the localization issue is broader than that screenshot:
+  active filter labels,
+  status messages,
+  Detail/Gallery controls,
+  memory actions,
+  settings actions,
+  notifications,
+  map controls,
+  and timeline actions still have hardcoded English paths.
+- Updated `docs/flutter-electron-ui-functional-parity.md` so the Chinese
+  locale row is now `Gap` instead of `Accepted Difference`.
+- Promoted the gap into Phase 5.10:
+  Flutter Visible String Localization Parity.
+- Created the Phase 5.10 implementation plan:
+  `docs/superpowers/plans/2026-05-09-flutter-visible-string-localization-parity.md`.
+- Updated:
+  `PLAN.md`
+  and
+  `docs/flutter-refactor-phases.md`
+  to record Phase 5.10.
+- Next:
+  add failing zh locale tests for the selected-photo banner and active filter
+  labels before changing implementation strings.
+
+### 2026-05-09 Step 208
+
+- Ran the Phase 5.9 verification gate after the review documentation and Phase
+  5.10 promotion were recorded.
+- Agent verification scenes covered:
+  Scene 4 Focused Viewing through Electron accessibility E2E,
+  Scene 7 Restart Persistence through Electron runtime E2E,
+  Scene 8 Settings/Locale through the refreshed settings and zh-locale
+  screenshots plus Flutter locale tests,
+  and Scene 9 Notifications/AI Queue through the refreshed notifications
+  screenshot and existing Electron AI productization coverage reference.
+- Generated/inspected screenshot evidence:
+  `test-results/flutter-electron-parity/electron/*.png`,
+  `test-results/flutter-electron-parity/flutter/*.png`,
+  `test-results/flutter-electron-parity/compare/*.png`,
+  and
+  `test-results/flutter-electron-parity/compare/all-surfaces-contact.png`.
+- Verification commands passed:
+  `node scripts/capture-electron-parity.mjs`,
+  `file test-results/flutter-electron-parity/electron/*.png`,
+  `cd chronopic_flutter && bash tool/capture_flutter_parity.sh all`,
+  `file test-results/flutter-electron-parity/flutter/*.png`,
+  compare artifact generation with `montage`,
+  `pnpm run e2e:accessibility`,
+  `pnpm run e2e:runtime`,
+  `pnpm typecheck`,
+  `pnpm build`,
+  `cd chronopic_flutter && dart analyze packages/chronopic_ui apps/chronopic`,
+  `cd chronopic_flutter && flutter test packages/chronopic_ui/test/linux_desktop_parity_test.dart packages/chronopic_ui/test/chronopic_home_test.dart`,
+  and
+  `git diff --check`.
+- Skipped scenes:
+  no manual Electron mutation scene was added beyond the stable E2E coverage
+  because this slice changed review/planning documentation and did not change
+  runtime implementation.
+- Next:
+  start Phase 5.10 with red zh-locale tests before localizing Flutter strings.
+
+### 2026-05-09 Step 209
+
+- Started Phase 5.10:
+  Flutter Visible String Localization Parity.
+- Added a red Flutter zh regression test in
+  `chronopic_flutter/packages/chronopic_ui/test/chronopic_home_test.dart`
+  covering app-owned visible strings across:
+  selected-photo banners,
+  active filter labels,
+  focused Detail/Gallery controls,
+  memory list/detail actions,
+  settings,
+  notifications,
+  map,
+  timeline,
+  and status messages.
+- Confirmed the test failed before implementation on the selected-photo banner:
+  expected `已选照片`,
+  but the Flutter UI still rendered the English `SELECTED PHOTO` path.
+- Localized the Flutter app-owned strings while preserving source-authored
+  filenames,
+  captions,
+  memory names,
+  imported descriptions,
+  tags,
+  and AI/fixture text.
+- Updated the affected UI surfaces:
+  `chronopic_home.dart`,
+  `home_page.dart`,
+  `browse_surface.dart`,
+  `detail_surface.dart`,
+  `gallery_dialog.dart`,
+  `memory_pages.dart`,
+  and
+  `settings_pages.dart`.
+- Refreshed focused visual evidence:
+  Flutter zh/detail/gallery/settings/notifications/memories-list/memory-detail/map/timeline screenshots,
+  Electron reference screenshots,
+  and affected side-by-side compare artifacts under
+  `test-results/flutter-electron-parity/compare/`.
+
+### 2026-05-09 Step 210
+
+- Ran the Phase 5.10 verification gate after implementation and documentation
+  updates.
+- Agent verification scenes covered:
+  Scene 4 Focused Viewing through localized Detail/Gallery widget coverage and
+  Electron accessibility E2E,
+  Scene 8 Settings/Locale through the zh-locale screenshot,
+  Flutter zh regression test,
+  and Electron i18n E2E,
+  and Scene 9 Notifications/AI Queue through localized notification assertions
+  and refreshed screenshot evidence.
+- Verification commands passed:
+  `cd chronopic_flutter && dart analyze packages/chronopic_ui apps/chronopic`,
+  `cd chronopic_flutter && flutter test packages/chronopic_ui/test/chronopic_home_test.dart packages/chronopic_ui/test/linux_desktop_parity_test.dart`,
+  `pnpm exec playwright test -c tests/e2e/playwright.config.ts i18n.spec.ts accessibility.spec.ts`,
+  and
+  `git diff --check`.
+- Updated
+  `docs/flutter-electron-feature-ui-review.md`
+  to close `FUI-001`.
+- Updated
+  `docs/flutter-electron-ui-functional-parity.md`
+  so the Chinese-locale row is no longer a `Gap`.
+- Updated
+  `PLAN.md`,
+  `docs/flutter-refactor-phases.md`,
+  and
+  `docs/superpowers/plans/2026-05-09-flutter-visible-string-localization-parity.md`
+  to mark Phase 5.10 implemented and verified.
+- Skipped broader Electron runtime/build gates in this slice because no
+  Electron runtime implementation changed; the focused Electron i18n and
+  accessibility E2E checks were rerun to cover the cross-surface parity risk.
+- Next:
+  continue the same evidence-first review process for any newly identified
+  feature/UI deltas before opening Phase 6 mobile productization work.

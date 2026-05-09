@@ -31,6 +31,7 @@ final class MemoryListPage extends StatelessWidget {
       children: [
         _MemoryCandidatePanel(
           candidates: candidates,
+          labels: labels,
           onAcceptCandidate: onAcceptCandidate,
           onGenerateCandidates: onGenerateCandidates,
           onRejectCandidate: onRejectCandidate,
@@ -51,12 +52,14 @@ final class MemoryListPage extends StatelessWidget {
 final class _MemoryCandidatePanel extends StatelessWidget {
   const _MemoryCandidatePanel({
     required this.candidates,
+    required this.labels,
     required this.onAcceptCandidate,
     required this.onGenerateCandidates,
     required this.onRejectCandidate,
   });
 
   final List<MemoryCandidate> candidates;
+  final UiStrings labels;
   final ValueChanged<String> onAcceptCandidate;
   final VoidCallback onGenerateCandidates;
   final ValueChanged<String> onRejectCandidate;
@@ -74,20 +77,35 @@ final class _MemoryCandidatePanel extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.all(20),
             child: _SectionHeader(
-              eyebrow: 'SUGGESTED MEMORIES',
-              title: 'AI-assisted grouping candidates',
-              description:
-                  'Review suggested groups before they become editable memories. Accepting a candidate creates an editable Memory; rejecting it leaves your library untouched.',
+              eyebrow: _localized(labels, 'SUGGESTED MEMORIES', '建议记忆'),
+              title: _localized(
+                labels,
+                'AI-assisted grouping candidates',
+                'AI 辅助分组候选',
+              ),
+              description: _localized(
+                labels,
+                'Review suggested groups before they become editable memories. Accepting a candidate creates an editable Memory; rejecting it leaves your library untouched.',
+                '先审核建议分组，再将其变成可编辑记忆。接受候选会创建可编辑记忆；拒绝候选不会修改资料库。',
+              ),
               trailing: Wrap(
                 spacing: 10,
                 crossAxisAlignment: WrapCrossAlignment.center,
                 children: [
-                  Chip(label: Text('${ready.length} READY')),
+                  Chip(
+                    label: Text(
+                      _localized(
+                        labels,
+                        '${ready.length} READY',
+                        '${ready.length} 条就绪',
+                      ),
+                    ),
+                  ),
                   FilledButton.icon(
                     key: const Key('generate-memory-candidates-button'),
                     onPressed: onGenerateCandidates,
                     icon: const Icon(Icons.auto_awesome),
-                    label: const Text('Generate'),
+                    label: Text(_localized(labels, 'Generate', '生成')),
                   ),
                 ],
               ),
@@ -98,7 +116,11 @@ final class _MemoryCandidatePanel extends StatelessWidget {
             padding: const EdgeInsets.all(20),
             child: ready.isEmpty
                 ? Text(
-                    'No memory candidates are ready.',
+                    _localized(
+                      labels,
+                      'No memory candidates are ready.',
+                      '当前没有就绪的记忆候选。',
+                    ),
                     style: TextStyle(color: Colors.grey.shade600),
                   )
                 : Wrap(
@@ -108,6 +130,7 @@ final class _MemoryCandidatePanel extends StatelessWidget {
                       for (final candidate in ready)
                         _CandidateCard(
                           candidate: candidate,
+                          labels: labels,
                           onAcceptCandidate: onAcceptCandidate,
                           onRejectCandidate: onRejectCandidate,
                         ),
@@ -123,11 +146,13 @@ final class _MemoryCandidatePanel extends StatelessWidget {
 final class _CandidateCard extends StatelessWidget {
   const _CandidateCard({
     required this.candidate,
+    required this.labels,
     required this.onAcceptCandidate,
     required this.onRejectCandidate,
   });
 
   final MemoryCandidate candidate;
+  final UiStrings labels;
   final ValueChanged<String> onAcceptCandidate;
   final ValueChanged<String> onRejectCandidate;
 
@@ -187,7 +212,13 @@ final class _CandidateCard extends StatelessWidget {
                       runSpacing: 8,
                       children: [
                         Chip(
-                          label: Text('${candidate.photoIds.length} photos'),
+                          label: Text(
+                            _localized(
+                              labels,
+                              '${candidate.photoIds.length} photos',
+                              '${candidate.photoIds.length} 张照片',
+                            ),
+                          ),
                         ),
                         for (final label in candidate.generatedLabels.take(2))
                           Chip(label: Text(label)),
@@ -204,7 +235,11 @@ final class _CandidateCard extends StatelessWidget {
                         const SizedBox(width: 6),
                         Expanded(
                           child: Text(
-                            '${candidate.photoIds.length} photos suggested from ${candidate.source.name} evidence at ${(candidate.confidence * 100).round()}% confidence.',
+                            _localized(
+                              labels,
+                              '${candidate.photoIds.length} photos suggested from ${candidate.source.name} evidence at ${(candidate.confidence * 100).round()}% confidence.',
+                              '基于 ${candidate.source.name} 证据建议 ${candidate.photoIds.length} 张照片，置信度 ${(candidate.confidence * 100).round()}%。',
+                            ),
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
                             style: TextStyle(
@@ -219,7 +254,7 @@ final class _CandidateCard extends StatelessWidget {
                     TextButton.icon(
                       onPressed: () {},
                       icon: const Icon(Icons.tune, size: 16),
-                      label: const Text('Adjust photos'),
+                      label: Text(_localized(labels, 'Adjust photos', '调整照片')),
                     ),
                     const SizedBox(height: 10),
                     Wrap(
@@ -230,13 +265,15 @@ final class _CandidateCard extends StatelessWidget {
                           key: Key('reject-candidate-${candidate.id}'),
                           onPressed: () => onRejectCandidate(candidate.id),
                           icon: const Icon(Icons.close, size: 16),
-                          label: const Text('Reject'),
+                          label: Text(_localized(labels, 'Reject', '拒绝')),
                         ),
                         FilledButton.icon(
                           key: Key('accept-candidate-${candidate.id}'),
                           onPressed: () => onAcceptCandidate(candidate.id),
                           icon: const Icon(Icons.check, size: 16),
-                          label: const Text('Accept Memory'),
+                          label: Text(
+                            _localized(labels, 'Accept Memory', '接受记忆'),
+                          ),
                         ),
                       ],
                     ),
@@ -313,10 +350,21 @@ final class _MemoryCollectionPanel extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.all(20),
             child: _SectionHeader(
-              title: 'Browse memory collections',
-              description:
-                  'Open a memory to review its story, edit metadata, and manage contained photos.',
-              trailing: Chip(label: Text('${memories.length} memories')),
+              title: _localized(labels, 'Browse memory collections', '浏览记忆集合'),
+              description: _localized(
+                labels,
+                'Open a memory to review its story, edit metadata, and manage contained photos.',
+                '打开记忆以查看故事、编辑元数据并管理其中的照片。',
+              ),
+              trailing: Chip(
+                label: Text(
+                  _localized(
+                    labels,
+                    '${memories.length} memories',
+                    '${memories.length} 个记忆',
+                  ),
+                ),
+              ),
             ),
           ),
           const Divider(height: 1),
@@ -348,7 +396,11 @@ final class _MemoryCollectionPanel extends StatelessWidget {
             padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
             child: memories.isEmpty
                 ? Text(
-                    'No memories yet. Create one, then add selected photos from the detail pane.',
+                    _localized(
+                      labels,
+                      'No memories yet. Create one, then add selected photos from the detail pane.',
+                      '还没有记忆。创建一个记忆后，可从详情面板加入所选照片。',
+                    ),
                     style: TextStyle(color: Colors.grey.shade600),
                   )
                 : Wrap(
@@ -357,6 +409,7 @@ final class _MemoryCollectionPanel extends StatelessWidget {
                     children: [
                       for (final memory in memories)
                         _MemoryCard(
+                          labels: labels,
                           memory: memory,
                           onSelectMemory: onSelectMemory,
                         ),
@@ -370,8 +423,13 @@ final class _MemoryCollectionPanel extends StatelessWidget {
 }
 
 final class _MemoryCard extends StatelessWidget {
-  const _MemoryCard({required this.memory, required this.onSelectMemory});
+  const _MemoryCard({
+    required this.labels,
+    required this.memory,
+    required this.onSelectMemory,
+  });
 
+  final UiStrings labels;
   final Memory memory;
   final ValueChanged<String> onSelectMemory;
 
@@ -407,7 +465,7 @@ final class _MemoryCard extends StatelessWidget {
                       ),
                       const SizedBox(height: 6),
                       Text(
-                        memory.description ?? 'No description',
+                        memory.description ?? labels.noDescription,
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(color: Colors.grey.shade600),
@@ -501,7 +559,7 @@ final class MemoryDetailPage extends StatelessWidget {
           selected: selected,
         ),
         const SizedBox(height: 18),
-        _StoryOutlinePanel(memory: memory!),
+        _StoryOutlinePanel(labels: labels, memory: memory!),
         const SizedBox(height: 18),
         _MemoryManagementPanel(
           labels: labels,
@@ -553,7 +611,15 @@ final class _MemoryDetailHero extends StatelessWidget {
                       spacing: 8,
                       runSpacing: 8,
                       children: [
-                        Chip(label: Text('${memory.photoCount} photos')),
+                        Chip(
+                          label: Text(
+                            _localized(
+                              labels,
+                              '${memory.photoCount} photos',
+                              '${memory.photoCount} 张照片',
+                            ),
+                          ),
+                        ),
                         Chip(label: Text(memory.source.name.toUpperCase())),
                       ],
                     ),
@@ -561,7 +627,7 @@ final class _MemoryDetailHero extends StatelessWidget {
                   IconButton(
                     key: const Key('memory-hero-set-cover-button'),
                     onPressed: selected == null ? null : onSetCover,
-                    tooltip: 'Set Cover',
+                    tooltip: _localized(labels, 'Set Cover', '设为封面'),
                     icon: const Icon(Icons.auto_fix_high_outlined),
                   ),
                   IconButton(
@@ -569,14 +635,14 @@ final class _MemoryDetailHero extends StatelessWidget {
                     onPressed: selected == null
                         ? null
                         : onRemoveSelectedFromMemory,
-                    tooltip: 'Remove from Memory',
+                    tooltip: _localized(labels, 'Remove from Memory', '从记忆移除'),
                     icon: const Icon(Icons.delete_outline),
                   ),
                 ],
               ),
               const SizedBox(height: 10),
               Text(
-                'MEMORY DETAIL',
+                _localized(labels, 'MEMORY DETAIL', '记忆详情'),
                 style: TextStyle(
                   color: Colors.grey.shade600,
                   fontSize: 12,
@@ -609,8 +675,8 @@ final class _MemoryDetailHero extends StatelessWidget {
               const SizedBox(height: 14),
               Text(
                 memory.coverPhotoId == null
-                    ? 'No custom cover selected'
-                    : 'Custom cover selected',
+                    ? _localized(labels, 'No custom cover selected', '未选择自定义封面')
+                    : _localized(labels, 'Custom cover selected', '已选择自定义封面'),
                 style: TextStyle(
                   color: Colors.grey.shade600,
                   fontSize: 12,
@@ -620,7 +686,7 @@ final class _MemoryDetailHero extends StatelessWidget {
               ),
               const SizedBox(height: 14),
               Text(
-                'Description',
+                _localized(labels, 'Description', '描述'),
                 style: TextStyle(
                   color: Colors.grey.shade700,
                   fontSize: 12,
@@ -708,10 +774,13 @@ final class _MemoryManagementPanel extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const _SectionHeader(
-            title: 'Memory management',
-            description:
-                'Edit metadata and manage selected-photo membership after reviewing the story.',
+          _SectionHeader(
+            title: _localized(labels, 'Memory management', '记忆管理'),
+            description: _localized(
+              labels,
+              'Edit metadata and manage selected-photo membership after reviewing the story.',
+              '查看故事后，编辑元数据并管理所选照片的记忆关系。',
+            ),
           ),
           const SizedBox(height: 16),
           TextField(
@@ -723,7 +792,9 @@ final class _MemoryManagementPanel extends StatelessWidget {
           TextField(
             key: const Key('memory-description-field'),
             controller: memoryDescriptionController,
-            decoration: const InputDecoration(labelText: 'Description'),
+            decoration: InputDecoration(
+              labelText: _localized(labels, 'Description', '描述'),
+            ),
             maxLines: 2,
           ),
           const SizedBox(height: 12),
@@ -735,7 +806,7 @@ final class _MemoryManagementPanel extends StatelessWidget {
                 key: const Key('save-memory-button'),
                 onPressed: onSaveMemory,
                 icon: const Icon(Icons.save_outlined),
-                label: const Text('Save Memory'),
+                label: Text(_localized(labels, 'Save Memory', '保存记忆')),
               ),
               OutlinedButton.icon(
                 key: const Key('add-to-memory-button'),
@@ -747,13 +818,13 @@ final class _MemoryManagementPanel extends StatelessWidget {
                 key: const Key('set-memory-cover-button'),
                 onPressed: selected == null ? null : onSetCover,
                 icon: const Icon(Icons.wallpaper_outlined),
-                label: const Text('Set Cover'),
+                label: Text(_localized(labels, 'Set Cover', '设为封面')),
               ),
               OutlinedButton.icon(
                 key: const Key('remove-from-memory-button'),
                 onPressed: selected == null ? null : onRemoveSelectedFromMemory,
                 icon: const Icon(Icons.remove_circle_outline),
-                label: const Text('Remove from Memory'),
+                label: Text(_localized(labels, 'Remove from Memory', '从记忆移除')),
               ),
               OutlinedButton.icon(
                 onPressed: onBackToMemories,
@@ -769,8 +840,9 @@ final class _MemoryManagementPanel extends StatelessWidget {
 }
 
 final class _StoryOutlinePanel extends StatelessWidget {
-  const _StoryOutlinePanel({required this.memory});
+  const _StoryOutlinePanel({required this.labels, required this.memory});
 
+  final UiStrings labels;
   final Memory memory;
 
   @override
@@ -786,9 +858,21 @@ final class _StoryOutlinePanel extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.all(20),
             child: _SectionHeader(
-              eyebrow: 'STORY OUTLINE',
-              title: 'Chapters inside this memory',
-              trailing: Chip(label: Text('${memory.photoCount} CHAPTERS')),
+              eyebrow: _localized(labels, 'STORY OUTLINE', '故事大纲'),
+              title: _localized(
+                labels,
+                'Chapters inside this memory',
+                '这个记忆中的章节',
+              ),
+              trailing: Chip(
+                label: Text(
+                  _localized(
+                    labels,
+                    '${memory.photoCount} CHAPTERS',
+                    '${memory.photoCount} 个章节',
+                  ),
+                ),
+              ),
             ),
           ),
           const Divider(height: 1),
@@ -809,10 +893,18 @@ final class _StoryOutlinePanel extends StatelessWidget {
                         children: [
                           Row(
                             children: [
-                              const Chip(label: Text('CHAPTER 1')),
+                              Chip(
+                                label: Text(
+                                  _localized(labels, 'CHAPTER 1', '章节 1'),
+                                ),
+                              ),
                               const Spacer(),
                               Text(
-                                '${memory.photoCount} photos',
+                                _localized(
+                                  labels,
+                                  '${memory.photoCount} photos',
+                                  '${memory.photoCount} 张照片',
+                                ),
                                 style: TextStyle(color: Colors.grey.shade600),
                               ),
                             ],
@@ -832,10 +924,22 @@ final class _StoryOutlinePanel extends StatelessWidget {
                           Wrap(
                             spacing: 8,
                             children: [
-                              Chip(label: Text('${memory.photoCount} MAPPED')),
                               Chip(
                                 label: Text(
-                                  '${memory.photoCount} AI ${memory.aiStatus == AiPipelineStatus.completed ? 'READY' : memory.aiStatus.name.toUpperCase()}',
+                                  _localized(
+                                    labels,
+                                    '${memory.photoCount} MAPPED',
+                                    '${memory.photoCount} 张已定位',
+                                  ),
+                                ),
+                              ),
+                              Chip(
+                                label: Text(
+                                  _localized(
+                                    labels,
+                                    '${memory.photoCount} AI ${memory.aiStatus == AiPipelineStatus.completed ? 'READY' : memory.aiStatus.name.toUpperCase()}',
+                                    '${memory.photoCount} 个 AI ${memory.aiStatus == AiPipelineStatus.completed ? '就绪' : memory.aiStatus.name}',
+                                  ),
                                 ),
                               ),
                             ],

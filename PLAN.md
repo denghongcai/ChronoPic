@@ -2229,6 +2229,107 @@ Current status:
   side-by-side comparison artifacts are under
   `test-results/flutter-electron-parity/compare/`.
 
+### 4.37 Full Feature UI Parity Review Phase
+
+- Purpose:
+  review every Electron-vs-Flutter desktop feature surface and UI state with
+  code,
+  tests,
+  and refreshed screenshot evidence before further broad UI work.
+- Method:
+  review Electron reference code/runtime first,
+  compare Flutter implementation,
+  run or add focused tests for behavior,
+  refresh screenshots,
+  inspect side-by-side compare artifacts,
+  and classify each finding as `Matched`,
+  `Accepted Difference`,
+  or `Gap`.
+- Surfaces:
+  empty home,
+  populated grid,
+  map,
+  timeline,
+  detail,
+  gallery,
+  favorites,
+  memories list,
+  memory detail,
+  settings,
+  notifications,
+  Chinese locale,
+  and restart persistence.
+- Implementation plan:
+  [docs/superpowers/plans/2026-05-09-feature-ui-parity-review.md](docs/superpowers/plans/2026-05-09-feature-ui-parity-review.md)
+- Detailed review report:
+  [docs/flutter-electron-feature-ui-review.md](docs/flutter-electron-feature-ui-review.md)
+- Current status:
+  reviewed on 2026-05-09.
+  Full Electron and Flutter screenshot evidence was refreshed,
+  all 13 side-by-side compare artifacts were generated,
+  and the detailed review found one confirmed parity gap:
+  Flutter zh mode still contains app-owned English UI strings.
+  Verification passed after the review:
+  `pnpm run e2e:accessibility`,
+  `pnpm run e2e:runtime`,
+  `pnpm typecheck`,
+  `pnpm build`,
+  `dart analyze packages/chronopic_ui apps/chronopic`,
+  `flutter test packages/chronopic_ui/test/linux_desktop_parity_test.dart packages/chronopic_ui/test/chronopic_home_test.dart`,
+  and
+  `git diff --check`.
+- Follow-up:
+  visible-string localization parity has been promoted to Phase 4.38.
+
+### 4.38 Flutter Visible String Localization Parity Phase
+
+- Purpose:
+  close the confirmed Flutter Chinese-locale UI parity gap by removing
+  app-owned English strings from zh mode while preserving source-authored user
+  content.
+- Reference finding:
+  `FUI-001` in
+  [docs/flutter-electron-feature-ui-review.md](docs/flutter-electron-feature-ui-review.md).
+- Implementation plan:
+  [docs/superpowers/plans/2026-05-09-flutter-visible-string-localization-parity.md](docs/superpowers/plans/2026-05-09-flutter-visible-string-localization-parity.md)
+- Scope:
+  selected-photo banners,
+  active filter labels,
+  status messages,
+  Detail/Gallery controls,
+  memory list/detail actions,
+  settings actions,
+  notifications,
+  map controls,
+  and timeline actions.
+- Test requirement:
+  add failing zh assertions before changing strings,
+  then refresh the affected Flutter screenshots and compare artifacts.
+- Current status:
+  implemented and verified on 2026-05-09.
+- Result:
+  Flutter app-owned zh UI is localized across selected-photo banners,
+  active filter labels,
+  status messages,
+  Detail/Gallery controls,
+  memory actions,
+  settings,
+  notifications,
+  map,
+  and timeline surfaces.
+  Source-authored filenames,
+  captions,
+  memory names,
+  imported descriptions,
+  and AI/fixture content remain untranslated.
+- Verification:
+  `dart analyze packages/chronopic_ui apps/chronopic`,
+  `flutter test packages/chronopic_ui/test/chronopic_home_test.dart packages/chronopic_ui/test/linux_desktop_parity_test.dart`,
+  `pnpm exec playwright test -c tests/e2e/playwright.config.ts i18n.spec.ts accessibility.spec.ts`,
+  and
+  `git diff --check`
+  all pass.
+
 ## Future Product Backlog
 
 These are intentionally recorded as candidate directions rather than committed phases. They should be promoted into explicit numbered phases only after the current product risk is re-evaluated.

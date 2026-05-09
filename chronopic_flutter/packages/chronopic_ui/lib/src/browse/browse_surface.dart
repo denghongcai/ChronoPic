@@ -40,6 +40,7 @@ final class BrowseModeSelector extends StatelessWidget {
 
 final class BrowseSurface extends StatelessWidget {
   const BrowseSurface({
+    required this.labels,
     required this.mode,
     required this.onOpenDetail,
     required this.onSelectPhoto,
@@ -47,6 +48,7 @@ final class BrowseSurface extends StatelessWidget {
     required this.selected,
   });
 
+  final UiStrings labels;
   final BrowseMode mode;
   final ValueChanged<PhotoRecord> onOpenDetail;
   final ValueChanged<PhotoRecord> onSelectPhoto;
@@ -57,16 +59,19 @@ final class BrowseSurface extends StatelessWidget {
   Widget build(BuildContext context) {
     return switch (mode) {
       BrowseMode.waterfall => PhotoGrid(
+        labels: labels,
         onOpenDetail: onOpenDetail,
         onSelectPhoto: onSelectPhoto,
         photos: photos,
         selected: selected,
       ),
       BrowseMode.map => MapBrowseView(
+        labels: labels,
         onSelectPhoto: onSelectPhoto,
         photos: photos,
       ),
       BrowseMode.timeline => TimelineBrowseView(
+        labels: labels,
         onSelectPhoto: onSelectPhoto,
         photos: photos,
         selected: selected,
@@ -77,12 +82,14 @@ final class BrowseSurface extends StatelessWidget {
 
 final class PhotoGrid extends StatelessWidget {
   const PhotoGrid({
+    required this.labels,
     required this.onOpenDetail,
     required this.onSelectPhoto,
     required this.photos,
     required this.selected,
   });
 
+  final UiStrings labels;
   final ValueChanged<PhotoRecord> onOpenDetail;
   final ValueChanged<PhotoRecord> onSelectPhoto;
   final List<PhotoRecord> photos;
@@ -91,7 +98,7 @@ final class PhotoGrid extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (photos.isEmpty) {
-      return const _EmptyLibrary();
+      return _EmptyLibrary(labels: labels);
     }
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -115,6 +122,7 @@ final class PhotoGrid extends StatelessWidget {
           itemBuilder: (context, index) {
             final record = photos[index];
             return PhotoCardTile(
+              labels: labels,
               onOpenDetail: () => onOpenDetail(record),
               onSelect: () => onSelectPhoto(record),
               record: record,
@@ -129,12 +137,14 @@ final class PhotoGrid extends StatelessWidget {
 
 final class PhotoCardTile extends StatefulWidget {
   const PhotoCardTile({
+    required this.labels,
     required this.onOpenDetail,
     required this.onSelect,
     required this.record,
     required this.selected,
   });
 
+  final UiStrings labels;
   final VoidCallback onOpenDetail;
   final VoidCallback onSelect;
   final PhotoRecord record;
@@ -225,7 +235,7 @@ final class _PhotoCardTileState extends State<PhotoCardTile> {
                       Expanded(
                         child: Text(
                           widget.record.metadata.datetime == null
-                              ? 'No date'
+                              ? _localized(widget.labels, 'No date', '无日期')
                               : _formatDate(
                                   DateTime.fromMillisecondsSinceEpoch(
                                     widget.record.metadata.datetime!,
@@ -252,8 +262,13 @@ final class _PhotoCardTileState extends State<PhotoCardTile> {
 }
 
 final class MapBrowseView extends StatelessWidget {
-  const MapBrowseView({required this.onSelectPhoto, required this.photos});
+  const MapBrowseView({
+    required this.labels,
+    required this.onSelectPhoto,
+    required this.photos,
+  });
 
+  final UiStrings labels;
   final ValueChanged<PhotoRecord> onSelectPhoto;
   final List<PhotoRecord> photos;
 
@@ -292,13 +307,18 @@ final class MapBrowseView extends StatelessWidget {
                 const Positioned.fill(
                   child: CustomPaint(painter: _MapGridPainter()),
                 ),
-                Center(child: _MapStatusCard(mappedCount: mapped.length)),
+                Center(
+                  child: _MapStatusCard(
+                    labels: labels,
+                    mappedCount: mapped.length,
+                  ),
+                ),
               ],
             ),
           ),
           const SizedBox(height: 16),
           if (mapped.isEmpty)
-            _MapEmptyState(totalCount: photos.length)
+            _MapEmptyState(labels: labels, totalCount: photos.length)
           else
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -309,11 +329,15 @@ final class MapBrowseView extends StatelessWidget {
                   crossAxisAlignment: WrapCrossAlignment.center,
                   children: [
                     Text(
-                      'Mappable Photos',
+                      _localized(labels, 'Mappable Photos', '可定位照片'),
                       style: Theme.of(context).textTheme.titleMedium,
                     ),
                     Text(
-                      '${mapped.length} of ${photos.length} in current results',
+                      _localized(
+                        labels,
+                        '${mapped.length} of ${photos.length} in current results',
+                        '当前结果中 ${mapped.length} / ${photos.length} 张可定位',
+                      ),
                       style: TextStyle(color: Colors.grey.shade600),
                     ),
                   ],
@@ -334,8 +358,9 @@ final class MapBrowseView extends StatelessWidget {
 }
 
 final class _MapStatusCard extends StatelessWidget {
-  const _MapStatusCard({required this.mappedCount});
+  const _MapStatusCard({required this.labels, required this.mappedCount});
 
+  final UiStrings labels;
   final int mappedCount;
 
   @override
@@ -356,7 +381,7 @@ final class _MapStatusCard extends StatelessWidget {
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
               child: Text(
-                'MAP ERROR',
+                _localized(labels, 'MAP ERROR', '地图错误'),
                 style: TextStyle(
                   color: Colors.red.shade600,
                   fontSize: 11,
@@ -367,21 +392,32 @@ final class _MapStatusCard extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 16),
-          const Text(
-            'Map view failed to initialize',
+          Text(
+            _localized(labels, 'Map view failed to initialize', '地图视图初始化失败'),
             textAlign: TextAlign.center,
-            style: TextStyle(fontSize: 22, fontWeight: FontWeight.w900),
+            style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w900),
           ),
           const SizedBox(height: 14),
           Text(
-            'AMap loaded but window.AMap is unavailable',
+            _localized(
+              labels,
+              'AMap loaded but window.AMap is unavailable',
+              'AMap 已加载，但 window.AMap 不可用',
+            ),
             textAlign: TextAlign.center,
             style: TextStyle(color: Colors.grey.shade700, height: 1.35),
           ),
           const SizedBox(height: 18),
           Semantics(
-            label: '$mappedCount mapped photos remain selectable below',
-            child: _SoftStat(label: 'Mapped', value: '$mappedCount'),
+            label: _localized(
+              labels,
+              '$mappedCount mapped photos remain selectable below',
+              '下方仍可选择 $mappedCount 张已定位照片',
+            ),
+            child: _SoftStat(
+              label: _localized(labels, 'Mapped', '已定位'),
+              value: '$mappedCount',
+            ),
           ),
         ],
       ),
@@ -417,8 +453,9 @@ final class _MapPhotoTile extends StatelessWidget {
 }
 
 final class _MapEmptyState extends StatelessWidget {
-  const _MapEmptyState({required this.totalCount});
+  const _MapEmptyState({required this.labels, required this.totalCount});
 
+  final UiStrings labels;
   final int totalCount;
 
   @override
@@ -437,7 +474,11 @@ final class _MapEmptyState extends StatelessWidget {
           const SizedBox(width: 12),
           Expanded(
             child: Text(
-              'No geotagged photos in these $totalCount results. Use grid or timeline to continue browsing.',
+              _localized(
+                labels,
+                'No geotagged photos in these $totalCount results. Use grid or timeline to continue browsing.',
+                '这 $totalCount 个结果中没有带位置的照片。可用瀑布流或时间线继续浏览。',
+              ),
               style: TextStyle(color: Colors.grey.shade700),
             ),
           ),
@@ -500,11 +541,13 @@ final class _SoftStat extends StatelessWidget {
 
 final class TimelineBrowseView extends StatelessWidget {
   const TimelineBrowseView({
+    required this.labels,
     required this.onSelectPhoto,
     required this.photos,
     required this.selected,
   });
 
+  final UiStrings labels;
   final ValueChanged<PhotoRecord> onSelectPhoto;
   final List<PhotoRecord> photos;
   final PhotoRecord? selected;
@@ -515,7 +558,7 @@ final class TimelineBrowseView extends StatelessWidget {
     for (final record in photos) {
       final timestamp = record.metadata.datetime;
       final key = timestamp == null
-          ? 'No date'
+          ? _localized(labels, 'No date', '无日期')
           : _formatTimelineMonth(
               DateTime.fromMillisecondsSinceEpoch(timestamp).toLocal(),
             );
@@ -525,26 +568,40 @@ final class TimelineBrowseView extends StatelessWidget {
     final timestamps = dated.map((record) => record.metadata.datetime!).toList()
       ..sort();
     final range = timestamps.isEmpty
-        ? 'No dated media'
-        : '${_formatDate(DateTime.fromMillisecondsSinceEpoch(timestamps.first).toLocal())} to ${_formatDate(DateTime.fromMillisecondsSinceEpoch(timestamps.last).toLocal())}';
+        ? _localized(labels, 'No dated media', '没有带日期的媒体')
+        : _localized(
+            labels,
+            '${_formatDate(DateTime.fromMillisecondsSinceEpoch(timestamps.first).toLocal())} to ${_formatDate(DateTime.fromMillisecondsSinceEpoch(timestamps.last).toLocal())}',
+            '${_formatDate(DateTime.fromMillisecondsSinceEpoch(timestamps.first).toLocal())} 至 ${_formatDate(DateTime.fromMillisecondsSinceEpoch(timestamps.last).toLocal())}',
+          );
     return _Panel(
       child: Column(
         key: const Key('timeline-view'),
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _SectionHeader(
-            title: 'Timeline View',
-            description:
-                'Review the current library results by capture date without leaving the desktop browse shell.',
+            title: _localized(labels, 'Timeline View', '时间线视图'),
+            description: _localized(
+              labels,
+              'Review the current library results by capture date without leaving the desktop browse shell.',
+              '按拍摄日期查看当前资料库结果，同时保留桌面浏览外壳。',
+            ),
             trailing: Chip(
               avatar: const Icon(Icons.timeline, size: 16),
-              label: Text('${groups.length} groups'),
+              label: Text(
+                _localized(
+                  labels,
+                  '${groups.length} groups',
+                  '${groups.length} 组',
+                ),
+              ),
             ),
           ),
           const SizedBox(height: 16),
           _TimelineHero(
             datedCount: timestamps.length,
             groupCount: groups.length,
+            labels: labels,
             onSelectPhoto: onSelectPhoto,
             range: range,
             selected: selected,
@@ -555,6 +612,7 @@ final class TimelineBrowseView extends StatelessWidget {
             _TimelineGroupCard(
               key: Key('timeline-group-${entry.key}'),
               dateLabel: entry.key,
+              labels: labels,
               onSelectPhoto: onSelectPhoto,
               records: entry.value,
               selected: selected,
@@ -571,6 +629,7 @@ final class _TimelineHero extends StatelessWidget {
   const _TimelineHero({
     required this.datedCount,
     required this.groupCount,
+    required this.labels,
     required this.onSelectPhoto,
     required this.range,
     required this.selected,
@@ -579,6 +638,7 @@ final class _TimelineHero extends StatelessWidget {
 
   final int datedCount;
   final int groupCount;
+  final UiStrings labels;
   final ValueChanged<PhotoRecord> onSelectPhoto;
   final String range;
   final PhotoRecord? selected;
@@ -603,29 +663,48 @@ final class _TimelineHero extends StatelessWidget {
             runSpacing: 8,
             crossAxisAlignment: WrapCrossAlignment.center,
             children: [
-              const _TimelineScopeChip(label: 'Year'),
-              const _TimelineScopeChip(label: 'Month', selected: true),
-              const _TimelineScopeChip(label: 'Day'),
+              _TimelineScopeChip(label: _localized(labels, 'Year', '年份')),
+              _TimelineScopeChip(
+                label: _localized(labels, 'Month', '月份'),
+                selected: true,
+              ),
+              _TimelineScopeChip(label: _localized(labels, 'Day', '日期')),
               OutlinedButton(
                 key: const Key('timeline-select-button'),
                 onPressed: selected == null
                     ? null
                     : () => onSelectPhoto(selected),
-                child: const Text('Select'),
+                child: Text(_localized(labels, 'Select', '选择')),
               ),
-              _TimelineMetricChip(label: '$groupCount groups'),
-              _TimelineMetricChip(label: '$datedCount dated photos'),
+              _TimelineMetricChip(
+                label: _localized(
+                  labels,
+                  '$groupCount groups',
+                  '$groupCount 组',
+                ),
+              ),
+              _TimelineMetricChip(
+                label: _localized(
+                  labels,
+                  '$datedCount dated photos',
+                  '$datedCount 张有日期照片',
+                ),
+              ),
             ],
           ),
           const SizedBox(height: 18),
           _TimelineInfoStrip(
-            label: 'TIMELINE SCOPE',
-            text:
-                'Showing $datedCount dated photos across $groupCount Month groups in $totalCount current results.',
+            label: _localized(labels, 'TIMELINE SCOPE', '时间线范围'),
+            text: _localized(
+              labels,
+              'Showing $datedCount dated photos across $groupCount Month groups in $totalCount current results.',
+              '当前 $totalCount 个结果中，显示 $datedCount 张带日期照片，分布在 $groupCount 个月份组。',
+            ),
           ),
           if (selected != null) ...[
             const SizedBox(height: 14),
             _TimelineSelectedBanner(
+              labels: labels,
               onSelectPhoto: onSelectPhoto,
               record: selected,
             ),
@@ -730,10 +809,12 @@ final class _TimelineInfoStrip extends StatelessWidget {
 
 final class _TimelineSelectedBanner extends StatelessWidget {
   const _TimelineSelectedBanner({
+    required this.labels,
     required this.onSelectPhoto,
     required this.record,
   });
 
+  final UiStrings labels;
   final ValueChanged<PhotoRecord> onSelectPhoto;
   final PhotoRecord record;
 
@@ -753,15 +834,22 @@ final class _TimelineSelectedBanner extends StatelessWidget {
         runSpacing: 8,
         crossAxisAlignment: WrapCrossAlignment.center,
         children: [
-          const _TimelineMetricChip(label: 'SELECTED PHOTO', selected: true),
+          _TimelineMetricChip(
+            label: _localized(labels, 'SELECTED PHOTO', '已选照片'),
+            selected: true,
+          ),
           Text(
-            '${_basename(record.photo.path)} is the current timeline focus.',
+            _localized(
+              labels,
+              '${_basename(record.photo.path)} is the current timeline focus.',
+              '${_basename(record.photo.path)} 是当前时间线焦点。',
+            ),
             style: TextStyle(color: Colors.lightBlue.shade900),
           ),
           OutlinedButton(
             key: const Key('timeline-open-detail-button'),
             onPressed: () => onSelectPhoto(record),
-            child: const Text('Open Detail'),
+            child: Text(_localized(labels, 'Open Detail', '打开详情')),
           ),
         ],
       ),
@@ -772,6 +860,7 @@ final class _TimelineSelectedBanner extends StatelessWidget {
 final class _TimelineGroupCard extends StatelessWidget {
   const _TimelineGroupCard({
     required this.dateLabel,
+    required this.labels,
     required this.onSelectPhoto,
     required this.records,
     required this.selected,
@@ -779,6 +868,7 @@ final class _TimelineGroupCard extends StatelessWidget {
   });
 
   final String dateLabel;
+  final UiStrings labels;
   final ValueChanged<PhotoRecord> onSelectPhoto;
   final List<PhotoRecord> records;
   final PhotoRecord? selected;
@@ -817,7 +907,11 @@ final class _TimelineGroupCard extends StatelessWidget {
                         ),
                       ),
                       Text(
-                        '${records.length} items',
+                        _localized(
+                          labels,
+                          '${records.length} items',
+                          '${records.length} 项',
+                        ),
                         style: TextStyle(color: Colors.grey.shade600),
                       ),
                     ],
@@ -826,7 +920,7 @@ final class _TimelineGroupCard extends StatelessWidget {
                 OutlinedButton.icon(
                   onPressed: () => onSelectPhoto(records.first),
                   icon: const Icon(Icons.ads_click, size: 18),
-                  label: const Text('Select'),
+                  label: Text(_localized(labels, 'Select', '选择')),
                 ),
               ],
             ),
@@ -837,6 +931,7 @@ final class _TimelineGroupCard extends StatelessWidget {
               children: [
                 for (final record in records)
                   _TimelinePhotoCard(
+                    labels: labels,
                     key: Key('timeline-photo-${record.photo.id}'),
                     onTap: () => onSelectPhoto(record),
                     record: record,
@@ -853,12 +948,14 @@ final class _TimelineGroupCard extends StatelessWidget {
 
 final class _TimelinePhotoCard extends StatelessWidget {
   const _TimelinePhotoCard({
+    required this.labels,
     required this.onTap,
     required this.record,
     required this.selected,
     super.key,
   });
 
+  final UiStrings labels;
   final VoidCallback onTap;
   final PhotoRecord record;
   final bool selected;
@@ -903,7 +1000,9 @@ final class _TimelinePhotoCard extends StatelessWidget {
                     Row(
                       children: [
                         _TimelineMetricChip(
-                          label: selected ? 'Selected' : 'Media',
+                          label: selected
+                              ? _localized(labels, 'Selected', '已选择')
+                              : _localized(labels, 'Media', '媒体'),
                           selected: selected,
                         ),
                         const SizedBox(width: 8),
@@ -943,7 +1042,9 @@ String _formatTimelineMonth(DateTime value) {
 }
 
 final class _EmptyLibrary extends StatelessWidget {
-  const _EmptyLibrary();
+  const _EmptyLibrary({required this.labels});
+
+  final UiStrings labels;
 
   @override
   Widget build(BuildContext context) {
@@ -960,7 +1061,13 @@ final class _EmptyLibrary extends StatelessWidget {
                 color: Colors.grey.shade400,
               ),
               const SizedBox(height: 12),
-              const Text('Add a folder, scan, then browse photos here.'),
+              Text(
+                _localized(
+                  labels,
+                  'Add a folder, scan, then browse photos here.',
+                  '添加文件夹并扫描后，即可在这里浏览照片。',
+                ),
+              ),
             ],
           ),
         ),

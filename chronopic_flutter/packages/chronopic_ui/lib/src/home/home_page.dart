@@ -226,10 +226,11 @@ final class HomePage extends StatelessWidget {
             selected != null &&
             browseMode == BrowseMode.waterfall) ...[
           const SizedBox(height: 14),
-          _BrowseSelectedPhotoBanner(record: selected!),
+          _BrowseSelectedPhotoBanner(labels: labels, record: selected!),
         ],
         const SizedBox(height: 14),
         BrowseSurface(
+          labels: labels,
           mode: browseMode,
           onOpenDetail: onOpenDetailFor,
           onSelectPhoto: onSelectPhoto,
@@ -263,8 +264,12 @@ final class HomePage extends StatelessWidget {
 }
 
 final class _BrowseSelectedPhotoBanner extends StatelessWidget {
-  const _BrowseSelectedPhotoBanner({required this.record});
+  const _BrowseSelectedPhotoBanner({
+    required this.labels,
+    required this.record,
+  });
 
+  final UiStrings labels;
   final PhotoRecord record;
 
   @override
@@ -292,7 +297,7 @@ final class _BrowseSelectedPhotoBanner extends StatelessWidget {
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               child: Text(
-                'SELECTED PHOTO',
+                _localized(labels, 'SELECTED PHOTO', '已选照片'),
                 style: TextStyle(
                   color: Colors.lightBlue.shade800,
                   fontSize: 11,
@@ -303,7 +308,11 @@ final class _BrowseSelectedPhotoBanner extends StatelessWidget {
             ),
           ),
           Text(
-            'This photo is not saved to any memory yet.',
+            _localized(
+              labels,
+              'This photo is not saved to any memory yet.',
+              '这张照片还没有保存到任何记忆。',
+            ),
             style: TextStyle(color: Colors.lightBlue.shade900),
           ),
         ],

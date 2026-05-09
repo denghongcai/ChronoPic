@@ -78,7 +78,7 @@ final class _ChronoPicHomeState extends State<ChronoPicHome> {
   PhotoSortBy _sortBy = PhotoSortBy.datetime;
   SortDirection _sortDirection = SortDirection.desc;
   String? _selectedMemoryId;
-  String _status = 'Scan progress: idle';
+  String _status = uiStrings[UiLocale.en]!.scanIdle;
 
   @override
   void initState() {
@@ -325,27 +325,80 @@ final class _ChronoPicHomeState extends State<ChronoPicHome> {
 
   List<String> _activeFilterLabels() {
     final labels = <String>[];
-    if (_query.trim().isNotEmpty) labels.add('Search: ${_query.trim()}');
-    if (_tagFilter != null) labels.add('Tag: $_tagFilter');
-    if (_gpsOnly) labels.add('GPS only');
-    if (_aiStatusFilter != null) labels.add('AI: ${_aiStatusFilter!.name}');
+    if (_query.trim().isNotEmpty) {
+      labels.add(_labelValue(_tr('Search', '搜索'), _query.trim()));
+    }
+    if (_tagFilter != null) {
+      labels.add(_labelValue(_tr('Tag', '标签'), _tagFilter!));
+    }
+    if (_gpsOnly) labels.add(_l10n.gpsOnly);
+    if (_aiStatusFilter != null) {
+      labels.add(_aiStatusLabel(_aiStatusFilter!));
+    }
     if (_fromDatetimeFilter != null) {
       labels.add(
-        'From: ${_formatDate(DateTime.fromMillisecondsSinceEpoch(_fromDatetimeFilter!).toLocal())}',
+        _labelValue(
+          _tr('From', '开始'),
+          _formatDate(
+            DateTime.fromMillisecondsSinceEpoch(_fromDatetimeFilter!).toLocal(),
+          ),
+        ),
       );
     }
     if (_toDatetimeFilter != null) {
       labels.add(
-        'To: ${_formatDate(DateTime.fromMillisecondsSinceEpoch(_toDatetimeFilter!).toLocal())}',
+        _labelValue(
+          _tr('To', '结束'),
+          _formatDate(
+            DateTime.fromMillisecondsSinceEpoch(_toDatetimeFilter!).toLocal(),
+          ),
+        ),
       );
     }
-    if (_favoriteOnly) labels.add('Favorites');
-    if (_selectedMemoryId != null) labels.add('Memory: $_selectedMemoryId');
+    if (_favoriteOnly) labels.add(_l10n.favorites);
+    if (_selectedMemoryId != null) {
+      labels.add(_labelValue(_l10n.memories, _selectedMemoryId!));
+    }
     if (_sortBy != PhotoSortBy.datetime ||
         _sortDirection != SortDirection.desc) {
-      labels.add('Sort: ${_sortBy.name} ${_sortDirection.name}');
+      labels.add(
+        '${_sortByLabel(_sortBy)} ${_sortDirectionLabel(_sortDirection)}',
+      );
     }
     return labels;
+  }
+
+  String _tr(String en, String zh) => _localized(_l10n, en, zh);
+
+  String _labelValue(String label, String value) {
+    return identical(_l10n, uiStrings[UiLocale.zh])
+        ? '$label：$value'
+        : '$label: $value';
+  }
+
+  String _sortByLabel(PhotoSortBy value) {
+    return switch (value) {
+      PhotoSortBy.datetime => _l10n.sortDatetime,
+      PhotoSortBy.path => _l10n.sortPath,
+      PhotoSortBy.updatedAt => _l10n.sortUpdated,
+    };
+  }
+
+  String _sortDirectionLabel(SortDirection value) {
+    return switch (value) {
+      SortDirection.desc => _l10n.desc,
+      SortDirection.asc => _l10n.asc,
+    };
+  }
+
+  String _aiStatusLabel(AiPipelineStatus value) {
+    return switch (value) {
+      AiPipelineStatus.disabled => _l10n.aiDisabled,
+      AiPipelineStatus.pending => _l10n.aiPending,
+      AiPipelineStatus.processing => _l10n.aiProcessing,
+      AiPipelineStatus.completed => _l10n.aiCompleted,
+      AiPipelineStatus.failed => _l10n.aiFailed,
+    };
   }
 
   KeyEventResult _handleShellKey(BuildContext context, KeyEvent event) {
@@ -461,7 +514,7 @@ final class _ChronoPicHomeState extends State<ChronoPicHome> {
     setState(() {
       _detailCaptureFirst = false;
       _page = _DesktopPage.memories;
-      _status = 'Choose a memory for the selected photo';
+      _status = _tr('Choose a memory for the selected photo', '为所选照片选择一个记忆');
     });
   }
 
@@ -534,6 +587,7 @@ final class _ChronoPicHomeState extends State<ChronoPicHome> {
       case 'zh-locale':
         _page = _DesktopPage.home;
         _locale = UiLocale.zh;
+        _status = uiStrings[UiLocale.zh]!.scanIdle;
         _browseMode = BrowseMode.waterfall;
       default:
         _page = _DesktopPage.home;
@@ -544,11 +598,13 @@ final class _ChronoPicHomeState extends State<ChronoPicHome> {
   void _addLibrary() {
     final path = _libraryPathController.text.trim();
     if (path.isEmpty) {
-      setState(() => _status = 'Library path is required');
+      setState(() => _status = _tr('Library path is required', '需要图库路径'));
       return;
     }
     final source = _service.addLibrarySource(path);
-    setState(() => _status = 'Added library: ${source.path}');
+    setState(
+      () => _status = _labelValue(_tr('Added library', '已添加图库'), source.path),
+    );
   }
 
   Future<void> _chooseLibraryFolder() async {
@@ -562,30 +618,37 @@ final class _ChronoPicHomeState extends State<ChronoPicHome> {
     if (selectedPath == null) return;
     _libraryPathController.text = selectedPath;
     final source = _service.addLibrarySource(selectedPath);
-    setState(() => _status = 'Added library: ${source.path}');
+    setState(
+      () => _status = _labelValue(_tr('Added library', '已添加图库'), source.path),
+    );
   }
 
   Future<void> _scanLibrary() async {
     final path = _libraryPathController.text.trim();
     if (path.isEmpty) {
-      setState(() => _status = 'Library path is required');
+      setState(() => _status = _tr('Library path is required', '需要图库路径'));
       return;
     }
     setState(() {
       _scanning = true;
-      _status = 'Scan progress: scanning';
+      _status = _tr('Scan progress: scanning', '扫描进度：扫描中');
     });
     try {
       final stats = await _service.scanDesktopDirectory(path);
       setState(() {
-        _status =
-            'Scan complete: ${stats.imported} imported, ${stats.updated} updated, ${stats.skipped} skipped, ${stats.errors} errors, ${stats.missing} missing';
+        _status = _localized(
+          _l10n,
+          'Scan complete: ${stats.imported} imported, ${stats.updated} updated, ${stats.skipped} skipped, ${stats.errors} errors, ${stats.missing} missing',
+          '扫描完成：${stats.imported} 个已导入，${stats.updated} 个已更新，${stats.skipped} 个已跳过，${stats.errors} 个错误，${stats.missing} 个缺失',
+        );
         _selected = _selected == null
             ? null
             : _service.getPhoto(_selected!.photo.id);
       });
     } on Object catch (error) {
-      setState(() => _status = 'Scan failed: $error');
+      setState(
+        () => _status = _labelValue(_tr('Scan failed', '扫描失败'), '$error'),
+      );
     } finally {
       if (mounted) setState(() => _scanning = false);
     }
@@ -598,7 +661,9 @@ final class _ChronoPicHomeState extends State<ChronoPicHome> {
     );
     setState(() {
       if (_selected?.photo.id == updated.photo.id) _selected = updated;
-      _status = updated.photo.favorite ? 'Marked favorite' : 'Removed favorite';
+      _status = updated.photo.favorite
+          ? _tr('Marked favorite', '已标记收藏')
+          : _tr('Removed favorite', '已取消收藏');
     });
   }
 
@@ -613,7 +678,12 @@ final class _ChronoPicHomeState extends State<ChronoPicHome> {
     if (selected == null) return;
     final caption = _captionController.text.trim();
     if (caption.length > 160) {
-      setState(() => _status = 'Caption must be 160 characters or fewer');
+      setState(
+        () => _status = _tr(
+          'Caption must be 160 characters or fewer',
+          '标题必须不超过 160 个字符',
+        ),
+      );
       return;
     }
     final updated = _service.updatePhotoCaption(
@@ -622,7 +692,9 @@ final class _ChronoPicHomeState extends State<ChronoPicHome> {
     );
     setState(() {
       _selected = updated;
-      _status = caption.isEmpty ? 'Cleared caption' : 'Saved caption';
+      _status = caption.isEmpty
+          ? _tr('Cleared caption', '已清除标题')
+          : _tr('Saved caption', '已保存标题');
     });
   }
 
@@ -638,14 +710,19 @@ final class _ChronoPicHomeState extends State<ChronoPicHome> {
         .toList();
     for (final label in rawLabels) {
       if (label.length > 32) {
-        setState(() => _status = 'Tags must be 32 characters or fewer');
+        setState(
+          () => _status = _tr(
+            'Tags must be 32 characters or fewer',
+            '标签必须不超过 32 个字符',
+          ),
+        );
         return;
       }
       final normalized = label.toLowerCase();
       if (seen.add(normalized)) labels.add(label);
     }
     if (labels.length > 20) {
-      setState(() => _status = 'Use 20 tags or fewer');
+      setState(() => _status = _tr('Use 20 tags or fewer', '请使用不超过 20 个标签'));
       return;
     }
     final updated = _service.updatePhotoTags(selected.photo.id, labels);
@@ -653,8 +730,12 @@ final class _ChronoPicHomeState extends State<ChronoPicHome> {
       _selected = updated;
       _tagsController.text = labels.join(', ');
       _status = labels.isEmpty
-          ? 'Cleared tags'
-          : 'Saved tags: ${labels.length}';
+          ? _tr('Cleared tags', '已清除标签')
+          : _localized(
+              _l10n,
+              'Saved tags: ${labels.length}',
+              '已保存标签：${labels.length}',
+            );
     });
   }
 
@@ -663,7 +744,12 @@ final class _ChronoPicHomeState extends State<ChronoPicHome> {
     if (selected == null) return;
     final parsed = _parseDateTimeInput();
     if (parsed == _DateTimeParseResult.invalid) {
-      setState(() => _status = 'Datetime must use YYYY-MM-DD and HH:mm');
+      setState(
+        () => _status = _tr(
+          'Datetime must use YYYY-MM-DD and HH:mm',
+          '日期时间必须使用 YYYY-MM-DD 和 HH:mm',
+        ),
+      );
       return;
     }
     final updated = _service.updatePhotoDatetime(
@@ -672,7 +758,7 @@ final class _ChronoPicHomeState extends State<ChronoPicHome> {
     );
     setState(() {
       _selected = updated;
-      _status = 'Saved datetime';
+      _status = _tr('Saved datetime', '已保存日期时间');
     });
   }
 
@@ -684,7 +770,12 @@ final class _ChronoPicHomeState extends State<ChronoPicHome> {
     );
     if (from == _DateFilterParseResult.invalid ||
         to == _DateFilterParseResult.invalid) {
-      setState(() => _status = 'Date filters must use YYYY-MM-DD');
+      setState(
+        () => _status = _tr(
+          'Date filters must use YYYY-MM-DD',
+          '日期筛选必须使用 YYYY-MM-DD',
+        ),
+      );
       return;
     }
     setState(() {
@@ -694,7 +785,7 @@ final class _ChronoPicHomeState extends State<ChronoPicHome> {
       _fromDatetimeFilter = from.millisecondsSinceEpoch;
       _toDatetimeFilter = to.millisecondsSinceEpoch;
       _selected = null;
-      _status = 'Applied filters';
+      _status = _tr('Applied filters', '已应用筛选');
     });
   }
 
@@ -712,7 +803,7 @@ final class _ChronoPicHomeState extends State<ChronoPicHome> {
       _sortDirection = SortDirection.desc;
       _selected = null;
       _browseMode = BrowseMode.waterfall;
-      _status = 'Cleared filters';
+      _status = _tr('Cleared filters', '已清除筛选');
     });
   }
 
@@ -743,7 +834,7 @@ final class _ChronoPicHomeState extends State<ChronoPicHome> {
       _captionController.text = updated.semantic.caption ?? '';
       _tagsController.text = updated.semantic.labels.join(', ');
       _setDatetimeControllers(updated.metadata.datetime);
-      _status = 'Rolled back latest edit';
+      _status = _tr('Rolled back latest edit', '已回滚最近编辑');
     });
   }
 
@@ -812,6 +903,7 @@ final class _ChronoPicHomeState extends State<ChronoPicHome> {
       barrierColor: Colors.black.withValues(alpha: 0.9),
       builder: (context) => GalleryDialog(
         initialPhotoId: record.photo.id,
+        labels: _l10n,
         photos: _visiblePhotos(),
       ),
     );
@@ -826,7 +918,7 @@ final class _ChronoPicHomeState extends State<ChronoPicHome> {
   void _createMemory() {
     final name = _memoryNameController.text.trim();
     if (name.isEmpty) {
-      setState(() => _status = 'Memory name is required');
+      setState(() => _status = _tr('Memory name is required', '需要记忆名称'));
       return;
     }
     final memory = _service.createMemory(name);
@@ -835,13 +927,19 @@ final class _ChronoPicHomeState extends State<ChronoPicHome> {
       _memoryTitleController.text = memory.name;
       _memoryDescriptionController.text = memory.description ?? '';
       _page = _DesktopPage.memoryDetail;
-      _status = 'Created memory: ${memory.name}';
+      _status = _labelValue(_tr('Created memory', '已创建记忆'), memory.name);
     });
   }
 
   void _refreshMemoryCandidates() {
     final ready = _service.listMemoryCandidates().length;
-    setState(() => _status = 'Memory suggestions refreshed: $ready ready');
+    setState(
+      () => _status = _localized(
+        _l10n,
+        'Memory suggestions refreshed: $ready ready',
+        '记忆建议已刷新：$ready 条就绪',
+      ),
+    );
   }
 
   void _selectMemory(String memoryId) {
@@ -861,7 +959,7 @@ final class _ChronoPicHomeState extends State<ChronoPicHome> {
     final memoryId = _selectedMemoryId;
     if (selected == null || memoryId == null) return;
     _service.addPhotoToMemory(memoryId, selected.photo.id);
-    setState(() => _status = 'Added photo to memory');
+    setState(() => _status = _tr('Added photo to memory', '已将照片加入记忆'));
   }
 
   void _saveSelectedMemory() {
@@ -879,7 +977,7 @@ final class _ChronoPicHomeState extends State<ChronoPicHome> {
     setState(() {
       _memoryTitleController.text = updated.name;
       _memoryDescriptionController.text = updated.description ?? '';
-      _status = 'Saved memory';
+      _status = _tr('Saved memory', '已保存记忆');
     });
   }
 
@@ -888,7 +986,7 @@ final class _ChronoPicHomeState extends State<ChronoPicHome> {
     final selected = _selected;
     if (memoryId == null || selected == null) return;
     _service.setMemoryCover(memoryId, selected.photo.id);
-    setState(() => _status = 'Updated memory cover');
+    setState(() => _status = _tr('Updated memory cover', '已更新记忆封面'));
   }
 
   void _removeSelectedFromMemory() {
@@ -898,7 +996,7 @@ final class _ChronoPicHomeState extends State<ChronoPicHome> {
     _service.removePhotoFromMemory(memoryId, selected.photo.id);
     setState(() {
       _selected = null;
-      _status = 'Removed photo from memory';
+      _status = _tr('Removed photo from memory', '已从记忆移除照片');
     });
   }
 
@@ -910,18 +1008,26 @@ final class _ChronoPicHomeState extends State<ChronoPicHome> {
         final file = _service.exportBackupToFile(path);
         setState(() {
           _lastBackup = backup;
-          _status =
-              'Exported backup file: ${file.path} (${backup.photos.length} photos, ${backup.memories.length} memories)';
+          _status = _localized(
+            _l10n,
+            'Exported backup file: ${file.path} (${backup.photos.length} photos, ${backup.memories.length} memories)',
+            '已导出备份文件：${file.path}（${backup.photos.length} 张照片，${backup.memories.length} 个记忆）',
+          );
         });
       } else {
         setState(() {
           _lastBackup = backup;
-          _status =
-              'Exported backup: ${backup.photos.length} photos, ${backup.memories.length} memories';
+          _status = _localized(
+            _l10n,
+            'Exported backup: ${backup.photos.length} photos, ${backup.memories.length} memories',
+            '已导出备份：${backup.photos.length} 张照片，${backup.memories.length} 个记忆',
+          );
         });
       }
     } on Object catch (error) {
-      setState(() => _status = 'Export failed: $error');
+      setState(
+        () => _status = _labelValue(_tr('Export failed', '导出失败'), '$error'),
+      );
     }
   }
 
@@ -936,11 +1042,19 @@ final class _ChronoPicHomeState extends State<ChronoPicHome> {
       if (location != null) {
         _backupPathController.text = location.path;
         setState(
-          () => _status = 'Selected backup export path: ${location.path}',
+          () => _status = _labelValue(
+            _tr('Selected backup export path', '已选择备份导出路径'),
+            location.path,
+          ),
         );
       }
     } on Object catch (error) {
-      setState(() => _status = 'Choose export path failed: $error');
+      setState(
+        () => _status = _labelValue(
+          _tr('Choose export path failed', '选择导出路径失败'),
+          '$error',
+        ),
+      );
     }
   }
 
@@ -953,10 +1067,20 @@ final class _ChronoPicHomeState extends State<ChronoPicHome> {
       );
       if (file != null) {
         _backupPathController.text = file.path;
-        setState(() => _status = 'Selected backup restore file: ${file.path}');
+        setState(
+          () => _status = _labelValue(
+            _tr('Selected backup restore file', '已选择备份恢复文件'),
+            file.path,
+          ),
+        );
       }
     } on Object catch (error) {
-      setState(() => _status = 'Choose restore file failed: $error');
+      setState(
+        () => _status = _labelValue(
+          _tr('Choose restore file failed', '选择恢复文件失败'),
+          '$error',
+        ),
+      );
     }
   }
 
@@ -969,7 +1093,7 @@ final class _ChronoPicHomeState extends State<ChronoPicHome> {
         providerName: _aiProviderController.text.trim(),
       ),
     );
-    setState(() => _status = 'Saved AI settings');
+    setState(() => _status = _tr('Saved AI settings', '已保存 AI 设置'));
   }
 
   void _saveMapSettings() {
@@ -979,12 +1103,18 @@ final class _ChronoPicHomeState extends State<ChronoPicHome> {
         securityJsCode: _mapSecurityJsCodeController.text.trim(),
       ),
     );
-    setState(() => _status = 'Saved map settings');
+    setState(() => _status = _tr('Saved map settings', '已保存地图设置'));
   }
 
   void _retryAiQueue() {
     final count = _service.retryFailedAiQueue();
-    setState(() => _status = 'Retried $count failed AI items');
+    setState(
+      () => _status = _localized(
+        _l10n,
+        'Retried $count failed AI items',
+        '已重试 $count 个失败的 AI 项目',
+      ),
+    );
   }
 
   void _acceptMemoryCandidate(String candidateId) {
@@ -994,13 +1124,16 @@ final class _ChronoPicHomeState extends State<ChronoPicHome> {
       _memoryTitleController.text = memory.name;
       _memoryDescriptionController.text = memory.description ?? '';
       _page = _DesktopPage.memoryDetail;
-      _status = 'Accepted memory candidate: ${memory.name}';
+      _status = _labelValue(
+        _tr('Accepted memory candidate', '已接受记忆候选'),
+        memory.name,
+      );
     });
   }
 
   void _rejectMemoryCandidate(String candidateId) {
     _service.rejectMemoryCandidate(candidateId);
-    setState(() => _status = 'Rejected memory candidate');
+    setState(() => _status = _tr('Rejected memory candidate', '已拒绝记忆候选'));
   }
 
   void _previewRestore() {
@@ -1012,16 +1145,24 @@ final class _ChronoPicHomeState extends State<ChronoPicHome> {
                 ? null
                 : _service.previewBackupRestore(_lastBackup!));
       if (preview == null) {
-        setState(() => _status = 'No backup to preview');
+        setState(() => _status = _tr('No backup to preview', '没有可预览的备份'));
         return;
       }
       setState(() {
         _restorePreview = preview;
-        _status =
-            'Preview restore: ${preview.photoCount} photos, ${preview.memoryCount} memories';
+        _status = _localized(
+          _l10n,
+          'Preview restore: ${preview.photoCount} photos, ${preview.memoryCount} memories',
+          '恢复预览：${preview.photoCount} 张照片，${preview.memoryCount} 个记忆',
+        );
       });
     } on Object catch (error) {
-      setState(() => _status = 'Preview restore failed: $error');
+      setState(
+        () => _status = _labelValue(
+          _tr('Preview restore failed', '恢复预览失败'),
+          '$error',
+        ),
+      );
     }
   }
 
@@ -1033,25 +1174,35 @@ final class _ChronoPicHomeState extends State<ChronoPicHome> {
         setState(() {
           _restorePreview = null;
           _selected = null;
-          _status =
-              'Restored backup: ${result.restoredPhotoCount} photos, ${result.restoredMemoryCount} memories';
+          _status = _localized(
+            _l10n,
+            'Restored backup: ${result.restoredPhotoCount} photos, ${result.restoredMemoryCount} memories',
+            '已恢复备份：${result.restoredPhotoCount} 张照片，${result.restoredMemoryCount} 个记忆',
+          );
         });
         return;
       }
       final backup = _lastBackup;
       if (backup == null) {
-        setState(() => _status = 'No exported backup to restore');
+        setState(
+          () => _status = _tr('No exported backup to restore', '没有可恢复的已导出备份'),
+        );
         return;
       }
       final result = _service.restoreBackup(backup);
       setState(() {
         _restorePreview = null;
         _selected = null;
-        _status =
-            'Restored backup: ${result.restoredPhotoCount} photos, ${result.restoredMemoryCount} memories';
+        _status = _localized(
+          _l10n,
+          'Restored backup: ${result.restoredPhotoCount} photos, ${result.restoredMemoryCount} memories',
+          '已恢复备份：${result.restoredPhotoCount} 张照片，${result.restoredMemoryCount} 个记忆',
+        );
       });
     } on Object catch (error) {
-      setState(() => _status = 'Restore failed: $error');
+      setState(
+        () => _status = _labelValue(_tr('Restore failed', '恢复失败'), '$error'),
+      );
     }
   }
 }

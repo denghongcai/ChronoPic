@@ -18,11 +18,13 @@ final class GalleryDialogResult {
 final class GalleryDialog extends StatefulWidget {
   const GalleryDialog({
     required this.initialPhotoId,
+    required this.labels,
     required this.photos,
     super.key,
   });
 
   final String initialPhotoId;
+  final UiStrings labels;
   final List<PhotoRecord> photos;
 
   @override
@@ -40,7 +42,7 @@ final class _GalleryDialogState extends State<GalleryDialog> {
   Widget build(BuildContext context) {
     final record = _record;
     final captured = record.metadata.datetime == null
-        ? 'Captured: unknown'
+        ? _localized(widget.labels, 'Captured: unknown', '拍摄：未知')
         : () {
             final dateTime = DateTime.fromMillisecondsSinceEpoch(
               record.metadata.datetime!,
@@ -61,9 +63,11 @@ final class _GalleryDialogState extends State<GalleryDialog> {
             foregroundColor: Colors.white,
             title: Row(
               children: [
-                const Chip(
-                  label: Text('Gallery View'),
-                  side: BorderSide(color: Colors.white24),
+                Chip(
+                  label: Text(
+                    _localized(widget.labels, 'Gallery View', '图库视图'),
+                  ),
+                  side: const BorderSide(color: Colors.white24),
                 ),
                 const SizedBox(width: 10),
                 Text(
@@ -88,7 +92,7 @@ final class _GalleryDialogState extends State<GalleryDialog> {
                       vertical: 14,
                     ),
                   ),
-                  child: const Text('Detail View'),
+                  child: Text(_localized(widget.labels, 'Detail View', '详情视图')),
                 ),
               ),
             ],
@@ -167,25 +171,33 @@ final class _GalleryDialogState extends State<GalleryDialog> {
                             style: const TextStyle(color: Colors.white70),
                           ),
                           const SizedBox(height: 6),
-                          const Wrap(
+                          Wrap(
                             spacing: 8,
                             runSpacing: 6,
                             crossAxisAlignment: WrapCrossAlignment.center,
                             children: [
                               Chip(
-                                key: Key('gallery-memory-badge'),
+                                key: const Key('gallery-memory-badge'),
                                 visualDensity: VisualDensity.compact,
-                                side: BorderSide(color: Colors.white24),
+                                side: const BorderSide(color: Colors.white24),
                                 backgroundColor: Colors.black,
                                 label: Text(
-                                  'NOT IN ANY MEMORY',
-                                  style: TextStyle(color: Colors.white70),
+                                  _localized(
+                                    widget.labels,
+                                    'NOT IN ANY MEMORY',
+                                    '未加入任何记忆',
+                                  ),
+                                  style: const TextStyle(color: Colors.white70),
                                 ),
                               ),
                               Text(
-                                'Esc close • Left/Right navigate • D detail',
-                                key: Key('gallery-keyboard-hint'),
-                                style: TextStyle(color: Colors.white70),
+                                _localized(
+                                  widget.labels,
+                                  'Esc close • Left/Right navigate • D detail',
+                                  'Esc 关闭 • 左/右导航 • D 详情',
+                                ),
+                                key: const Key('gallery-keyboard-hint'),
+                                style: const TextStyle(color: Colors.white70),
                               ),
                             ],
                           ),
@@ -205,7 +217,9 @@ final class _GalleryDialogState extends State<GalleryDialog> {
                           vertical: 14,
                         ),
                       ),
-                      child: const Text('Open Inspector'),
+                      child: Text(
+                        _localized(widget.labels, 'Open Inspector', '打开检查器'),
+                      ),
                     ),
                   ],
                 ),
@@ -224,9 +238,13 @@ final class _GalleryDialogState extends State<GalleryDialog> {
                         padding: const EdgeInsets.fromLTRB(12, 12, 12, 8),
                         child: Row(
                           children: [
-                            const Text(
-                              'GALLERY STRIP',
-                              style: TextStyle(
+                            Text(
+                              _localized(
+                                widget.labels,
+                                'GALLERY STRIP',
+                                '图库胶片条',
+                              ),
+                              style: const TextStyle(
                                 color: Colors.white70,
                                 fontSize: 12,
                                 fontWeight: FontWeight.w800,
@@ -234,7 +252,15 @@ final class _GalleryDialogState extends State<GalleryDialog> {
                               ),
                             ),
                             const Spacer(),
-                            Chip(label: Text('${widget.photos.length} ITEMS')),
+                            Chip(
+                              label: Text(
+                                _localized(
+                                  widget.labels,
+                                  '${widget.photos.length} ITEMS',
+                                  '${widget.photos.length} 项',
+                                ),
+                              ),
+                            ),
                           ],
                         ),
                       ),

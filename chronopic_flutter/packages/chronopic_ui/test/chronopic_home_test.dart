@@ -477,6 +477,185 @@ void main() {
     expect(find.text('地图'), findsOneWidget);
     expect(find.text('时间线'), findsOneWidget);
   });
+
+  testWidgets('localizes Flutter desktop app-owned surfaces in Chinese', (
+    tester,
+  ) async {
+    final backup = ChronoPicBackup.fromJson(
+      FlutterParityFixtures.readBackupJson(),
+    );
+    final repository = ChronoPicRepository()..restoreBackup(backup);
+    final service = ChronoPicAppService(repository);
+
+    tester.view.physicalSize = const Size(1600, 1200);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+
+    await tester.pumpWidget(ChronoPicHome(service: service));
+    await tester.tap(find.byKey(const Key('settings-nav')));
+    await tester.pump();
+    await tester.tap(find.byKey(const Key('interface-locale-control')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('中文').last);
+    await tester.pump();
+
+    await tester.tap(find.byKey(const Key('all-photos-nav')));
+    await tester.pump();
+    await tester.ensureVisible(find.byKey(const Key('photo-card-photo-lake')));
+    await tester.tap(find.byKey(const Key('photo-card-photo-lake')));
+    await tester.pump();
+    expect(
+      find.byKey(const Key('browse-selected-photo-banner')),
+      findsOneWidget,
+    );
+    expect(find.text('已选照片'), findsWidgets);
+    expect(find.text('这张照片还没有保存到任何记忆。'), findsOneWidget);
+    expect(find.text('SELECTED PHOTO'), findsNothing);
+
+    await tester.enterText(find.byKey(const Key('search-field')), 'lake');
+    await tester.pump();
+    final filterToggle = find.byKey(const Key('filter-toggle-button'));
+    await tester.ensureVisible(filterToggle);
+    await tester.tap(filterToggle);
+    await tester.pump();
+    await tester.enterText(
+      find.byKey(const Key('tag-filter-field')),
+      'fixture',
+    );
+    await tester.tap(find.byKey(const Key('gps-filter-chip')));
+    tester
+        .widget<DropdownButton<AiPipelineStatus?>>(
+          find.byKey(const Key('ai-status-filter-control')),
+        )
+        .onChanged!(AiPipelineStatus.disabled);
+    tester
+        .widget<DropdownButton<PhotoSortBy>>(
+          find.byKey(const Key('sort-by-control')),
+        )
+        .onChanged!(PhotoSortBy.path);
+    tester
+        .widget<DropdownButton<SortDirection>>(
+          find.byKey(const Key('sort-direction-control')),
+        )
+        .onChanged!(SortDirection.asc);
+    await tester.enterText(
+      find.byKey(const Key('from-date-filter-field')),
+      '2024-01-01',
+    );
+    await tester.enterText(
+      find.byKey(const Key('to-date-filter-field')),
+      '2024-12-31',
+    );
+    await tester.tap(find.byKey(const Key('apply-filter-button')));
+    await tester.pump();
+    expect(find.byKey(const Key('active-filter-summary')), findsOneWidget);
+    expect(find.text('搜索：lake'), findsOneWidget);
+    expect(find.text('标签：fixture'), findsOneWidget);
+    expect(find.text('仅 GPS'), findsWidgets);
+    expect(find.text('AI：已停用'), findsWidgets);
+    expect(find.text('开始：2024-01-01'), findsOneWidget);
+    expect(find.text('结束：2024-12-31'), findsOneWidget);
+    expect(find.text('排序：路径 升序'), findsOneWidget);
+    expect(find.text('Search: lake'), findsNothing);
+    expect(find.text('GPS only'), findsNothing);
+
+    await tester.tap(find.byKey(const Key('clear-filter-button')));
+    await tester.pump();
+    expect(find.text('已清除筛选'), findsOneWidget);
+    await tester.ensureVisible(find.byKey(const Key('photo-card-photo-lake')));
+    await tester.tap(find.byKey(const Key('photo-card-photo-lake')));
+    await tester.pump();
+    await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+    await tester.pump();
+    expect(find.byKey(const Key('focused-detail-view')), findsOneWidget);
+    expect(find.text('详情视图'), findsOneWidget);
+    expect(find.text('图库'), findsWidgets);
+    expect(find.text('Esc 关闭 • 左/右导航 • G 图库'), findsOneWidget);
+    expect(find.text('检查器'), findsOneWidget);
+    expect(find.text('AI 洞察'), findsOneWidget);
+    expect(find.text('图库视图'), findsNothing);
+    expect(find.text('Gallery'), findsNothing);
+
+    await tester.tap(find.byKey(const Key('focused-detail-gallery-button')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('gallery-dialog')), findsOneWidget);
+    expect(find.text('图库视图'), findsOneWidget);
+    expect(find.text('详情视图'), findsOneWidget);
+    expect(find.text('打开检查器'), findsOneWidget);
+    expect(find.text('未加入任何记忆'), findsOneWidget);
+    expect(find.text('Esc 关闭 • 左/右导航 • D 详情'), findsOneWidget);
+    expect(find.text('Gallery View'), findsNothing);
+    await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('地图'));
+    await tester.pump();
+    expect(find.byKey(const Key('map-view')), findsOneWidget);
+    expect(find.text('地图错误'), findsOneWidget);
+    expect(find.text('地图视图初始化失败'), findsOneWidget);
+    expect(find.text('可定位照片'), findsOneWidget);
+
+    await tester.tap(find.text('时间线'));
+    await tester.pump();
+    expect(find.byKey(const Key('timeline-view')), findsOneWidget);
+    expect(find.text('时间线视图'), findsOneWidget);
+    expect(find.text('年份'), findsOneWidget);
+    expect(find.text('月份'), findsOneWidget);
+    expect(find.text('日期'), findsWidgets);
+    expect(find.text('时间线范围'), findsOneWidget);
+    expect(
+      find.byKey(const Key('timeline-open-detail-button')),
+      findsOneWidget,
+    );
+    expect(find.text('打开详情'), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('memories-nav')));
+    await tester.pump();
+    expect(find.text('AI 辅助分组候选'), findsOneWidget);
+    expect(find.text('生成'), findsOneWidget);
+    expect(find.text('调整照片'), findsOneWidget);
+    expect(find.text('拒绝'), findsOneWidget);
+    expect(find.text('接受记忆'), findsOneWidget);
+    await tester.tap(
+      find.byKey(const Key('generate-memory-candidates-button')),
+    );
+    await tester.pump();
+    expect(find.text('记忆建议已刷新：1 条就绪'), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('memory-card-memory-weekend')));
+    await tester.pump();
+    expect(find.text('记忆详情'), findsOneWidget);
+    expect(find.text('描述'), findsWidgets);
+    expect(find.text('保存记忆'), findsOneWidget);
+    expect(find.text('设为封面'), findsOneWidget);
+    expect(find.text('从记忆移除'), findsOneWidget);
+    expect(find.text('故事大纲'), findsOneWidget);
+    expect(find.text('章节 1'), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('settings-nav')));
+    await tester.pump();
+    expect(find.text('资料库设置'), findsOneWidget);
+    expect(find.text('导出、备份和恢复'), findsOneWidget);
+    expect(find.text('保存 AI 设置'), findsOneWidget);
+    expect(find.text('保存地图设置'), findsOneWidget);
+    await tester.ensureVisible(
+      find.byKey(const Key('save-ai-settings-button')),
+    );
+    await tester.tap(find.byKey(const Key('save-ai-settings-button')));
+    await tester.pump();
+    expect(find.text('已保存 AI 设置'), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('notifications-nav')));
+    await tester.pump();
+    expect(find.text('AI 队列'), findsWidgets);
+    expect(find.text('记忆候选'), findsWidgets);
+    expect(find.text('丰富队列'), findsOneWidget);
+    expect(find.text('刷新建议'), findsOneWidget);
+    expect(find.textContaining('Memory candidates:'), findsNothing);
+  });
 }
 
 int _photoGridColumns(WidgetTester tester) {
