@@ -499,44 +499,55 @@ Status:
   keep Phase 6 mobile productization blocked until the pushed Flutter desktop
   parity branch is reviewed or merged.
 
-## Phase 5.8: Gallery Overlay Activation Parity
+## Phase 5.8: Viewer Overlay Activation Parity
 
-Purpose: fix the missing direct photo-to-gallery desktop interaction after Phase 5.7 exposed that screenshot parity did not prove the double-click activation contract.
+Purpose: align Flutter and Electron on the real desktop viewer contract after
+Phase 5.7 exposed that screenshot parity did not prove the double-click
+activation path or the in-overlay Detail/Gallery mode switch.
 
 Deliverables:
 
-- Double-clicking a photo card opens fullscreen gallery overlay in Electron and Flutter.
-- Single-click selection, Enter-to-detail, and `G`-to-gallery keyboard paths remain explicit.
-- Gallery overlay remains fullscreen, navigable, and dismissible with `Escape`.
+- Double-clicking a photo card opens the focused Detail viewer overlay in
+  Electron and Flutter.
+- Single-click selection,
+  Enter-to-Detail,
+  selected-photo `G`-to-Gallery,
+  Gallery `D` / `Detail View` back to Detail,
+  and `Escape` close remain explicit.
+- Gallery overlay remains fullscreen,
+  navigable,
+  and switchable back to Detail from inside the overlay.
 - Electron and Flutter tests cover the activation path, not only the gallery view once opened.
 - Focused Electron and Flutter screenshots are recaptured and compared for:
   populated browse,
+  Detail,
   gallery,
-  favorites,
-  and restart persistence.
+  and the Detail/Gallery overlay mode relationship.
 
 Status:
 
 - Planned on 2026-05-09.
-- Code comparison found Electron currently double-clicks into detail,
-  while Flutter grid cards only select.
-- Implemented and pushed on 2026-05-09.
-- Implementation commit:
-  `7efb12e`.
-- Follow-up evidence and handoff commits record the phase closure.
-- Electron accessibility E2E now covers Enter-to-detail,
-  double-click-to-gallery,
-  selected-card `G`-to-gallery,
+- Corrected on 2026-05-09 after user review clarified that Electron's
+  reference behavior is Detail-first overlay activation, not direct
+  double-click-to-Gallery.
+- Correction commit:
+  `96ba222`.
+- Electron accessibility E2E now covers Enter-to-Detail,
+  double-click-to-Detail,
+  Detail-to-Gallery,
+  Gallery `D`-to-Detail,
+  selected-card `G`-to-Gallery,
   and Escape close.
-- Flutter widget/parity tests now cover card double-tap-to-gallery,
-  selected-photo `G`-to-gallery,
-  Enter-to-focused-detail,
+- Flutter widget/parity tests now cover card double-tap-to-focused-Detail,
+  focused Detail-to-Gallery,
+  Gallery `D`-to-focused-Detail,
+  selected-photo `G`-to-Gallery,
+  Enter-to-focused-Detail,
   and Escape close.
 - Focused Electron and Flutter screenshots were recaptured for populated
   browse,
+  Detail,
   gallery,
-  favorites,
-  and restart persistence,
   then compared with side-by-side artifacts under
   `test-results/flutter-electron-parity/compare/`.
 - Implementation plan:

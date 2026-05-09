@@ -1,12 +1,30 @@
-# Gallery Overlay Activation Parity Implementation Plan
+# Viewer Overlay Activation Parity Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Make double-clicking a photo open the fullscreen gallery overlay consistently in Electron and Flutter Linux desktop.
+**Goal:** Make photo-card activation match the Electron viewer model in both
+Electron and Flutter Linux desktop:
+single click/tap selects,
+double-click/double-tap opens the focused Detail viewer overlay,
+`G` opens Gallery for the selected photo,
+and Gallery `D` / `Detail View` returns to focused Detail.
 
-**Architecture:** Treat gallery activation as a first-class viewer contract instead of an incidental detail-only action. Electron already has a fullscreen Radix `PhotoViewerOverlay` in gallery mode, and Flutter already has a `Dialog.fullscreen` `GalleryDialog`; this phase wires the primary photo cards and keyboard paths into those overlays, tests the behavior from both implementations, then compares refreshed screenshots before closing the matrix rows.
+**Architecture:** Treat Detail and Gallery as two modes of the focused viewer
+contract instead of independent page-level actions. Electron already has a
+fullscreen Radix `PhotoViewerOverlay` with `detail` and `gallery` modes.
+Flutter has a focused Detail surface and a `Dialog.fullscreen` `GalleryDialog`;
+the correction wires primary photo cards into the Detail-first path and makes
+Gallery return explicitly to focused Detail.
 
-**Tech Stack:** React, Radix Dialog, Playwright Electron E2E, Flutter widgets, `Dialog.fullscreen`, Flutter `InkWell` with an immediate custom tap/double-tap detector, existing ChronoPic parity capture scripts.
+**Tech Stack:** React, Radix Dialog, Playwright Electron E2E, Flutter widgets,
+`Dialog.fullscreen`, Flutter `InkWell` with an immediate custom tap/double-tap
+detector, existing ChronoPic parity capture scripts.
+
+**Correction note:** the first implementation of this plan incorrectly treated
+direct double-click-to-Gallery as the target. User review clarified that the
+Electron reference is Detail-first: double-click opens the focused Detail
+overlay, where Gallery and Detail are switchable viewer modes. Correction
+commit `96ba222` restores that contract.
 
 ---
 
@@ -14,7 +32,7 @@
 
 - Electron card activation currently selects on single click and opens **detail** on double-click:
   `packages/ui-components/src/photo-card.tsx` uses `onDoubleClick={onOpenDetail}` and Enter also calls `onOpenDetail()`.
-- Electron fullscreen gallery overlay already exists:
+- Electron fullscreen viewer overlay already exists:
   `packages/ui-components/src/photo-viewer-overlay.tsx` renders `DialogContent` with `fixed inset-0` via `packages/ui-components/src/dialog.tsx`, and gallery mode is selected by `viewerMode === "gallery"`.
 - Electron keyboard shortcut `G` already opens gallery for the selected photo:
   `apps/desktop/renderer/src/app/use-viewer-shortcuts.ts`.
@@ -28,21 +46,22 @@
 ## Interaction Contract
 
 - Single click/tap on a photo card selects the photo and keeps the user in the current browse surface.
-- Double-click/double-tap on a photo card selects that photo and opens fullscreen gallery overlay directly.
-- Keyboard `Enter` keeps the existing Electron detail-inspector behavior.
+- Double-click/double-tap on a photo card selects that photo and opens focused Detail overlay.
+- Keyboard `Enter` opens focused Detail.
 - Keyboard `G` opens fullscreen gallery for the selected photo on both implementations.
+- Gallery `D`, `Detail View`, and `Open Inspector` return to focused Detail.
 - Gallery overlay must cover the desktop window, expose previous/next navigation, expose the filmstrip, and close with `Escape` while preserving the active photo selection.
-- In batch-selection mode, double-click must not open gallery; the card should toggle batch selection only.
+- In batch-selection mode, double-click must not open a viewer; the card should toggle batch selection only.
 - UI closure requires screenshot comparison after interaction alignment:
-  Electron and Flutter must both recapture populated browse, gallery, favorites,
-  and restart-persistence surfaces, then the agent must re-open or otherwise
-  inspect the matching PNG pairs before marking a row closed.
+  Electron and Flutter must both recapture populated browse, Detail, and Gallery
+  surfaces, then the agent must re-open or otherwise inspect the matching PNG
+  pairs before marking a row closed.
 
 ## File Structure
 
 - Modify `packages/ui-components/src/photo-card.tsx`
-  - Add explicit `onOpenGallery` card prop.
-  - Route double-click to gallery.
+  - Keep double-click routed to `onOpenDetail`.
+  - Keep explicit `onOpenGallery` only for intentional Gallery shortcuts/actions.
   - Preserve Enter-to-detail and Space-to-select.
 - Modify `packages/ui-components/src/gallery-section.tsx`
   - Thread `onOpenGallery` into `PhotoCard`.
@@ -50,26 +69,32 @@
 - Modify `packages/ui-components/src/photo-grid.tsx`
   - Thread `onOpenGallery` into `PhotoCard` for shared grid consumers.
 - Modify `packages/ui-components/src/memory-detail-page.tsx`
-  - Ensure memory-detail photo cards double-click into gallery with the memory photo list.
+  - Ensure memory-detail photo cards keep the same detail-first double-click
+    contract as the main browse grid.
 - Modify `packages/ui-components/src/photo-home.tsx`
   - Add `onOpenGallery(photoId)` prop and pass it to all photo-card surfaces.
 - Modify `apps/desktop/renderer/src/App.tsx`
   - Wire `onOpenGallery={(photoId) => app.openViewer("gallery", photoId)}`.
 - Modify `tests/e2e/accessibility.spec.ts`
-  - Add Electron keyboard and double-click coverage for gallery overlay activation.
+  - Add Electron keyboard and double-click coverage for Detail-first overlay
+    activation and in-overlay Gallery/Detail switching.
 - Modify `chronopic_flutter/packages/chronopic_ui/lib/src/browse/browse_surface.dart`
-  - Add `onOpenGallery` through `BrowseSurface`, `PhotoGrid`, and `PhotoCardTile`.
+  - Add `onOpenDetail` through `BrowseSurface`, `PhotoGrid`, and `PhotoCardTile`.
   - Use an immediate custom tap/double-tap detector so single tap selection is not delayed by Flutter's double-tap recognizer.
-  - Add focus/keyboard handling for `G` on the selected card if practical inside the widget tree; otherwise cover app-level `G` in `ChronoPicHome`.
 - Modify `chronopic_flutter/packages/chronopic_ui/lib/src/home/home_page.dart`
-  - Pass `onOpenGallery` into browse surfaces.
+  - Pass `onOpenDetail` into browse surfaces.
 - Modify `chronopic_flutter/packages/chronopic_ui/lib/src/chronopic_home.dart`
-  - Add `_openGalleryFor(PhotoRecord, BuildContext)`.
+  - Add `_openFocusedDetailFor(PhotoRecord)`.
+  - Keep `_openGalleryFor(BuildContext, PhotoRecord)` as the explicit
+    Gallery path.
   - Keep `_openGallery(BuildContext)` as selected-photo wrapper.
-  - Wire `G` shortcut when a selected photo exists.
+  - Wire `G` shortcut when a selected photo exists and make Gallery return a
+    typed close-vs-detail result.
 - Modify `chronopic_flutter/packages/chronopic_ui/test/linux_desktop_parity_test.dart`
-  - Add failing test for double-tapping a grid card into `gallery-dialog`.
-  - Assert `Escape` closes and selected photo remains active.
+  - Add failing test for double-tapping a grid card into focused Detail.
+  - Assert Detail can open Gallery,
+    Gallery `D` returns to focused Detail,
+    and `Escape` closes the active overlay while selected photo remains active.
 - Modify `chronopic_flutter/packages/chronopic_ui/test/chronopic_home_test.dart`
   - Add lightweight widget assertion for the no-photos/no-selected guard and selected-photo `G` shortcut if not covered by parity test.
 - Modify `docs/flutter-electron-ui-functional-parity.md`
@@ -90,21 +115,21 @@
   Add a new phase after Phase 5.7 and before Phase 6:
 
   ```markdown
-  ## Phase 5.8: Gallery Overlay Activation Parity
+  ## Phase 5.8: Viewer Overlay Activation Parity
 
-  Purpose: fix the missing direct photo-to-gallery desktop interaction after Phase 5.7 exposed that screenshot parity did not prove the double-click activation contract.
+  Purpose: align Flutter and Electron on the real desktop viewer contract after Phase 5.7 exposed that screenshot parity did not prove the double-click activation path or the in-overlay Detail/Gallery mode switch.
 
   Deliverables:
 
-  - Double-clicking a photo card opens fullscreen gallery overlay in Electron and Flutter.
-  - Single-click selection, Enter-to-detail, and `G`-to-gallery keyboard paths remain explicit.
-  - Gallery overlay remains fullscreen, navigable, and dismissible with `Escape`.
+  - Double-clicking a photo card opens focused Detail overlay in Electron and Flutter.
+  - Single-click selection, Enter-to-Detail, selected-photo `G`-to-Gallery, Gallery `D` / `Detail View` back to Detail, and `Escape` close remain explicit.
+  - Gallery overlay remains fullscreen, navigable, and switchable back to Detail.
   - Electron and Flutter tests cover the activation path, not only the gallery view once opened.
 
   Status:
 
   - Planned on 2026-05-09.
-  - Code comparison found Electron currently double-clicks into detail, while Flutter grid cards only select.
+  - Code comparison found Electron correctly double-clicks into Detail, while Flutter grid cards only select.
   ```
 
 - [x] **Step 2: Reopen the relevant parity rows**
@@ -112,10 +137,11 @@
   Update these rows in `docs/flutter-electron-ui-functional-parity.md`:
 
   ```markdown
-  | Populated grid/waterfall browse | ... | ... | Gap | Direct double-click/double-tap photo activation does not open fullscreen gallery overlay consistently across Electron and Flutter. | Pending |
-  | Fullscreen gallery | ... | ... | Gap | Gallery view exists, but the primary browse-card activation path is not aligned: Electron double-click opens detail and Flutter card double-tap is missing. | Pending |
-  | Favorites filter | ... | ... | Gap | Favorites photo cards must share the same double-click-to-gallery activation contract as the main browse grid. | Pending |
-  | Restart persistence | ... | ... | Gap | Restored photo cards must preserve the same double-click-to-gallery activation after app restart. | Pending |
+  | Populated grid/waterfall browse | ... | ... | Gap | Direct double-click/double-tap photo activation does not open focused Detail overlay consistently across Electron and Flutter. | Pending |
+  | Detail inspector and edits | ... | ... | Gap | Detail exists, but Flutter card double-tap does not enter the same focused viewer overlay path as Electron. | Pending |
+  | Fullscreen gallery | ... | ... | Gap | Gallery view exists, but Gallery-to-Detail mode switching is not aligned with Electron. | Pending |
+  | Favorites filter | ... | ... | Gap | Favorites photo cards must share the same detail-first double-click activation contract as the main browse grid. | Pending |
+  | Restart persistence | ... | ... | Gap | Restored photo cards must preserve the same detail-first double-click activation after app restart. | Pending |
   ```
 
 - [x] **Step 3: Record the phase start in `AGENTS.md`**
@@ -125,10 +151,10 @@
   ```markdown
   ### 2026-05-09 Step 202
 
-  - Started Phase 5.8 Gallery Overlay Activation Parity after code comparison showed the direct photo-card activation path was not aligned.
-  - Electron currently wires `PhotoCard.onDoubleClick` to detail mode.
-  - Flutter currently wires browse photo cards only to selection and opens gallery only from detail/capture paths.
-  - Next: add failing Electron and Flutter tests for double-click/double-tap gallery activation before implementation.
+  - Started Phase 5.8 Viewer Overlay Activation Parity after code comparison showed the direct photo-card activation path was not aligned.
+  - Electron correctly wires `PhotoCard.onDoubleClick` to detail mode.
+  - Flutter currently wires browse photo cards only to selection and opens Gallery only from detail/capture paths.
+  - Next: add failing Electron and Flutter tests for double-click/double-tap Detail activation and in-overlay Gallery/Detail switching before implementation.
   ```
 
 - [x] **Step 4: Verify documentation formatting**
@@ -569,7 +595,13 @@
   Use this closure text if behavior is fully aligned and only renderer pixels differ:
 
   ```markdown
-  Direct photo-card activation is aligned: single click selects, double-click/double-tap opens fullscreen gallery overlay, Enter opens detail, `G` opens gallery for the selected photo, and `Escape` closes the overlay while preserving selection. Accepted difference: exact overlay button and filmstrip rendering differs between Electron CSS/Radix and Flutter Material.
+  Direct photo-card activation is aligned to the Electron model: single
+  click/tap selects, double-click/double-tap opens focused Detail overlay,
+  Enter opens Detail, `G` opens Gallery for the selected photo, Gallery `D` /
+  `Detail View` returns to focused Detail, and `Escape` closes the active
+  overlay while preserving selection. Accepted difference: exact overlay button,
+  media fallback, and filmstrip rendering differs between Electron CSS/Radix and
+  Flutter Material.
   ```
 
 - [x] **Step 5: Run final focused gate**
@@ -597,6 +629,12 @@
   - `pnpm build` passes.
   - `dart analyze packages/chronopic_ui apps/chronopic` passes.
   - `flutter test packages/chronopic_ui/test/linux_desktop_parity_test.dart packages/chronopic_ui/test/chronopic_home_test.dart` passes.
+  - Correction run also recaptured
+    `02-populated-grid`,
+    `05-detail`,
+    and `06-gallery`
+    on Electron and Flutter at 1440x920 and generated side-by-side compare
+    images under `test-results/flutter-electron-parity/compare/`.
 
 - [x] **Step 6: Commit and push**
 
@@ -613,13 +651,20 @@
   Progress:
   - Implementation commit `7efb12e` records the Electron and Flutter gallery
     activation changes.
+  - Correction commit `96ba222` restores the Electron detail-first activation
+    model and fixes Flutter Gallery-to-Detail switching.
   - Matrix rows now reference `7efb12e` for the four reopened surfaces.
+  - Corrected matrix rows now reference `96ba222` for the viewer activation
+    contract.
   - Follow-up evidence and handoff commits record the phase closure.
   - `git push` updated `github.com:denghongcai/ChronoPic.git`
     branch `flutter-refactor-phases`.
 
 ## Self-Review
 
-- Spec coverage: the plan covers code comparison, Electron double-click behavior, Flutter double-tap behavior, fullscreen overlay verification, keyboard parity, focused screenshots, docs, commit, and push.
+- Spec coverage: the plan covers code comparison, Electron double-click behavior, Flutter double-tap behavior, Detail/Gallery overlay verification, keyboard parity, focused screenshots, docs, commit, and push.
 - Placeholder scan: no task uses TBD/TODO or asks for unspecified tests; every test command and intended code path is named.
-- Type consistency: `onOpenGallery(photoId)` is the Electron prop shape; Flutter uses `ValueChanged<PhotoRecord>` internally and a `BuildContext` wrapper where `showDialog` needs a context.
+- Type consistency: Electron cards use `onOpenDetail` for double-click and
+  keep `onOpenGallery` for explicit Gallery shortcuts/actions. Flutter cards
+  use `ValueChanged<PhotoRecord>` for Detail-first activation and a typed
+  `GalleryDialogResult` for Gallery close-vs-detail return.

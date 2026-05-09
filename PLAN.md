@@ -2167,55 +2167,65 @@ Current status:
   keep Phase 6 mobile productization blocked until the pushed Flutter desktop
   parity branch is reviewed or merged.
 
-### 4.36 Gallery Overlay Activation Parity Phase
+### 4.36 Viewer Overlay Activation Parity Phase
 
 - Continue desktop-first parity after code comparison found a missed interaction
   contract in Phase 5.7:
-  primary photo-card activation does not consistently open fullscreen gallery.
+  primary photo-card activation and in-overlay Detail/Gallery switching were
+  not consistently aligned to the Electron reference.
 - Treat the expected desktop behavior as:
   single click selects,
-  double-click or double-tap opens fullscreen gallery overlay,
-  Enter opens detail/inspector,
+  double-click or double-tap opens the focused Detail viewer overlay,
+  Enter opens the same focused Detail/inspector overlay,
   `G` opens gallery for the selected photo,
-  and `Escape` closes the overlay while preserving selection.
+  Gallery overlay `D` / `Detail View` returns to the focused Detail overlay,
+  and `Escape` closes the active overlay while preserving selection.
 - Electron comparison finding:
   `packages/ui-components/src/photo-card.tsx`
-  currently wires `onDoubleClick` to detail mode,
+  correctly wires `onDoubleClick` to detail mode,
   while `packages/ui-components/src/photo-viewer-overlay.tsx`
-  already supports a fullscreen Radix gallery overlay.
+  supports Detail and Gallery as two modes inside the same fullscreen Radix
+  viewer overlay.
 - Flutter comparison finding:
   `chronopic_flutter/packages/chronopic_ui/lib/src/browse/browse_surface.dart`
-  currently wires photo cards only to selection,
+  previously wired photo cards only to selection,
   while `chronopic_flutter/packages/chronopic_ui/lib/src/gallery/gallery_dialog.dart`
-  already provides a fullscreen `Dialog.fullscreen` gallery overlay.
+  provides the fullscreen Gallery mode and now returns explicitly to focused
+  Detail mode for `D` / `Detail View`.
 - Implementation plan:
   [docs/superpowers/plans/2026-05-09-gallery-overlay-activation-parity.md](docs/superpowers/plans/2026-05-09-gallery-overlay-activation-parity.md)
 - Required verification:
-  Electron E2E must prove double-click opens gallery and Enter still opens
-  detail;
-  Flutter widget/parity tests must prove double-tap opens `gallery-dialog`;
+  Electron E2E must prove double-click opens Detail,
+  the in-overlay Gallery button switches to Gallery,
+  and `D` switches Gallery back to Detail;
+  Flutter widget/parity tests must prove double-tap opens focused Detail,
+  Gallery can be opened from that overlay,
+  and `D` / `Detail View` returns to focused Detail;
   both sides must recapture and compare populated browse,
-  gallery,
-  favorites,
-  and restart-persistence screenshots before closing the reopened matrix rows.
+  Detail,
+  and Gallery screenshots before closing the corrected matrix rows.
 - Current status:
-  implemented and pushed on 2026-05-09;
-  implementation commit `7efb12e` records the code/test changes;
-  follow-up evidence and handoff commits record the phase closure.
+  corrected locally on 2026-05-09 after user review clarified the Electron
+  reference interaction;
+  correction commit `96ba222` restores Detail-first card activation and
+  fixes Flutter Gallery-to-Detail switching.
 - Local verification:
-  Electron accessibility E2E now covers Enter-to-detail,
-  double-click-to-gallery,
-  selected-card `G`-to-gallery,
+  Electron accessibility E2E now covers Enter-to-Detail,
+  double-click-to-Detail,
+  Detail-to-Gallery,
+  Gallery `D`-to-Detail,
+  selected-card `G`-to-Gallery,
   and Escape close;
-  Flutter parity tests now cover card double-tap-to-gallery,
-  selected-photo `G`-to-gallery,
-  Enter-to-focused-detail,
+  Flutter parity tests now cover card double-tap-to-focused-Detail,
+  focused Detail-to-Gallery,
+  Gallery `D`-to-focused-Detail,
+  selected-photo `G`-to-Gallery,
+  Enter-to-focused-Detail,
   and Escape close.
 - Screenshot comparison:
   refreshed Electron and Flutter populated browse,
-  gallery,
-  favorites,
-  and restart-persistence screenshots are 1440x920;
+  Detail,
+  and Gallery screenshots are 1440x920;
   side-by-side comparison artifacts are under
   `test-results/flutter-electron-parity/compare/`.
 

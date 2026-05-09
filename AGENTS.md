@@ -5152,16 +5152,18 @@ This file is the local execution record for ChronoPic. It complements `PLAN.md` 
   and restart-persistence PNGs before the rows can close.
 - Next:
   implement failing Electron and Flutter tests for double-click/double-tap
-  gallery activation,
+  focused viewer activation,
   then wire the activation path and rerun focused screenshots.
 
 ### 2026-05-09 Step 203
 
-- Implemented Phase 5.8 Gallery Overlay Activation Parity locally.
+- Implemented the first Phase 5.8 attempt locally.
+- This attempt was superseded by Step 205 after user review clarified the
+  Electron reference model is Detail-first rather than direct-to-Gallery.
 - Electron changes:
   `PhotoCard` now has explicit `onOpenGallery`;
-  double-click and card-level `G` open gallery,
-  while Enter remains detail;
+  this first attempt incorrectly made double-click open gallery,
+  while Enter remained detail;
   gallery activation is threaded through gallery,
   timeline,
   memory-detail,
@@ -5233,3 +5235,60 @@ This file is the local execution record for ChronoPic. It complements `PLAN.md` 
   to mark the handoff complete.
 - Next:
   perform a completion audit against Phase 5.8 requirements.
+
+### 2026-05-09 Step 205
+
+- Re-reviewed Phase 5.8 after user feedback clarified the Electron reference
+  interaction was misunderstood in Step 203.
+- Corrected the target model:
+  photo-card double-click/double-tap opens the focused Detail viewer overlay,
+  not Gallery directly;
+  Gallery remains the second viewer mode opened by `G` or the Detail overlay's
+  Gallery action;
+  Gallery `D`,
+  `Detail View`,
+  and `Open Inspector` return to focused Detail.
+- Electron correction:
+  restored `PhotoCard` double-click to `onOpenDetail`;
+  updated accessibility E2E to assert double-click-to-Detail,
+  Detail-to-Gallery,
+  Gallery `D`-to-Detail,
+  selected-card `G`-to-Gallery,
+  and Escape close.
+- Flutter correction:
+  changed browse card double-tap to open focused Detail;
+  changed `GalleryDialog` to return an explicit close/detail result so
+  Gallery can switch back to focused Detail instead of silently dropping to the
+  page;
+  updated Linux parity tests for double-tap-to-Detail,
+  focused Detail-to-Gallery,
+  Gallery `D`-to-focused-Detail,
+  and `Detail View` / `Open Inspector` return behavior.
+- Verification:
+  `pnpm typecheck`
+  `pnpm build`
+  `pnpm exec playwright test -c tests/e2e/playwright.config.ts accessibility.spec.ts`
+  `pnpm run e2e:runtime`
+  `dart analyze packages/chronopic_ui apps/chronopic`
+  `flutter test packages/chronopic_ui/test/linux_desktop_parity_test.dart packages/chronopic_ui/test/chronopic_home_test.dart`
+- Screenshot evidence:
+  recaptured Electron screenshots with
+  `node scripts/capture-electron-parity.mjs`;
+  recaptured Flutter screenshots with
+  `bash tool/capture_flutter_parity.sh populated-grid detail gallery`;
+  confirmed `02-populated-grid`,
+  `05-detail`,
+  and `06-gallery` PNGs are 1440x920 on both sides;
+  generated side-by-side compare artifacts under
+  `test-results/flutter-electron-parity/compare/`;
+  inspected `05-detail-compare.png` and `06-gallery-compare.png`.
+- Implementation correction commit:
+  `96ba222 Restore detail-first viewer activation`.
+- Updated:
+  `PLAN.md`,
+  `docs/flutter-refactor-phases.md`,
+  `docs/flutter-electron-ui-functional-parity.md`,
+  and
+  `docs/superpowers/plans/2026-05-09-gallery-overlay-activation-parity.md`.
+- Next:
+  commit and push the corrected documentation handoff.
