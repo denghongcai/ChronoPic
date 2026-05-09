@@ -5604,3 +5604,47 @@ This file is the local execution record for ChronoPic. It complements `PLAN.md` 
   Task 1 still needs its commit,
   then Phase 6 should continue into Task 2 with red tests for the mobile
   photo-library media source.
+
+### 2026-05-09 Step 214
+
+- Implemented Phase 6 Task 2:
+  Mobile Media Source Boundary.
+- Added the latest stable compatible `photo_manager` dependency through:
+  `cd chronopic_flutter/packages/chronopic_media && flutter pub add photo_manager:^3.9.0`.
+- Verified dependency state with:
+  `cd chronopic_flutter && flutter pub outdated`.
+  Direct dependencies are up to date;
+  newer dev/transitive versions are outside the current resolvable set.
+- Added red tests in:
+  `chronopic_flutter/packages/chronopic_media/test/mobile_photo_library_media_source_test.dart`.
+  The first run failed because
+  `PhotoLibraryGateway`,
+  `PhotoLibraryPermissionSnapshot`,
+  `PhotoLibraryAsset`,
+  and
+  `MobilePhotoLibraryMediaSource`
+  did not exist.
+- Added pure Dart mobile media-source contracts and adapter:
+  `photo_library_gateway.dart`
+  and
+  `mobile_photo_library_media_source.dart`.
+- Added the real Flutter plugin-backed gateway in:
+  `photo_manager_gateway.dart`.
+- Kept the public package boundary deliberate:
+  `chronopic_media.dart`
+  exports only pure Dart media contracts/adapters,
+  while
+  `chronopic_media_flutter.dart`
+  exports the `photo_manager` gateway so pure Dart tests do not load
+  Flutter's `dart:ui`.
+- Verification passed:
+  `cd chronopic_flutter && dart test packages/chronopic_media/test/mobile_photo_library_media_source_test.dart`,
+  `cd chronopic_flutter && dart analyze packages/chronopic_media`,
+  and
+  `cd chronopic_flutter && dart test packages/chronopic_media/test`.
+- Next:
+  commit Task 2,
+  then continue into Task 3 with red tests for mobile scan progress,
+  pause,
+  resume,
+  and retry orchestration.

@@ -11,15 +11,21 @@ final class DesktopDirectoryMediaSource implements MediaSourceAdapter {
   final Directory rootDirectory;
 
   @override
-  MediaSourcePermissionState get permissionState => MediaSourcePermissionState.granted;
+  MediaSourcePermissionState get permissionState =>
+      MediaSourcePermissionState.granted;
 
   @override
   Future<List<MediaAsset>> listAssets() async {
     if (!rootDirectory.existsSync()) {
-      throw MediaSourceException('Directory does not exist: ${rootDirectory.path}');
+      throw MediaSourceException(
+        'Directory does not exist: ${rootDirectory.path}',
+      );
     }
     final assets = <MediaAsset>[];
-    await for (final entity in rootDirectory.list(recursive: true, followLinks: false)) {
+    await for (final entity in rootDirectory.list(
+      recursive: true,
+      followLinks: false,
+    )) {
       if (entity is! File || !isSupportedMediaPath(entity.path)) continue;
       assets.add(_assetForFile(entity));
     }
@@ -30,9 +36,14 @@ final class DesktopDirectoryMediaSource implements MediaSourceAdapter {
   @override
   Future<MediaReadResult> readAsset(String assetId) async {
     final file = File(assetId);
-    if (!file.existsSync()) throw MediaSourceException('Missing desktop asset $assetId');
+    if (!file.existsSync()) {
+      throw MediaSourceException('Missing desktop asset $assetId');
+    }
     final asset = _assetForFile(file);
-    return MediaReadResult(asset: asset, bytes: Uint8List.fromList(await file.readAsBytes()));
+    return MediaReadResult(
+      asset: asset,
+      bytes: Uint8List.fromList(await file.readAsBytes()),
+    );
   }
 
   @override
@@ -43,7 +54,9 @@ final class DesktopDirectoryMediaSource implements MediaSourceAdapter {
   }
 
   @override
-  Future<List<String>> listMissingAssetIds(Iterable<String> knownAssetIds) async {
+  Future<List<String>> listMissingAssetIds(
+    Iterable<String> knownAssetIds,
+  ) async {
     return knownAssetIds.where((id) => !File(id).existsSync()).toList();
   }
 
@@ -62,4 +75,3 @@ final class DesktopDirectoryMediaSource implements MediaSourceAdapter {
     );
   }
 }
-

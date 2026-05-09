@@ -6,6 +6,7 @@ resolution: workspace
 
 dependencies:
   path: ^1.9.1
+  photo_manager: ^3.9.0
 
 dev_dependencies:
   lints: ^6.0.0

@@ -54,7 +54,10 @@ Use `permission_handler:^12.0.1` only if a task proves `photo_manager` cannot co
 - Modify: `chronopic_flutter/packages/chronopic_ui/pubspec.yaml`
   Upgrade/verify mobile file import dependency if file import remains in UI.
 - Modify: `chronopic_flutter/packages/chronopic_media/lib/chronopic_media.dart`
-  Export mobile media-source abstractions.
+  Export pure Dart mobile media-source abstractions.
+- Create: `chronopic_flutter/packages/chronopic_media/lib/chronopic_media_flutter.dart`
+  Export the real Flutter plugin-backed gateway separately so pure Dart tests
+  do not load `dart:ui`.
 - Create: `chronopic_flutter/packages/chronopic_media/lib/src/photo_library_gateway.dart`
   Testable gateway around `photo_manager`.
 - Create: `chronopic_flutter/packages/chronopic_media/lib/src/photo_manager_gateway.dart`
@@ -168,12 +171,13 @@ git commit -m "Scaffold Flutter mobile runners"
 
 - Modify: `chronopic_flutter/packages/chronopic_media/pubspec.yaml`
 - Modify: `chronopic_flutter/packages/chronopic_media/lib/chronopic_media.dart`
+- Create: `chronopic_flutter/packages/chronopic_media/lib/chronopic_media_flutter.dart`
 - Create: `chronopic_flutter/packages/chronopic_media/lib/src/photo_library_gateway.dart`
 - Create: `chronopic_flutter/packages/chronopic_media/lib/src/photo_manager_gateway.dart`
 - Create: `chronopic_flutter/packages/chronopic_media/lib/src/mobile_photo_library_media_source.dart`
 - Test: `chronopic_flutter/packages/chronopic_media/test/mobile_photo_library_media_source_test.dart`
 
-- [ ] **Step 1: Add dependency through pub**
+- [x] **Step 1: Add dependency through pub**
 
 Run:
 
@@ -189,7 +193,7 @@ Expected:
 - `photo_manager` resolves to the latest stable compatible package.
 - Any newer direct dependency is either adopted or explicitly recorded in `AGENTS.md` with the resolver reason.
 
-- [ ] **Step 2: Add failing gateway/source tests**
+- [x] **Step 2: Add failing gateway/source tests**
 
 Create `chronopic_flutter/packages/chronopic_media/test/mobile_photo_library_media_source_test.dart`:
 
@@ -284,7 +288,7 @@ dart test packages/chronopic_media/test/mobile_photo_library_media_source_test.d
 
 Expected: fails because gateway/source types do not exist.
 
-- [ ] **Step 3: Implement testable gateway contracts**
+- [x] **Step 3: Implement testable gateway contracts**
 
 Create `chronopic_flutter/packages/chronopic_media/lib/src/photo_library_gateway.dart`:
 
@@ -338,7 +342,7 @@ abstract interface class PhotoLibraryGateway {
 }
 ```
 
-- [ ] **Step 4: Implement mobile media source**
+- [x] **Step 4: Implement mobile media source**
 
 Create `chronopic_flutter/packages/chronopic_media/lib/src/mobile_photo_library_media_source.dart`:
 
@@ -412,7 +416,7 @@ final class MobilePhotoLibraryMediaSource implements MediaSourceAdapter {
 }
 ```
 
-- [ ] **Step 5: Implement fake and plugin gateways**
+- [x] **Step 5: Implement fake and plugin gateways**
 
 Add test fake inside `mobile_photo_library_media_source_test.dart`:
 
@@ -528,7 +532,7 @@ final class PhotoManagerGateway implements PhotoLibraryGateway {
 }
 ```
 
-- [ ] **Step 6: Export and verify**
+- [x] **Step 6: Export and verify**
 
 Update `chronopic_flutter/packages/chronopic_media/lib/chronopic_media.dart`:
 
@@ -538,6 +542,12 @@ export 'src/fixture_media_source.dart';
 export 'src/media_source.dart';
 export 'src/mobile_photo_library_media_source.dart';
 export 'src/photo_library_gateway.dart';
+```
+
+Create `chronopic_flutter/packages/chronopic_media/lib/chronopic_media_flutter.dart`:
+
+```dart
+export 'chronopic_media.dart';
 export 'src/photo_manager_gateway.dart';
 ```
 
@@ -552,7 +562,7 @@ dart analyze packages/chronopic_media
 
 Expected: tests and analyze pass.
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add chronopic_flutter/packages/chronopic_media

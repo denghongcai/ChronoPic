@@ -1,10 +1,6 @@
 import 'dart:typed_data';
 
-enum MediaSourcePermissionState {
-  granted,
-  denied,
-  limited,
-}
+enum MediaSourcePermissionState { granted, denied, limited }
 
 final class MediaAssetMetadata {
   const MediaAssetMetadata({
@@ -48,7 +44,10 @@ final class MediaReadResult {
 }
 
 final class MediaSourceException implements Exception {
-  const MediaSourceException(this.message, {this.permissionState = MediaSourcePermissionState.granted});
+  const MediaSourceException(
+    this.message, {
+    this.permissionState = MediaSourcePermissionState.granted,
+  });
 
   final String message;
   final MediaSourcePermissionState permissionState;
@@ -92,4 +91,3 @@ String mimeFromPath(String path) {
   if (lower.endsWith('.mov')) return 'video/quicktime';
   return 'application/octet-stream';
 }
-
