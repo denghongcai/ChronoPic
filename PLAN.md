@@ -2199,7 +2199,24 @@ Current status:
   favorites,
   and restart-persistence screenshots before closing the reopened matrix rows.
 - Current status:
-  planned on 2026-05-09.
+  implemented locally on 2026-05-09;
+  final commit/push handoff remains.
+- Local verification:
+  Electron accessibility E2E now covers Enter-to-detail,
+  double-click-to-gallery,
+  selected-card `G`-to-gallery,
+  and Escape close;
+  Flutter parity tests now cover card double-tap-to-gallery,
+  selected-photo `G`-to-gallery,
+  Enter-to-focused-detail,
+  and Escape close.
+- Screenshot comparison:
+  refreshed Electron and Flutter populated browse,
+  gallery,
+  favorites,
+  and restart-persistence screenshots are 1440x920;
+  side-by-side comparison artifacts are under
+  `test-results/flutter-electron-parity/compare/`.
 
 ## Future Product Backlog
 

@@ -15,6 +15,7 @@ export interface PhotoCardProps {
   selected: boolean;
   onSelect: () => void;
   onOpenDetail: () => void;
+  onOpenGallery: () => void;
   onToggleFavorite?: (photoId: string, favorite: boolean) => void;
   memories?: Memory[];
   onAddToMemory?: (memoryId: string, photoId: string) => void;
@@ -31,6 +32,7 @@ export function PhotoCard({
   selected,
   onSelect,
   onOpenDetail,
+  onOpenGallery,
   onToggleFavorite,
   memories = [],
   onAddToMemory,
@@ -59,11 +61,17 @@ export function PhotoCard({
             : "border-stone-200 hover:border-stone-300"
       )}
       onClick={onSelect}
-      onDoubleClick={onOpenDetail}
+      onDoubleClick={onOpenGallery}
       onKeyDown={(event) => {
         if (event.key === "Enter") {
           event.preventDefault();
           onOpenDetail();
+          return;
+        }
+
+        if (event.key.toLowerCase() === "g") {
+          event.preventDefault();
+          onOpenGallery();
           return;
         }
 

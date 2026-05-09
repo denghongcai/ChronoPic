@@ -5154,3 +5154,62 @@ This file is the local execution record for ChronoPic. It complements `PLAN.md` 
   implement failing Electron and Flutter tests for double-click/double-tap
   gallery activation,
   then wire the activation path and rerun focused screenshots.
+
+### 2026-05-09 Step 203
+
+- Implemented Phase 5.8 Gallery Overlay Activation Parity locally.
+- Electron changes:
+  `PhotoCard` now has explicit `onOpenGallery`;
+  double-click and card-level `G` open gallery,
+  while Enter remains detail;
+  gallery activation is threaded through gallery,
+  timeline,
+  memory-detail,
+  and app-level `PhotoHome` surfaces.
+- Flutter changes:
+  `BrowseSurface`,
+  `PhotoGrid`,
+  and `PhotoCardTile` now accept `onOpenGallery`;
+  cards use an immediate custom tap/double-tap detector so single tap selects
+  immediately and the second tap opens fullscreen `GalleryDialog`;
+  selected-photo `G` opens gallery,
+  and Enter opens focused detail.
+- Red/green evidence:
+  Electron accessibility E2E initially failed because card double-click did not
+  expose a gallery dialog;
+  Flutter parity test initially failed because card double-tap did not expose
+  `gallery-dialog`.
+- Verification:
+  `pnpm exec playwright test -c tests/e2e/playwright.config.ts accessibility.spec.ts`
+  `pnpm run e2e:runtime`
+  `pnpm typecheck`
+  `pnpm build`
+  `dart analyze packages/chronopic_ui apps/chronopic`
+  `flutter test packages/chronopic_ui/test/linux_desktop_parity_test.dart packages/chronopic_ui/test/chronopic_home_test.dart`
+- Screenshot evidence:
+  `node scripts/capture-electron-parity.mjs`
+  refreshed Electron screenshots;
+  `bash tool/capture_flutter_parity.sh populated-grid gallery favorites restart-persistence`
+  refreshed focused Flutter screenshots;
+  all focused PNGs were confirmed as 1440x920.
+- Screenshot comparison:
+  generated side-by-side compare artifacts under
+  `test-results/flutter-electron-parity/compare/`;
+  inspected `06-gallery-compare.png`
+  and `02-populated-grid-compare.png`
+  to confirm fullscreen gallery hierarchy,
+  navigation,
+  metadata,
+  filmstrip,
+  and browse card hierarchy remain aligned.
+- Updated:
+  `PLAN.md`,
+  `docs/flutter-refactor-phases.md`,
+  `docs/flutter-electron-ui-functional-parity.md`,
+  and
+  `docs/superpowers/plans/2026-05-09-gallery-overlay-activation-parity.md`.
+- Next:
+  run `git diff --check`,
+  commit the implementation,
+  write the implementation commit into the reopened matrix rows,
+  and push `flutter-refactor-phases`.

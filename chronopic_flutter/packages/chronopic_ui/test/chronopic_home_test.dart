@@ -176,6 +176,13 @@ void main() {
     expect(service.getPhoto('photo-city')?.semantic.caption, isNull);
 
     await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+    await tester.pump();
+    expect(find.byKey(const Key('focused-detail-view')), findsOneWidget);
+    await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+    await tester.pump();
+    expect(find.byKey(const Key('focused-detail-view')), findsNothing);
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.keyG);
     await tester.pumpAndSettle();
     expect(find.byKey(const Key('gallery-dialog')), findsOneWidget);
     await tester.sendKeyEvent(LogicalKeyboardKey.escape);

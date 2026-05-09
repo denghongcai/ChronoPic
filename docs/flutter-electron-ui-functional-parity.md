@@ -3,18 +3,18 @@
 | Surface / Workflow | Electron Reference Evidence | Flutter Evidence | Status | Gap | Fix Commit |
 | --- | --- | --- | --- | --- | --- |
 | Empty first-run home | `test-results/flutter-electron-parity/electron/01-empty-home.png` | `test-results/flutter-electron-parity/flutter/01-empty-home.png` | Accepted Difference | Flutter matches the Electron first-run information architecture and actions. Accepted difference: exact spacing/card sizing/button rendering differs because the Flutter Linux Material renderer and Electron CSS renderer do not share a pixel-identical component system. | `223d9e8` |
-| Populated grid/waterfall browse | `test-results/flutter-electron-parity/electron/02-populated-grid.png` | `test-results/flutter-electron-parity/flutter/02-populated-grid.png` | Gap | Direct photo-card activation is not aligned: Electron double-click currently opens detail, while Flutter cards only select. Expected contract is single click selects, double-click/double-tap opens fullscreen gallery overlay, Enter opens detail, and `G` opens gallery for the selected photo. | Pending |
+| Populated grid/waterfall browse | `test-results/flutter-electron-parity/electron/02-populated-grid.png` | `test-results/flutter-electron-parity/flutter/02-populated-grid.png` | Accepted Difference | Direct photo-card activation is aligned: single click/tap selects immediately, double-click/double-tap opens fullscreen gallery overlay, Enter opens detail/focused inspector, and `G` opens gallery for the selected photo. Accepted difference: card proportions and renderer density still differ between Electron CSS and Flutter Material. | Pending |
 | Map browse / disabled-map state | `test-results/flutter-electron-parity/electron/03-map.png` | `test-results/flutter-electron-parity/flutter/03-map.png` | Accepted Difference | Flutter matches the Electron disabled-map workflow, mapped counts, GPS selection, and browse controls. Accepted difference: exact discovery-chip density and map-canvas vertical offset differ slightly between renderers. | `223d9e8` |
 | Timeline browse | `test-results/flutter-electron-parity/electron/04-timeline.png` | `test-results/flutter-electron-parity/flutter/04-timeline.png` | Accepted Difference | Flutter matches the Electron timeline workflow, scope chips, selected-photo banner, month grouping, and selectable cards. Accepted difference: exact card header proportions and group density differ slightly between renderers. | `223d9e8` |
 | Detail inspector and edits | `test-results/flutter-electron-parity/electron/05-detail.png` | `test-results/flutter-electron-parity/flutter/05-detail.png` | Accepted Difference | Flutter matches the Electron focused detail workflow, selected fixture, top controls, inspector health semantics, metadata/edit actions, AI insights, and gallery strip. Accepted difference: exact top-button sizing and lower edit-field scroll position differ slightly while preserving all controls. | `223d9e8` |
-| Fullscreen gallery | `test-results/flutter-electron-parity/electron/06-gallery.png` | `test-results/flutter-electron-parity/flutter/06-gallery.png` | Gap | Gallery view exists on both sides, but the primary browse-card activation path is not aligned. Phase 5.8 must prove the overlay opens fullscreen from photo-card double-click/double-tap and then compare refreshed gallery screenshots. | Pending |
-| Favorites filter | `test-results/flutter-electron-parity/electron/07-favorites.png` | `test-results/flutter-electron-parity/flutter/07-favorites.png` | Gap | Favorites photo cards must share the same double-click/double-tap-to-gallery activation contract as the main browse grid, followed by refreshed screenshot comparison. | Pending |
+| Fullscreen gallery | `test-results/flutter-electron-parity/electron/06-gallery.png` | `test-results/flutter-electron-parity/flutter/06-gallery.png` | Accepted Difference | Fullscreen gallery activation is aligned from primary photo-card double-click/double-tap and selected-photo `G`. Refreshed screenshot comparison confirms both overlays cover the window and retain top mode/count controls, navigation, metadata, inspector/detail affordance, and filmstrip. Accepted difference: exact media-frame height, button chrome, and fallback image rendering differ by renderer. | Pending |
+| Favorites filter | `test-results/flutter-electron-parity/electron/07-favorites.png` | `test-results/flutter-electron-parity/flutter/07-favorites.png` | Accepted Difference | Favorites photo cards share the same double-click/double-tap-to-gallery activation contract as the main browse grid. Refreshed screenshot comparison confirms the favorites browse hierarchy remains Electron-aligned. Accepted difference: exact selected-card dimensions and browse spacing differ between adaptive layouts. | Pending |
 | Memories list | `test-results/flutter-electron-parity/electron/08-memories-list.png` | `test-results/flutter-electron-parity/flutter/08-memories-list.png` | Accepted Difference | Flutter matches the Electron memories list workflow, suggested-memory generation/refresh, candidate accept/reject, Adjust photos affordance, and memory collections. Accepted difference: exact candidate/card proportions and fallback cover crop differ slightly between renderers. | `223d9e8` |
 | Memory detail management | `test-results/flutter-electron-parity/electron/09-memory-detail.png` | `test-results/flutter-electron-parity/flutter/09-memory-detail.png` | Accepted Difference | Flutter matches the Electron memory detail workflow, cover-led hero, timestamp, custom-cover status, description, story outline, chapter metadata, and lower management actions. Accepted difference: exact chip colors/icon treatment/card spacing differ slightly while preserving function. | `223d9e8` |
 | Settings | `test-results/flutter-electron-parity/electron/10-settings.png` | `test-results/flutter-electron-parity/flutter/10-settings.png` | Accepted Difference | Flutter matches the Electron settings workflow and first-viewport density while preserving additional lower-panel path, map, source, and secret-safe AI controls. Accepted difference: exact section heights and lower-panel density differ because Flutter exposes desktop-only file-path controls below the first viewport. | `223d9e8` |
 | Notifications / AI queue | `test-results/flutter-electron-parity/electron/11-notifications.png` | `test-results/flutter-electron-parity/flutter/11-notifications.png` | Accepted Difference | Flutter matches the Electron notifications workflow, AI queue and memory candidate cards, semantic chips, retry, and suggestions handoff. Accepted difference: exact button color semantics and card spacing differ slightly between renderers. | `223d9e8` |
 | Chinese locale | `test-results/flutter-electron-parity/electron/12-zh-locale.png` | `test-results/flutter-electron-parity/flutter/12-zh-locale.png` | Accepted Difference | Flutter localizes the Electron-aligned shell, browse controls, settings, memory labels, and core first-viewport UI. Accepted difference: fixture-authored memory/photo text remains source data rather than UI translation, matching local-first content semantics. | `223d9e8` |
-| Restart persistence | `test-results/flutter-electron-parity/electron/13-restart-persistence.png` | `test-results/flutter-electron-parity/flutter/13-restart-persistence.png` | Gap | Restored photo cards must preserve the same double-click/double-tap-to-gallery activation after app restart, followed by refreshed screenshot comparison. | Pending |
+| Restart persistence | `test-results/flutter-electron-parity/electron/13-restart-persistence.png` | `test-results/flutter-electron-parity/flutter/13-restart-persistence.png` | Accepted Difference | Restored photo cards preserve the same selected-photo and double-click/double-tap-to-gallery activation contract after restart. Refreshed screenshot comparison confirms the restored browse state remains aligned. Accepted difference: exact card dimensions and browse spacing follow the same adaptive-layout difference as populated browse. | Pending |
 
 ## Evidence Rules
 
@@ -28,11 +28,9 @@
 
 ## Current Closure Status
 
-- Matrix audit status: Phase 5.8 reopened direct gallery activation gaps in
-  populated browse,
-  fullscreen gallery,
-  favorites,
-  and restart persistence.
+- Matrix audit status:
+  Phase 5.8 direct gallery activation gaps are locally closed after focused
+  tests and refreshed screenshot comparison.
 - Electron evidence: all 13 reference screenshots were refreshed with
   `node scripts/capture-electron-parity.mjs` and confirmed as 1440x920.
 - Flutter evidence: all 13 screenshots were refreshed with
@@ -47,6 +45,12 @@
   `50bba7c`.
 - Current follow-up plan:
   [docs/superpowers/plans/2026-05-09-gallery-overlay-activation-parity.md](superpowers/plans/2026-05-09-gallery-overlay-activation-parity.md).
+- Phase 5.8 screenshot comparison artifacts:
+  `test-results/flutter-electron-parity/compare/02-populated-grid-compare.png`,
+  `test-results/flutter-electron-parity/compare/06-gallery-compare.png`,
+  `test-results/flutter-electron-parity/compare/07-favorites-compare.png`,
+  and
+  `test-results/flutter-electron-parity/compare/13-restart-persistence-compare.png`.
 
 ## Closure Order
 

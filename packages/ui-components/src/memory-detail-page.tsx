@@ -33,6 +33,7 @@ export interface MemoryDetailPageProps {
   onToggleBatchSelect: (photoId: string) => void;
   onClearBatchSelection: () => void;
   onOpenDetail: (photoId: string) => void;
+  onOpenGallery: (photoId: string) => void;
   onToggleFavorite: (photoId: string, favorite: boolean) => void;
   onRemovePhoto: (memoryId: string, photoId: string) => void;
   onRemoveSelection: (memoryId: string, photoIds: string[]) => void | Promise<void>;
@@ -56,6 +57,7 @@ export function MemoryDetailPage({
   onToggleBatchSelect,
   onClearBatchSelection,
   onOpenDetail,
+  onOpenGallery,
   onToggleFavorite,
   onRemovePhoto,
   onRemoveSelection,
@@ -540,6 +542,11 @@ export function MemoryDetailPage({
                   onOpenDetail={() => {
                     if (!isSelecting) {
                       onOpenDetail(record.photo.id);
+                    }
+                  }}
+                  onOpenGallery={() => {
+                    if (!isSelecting) {
+                      onOpenGallery(record.photo.id);
                     }
                   }}
                   onSecondaryAction={(photoId) => setPendingRemovalPhotoId(photoId)}

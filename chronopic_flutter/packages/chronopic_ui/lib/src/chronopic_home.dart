@@ -278,6 +278,7 @@ final class _ChronoPicHomeState extends State<ChronoPicHome> {
           onGpsOnlyChanged: (value) => setState(() => _gpsOnly = value),
           onAiStatusChanged: (value) => setState(() => _aiStatusFilter = value),
           onOpenGallery: _openGallery,
+          onOpenGalleryFor: _openGalleryFor,
           onSaveCaption: _saveCaption,
           onSaveDatetime: _saveDatetime,
           onSaveTags: _saveTags,
@@ -351,8 +352,15 @@ final class _ChronoPicHomeState extends State<ChronoPicHome> {
     if (event is! KeyDownEvent || _selected == null) {
       return KeyEventResult.ignored;
     }
-    if (event.logicalKey == LogicalKeyboardKey.enter ||
-        event.logicalKey == LogicalKeyboardKey.keyG) {
+    if (event.logicalKey == LogicalKeyboardKey.escape && _detailCaptureFirst) {
+      _closeFocusedDetail();
+      return KeyEventResult.handled;
+    }
+    if (event.logicalKey == LogicalKeyboardKey.enter) {
+      setState(() => _detailCaptureFirst = true);
+      return KeyEventResult.handled;
+    }
+    if (event.logicalKey == LogicalKeyboardKey.keyG) {
       _openGallery(context);
       return KeyEventResult.handled;
     }
@@ -780,11 +788,22 @@ final class _ChronoPicHomeState extends State<ChronoPicHome> {
   Future<void> _openGallery(BuildContext dialogContext) async {
     final selected = _selected;
     if (selected == null) return;
+    await _openGalleryFor(dialogContext, selected);
+  }
+
+  Future<void> _openGalleryFor(
+    BuildContext dialogContext,
+    PhotoRecord record,
+  ) async {
+    setState(() {
+      _setSelectedPhoto(record);
+      _detailCaptureFirst = false;
+    });
     final result = await showDialog<PhotoRecord>(
       context: dialogContext,
       barrierColor: Colors.black.withValues(alpha: 0.9),
       builder: (context) => GalleryDialog(
-        initialPhotoId: selected.photo.id,
+        initialPhotoId: record.photo.id,
         photos: _visiblePhotos(),
       ),
     );

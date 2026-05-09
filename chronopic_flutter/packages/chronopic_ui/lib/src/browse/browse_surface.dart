@@ -41,12 +41,14 @@ final class BrowseModeSelector extends StatelessWidget {
 final class BrowseSurface extends StatelessWidget {
   const BrowseSurface({
     required this.mode,
+    required this.onOpenGallery,
     required this.onSelectPhoto,
     required this.photos,
     required this.selected,
   });
 
   final BrowseMode mode;
+  final ValueChanged<PhotoRecord> onOpenGallery;
   final ValueChanged<PhotoRecord> onSelectPhoto;
   final List<PhotoRecord> photos;
   final PhotoRecord? selected;
@@ -55,6 +57,7 @@ final class BrowseSurface extends StatelessWidget {
   Widget build(BuildContext context) {
     return switch (mode) {
       BrowseMode.waterfall => PhotoGrid(
+        onOpenGallery: onOpenGallery,
         onSelectPhoto: onSelectPhoto,
         photos: photos,
         selected: selected,
@@ -74,11 +77,13 @@ final class BrowseSurface extends StatelessWidget {
 
 final class PhotoGrid extends StatelessWidget {
   const PhotoGrid({
+    required this.onOpenGallery,
     required this.onSelectPhoto,
     required this.photos,
     required this.selected,
   });
 
+  final ValueChanged<PhotoRecord> onOpenGallery;
   final ValueChanged<PhotoRecord> onSelectPhoto;
   final List<PhotoRecord> photos;
   final PhotoRecord? selected;
@@ -110,6 +115,7 @@ final class PhotoGrid extends StatelessWidget {
           itemBuilder: (context, index) {
             final record = photos[index];
             return PhotoCardTile(
+              onOpenGallery: () => onOpenGallery(record),
               onSelect: () => onSelectPhoto(record),
               record: record,
               selected: selected?.photo.id == record.photo.id,
@@ -121,36 +127,57 @@ final class PhotoGrid extends StatelessWidget {
   }
 }
 
-final class PhotoCardTile extends StatelessWidget {
+final class PhotoCardTile extends StatefulWidget {
   const PhotoCardTile({
+    required this.onOpenGallery,
     required this.onSelect,
     required this.record,
     required this.selected,
   });
 
+  final VoidCallback onOpenGallery;
   final VoidCallback onSelect;
   final PhotoRecord record;
   final bool selected;
 
   @override
+  State<PhotoCardTile> createState() => _PhotoCardTileState();
+}
+
+final class _PhotoCardTileState extends State<PhotoCardTile> {
+  DateTime? _lastTapAt;
+
+  void _handleTap() {
+    final now = DateTime.now();
+    final isDoubleTap =
+        _lastTapAt != null &&
+        now.difference(_lastTapAt!) <= const Duration(milliseconds: 320);
+    _lastTapAt = isDoubleTap ? null : now;
+    widget.onSelect();
+    if (isDoubleTap) widget.onOpenGallery();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Card(
-      key: Key('photo-card-${record.photo.id}'),
+      key: Key('photo-card-${widget.record.photo.id}'),
       clipBehavior: Clip.antiAlias,
       color: Colors.black,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(20),
         side: BorderSide(
-          color: selected ? Colors.amber.shade700 : Colors.grey.shade200,
-          width: selected ? 2 : 1,
+          color: widget.selected
+              ? Colors.amber.shade700
+              : Colors.grey.shade200,
+          width: widget.selected ? 2 : 1,
         ),
       ),
       child: InkWell(
-        onTap: onSelect,
+        onTap: _handleTap,
         child: Stack(
           fit: StackFit.expand,
           children: [
-            MediaPreview(record: record, fit: BoxFit.cover),
+            MediaPreview(record: widget.record, fit: BoxFit.cover),
             const DecoratedBox(
               decoration: BoxDecoration(
                 gradient: LinearGradient(
@@ -174,7 +201,8 @@ final class PhotoCardTile extends StatelessWidget {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
-                    record.semantic.caption ?? _basename(record.photo.path),
+                    widget.record.semantic.caption ??
+                        _basename(widget.record.photo.path),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
@@ -187,8 +215,10 @@ final class PhotoCardTile extends StatelessWidget {
                   Row(
                     children: [
                       Icon(
-                        record.photo.favorite ? Icons.star : Icons.star_border,
-                        color: record.photo.favorite
+                        widget.record.photo.favorite
+                            ? Icons.star
+                            : Icons.star_border,
+                        color: widget.record.photo.favorite
                             ? Colors.amber.shade700
                             : Colors.white70,
                         size: 16,
@@ -196,11 +226,11 @@ final class PhotoCardTile extends StatelessWidget {
                       const SizedBox(width: 6),
                       Expanded(
                         child: Text(
-                          record.metadata.datetime == null
+                          widget.record.metadata.datetime == null
                               ? 'No date'
                               : _formatDate(
                                   DateTime.fromMillisecondsSinceEpoch(
-                                    record.metadata.datetime!,
+                                    widget.record.metadata.datetime!,
                                   ).toLocal(),
                                 ),
                           overflow: TextOverflow.ellipsis,

@@ -12,6 +12,7 @@ export interface PhotoGridProps {
   selectedPhotoId: string | null;
   onSelect: (photoId: string) => void;
   onOpenDetail: (photoId: string) => void;
+  onOpenGallery: (photoId: string) => void;
 }
 
 export function PhotoGrid(props: PhotoGridProps) {
@@ -44,6 +45,7 @@ export function PhotoGrid(props: PhotoGridProps) {
               <PhotoCard
                 key={record.photo.id}
                 onOpenDetail={() => props.onOpenDetail(record.photo.id)}
+                onOpenGallery={() => props.onOpenGallery(record.photo.id)}
                 onSelect={() => props.onSelect(record.photo.id)}
                 record={record}
                 selected={props.selectedPhotoId === record.photo.id}

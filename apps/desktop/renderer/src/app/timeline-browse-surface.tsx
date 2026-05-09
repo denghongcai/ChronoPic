@@ -17,6 +17,7 @@ interface TimelineBrowseSurfaceProps {
   onClearBatchSelection: () => void;
   onTimelineGranularityChange: (granularity: TimelineGranularity) => void;
   onOpenDetail: (photoId: string) => void;
+  onOpenGallery: (photoId: string) => void;
   onSelectPhoto: (photoId: string) => void;
   onToggleBatchSelect: (photoId: string) => void;
   onToggleFavorite: (photoId: string, favorite: boolean) => void;
@@ -36,6 +37,7 @@ export function TimelineBrowseSurface({
   onClearBatchSelection,
   onTimelineGranularityChange,
   onOpenDetail,
+  onOpenGallery,
   onSelectPhoto,
   onToggleBatchSelect,
   onToggleFavorite,
@@ -256,6 +258,11 @@ export function TimelineBrowseSurface({
                       onOpenDetail={() => {
                         if (!isSelecting) {
                           onOpenDetail(record.photo.id);
+                        }
+                      }}
+                      onOpenGallery={() => {
+                        if (!isSelecting) {
+                          onOpenGallery(record.photo.id);
                         }
                       }}
                       onSelect={() => {

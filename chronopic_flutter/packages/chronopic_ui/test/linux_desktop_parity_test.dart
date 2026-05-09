@@ -187,12 +187,15 @@ void main() {
 
     final first = records.first;
     final second = records[1];
-    await tester.ensureVisible(find.byKey(Key('photo-card-${first.photo.id}')));
-    await tester.tap(find.byKey(Key('photo-card-${first.photo.id}')));
+    final firstCard = find.byKey(Key('photo-card-${first.photo.id}'));
+    await tester.ensureVisible(firstCard);
+    await tester.tap(firstCard);
     await tester.pump();
-    await tester.ensureVisible(find.byKey(const Key('open-gallery-button')));
-    await tester.ensureVisible(find.byKey(const Key('open-gallery-button')));
-    await tester.tap(find.byKey(const Key('open-gallery-button')));
+    expect(find.byKey(const Key('gallery-dialog')), findsNothing);
+
+    await tester.tap(firstCard);
+    await tester.pump(const Duration(milliseconds: 80));
+    await tester.tap(firstCard);
     await tester.pumpAndSettle();
     expect(find.byKey(const Key('gallery-dialog')), findsOneWidget);
     expect(find.byKey(const Key('gallery-counter')), findsOneWidget);
@@ -223,6 +226,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.byKey(const Key('gallery-dialog')), findsNothing);
 
+    await tester.ensureVisible(find.byKey(const Key('open-gallery-button')));
     await tester.tap(find.byKey(const Key('open-gallery-button')));
     await tester.pumpAndSettle();
     expect(find.byKey(const Key('gallery-dialog')), findsOneWidget);

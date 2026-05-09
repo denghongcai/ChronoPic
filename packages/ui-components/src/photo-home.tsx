@@ -110,6 +110,7 @@ export interface PhotoHomeProps extends EditControlsProps {
   onToggleBatchSelect: (photoId: string) => void;
   onClearBatchSelection: () => void;
   onOpenDetail: (photoId: string) => void;
+  onOpenGallery: (photoId: string) => void;
   onFilterChange: (patch: PhotoFilterPatch) => void;
   onSearchChange: (query: string) => void;
   onAddLibrary: () => void;
@@ -174,6 +175,7 @@ function HomeView({
   onToggleBatchSelect,
   onClearBatchSelection,
   onOpenDetail,
+  onOpenGallery,
   onOpenMemory,
   onSeeAllMemories,
   onToggleFavorite,
@@ -210,6 +212,7 @@ function HomeView({
   onToggleBatchSelect: (photoId: string) => void;
   onClearBatchSelection: () => void;
   onOpenDetail: (photoId: string) => void;
+  onOpenGallery: (photoId: string) => void;
   onOpenMemory: (memoryId: string) => void;
   onSeeAllMemories: () => void;
   onToggleFavorite: (photoId: string, favorite: boolean) => void;
@@ -319,6 +322,7 @@ function HomeView({
           onAddSelectionToMemory={onAddSelectionToMemory}
           onClearBatchSelection={onClearBatchSelection}
           onOpenDetail={onOpenDetail}
+          onOpenGallery={onOpenGallery}
           onSelect={onSelectPhoto}
           onSelectionModeChange={onSelectionModeChange}
           onToggleBatchSelect={onToggleBatchSelect}
@@ -497,6 +501,7 @@ export function PhotoHome({
   onToggleBatchSelect,
   onClearBatchSelection,
   onOpenDetail,
+  onOpenGallery,
   onFilterChange,
   onSearchChange,
   onAddLibrary,
@@ -786,6 +791,7 @@ export function PhotoHome({
                   memory={selectedMemory}
                   onDeleteMemory={handleDeleteMemory}
                   onOpenDetail={onOpenDetail}
+                  onOpenGallery={onOpenGallery}
                   onRemovePhoto={onRemovePhotoFromMemory}
                   onRemoveSelection={onRemoveSelectionFromMemory}
                   onRenameMemory={async (memoryId, name) => {
@@ -826,6 +832,7 @@ export function PhotoHome({
                   memoryCandidateCount={memoryCandidates.length}
                   onFilterChange={onFilterChange}
                   onOpenDetail={onOpenDetail}
+                  onOpenGallery={onOpenGallery}
                   onOpenMemory={openMemoryDetail}
                   onSeeAllMemories={() => {
                     onSelectMemories();

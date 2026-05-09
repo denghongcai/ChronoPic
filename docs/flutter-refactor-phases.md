@@ -520,6 +520,22 @@ Status:
 - Planned on 2026-05-09.
 - Code comparison found Electron currently double-clicks into detail,
   while Flutter grid cards only select.
+- Implemented locally on 2026-05-09.
+- Electron accessibility E2E now covers Enter-to-detail,
+  double-click-to-gallery,
+  selected-card `G`-to-gallery,
+  and Escape close.
+- Flutter widget/parity tests now cover card double-tap-to-gallery,
+  selected-photo `G`-to-gallery,
+  Enter-to-focused-detail,
+  and Escape close.
+- Focused Electron and Flutter screenshots were recaptured for populated
+  browse,
+  gallery,
+  favorites,
+  and restart persistence,
+  then compared with side-by-side artifacts under
+  `test-results/flutter-electron-parity/compare/`.
 - Implementation plan:
   [docs/superpowers/plans/2026-05-09-gallery-overlay-activation-parity.md](superpowers/plans/2026-05-09-gallery-overlay-activation-parity.md).
 

@@ -6,7 +6,7 @@
 
 **Architecture:** Treat gallery activation as a first-class viewer contract instead of an incidental detail-only action. Electron already has a fullscreen Radix `PhotoViewerOverlay` in gallery mode, and Flutter already has a `Dialog.fullscreen` `GalleryDialog`; this phase wires the primary photo cards and keyboard paths into those overlays, tests the behavior from both implementations, then compares refreshed screenshots before closing the matrix rows.
 
-**Tech Stack:** React, Radix Dialog, Playwright Electron E2E, Flutter widgets, `Dialog.fullscreen`, Flutter `InkWell.onDoubleTap`, existing ChronoPic parity capture scripts.
+**Tech Stack:** React, Radix Dialog, Playwright Electron E2E, Flutter widgets, `Dialog.fullscreen`, Flutter `InkWell` with an immediate custom tap/double-tap detector, existing ChronoPic parity capture scripts.
 
 ---
 
@@ -59,7 +59,7 @@
   - Add Electron keyboard and double-click coverage for gallery overlay activation.
 - Modify `chronopic_flutter/packages/chronopic_ui/lib/src/browse/browse_surface.dart`
   - Add `onOpenGallery` through `BrowseSurface`, `PhotoGrid`, and `PhotoCardTile`.
-  - Use `InkWell.onDoubleTap` to open gallery.
+  - Use an immediate custom tap/double-tap detector so single tap selection is not delayed by Flutter's double-tap recognizer.
   - Add focus/keyboard handling for `G` on the selected card if practical inside the widget tree; otherwise cover app-level `G` in `ChronoPicHome`.
 - Modify `chronopic_flutter/packages/chronopic_ui/lib/src/home/home_page.dart`
   - Pass `onOpenGallery` into browse surfaces.
@@ -152,7 +152,7 @@
 - Modify: `apps/desktop/renderer/src/App.tsx`
 - Test: `tests/e2e/accessibility.spec.ts`
 
-- [ ] **Step 1: Write the failing Electron E2E test**
+- [x] **Step 1: Write the failing Electron E2E test**
 
   Extend `tests/e2e/accessibility.spec.ts` after the existing Enter-to-detail assertion:
 
@@ -175,7 +175,7 @@
   await expect(page.getByRole("dialog", { name: /gallery/i })).not.toBeVisible();
   ```
 
-- [ ] **Step 2: Run the Electron test to verify it fails**
+- [x] **Step 2: Run the Electron test to verify it fails**
 
   Run:
 
@@ -186,7 +186,7 @@
 
   Expected before implementation: failure because double-click opens detail or no gallery dialog.
 
-- [ ] **Step 3: Add explicit gallery activation to `PhotoCard`**
+- [x] **Step 3: Add explicit gallery activation to `PhotoCard`**
 
   Update `packages/ui-components/src/photo-card.tsx`:
 
@@ -226,7 +226,7 @@
   }}
   ```
 
-- [ ] **Step 4: Thread `onOpenGallery` through gallery surfaces**
+- [x] **Step 4: Thread `onOpenGallery` through gallery surfaces**
 
   In `packages/ui-components/src/gallery-section.tsx`, add `onOpenGallery?: (photoId: string) => void` to props and pass:
 
@@ -254,7 +254,7 @@
   }}
   ```
 
-- [ ] **Step 5: Wire app-level gallery mode**
+- [x] **Step 5: Wire app-level gallery mode**
 
   In `packages/ui-components/src/photo-home.tsx`, add:
 
@@ -270,7 +270,7 @@
   onOpenGallery={(photoId) => app.openViewer("gallery", photoId)}
   ```
 
-- [ ] **Step 6: Verify Electron behavior**
+- [x] **Step 6: Verify Electron behavior**
 
   Run:
 
@@ -283,6 +283,14 @@
 
   Expected: all pass; double-click and `G` both open gallery, Enter still opens detail.
 
+  Evidence:
+  - Initial run failed because `photoCard.dblclick()` did not expose a gallery dialog.
+  - After implementation,
+    `pnpm exec playwright test -c tests/e2e/playwright.config.ts accessibility.spec.ts`,
+    `pnpm run e2e:runtime`,
+    `pnpm typecheck`,
+    and `pnpm build` pass.
+
 ## Task 3: Flutter Gallery Activation Contract
 
 **Files:**
@@ -292,7 +300,7 @@
 - Test: `chronopic_flutter/packages/chronopic_ui/test/linux_desktop_parity_test.dart`
 - Test: `chronopic_flutter/packages/chronopic_ui/test/chronopic_home_test.dart`
 
-- [ ] **Step 1: Write the failing Flutter parity test**
+- [x] **Step 1: Write the failing Flutter parity test**
 
   In `chronopic_flutter/packages/chronopic_ui/test/linux_desktop_parity_test.dart`, replace the detail-button-only gallery activation setup with a direct double-tap check:
 
@@ -318,7 +326,7 @@
 
   Keep the existing next/previous/`D`/`Escape` assertions after this block.
 
-- [ ] **Step 2: Run the Flutter test to verify it fails**
+- [x] **Step 2: Run the Flutter test to verify it fails**
 
   Run:
 
@@ -329,7 +337,7 @@
 
   Expected before implementation: failure because `PhotoCardTile` has no double-tap gallery activation.
 
-- [ ] **Step 3: Add gallery callback through browse widgets**
+- [x] **Step 3: Add gallery callback through browse widgets**
 
   In `chronopic_flutter/packages/chronopic_ui/lib/src/browse/browse_surface.dart`, update constructors:
 
@@ -374,7 +382,7 @@
   );
   ```
 
-- [ ] **Step 4: Use `InkWell.onDoubleTap` on Flutter cards**
+- [x] **Step 4: Use immediate custom double-tap detection on Flutter cards**
 
   In `PhotoCardTile`, add the callback:
 
@@ -382,22 +390,25 @@
   final VoidCallback onOpenGallery;
   ```
 
-  And update the `InkWell`:
+  Use a stateful custom detector instead of `InkWell.onDoubleTap`,
+  because Flutter's built-in double-tap recognizer delays ordinary single-tap
+  selection. The final `InkWell` should keep single tap immediate:
 
   ```dart
-  child: InkWell(
-    onTap: onSelect,
-    onDoubleTap: onOpenGallery,
-    child: Stack(
-      fit: StackFit.expand,
-      children: [
-        // existing children
-      ],
-    ),
-  ),
+  DateTime? _lastTapAt;
+
+  void _handleTap() {
+    final now = DateTime.now();
+    final isDoubleTap =
+        _lastTapAt != null &&
+        now.difference(_lastTapAt!) <= const Duration(milliseconds: 320);
+    _lastTapAt = isDoubleTap ? null : now;
+    widget.onSelect();
+    if (isDoubleTap) widget.onOpenGallery();
+  }
   ```
 
-- [ ] **Step 5: Add selected-photo gallery open helper**
+- [x] **Step 5: Add selected-photo gallery open helper**
 
   In `chronopic_flutter/packages/chronopic_ui/lib/src/chronopic_home.dart`, add:
 
@@ -437,7 +448,7 @@
   final void Function(BuildContext context, PhotoRecord record) onOpenGalleryFor;
   ```
 
-- [ ] **Step 6: Add Flutter `G` shortcut if missing**
+- [x] **Step 6: Add Flutter `G` shortcut if missing**
 
   In the existing app-level key handler in `chronopic_home.dart`, ensure:
 
@@ -451,7 +462,7 @@
   }
   ```
 
-- [ ] **Step 7: Verify Flutter behavior**
+- [x] **Step 7: Verify Flutter behavior**
 
   Run:
 
@@ -466,6 +477,16 @@
 
   Expected: tests pass and all four refreshed Flutter screenshots are 1440x920.
 
+  Evidence:
+  - Initial run failed because double-tapping the card did not produce
+    `gallery-dialog`.
+  - After implementation,
+    `dart analyze packages/chronopic_ui apps/chronopic`,
+    `flutter test packages/chronopic_ui/test/linux_desktop_parity_test.dart`,
+    and
+    `flutter test packages/chronopic_ui/test/chronopic_home_test.dart`
+    pass.
+
 ## Task 4: Two-Side Parity Closure
 
 **Files:**
@@ -474,7 +495,7 @@
 - Modify: `docs/flutter-refactor-phases.md`
 - Modify: `AGENTS.md`
 
-- [ ] **Step 1: Rerun focused Electron capture**
+- [x] **Step 1: Rerun focused Electron capture**
 
   Run:
 
@@ -485,7 +506,7 @@
 
   Expected: capture succeeds and the focused Electron PNGs are 1440x920.
 
-- [ ] **Step 2: Rerun focused Flutter capture**
+- [x] **Step 2: Rerun focused Flutter capture**
 
   Run:
 
@@ -497,7 +518,7 @@
 
   Expected: capture succeeds and the focused Flutter PNGs are 1440x920.
 
-- [ ] **Step 3: Compare refreshed screenshots**
+- [x] **Step 3: Compare refreshed screenshots**
 
   Compare these pairs before closing the matrix:
 
@@ -529,7 +550,19 @@
 
   Expected: the agent records any new visual deltas in `docs/flutter-electron-ui-functional-parity.md` before deciding whether they are fixed or accepted.
 
-- [ ] **Step 4: Close matrix rows**
+  Evidence:
+  - Created side-by-side comparison artifacts under
+    `test-results/flutter-electron-parity/compare/`.
+  - Inspected `06-gallery-compare.png` and `02-populated-grid-compare.png`.
+  - Gallery comparison confirms both sides show fullscreen overlay hierarchy,
+    navigation,
+    metadata,
+    inspector/detail action,
+    and filmstrip.
+  - Browse comparison confirms card hierarchy and selected-photo banner remain
+    aligned after the activation change.
+
+- [x] **Step 4: Close matrix rows**
 
   Update the reopened rows to `Matched` or `Accepted Difference` only after the tests above pass.
 
@@ -539,7 +572,7 @@
   Direct photo-card activation is aligned: single click selects, double-click/double-tap opens fullscreen gallery overlay, Enter opens detail, `G` opens gallery for the selected photo, and `Escape` closes the overlay while preserving selection. Accepted difference: exact overlay button and filmstrip rendering differs between Electron CSS/Radix and Flutter Material.
   ```
 
-- [ ] **Step 5: Run final focused gate**
+- [x] **Step 5: Run final focused gate**
 
   Run:
 
@@ -556,6 +589,14 @@
   ```
 
   Expected: all pass.
+
+  Evidence:
+  - `pnpm exec playwright test -c tests/e2e/playwright.config.ts accessibility.spec.ts` passes.
+  - `pnpm run e2e:runtime` passes.
+  - `pnpm typecheck` passes.
+  - `pnpm build` passes.
+  - `dart analyze packages/chronopic_ui apps/chronopic` passes.
+  - `flutter test packages/chronopic_ui/test/linux_desktop_parity_test.dart packages/chronopic_ui/test/chronopic_home_test.dart` passes.
 
 - [ ] **Step 6: Commit and push**
 

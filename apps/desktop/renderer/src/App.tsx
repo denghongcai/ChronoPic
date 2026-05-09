@@ -74,6 +74,7 @@ export function App() {
         onGenerateMemoryCandidates={app.handleGenerateMemoryCandidates}
         onNextPhoto={() => app.selectRelativePhoto(1)}
         onOpenDetail={(photoId) => app.openViewer("detail", photoId)}
+        onOpenGallery={(photoId) => app.openViewer("gallery", photoId)}
         onPreviewBackupRestore={app.handlePreviewBackupRestore}
         onPreviousPhoto={() => app.selectRelativePhoto(-1)}
         onRejectMemoryCandidate={app.handleRejectMemoryCandidate}
@@ -118,6 +119,7 @@ export function App() {
             onAddSelectionToMemory={app.handleAddSelectionToMemory}
             onClearBatchSelection={app.clearBatchSelection}
             onOpenDetail={(photoId) => app.openViewer("detail", photoId)}
+            onOpenGallery={(photoId) => app.openViewer("gallery", photoId)}
             onSelectPhoto={app.setSelectedPhotoId}
             onTimelineGranularityChange={app.setTimelineGranularity}
             onToggleBatchSelect={app.toggleBatchSelect}

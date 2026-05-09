@@ -27,6 +27,7 @@ final class HomePage extends StatelessWidget {
     required this.onFilterPanelToggle,
     required this.onGpsOnlyChanged,
     required this.onOpenGallery,
+    required this.onOpenGalleryFor,
     required this.onRollback,
     required this.onSaveCaption,
     required this.onSaveDatetime,
@@ -75,6 +76,7 @@ final class HomePage extends StatelessWidget {
   final VoidCallback onFilterPanelToggle;
   final ValueChanged<bool> onGpsOnlyChanged;
   final ValueChanged<BuildContext> onOpenGallery;
+  final void Function(BuildContext context, PhotoRecord record) onOpenGalleryFor;
   final VoidCallback onRollback;
   final VoidCallback onSaveCaption;
   final VoidCallback onSaveDatetime;
@@ -229,6 +231,7 @@ final class HomePage extends StatelessWidget {
         const SizedBox(height: 14),
         BrowseSurface(
           mode: browseMode,
+          onOpenGallery: (record) => onOpenGalleryFor(context, record),
           onSelectPhoto: onSelectPhoto,
           photos: photos,
           selected: selected,

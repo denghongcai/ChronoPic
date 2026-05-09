@@ -17,6 +17,7 @@ export interface GallerySectionProps {
   selectionMode?: boolean;
   onSelect?: (photoId: string) => void;
   onOpenDetail?: (photoId: string) => void;
+  onOpenGallery?: (photoId: string) => void;
   onToggleFavorite?: (photoId: string, favorite: boolean) => void;
   memories?: Memory[];
   onAddToMemory?: (memoryId: string, photoId: string) => void;
@@ -36,6 +37,7 @@ export function GallerySection({
   selectionMode = false,
   onSelect,
   onOpenDetail,
+  onOpenGallery,
   onToggleFavorite,
   memories = [],
   onAddToMemory,
@@ -126,6 +128,11 @@ export function GallerySection({
                 onOpenDetail={() => {
                   if (!isSelecting) {
                     onOpenDetail?.(record.photo.id);
+                  }
+                }}
+                onOpenGallery={() => {
+                  if (!isSelecting) {
+                    onOpenGallery?.(record.photo.id);
                   }
                 }}
                 onSelect={() => {
