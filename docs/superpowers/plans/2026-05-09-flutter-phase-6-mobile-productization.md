@@ -577,7 +577,7 @@ git commit -m "Add mobile photo library media source"
 - Modify: `chronopic_flutter/packages/chronopic_app/lib/src/app_service.dart`
 - Test: `chronopic_flutter/packages/chronopic_app/test/mobile_scan_test.dart`
 
-- [ ] **Step 1: Add failing scan progress tests**
+- [x] **Step 1: Add failing scan progress tests**
 
 Create `chronopic_flutter/packages/chronopic_app/test/mobile_scan_test.dart` with a fake `FixtureMediaSource` and assertions that:
 
@@ -596,7 +596,7 @@ dart test packages/chronopic_app/test/mobile_scan_test.dart
 
 Expected: fails because mobile scan/progress APIs do not exist.
 
-- [ ] **Step 2: Add scan progress value types**
+- [x] **Step 2: Add scan progress value types**
 
 Add to `indexer_service.dart`:
 
@@ -628,7 +628,7 @@ final class ScanProgress {
 }
 ```
 
-- [ ] **Step 3: Add cooperative pause support**
+- [x] **Step 3: Add cooperative pause support**
 
 Extend `ChronoPicIndexerService` constructor with:
 
@@ -639,7 +639,7 @@ void Function(ScanProgress progress)? onProgress;
 
 Inside the asset loop, call `onProgress` after each processed asset and return a partial `IndexerStats` if `await shouldPause?.call() == true`.
 
-- [ ] **Step 4: Add app-service entry point**
+- [x] **Step 4: Add app-service entry point**
 
 Add to `ChronoPicAppService`:
 
@@ -672,7 +672,7 @@ Future<IndexerStats> scanMediaSource(
 
 Then change `scanDesktopDirectory` to delegate to `scanMediaSource`.
 
-- [ ] **Step 5: Verify**
+- [x] **Step 5: Verify**
 
 Run:
 
@@ -685,7 +685,7 @@ dart analyze packages/chronopic_app
 
 Expected: new mobile tests and existing desktop scan tests pass.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add chronopic_flutter/packages/chronopic_app

@@ -5648,3 +5648,40 @@ This file is the local execution record for ChronoPic. It complements `PLAN.md` 
   pause,
   resume,
   and retry orchestration.
+
+### 2026-05-09 Step 215
+
+- Implemented Phase 6 Task 3:
+  Mobile Scan Orchestration And Progress.
+- Added red tests in:
+  `chronopic_flutter/packages/chronopic_app/test/mobile_scan_test.dart`.
+  The first run failed because `ScanProgress`,
+  `ScanRunState`,
+  and `ChronoPicAppService.scanMediaSource`
+  did not exist.
+- Added `ScanRunState` and `ScanProgress` in the app indexer layer.
+- Extended `ChronoPicIndexerService` with:
+  progress callbacks,
+  failure progress reporting,
+  cooperative pause checks,
+  and partial paused stats.
+- Added `ChronoPicAppService.scanMediaSource`
+  and refactored `scanDesktopDirectory`
+  to delegate through the shared media-source scan path.
+- Test coverage now includes:
+  limited mobile source scan,
+  denied permission failure without mutating photos,
+  pause after the current asset,
+  resume while skipping unchanged assets,
+  and retry by rescanning an asset that previously failed to read.
+- Verification passed:
+  `cd chronopic_flutter && dart test packages/chronopic_app/test/mobile_scan_test.dart`,
+  `cd chronopic_flutter && dart test packages/chronopic_app/test/mobile_scan_test.dart packages/chronopic_app/test/linux_desktop_scan_test.dart`,
+  and
+  `cd chronopic_flutter && dart analyze packages/chronopic_app`.
+- Next:
+  commit Task 3,
+  then continue into Task 4 with red widget tests for mobile onboarding,
+  permission states,
+  scan progress,
+  and backup wording.

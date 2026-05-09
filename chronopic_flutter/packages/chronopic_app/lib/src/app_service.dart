@@ -79,12 +79,28 @@ final class ChronoPicAppService {
     String path, {
     ChronoPicAiClient aiClient = const DisabledAiClient(),
   }) async {
+    return scanMediaSource(
+      path,
+      DesktopDirectoryMediaSource(Directory(path)),
+      aiClient: aiClient,
+    );
+  }
+
+  Future<IndexerStats> scanMediaSource(
+    String path,
+    MediaSourceAdapter mediaSource, {
+    ChronoPicAiClient aiClient = const DisabledAiClient(),
+    Future<bool> Function()? shouldPause,
+    void Function(ScanProgress progress)? onProgress,
+  }) async {
     repository.upsertLibrarySource(path);
     final indexer = ChronoPicIndexerService(
       repository: repository,
-      mediaSource: DesktopDirectoryMediaSource(Directory(path)),
+      mediaSource: mediaSource,
       aiClient: aiClient,
       thumbnailDirectory: _thumbnailDirectoryFor(path),
+      shouldPause: shouldPause,
+      onProgress: onProgress,
     );
     final stats = await indexer.scanLibrary();
     repository.upsertLibrarySource(

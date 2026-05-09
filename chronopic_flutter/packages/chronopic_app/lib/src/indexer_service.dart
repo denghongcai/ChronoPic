@@ -30,26 +30,74 @@ final class IndexerStats {
   final int missing;
 }
 
+enum ScanRunState { idle, running, paused, completed, failed }
+
+final class ScanProgress {
+  const ScanProgress({
+    required this.state,
+    required this.discovered,
+    required this.processed,
+    required this.imported,
+    required this.updated,
+    required this.errors,
+    required this.skipped,
+    required this.missing,
+    this.message,
+  });
+
+  final ScanRunState state;
+  final int discovered;
+  final int processed;
+  final int imported;
+  final int updated;
+  final int errors;
+  final int skipped;
+  final int missing;
+  final String? message;
+}
+
 final class ChronoPicIndexerService {
   ChronoPicIndexerService({
     required this.repository,
     required this.mediaSource,
     required this.aiClient,
     this.thumbnailDirectory,
+    this.shouldPause,
+    this.onProgress,
   });
 
   final ChronoPicRepository repository;
   final MediaSourceAdapter mediaSource;
   final ChronoPicAiClient aiClient;
   final Directory? thumbnailDirectory;
+  final Future<bool> Function()? shouldPause;
+  final void Function(ScanProgress progress)? onProgress;
 
   Future<IndexerStats> scanLibrary() async {
-    final assets = await mediaSource.listAssets();
+    late final List<MediaAsset> assets;
+    try {
+      assets = await mediaSource.listAssets();
+    } on Object catch (error) {
+      _report(
+        ScanRunState.failed,
+        const _ScanCounters(),
+        discovered: 0,
+        missing: 0,
+        message: error.toString(),
+      );
+      rethrow;
+    }
     var imported = 0;
     var updated = 0;
     var skipped = 0;
     var errors = 0;
     final seen = <String>{};
+    _report(
+      ScanRunState.running,
+      const _ScanCounters(),
+      discovered: assets.length,
+      missing: 0,
+    );
 
     for (final asset in assets) {
       seen.add(asset.id);
@@ -59,6 +107,17 @@ final class ChronoPicIndexerService {
           previous?.indexState.missingAt == null;
       if (unchanged) {
         skipped += 1;
+        _report(
+          ScanRunState.running,
+          _ScanCounters(
+            imported: imported,
+            updated: updated,
+            errors: errors,
+            skipped: skipped,
+          ),
+          discovered: assets.length,
+          missing: 0,
+        );
         continue;
       }
       try {
@@ -83,6 +142,27 @@ final class ChronoPicIndexerService {
       } on Object {
         errors += 1;
       }
+      final counters = _ScanCounters(
+        imported: imported,
+        updated: updated,
+        errors: errors,
+        skipped: skipped,
+      );
+      _report(
+        ScanRunState.running,
+        counters,
+        discovered: assets.length,
+        missing: 0,
+      );
+      if (await shouldPause?.call() == true) {
+        _report(
+          ScanRunState.paused,
+          counters,
+          discovered: assets.length,
+          missing: 0,
+        );
+        return _stats(counters, discovered: assets.length, missing: 0);
+      }
     }
 
     final knownIds = repository
@@ -93,16 +173,19 @@ final class ChronoPicIndexerService {
       knownIds.difference(seen),
     );
     repository.markMissingAssets(missing);
-    return IndexerStats(
-      discovered: assets.length,
-      processed: assets.length - skipped,
+    final counters = _ScanCounters(
       imported: imported,
       updated: updated,
-      duplicates: 0,
       errors: errors,
       skipped: skipped,
+    );
+    _report(
+      ScanRunState.completed,
+      counters,
+      discovered: assets.length,
       missing: missing.length,
     );
+    return _stats(counters, discovered: assets.length, missing: missing.length);
   }
 
   PhotoRecord _recordForAsset(
@@ -173,4 +256,59 @@ final class ChronoPicIndexerService {
     file.writeAsBytesSync(img.encodeJpg(thumbnail, quality: 82));
     return file.path;
   }
+
+  void _report(
+    ScanRunState state,
+    _ScanCounters counters, {
+    required int discovered,
+    required int missing,
+    String? message,
+  }) {
+    onProgress?.call(
+      ScanProgress(
+        state: state,
+        discovered: discovered,
+        processed: counters.processed,
+        imported: counters.imported,
+        updated: counters.updated,
+        errors: counters.errors,
+        skipped: counters.skipped,
+        missing: missing,
+        message: message,
+      ),
+    );
+  }
+
+  IndexerStats _stats(
+    _ScanCounters counters, {
+    required int discovered,
+    required int missing,
+  }) {
+    return IndexerStats(
+      discovered: discovered,
+      processed: counters.processed,
+      imported: counters.imported,
+      updated: counters.updated,
+      duplicates: 0,
+      errors: counters.errors,
+      skipped: counters.skipped,
+      missing: missing,
+    );
+  }
+}
+
+final class _ScanCounters {
+  const _ScanCounters({
+    this.imported = 0,
+    this.updated = 0,
+    this.errors = 0,
+    this.skipped = 0,
+  });
+
+  final int imported;
+  final int updated;
+  final int errors;
+  final int skipped;
+
+  int get processed => imported + updated + errors;
 }
