@@ -879,7 +879,7 @@ git commit -m "Verify Android mobile smoke"
 - Modify: `docs/mobile-productization.md`
 - Modify: `AGENTS.md`
 
-- [ ] **Step 1: Static iOS review**
+- [x] **Step 1: Static iOS review**
 
 Inspect:
 
@@ -892,7 +892,7 @@ Expected:
 - `NSPhotoLibraryUsageDescription` is present.
 - Any future add/write permission text does not claim ChronoPic writes originals.
 
-- [ ] **Step 2: Record Linux limitation**
+- [x] **Step 2: Record Linux limitation**
 
 Update `docs/mobile-productization.md` with this section:
 
@@ -910,7 +910,7 @@ flutter run -d <ios-device-id>
 ```
 ````
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add docs/mobile-productization.md AGENTS.md

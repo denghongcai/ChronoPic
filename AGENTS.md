@@ -5773,3 +5773,26 @@ This file is the local execution record for ChronoPic. It complements `PLAN.md` 
 - Next:
   commit the Task 5 documentation update,
   then continue into Task 6 iOS static review and constraint recording.
+
+### 2026-05-09 Step 218
+
+- Implemented Phase 6 Task 6:
+  iOS Scaffold And Constraint Record.
+- Ran:
+  `sed -n '1,220p' chronopic_flutter/apps/chronopic/ios/Runner/Info.plist`.
+- Static review result:
+  `NSPhotoLibraryUsageDescription`
+  and
+  `NSPhotoLibraryAddUsageDescription`
+  are present.
+- Confirmed the add/write usage text says ChronoPic does not write originals.
+- Updated `docs/mobile-productization.md` with the iOS static review evidence.
+- The Linux workstation limitation remains:
+  Xcode,
+  iOS simulators,
+  and iOS device signing cannot run here,
+  so the iOS real-device exit gate still requires macOS/Xcode.
+- Next:
+  commit Task 6,
+  then continue into Task 7 closeout gate while keeping the Android real-device
+  smoke blocker explicit.

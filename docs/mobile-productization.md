@@ -145,6 +145,14 @@ Unverified until an Android device is available:
 
 ## iOS Verification Constraint
 
+Static review on 2026-05-09:
+
+- `chronopic_flutter/apps/chronopic/ios/Runner/Info.plist` contains
+  `NSPhotoLibraryUsageDescription`.
+- `chronopic_flutter/apps/chronopic/ios/Runner/Info.plist` contains
+  `NSPhotoLibraryAddUsageDescription`.
+- The add/write usage text says ChronoPic does not write originals.
+
 This Linux workstation cannot run Xcode, iOS simulators, or iOS real-device
 signing. Phase 6 may scaffold iOS metadata and shared Dart code here, but the
 iOS exit gate requires a macOS/Xcode run that executes:
