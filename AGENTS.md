@@ -5531,3 +5531,36 @@ This file is the local execution record for ChronoPic. It complements `PLAN.md` 
 - Result:
   the Linux desktop Flutter/Electron baseline is frozen locally with no open
   parity-matrix `Gap` rows.
+
+### 2026-05-09 Step 212
+
+- Committed and pushed the desktop baseline freeze documentation as:
+  `52fda73 Record desktop baseline freeze gate`.
+- Used the writing-plans workflow to prepare Phase 6 before touching mobile
+  implementation code.
+- Confirmed the current Flutter app only has a Linux runner;
+  Android and iOS runner directories still need to be generated.
+- Confirmed `chronopic_media` already has the correct package boundary for
+  Phase 6:
+  `MediaSourceAdapter`
+  plus `granted`,
+  `denied`,
+  and `limited` permission states.
+- Checked current stable pub.dev versions for planned mobile dependencies:
+  `photo_manager 3.9.0`,
+  `file_picker 11.0.2`,
+  `path_provider 2.1.5`,
+  and `permission_handler 12.0.1`.
+- Created the Phase 6 implementation plan:
+  `docs/superpowers/plans/2026-05-09-flutter-phase-6-mobile-productization.md`.
+- Updated:
+  `PLAN.md`
+  and
+  `docs/flutter-refactor-phases.md`
+  so Phase 6 points to the new plan and records Android-first / iOS-on-Linux
+  verification constraints.
+- Next:
+  review and commit/push the Phase 6 planning docs,
+  then begin Task 1 with `flutter doctor -v`,
+  `flutter devices`,
+  and Android/iOS runner generation.

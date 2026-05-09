@@ -2334,6 +2334,31 @@ Current status:
 
 These are intentionally recorded as candidate directions rather than committed phases. They should be promoted into explicit numbered phases only after the current product risk is re-evaluated.
 
+### 6. Flutter Mobile Productization
+
+- Implementation plan:
+  [docs/superpowers/plans/2026-05-09-flutter-phase-6-mobile-productization.md](docs/superpowers/plans/2026-05-09-flutter-phase-6-mobile-productization.md)
+- Scope:
+  Android/iOS runner scaffolding,
+  Android-first photo-library permissions,
+  mobile-native onboarding,
+  resumable scan UX,
+  metadata-only backup/restore semantics,
+  Android smoke verification,
+  and iOS verification constraints.
+- Current status:
+  planned on 2026-05-09 after the desktop baseline freeze.
+- Execution order:
+  start with Android tooling/readiness and platform scaffolding,
+  then implement the mobile `MediaSourceAdapter`,
+  then wire app-service scan progress,
+  then adapt the UI,
+  then run Android smoke.
+- Constraint:
+  iOS code/config can be prepared on this Linux workstation,
+  but iOS real-device verification must be done from macOS/Xcode before the
+  iOS exit gate can be closed.
+
 - Person / face grouping:
   add person-like memory grouping only after the app has a real person-recognition or clustering signal.
   Do not pretend to identify people from generic captions or tags.

@@ -641,6 +641,10 @@ Status:
 
 Purpose: adapt ChronoPic to mobile permissions, lifecycle, and media-library behavior.
 
+Implementation plan:
+
+- [docs/superpowers/plans/2026-05-09-flutter-phase-6-mobile-productization.md](superpowers/plans/2026-05-09-flutter-phase-6-mobile-productization.md)
+
 Deliverables:
 
 - Implement Android media permissions, limited or partial access states, and foreground progress for long scans.
@@ -652,6 +656,14 @@ Deliverables:
 Exit gate:
 
 - Android and iOS real-device smoke tests can index authorized assets, persist edits, restart, and restore a backup without relying on desktop paths.
+
+Status:
+
+- Planned on 2026-05-09 after the Linux desktop baseline freeze.
+- Android is the first executable mobile target from the current Linux workstation.
+- iOS can be scaffolded and statically reviewed here, but its real-device exit
+  gate requires macOS/Xcode and must not be marked complete from Linux-only
+  evidence.
 
 ## Phase 7: Release, Migration, And Cutover
 
