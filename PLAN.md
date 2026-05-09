@@ -2167,6 +2167,40 @@ Current status:
   keep Phase 6 mobile productization blocked until the pushed Flutter desktop
   parity branch is reviewed or merged.
 
+### 4.36 Gallery Overlay Activation Parity Phase
+
+- Continue desktop-first parity after code comparison found a missed interaction
+  contract in Phase 5.7:
+  primary photo-card activation does not consistently open fullscreen gallery.
+- Treat the expected desktop behavior as:
+  single click selects,
+  double-click or double-tap opens fullscreen gallery overlay,
+  Enter opens detail/inspector,
+  `G` opens gallery for the selected photo,
+  and `Escape` closes the overlay while preserving selection.
+- Electron comparison finding:
+  `packages/ui-components/src/photo-card.tsx`
+  currently wires `onDoubleClick` to detail mode,
+  while `packages/ui-components/src/photo-viewer-overlay.tsx`
+  already supports a fullscreen Radix gallery overlay.
+- Flutter comparison finding:
+  `chronopic_flutter/packages/chronopic_ui/lib/src/browse/browse_surface.dart`
+  currently wires photo cards only to selection,
+  while `chronopic_flutter/packages/chronopic_ui/lib/src/gallery/gallery_dialog.dart`
+  already provides a fullscreen `Dialog.fullscreen` gallery overlay.
+- Implementation plan:
+  [docs/superpowers/plans/2026-05-09-gallery-overlay-activation-parity.md](docs/superpowers/plans/2026-05-09-gallery-overlay-activation-parity.md)
+- Required verification:
+  Electron E2E must prove double-click opens gallery and Enter still opens
+  detail;
+  Flutter widget/parity tests must prove double-tap opens `gallery-dialog`;
+  both sides must recapture and compare populated browse,
+  gallery,
+  favorites,
+  and restart-persistence screenshots before closing the reopened matrix rows.
+- Current status:
+  planned on 2026-05-09.
+
 ## Future Product Backlog
 
 These are intentionally recorded as candidate directions rather than committed phases. They should be promoted into explicit numbered phases only after the current product risk is re-evaluated.

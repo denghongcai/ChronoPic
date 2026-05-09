@@ -499,6 +499,30 @@ Status:
   keep Phase 6 mobile productization blocked until the pushed Flutter desktop
   parity branch is reviewed or merged.
 
+## Phase 5.8: Gallery Overlay Activation Parity
+
+Purpose: fix the missing direct photo-to-gallery desktop interaction after Phase 5.7 exposed that screenshot parity did not prove the double-click activation contract.
+
+Deliverables:
+
+- Double-clicking a photo card opens fullscreen gallery overlay in Electron and Flutter.
+- Single-click selection, Enter-to-detail, and `G`-to-gallery keyboard paths remain explicit.
+- Gallery overlay remains fullscreen, navigable, and dismissible with `Escape`.
+- Electron and Flutter tests cover the activation path, not only the gallery view once opened.
+- Focused Electron and Flutter screenshots are recaptured and compared for:
+  populated browse,
+  gallery,
+  favorites,
+  and restart persistence.
+
+Status:
+
+- Planned on 2026-05-09.
+- Code comparison found Electron currently double-clicks into detail,
+  while Flutter grid cards only select.
+- Implementation plan:
+  [docs/superpowers/plans/2026-05-09-gallery-overlay-activation-parity.md](superpowers/plans/2026-05-09-gallery-overlay-activation-parity.md).
+
 ## Phase 6: Android And iOS Productization
 
 Purpose: adapt ChronoPic to mobile permissions, lifecycle, and media-library behavior.

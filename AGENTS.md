@@ -5122,3 +5122,35 @@ This file is the local execution record for ChronoPic. It complements `PLAN.md` 
 - Next:
   keep mobile Phase 6 blocked until the pushed desktop parity branch is
   reviewed or merged.
+
+### 2026-05-09 Step 202
+
+- Started Phase 5.8 Gallery Overlay Activation Parity after code comparison
+  showed the direct photo-card activation path was not aligned.
+- Electron finding:
+  `packages/ui-components/src/photo-card.tsx`
+  currently wires `onDoubleClick` to detail mode,
+  while `packages/ui-components/src/photo-viewer-overlay.tsx`
+  already has a fullscreen gallery overlay.
+- Flutter finding:
+  `chronopic_flutter/packages/chronopic_ui/lib/src/browse/browse_surface.dart`
+  currently wires browse photo cards only to selection,
+  while `chronopic_flutter/packages/chronopic_ui/lib/src/gallery/gallery_dialog.dart`
+  already has a fullscreen `Dialog.fullscreen` gallery.
+- Wrote the implementation plan:
+  `docs/superpowers/plans/2026-05-09-gallery-overlay-activation-parity.md`.
+- Reopened the relevant parity matrix rows:
+  populated grid/waterfall browse,
+  fullscreen gallery,
+  favorites,
+  and restart persistence.
+- Added an explicit UI screenshot comparison gate:
+  after interaction alignment,
+  both Electron and Flutter must recapture and compare populated browse,
+  gallery,
+  favorites,
+  and restart-persistence PNGs before the rows can close.
+- Next:
+  implement failing Electron and Flutter tests for double-click/double-tap
+  gallery activation,
+  then wire the activation path and rerun focused screenshots.
