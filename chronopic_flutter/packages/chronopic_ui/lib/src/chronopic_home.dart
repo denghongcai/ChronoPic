@@ -2,6 +2,9 @@ import 'dart:io';
 
 import 'package:chronopic_app/chronopic_app.dart';
 import 'package:chronopic_domain/chronopic_domain.dart';
+import 'package:chronopic_media/chronopic_media.dart';
+import 'package:chronopic_media/chronopic_media_flutter.dart'
+    show PhotoManagerGateway;
 import 'package:file_selector/file_selector.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -19,10 +22,21 @@ part 'theme/chronopic_theme.dart';
 
 enum _DesktopPage { home, memories, memoryDetail, settings, notifications }
 
+enum ChronoPicEntryMode { desktopFolder, mobilePhotoLibrary }
+
+typedef MobileMediaSourceFactory = MediaSourceAdapter Function();
+
 final class ChronoPicHome extends StatefulWidget {
-  const ChronoPicHome({super.key, this.service});
+  const ChronoPicHome({
+    super.key,
+    this.service,
+    this.entryModeOverride,
+    this.mobileMediaSourceFactory,
+  });
 
   final ChronoPicAppService? service;
+  final ChronoPicEntryMode? entryModeOverride;
+  final MobileMediaSourceFactory? mobileMediaSourceFactory;
 
   @override
   State<ChronoPicHome> createState() => _ChronoPicHomeState();
@@ -170,6 +184,14 @@ final class _ChronoPicHomeState extends State<ChronoPicHome> {
 
   UiStrings get _l10n => uiStrings[_locale]!;
 
+  ChronoPicEntryMode get _entryMode {
+    final override = widget.entryModeOverride;
+    if (override != null) return override;
+    return Platform.isAndroid || Platform.isIOS
+        ? ChronoPicEntryMode.mobilePhotoLibrary
+        : ChronoPicEntryMode.desktopFolder;
+  }
+
   Widget _buildPage({
     required UiStrings labels,
     required List<PhotoRecord> photos,
@@ -262,12 +284,14 @@ final class _ChronoPicHomeState extends State<ChronoPicHome> {
           gpsOnly: _gpsOnly,
           labels: labels,
           libraryPathController: _libraryPathController,
+          entryMode: _entryMode,
           detailFirst: _detailCaptureFirst,
           memories: memories,
           onAddLibrary: _addLibrary,
           onAddToMemory: _openMemoryActionForSelectedPhoto,
           onBrowseModeChanged: (mode) => setState(() => _browseMode = mode),
           onChooseLibraryFolder: _chooseLibraryFolder,
+          onChoosePhotos: _scanPhotoLibrary,
           onCloseFocusedDetail: _closeFocusedDetail,
           onClearFilters: _clearFilters,
           onCreateFirstMemory: () =>
@@ -652,6 +676,88 @@ final class _ChronoPicHomeState extends State<ChronoPicHome> {
     } finally {
       if (mounted) setState(() => _scanning = false);
     }
+  }
+
+  Future<void> _scanPhotoLibrary() async {
+    setState(() {
+      _scanning = true;
+      _status = _tr(
+        'Scan progress: requesting photo access',
+        '扫描进度：正在请求照片访问权限',
+      );
+    });
+    final source =
+        widget.mobileMediaSourceFactory?.call() ??
+        MobilePhotoLibraryMediaSource(const PhotoManagerGateway());
+    try {
+      final stats = await _service.scanMediaSource(
+        'photo-library',
+        source,
+        onProgress: (progress) {
+          if (!mounted) return;
+          setState(() => _status = _mobileScanProgressStatus(progress));
+        },
+      );
+      if (!mounted) return;
+      setState(() {
+        _status = _mobileScanCompleteStatus(stats, source.permissionState);
+        _selected = _selected == null
+            ? null
+            : _service.getPhoto(_selected!.photo.id);
+      });
+    } on MediaSourceException catch (error) {
+      if (!mounted) return;
+      setState(() {
+        _status = error.permissionState == MediaSourcePermissionState.denied
+            ? _tr(
+                'Photo library permission denied. Open settings to grant access.',
+                '照片图库权限被拒绝。请到设置中授权。',
+              )
+            : _labelValue(
+                _tr('Photo library scan failed', '照片图库扫描失败'),
+                error.message,
+              );
+      });
+    } on Object catch (error) {
+      if (!mounted) return;
+      setState(
+        () => _status = _labelValue(
+          _tr('Photo library scan failed', '照片图库扫描失败'),
+          '$error',
+        ),
+      );
+    } finally {
+      if (mounted) setState(() => _scanning = false);
+    }
+  }
+
+  String _mobileScanProgressStatus(ScanProgress progress) {
+    final state = switch (progress.state) {
+      ScanRunState.running => _tr('Scan progress', '扫描进度'),
+      ScanRunState.paused => _tr('Scan paused', '扫描已暂停'),
+      ScanRunState.completed => _tr('Scan complete', '扫描完成'),
+      ScanRunState.failed => _tr('Scan failed', '扫描失败'),
+      ScanRunState.idle => _tr('Scan idle', '扫描空闲'),
+    };
+    return _localized(
+      _l10n,
+      '$state: ${progress.processed}/${progress.discovered} processed, ${progress.imported} imported',
+      '$state：已处理 ${progress.processed}/${progress.discovered}，已导入 ${progress.imported} 个',
+    );
+  }
+
+  String _mobileScanCompleteStatus(
+    IndexerStats stats,
+    MediaSourcePermissionState permissionState,
+  ) {
+    final prefix = permissionState == MediaSourcePermissionState.limited
+        ? _tr('Limited photo access', '有限照片访问')
+        : _tr('Photo library scan complete', '照片图库扫描完成');
+    return _localized(
+      _l10n,
+      '$prefix: ${stats.imported} imported, ${stats.updated} updated, ${stats.skipped} skipped, ${stats.errors} errors, ${stats.missing} missing',
+      '$prefix：${stats.imported} 个已导入，${stats.updated} 个已更新，${stats.skipped} 个已跳过，${stats.errors} 个错误，${stats.missing} 个缺失',
+    );
   }
 
   void _toggleFavorite(PhotoRecord record) {

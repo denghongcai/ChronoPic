@@ -14,12 +14,14 @@ final class HomePage extends StatelessWidget {
     required this.gpsOnly,
     required this.labels,
     required this.libraryPathController,
+    required this.entryMode,
     required this.memories,
     required this.onAddLibrary,
     required this.onAddToMemory,
     required this.onAiStatusChanged,
     required this.onBrowseModeChanged,
     required this.onChooseLibraryFolder,
+    required this.onChoosePhotos,
     required this.onCloseFocusedDetail,
     required this.onClearFilters,
     required this.onCreateFirstMemory,
@@ -63,12 +65,14 @@ final class HomePage extends StatelessWidget {
   final bool gpsOnly;
   final UiStrings labels;
   final TextEditingController libraryPathController;
+  final ChronoPicEntryMode entryMode;
   final List<Memory> memories;
   final VoidCallback onAddLibrary;
   final VoidCallback onAddToMemory;
   final ValueChanged<AiPipelineStatus?> onAiStatusChanged;
   final ValueChanged<BrowseMode> onBrowseModeChanged;
   final VoidCallback onChooseLibraryFolder;
+  final VoidCallback onChoosePhotos;
   final VoidCallback onCloseFocusedDetail;
   final VoidCallback onClearFilters;
   final VoidCallback onCreateFirstMemory;
@@ -145,7 +149,12 @@ final class HomePage extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         if (showFirstRun) ...[
-          FirstRunPanel(labels: labels, onAddFolder: onChooseLibraryFolder),
+          FirstRunPanel(
+            entryMode: entryMode,
+            labels: labels,
+            onAddFolder: onChooseLibraryFolder,
+            onChoosePhotos: onChoosePhotos,
+          ),
           const SizedBox(height: 18),
         ],
         MemoryHighlightsPanel(
@@ -322,13 +331,21 @@ final class _BrowseSelectedPhotoBanner extends StatelessWidget {
 }
 
 final class FirstRunPanel extends StatelessWidget {
-  const FirstRunPanel({required this.labels, required this.onAddFolder});
+  const FirstRunPanel({
+    required this.entryMode,
+    required this.labels,
+    required this.onAddFolder,
+    required this.onChoosePhotos,
+  });
 
+  final ChronoPicEntryMode entryMode;
   final UiStrings labels;
   final VoidCallback onAddFolder;
+  final VoidCallback onChoosePhotos;
 
   @override
   Widget build(BuildContext context) {
+    final mobile = entryMode == ChronoPicEntryMode.mobilePhotoLibrary;
     return _Panel(
       padding: EdgeInsets.zero,
       child: ClipRRect(
@@ -339,12 +356,20 @@ final class FirstRunPanel extends StatelessWidget {
               spacing: 10,
               runSpacing: 10,
               children: [
-                FilledButton.icon(
-                  key: const Key('choose-library-folder-button'),
-                  onPressed: onAddFolder,
-                  icon: const Icon(Icons.create_new_folder_outlined),
-                  label: Text(_localized(labels, 'Add Folder', '添加文件夹')),
-                ),
+                if (mobile)
+                  FilledButton.icon(
+                    key: const Key('choose-photo-library-button'),
+                    onPressed: onChoosePhotos,
+                    icon: const Icon(Icons.photo_library_outlined),
+                    label: Text(_localized(labels, 'Choose Photos', '选择照片')),
+                  )
+                else
+                  FilledButton.icon(
+                    key: const Key('choose-library-folder-button'),
+                    onPressed: onAddFolder,
+                    icon: const Icon(Icons.create_new_folder_outlined),
+                    label: Text(_localized(labels, 'Add Folder', '添加文件夹')),
+                  ),
               ],
             );
             final copy = Column(
@@ -363,16 +388,32 @@ final class FirstRunPanel extends StatelessWidget {
                 ),
                 const SizedBox(height: 14),
                 Text(
-                  _localized(labels, 'Start with a local folder', '从本地文件夹开始'),
+                  mobile
+                      ? _localized(
+                          labels,
+                          'Start with your photo library',
+                          '从你的照片图库开始',
+                        )
+                      : _localized(
+                          labels,
+                          'Start with a local folder',
+                          '从本地文件夹开始',
+                        ),
                   style: Theme.of(context).textTheme.headlineMedium,
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  _localized(
-                    labels,
-                    'ChronoPic builds its library from folders you choose. Add one photo folder to index local media, generate thumbnails, and keep the catalog on this device.',
-                    'ChronoPic 会从你选择的文件夹建立资料库。添加一个照片文件夹即可索引本地媒体、生成缩略图，并把目录保存在这台设备上。',
-                  ),
+                  mobile
+                      ? _localized(
+                          labels,
+                          'ChronoPic indexes the photos you authorize, respects limited-library access, and keeps the catalog metadata on this device.',
+                          'ChronoPic 会索引你授权的照片，尊重有限图库访问，并把目录元数据保存在这台设备上。',
+                        )
+                      : _localized(
+                          labels,
+                          'ChronoPic builds its library from folders you choose. Add one photo folder to index local media, generate thumbnails, and keep the catalog on this device.',
+                          'ChronoPic 会从你选择的文件夹建立资料库。添加一个照片文件夹即可索引本地媒体、生成缩略图，并把目录保存在这台设备上。',
+                        ),
                   style: TextStyle(color: Colors.grey.shade600),
                 ),
                 const SizedBox(height: 18),
@@ -382,9 +423,17 @@ final class FirstRunPanel extends StatelessWidget {
                   spacing: 8,
                   runSpacing: 8,
                   children: [
-                    _SmallBadge(_localized(labels, 'Local library', '本地资料库')),
-                    _SmallBadge(_localized(labels, 'Manual scan', '手动扫描')),
-                    _SmallBadge(_localized(labels, 'Optional AI', '可选 AI')),
+                    if (mobile) ...[
+                      _SmallBadge(_localized(labels, 'Photo library', '照片图库')),
+                      _SmallBadge(
+                        _localized(labels, 'Limited access aware', '支持有限访问'),
+                      ),
+                      _SmallBadge(_localized(labels, 'Local catalog', '本地目录')),
+                    ] else ...[
+                      _SmallBadge(_localized(labels, 'Local library', '本地资料库')),
+                      _SmallBadge(_localized(labels, 'Manual scan', '手动扫描')),
+                      _SmallBadge(_localized(labels, 'Optional AI', '可选 AI')),
+                    ],
                   ],
                 ),
               ],

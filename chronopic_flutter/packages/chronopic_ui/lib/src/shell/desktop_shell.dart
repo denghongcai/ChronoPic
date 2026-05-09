@@ -47,43 +47,242 @@ final class _DesktopShell extends StatelessWidget {
       );
     }
 
-    return Scaffold(
-      body: Row(
-        children: [
-          _DesktopSidebar(
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        if (constraints.maxWidth < 720) {
+          return _MobileShell(
             activePage: activePage,
+            child: child,
             favoriteOnly: favoriteOnly,
             labels: labels,
-            memories: memories,
             notificationCount: notificationCount,
             onAllPhotos: onAllPhotos,
             onFavorites: onFavorites,
             onMemories: onMemories,
-            onMemorySelected: onMemorySelected,
             onNotifications: onNotifications,
             onSettings: onSettings,
-            selectedMemoryId: selectedMemoryId,
+            status: status,
+          );
+        }
+
+        return Scaffold(
+          body: Row(
+            children: [
+              _DesktopSidebar(
+                activePage: activePage,
+                favoriteOnly: favoriteOnly,
+                labels: labels,
+                memories: memories,
+                notificationCount: notificationCount,
+                onAllPhotos: onAllPhotos,
+                onFavorites: onFavorites,
+                onMemories: onMemories,
+                onMemorySelected: onMemorySelected,
+                onNotifications: onNotifications,
+                onSettings: onSettings,
+                selectedMemoryId: selectedMemoryId,
+              ),
+              Expanded(
+                child: Column(
+                  children: [
+                    if (_showStatusBanner(labels, status))
+                      _StatusBanner(labels: labels, status: status),
+                    Expanded(
+                      child: SingleChildScrollView(
+                        padding: const EdgeInsets.all(24),
+                        child: Center(
+                          child: ConstrainedBox(
+                            constraints: const BoxConstraints(maxWidth: 1560),
+                            child: child,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
-          Expanded(
-            child: Column(
-              children: [
-                if (_showStatusBanner(labels, status))
-                  _StatusBanner(labels: labels, status: status),
-                Expanded(
-                  child: SingleChildScrollView(
-                    padding: const EdgeInsets.all(24),
-                    child: Center(
-                      child: ConstrainedBox(
-                        constraints: const BoxConstraints(maxWidth: 1560),
-                        child: child,
+        );
+      },
+    );
+  }
+}
+
+final class _MobileShell extends StatelessWidget {
+  const _MobileShell({
+    required this.activePage,
+    required this.child,
+    required this.favoriteOnly,
+    required this.labels,
+    required this.notificationCount,
+    required this.onAllPhotos,
+    required this.onFavorites,
+    required this.onMemories,
+    required this.onNotifications,
+    required this.onSettings,
+    required this.status,
+  });
+
+  final _DesktopPage activePage;
+  final Widget child;
+  final bool favoriteOnly;
+  final UiStrings labels;
+  final int notificationCount;
+  final VoidCallback onAllPhotos;
+  final VoidCallback onFavorites;
+  final VoidCallback onMemories;
+  final VoidCallback onNotifications;
+  final VoidCallback onSettings;
+  final String status;
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: SafeArea(
+        bottom: false,
+        child: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+              child: Row(
+                children: [
+                  Container(
+                    width: 36,
+                    height: 36,
+                    decoration: BoxDecoration(
+                      color: Colors.amber.shade700,
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Center(
+                      child: Text(
+                        'C',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w800,
+                        ),
                       ),
                     ),
                   ),
-                ),
-              ],
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          labels.appTitle,
+                          key: const Key('app-title'),
+                          overflow: TextOverflow.ellipsis,
+                          style: Theme.of(context).textTheme.titleMedium,
+                        ),
+                        Text(
+                          labels.librarySubtitle,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            color: Colors.grey.shade500,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  _SidebarNotificationButton(
+                    active: activePage == _DesktopPage.notifications,
+                    badge: notificationCount,
+                    onPressed: onNotifications,
+                  ),
+                ],
+              ),
             ),
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              padding: const EdgeInsets.fromLTRB(12, 0, 12, 10),
+              child: Row(
+                children: [
+                  _MobileNavItem(
+                    active: activePage == _DesktopPage.home && !favoriteOnly,
+                    icon: Icons.photo_library_outlined,
+                    keyName: 'all-photos-nav',
+                    label: labels.allPhotos,
+                    onPressed: onAllPhotos,
+                  ),
+                  _MobileNavItem(
+                    active: favoriteOnly,
+                    icon: Icons.star_border,
+                    keyName: 'favorites-nav',
+                    label: labels.favorites,
+                    onPressed: onFavorites,
+                  ),
+                  _MobileNavItem(
+                    active: activePage == _DesktopPage.memories,
+                    icon: Icons.auto_stories_outlined,
+                    keyName: 'memories-nav',
+                    label: labels.memories,
+                    onPressed: onMemories,
+                  ),
+                  _MobileNavItem(
+                    active: activePage == _DesktopPage.settings,
+                    icon: Icons.settings_outlined,
+                    keyName: 'settings-nav',
+                    label: labels.settings,
+                    onPressed: onSettings,
+                  ),
+                ],
+              ),
+            ),
+            if (_showStatusBanner(labels, status))
+              _StatusBanner(labels: labels, status: status),
+            Expanded(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.fromLTRB(16, 16, 16, 28),
+                child: Center(
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 620),
+                    child: child,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+final class _MobileNavItem extends StatelessWidget {
+  const _MobileNavItem({
+    required this.active,
+    required this.icon,
+    required this.keyName,
+    required this.label,
+    required this.onPressed,
+  });
+
+  final bool active;
+  final IconData icon;
+  final String keyName;
+  final String label;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    final foreground = active ? Colors.white : Colors.grey.shade800;
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 3),
+      child: TextButton.icon(
+        key: Key(keyName),
+        onPressed: onPressed,
+        icon: Icon(icon, size: 18),
+        label: Text(label),
+        style: TextButton.styleFrom(
+          backgroundColor: active ? Colors.grey.shade900 : Colors.grey.shade100,
+          foregroundColor: foreground,
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(999),
           ),
-        ],
+        ),
       ),
     );
   }

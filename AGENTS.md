@@ -5685,3 +5685,37 @@ This file is the local execution record for ChronoPic. It complements `PLAN.md` 
   permission states,
   scan progress,
   and backup wording.
+
+### 2026-05-09 Step 216
+
+- Implemented Phase 6 Task 4:
+  Adaptive Mobile Onboarding UI.
+- Added red widget tests in:
+  `chronopic_flutter/packages/chronopic_ui/test/mobile_productization_test.dart`.
+  The first run failed because `ChronoPicEntryMode`,
+  `entryModeOverride`,
+  and the mobile photo-library entry factory did not exist.
+- Added a public `ChronoPicEntryMode` and injectable
+  `mobileMediaSourceFactory` so tests and platforms can select the
+  mobile photo-library entry path without changing the desktop default.
+- Split the first-run CTA:
+  desktop keeps `choose-library-folder-button`,
+  while mobile shows `choose-photo-library-button` with
+  `Choose Photos` / `选择照片` copy.
+- Wired mobile scan through
+  `MobilePhotoLibraryMediaSource(PhotoManagerGateway())`
+  and `ChronoPicAppService.scanMediaSource('photo-library', ...)`.
+- Added limited-access and denied-permission status messages for the mobile
+  scan path.
+- Added a compact shell layout for narrow screens so the mobile first-run view
+  no longer loses width to the desktop sidebar.
+- Verification passed:
+  `cd chronopic_flutter && flutter test packages/chronopic_ui/test/mobile_productization_test.dart`,
+  `cd chronopic_flutter && flutter test packages/chronopic_ui/test/mobile_productization_test.dart packages/chronopic_ui/test/chronopic_home_test.dart packages/chronopic_ui/test/linux_desktop_parity_test.dart`,
+  and
+  `cd chronopic_flutter && dart analyze packages/chronopic_ui apps/chronopic`.
+- Next:
+  commit Task 4,
+  then continue into Task 5 with Android toolchain verification,
+  Android debug APK build,
+  and device-smoke status recording.

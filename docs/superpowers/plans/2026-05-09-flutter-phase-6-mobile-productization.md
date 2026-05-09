@@ -701,7 +701,7 @@ git commit -m "Add mobile scan orchestration"
 - Modify: `chronopic_flutter/packages/chronopic_ui/lib/src/settings/settings_pages.dart`
 - Test: `chronopic_flutter/packages/chronopic_ui/test/mobile_productization_test.dart`
 
-- [ ] **Step 1: Add failing widget tests**
+- [x] **Step 1: Add failing widget tests**
 
 Create `chronopic_flutter/packages/chronopic_ui/test/mobile_productization_test.dart` with tests that pump `ChronoPicHome` using a mobile platform override or injected entry mode and assert:
 
@@ -721,7 +721,7 @@ flutter test packages/chronopic_ui/test/mobile_productization_test.dart
 
 Expected: fails before UI wiring.
 
-- [ ] **Step 2: Add platform entry model**
+- [x] **Step 2: Add platform entry model**
 
 In `chronopic_home.dart`, add:
 
@@ -753,7 +753,7 @@ ChronoPicEntryMode get _entryMode {
 }
 ```
 
-- [ ] **Step 3: Split first-run actions**
+- [x] **Step 3: Split first-run actions**
 
 Update `FirstRunPanel` to receive:
 
@@ -776,11 +776,11 @@ FilledButton.icon(
 
 Desktop keeps `choose-library-folder-button`.
 
-- [ ] **Step 4: Wire mobile scan action**
+- [x] **Step 4: Wire mobile scan action**
 
 Add `_scanPhotoLibrary()` in `chronopic_home.dart`. It should use `MobilePhotoLibraryMediaSource(PhotoManagerGateway())` and call `scanMediaSource('photo-library', source, ...)`. Keep the desktop `_chooseLibraryFolder()` path unchanged.
 
-- [ ] **Step 5: Verify**
+- [x] **Step 5: Verify**
 
 Run:
 
@@ -793,7 +793,7 @@ dart analyze packages/chronopic_ui apps/chronopic
 
 Expected: mobile UI tests pass and Linux desktop parity tests still pass.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add chronopic_flutter/packages/chronopic_ui
