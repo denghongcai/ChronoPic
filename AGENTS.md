@@ -5208,8 +5208,9 @@ This file is the local execution record for ChronoPic. It complements `PLAN.md` 
   `docs/flutter-electron-ui-functional-parity.md`,
   and
   `docs/superpowers/plans/2026-05-09-gallery-overlay-activation-parity.md`.
+- Implementation commit:
+  `7efb12e Align gallery overlay activation`.
 - Next:
   run `git diff --check`,
-  commit the implementation,
   write the implementation commit into the reopened matrix rows,
   and push `flutter-refactor-phases`.

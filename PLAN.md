@@ -2200,7 +2200,8 @@ Current status:
   and restart-persistence screenshots before closing the reopened matrix rows.
 - Current status:
   implemented locally on 2026-05-09;
-  final commit/push handoff remains.
+  implementation commit `7efb12e` records the code/test changes;
+  final push handoff remains.
 - Local verification:
   Electron accessibility E2E now covers Enter-to-detail,
   double-click-to-gallery,

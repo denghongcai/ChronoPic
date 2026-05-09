@@ -610,6 +610,11 @@
 
   Expected: branch `flutter-refactor-phases` is pushed and worktree is clean.
 
+  Progress:
+  - Implementation commit `7efb12e` records the Electron and Flutter gallery
+    activation changes.
+  - Matrix rows now reference `7efb12e` for the four reopened surfaces.
+
 ## Self-Review
 
 - Spec coverage: the plan covers code comparison, Electron double-click behavior, Flutter double-tap behavior, fullscreen overlay verification, keyboard parity, focused screenshots, docs, commit, and push.
