@@ -278,7 +278,7 @@ final class _ChronoPicHomeState extends State<ChronoPicHome> {
           onGpsOnlyChanged: (value) => setState(() => _gpsOnly = value),
           onAiStatusChanged: (value) => setState(() => _aiStatusFilter = value),
           onOpenGallery: _openGallery,
-          onOpenGalleryFor: _openGalleryFor,
+          onOpenDetailFor: _openFocusedDetailFor,
           onSaveCaption: _saveCaption,
           onSaveDatetime: _saveDatetime,
           onSaveTags: _saveTags,
@@ -442,6 +442,14 @@ final class _ChronoPicHomeState extends State<ChronoPicHome> {
 
   void _closeFocusedDetail() {
     setState(() => _detailCaptureFirst = false);
+  }
+
+  void _openFocusedDetailFor(PhotoRecord record) {
+    setState(() {
+      _page = _DesktopPage.home;
+      _setSelectedPhoto(record);
+      _detailCaptureFirst = true;
+    });
   }
 
   void _openMemoryActionForSelectedPhoto() {
@@ -799,7 +807,7 @@ final class _ChronoPicHomeState extends State<ChronoPicHome> {
       _setSelectedPhoto(record);
       _detailCaptureFirst = false;
     });
-    final result = await showDialog<PhotoRecord>(
+    final result = await showDialog<GalleryDialogResult>(
       context: dialogContext,
       barrierColor: Colors.black.withValues(alpha: 0.9),
       builder: (context) => GalleryDialog(
@@ -807,7 +815,12 @@ final class _ChronoPicHomeState extends State<ChronoPicHome> {
         photos: _visiblePhotos(),
       ),
     );
-    if (result != null) _selectPhoto(result);
+    if (result != null) {
+      setState(() {
+        _setSelectedPhoto(result.record);
+        _detailCaptureFirst = result.action == GalleryDialogResultAction.detail;
+      });
+    }
   }
 
   void _createMemory() {

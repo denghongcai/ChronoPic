@@ -61,7 +61,7 @@ export function PhotoCard({
             : "border-stone-200 hover:border-stone-300"
       )}
       onClick={onSelect}
-      onDoubleClick={onOpenGallery}
+      onDoubleClick={onOpenDetail}
       onKeyDown={(event) => {
         if (event.key === "Enter") {
           event.preventDefault();

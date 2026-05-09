@@ -1,5 +1,20 @@
 part of '../chronopic_home.dart';
 
+enum GalleryDialogResultAction { close, detail }
+
+final class GalleryDialogResult {
+  const GalleryDialogResult._({required this.action, required this.record});
+
+  const GalleryDialogResult.close(PhotoRecord record)
+    : this._(action: GalleryDialogResultAction.close, record: record);
+
+  const GalleryDialogResult.detail(PhotoRecord record)
+    : this._(action: GalleryDialogResultAction.detail, record: record);
+
+  final GalleryDialogResultAction action;
+  final PhotoRecord record;
+}
+
 final class GalleryDialog extends StatefulWidget {
   const GalleryDialog({
     required this.initialPhotoId,
@@ -62,7 +77,9 @@ final class _GalleryDialogState extends State<GalleryDialog> {
                 padding: const EdgeInsets.only(right: 20),
                 child: FilledButton(
                   key: const Key('open-inspector-button'),
-                  onPressed: () => Navigator.of(context).pop(record),
+                  onPressed: () => Navigator.of(
+                    context,
+                  ).pop(GalleryDialogResult.detail(record)),
                   style: FilledButton.styleFrom(
                     backgroundColor: Colors.grey.shade900,
                     foregroundColor: Colors.white,
@@ -177,7 +194,9 @@ final class _GalleryDialogState extends State<GalleryDialog> {
                     ),
                     const SizedBox(width: 16),
                     FilledButton(
-                      onPressed: () => Navigator.of(context).pop(record),
+                      onPressed: () => Navigator.of(
+                        context,
+                      ).pop(GalleryDialogResult.detail(record)),
                       style: FilledButton.styleFrom(
                         backgroundColor: Colors.grey.shade900,
                         foregroundColor: Colors.white,
@@ -274,11 +293,11 @@ final class _GalleryDialogState extends State<GalleryDialog> {
       return KeyEventResult.handled;
     }
     if (event.logicalKey == LogicalKeyboardKey.escape) {
-      Navigator.of(context).pop(_record);
+      Navigator.of(context).pop(GalleryDialogResult.close(_record));
       return KeyEventResult.handled;
     }
     if (event.logicalKey == LogicalKeyboardKey.keyD) {
-      Navigator.of(context).pop(_record);
+      Navigator.of(context).pop(GalleryDialogResult.detail(_record));
       return KeyEventResult.handled;
     }
     return KeyEventResult.ignored;

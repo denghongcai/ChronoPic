@@ -41,14 +41,14 @@ final class BrowseModeSelector extends StatelessWidget {
 final class BrowseSurface extends StatelessWidget {
   const BrowseSurface({
     required this.mode,
-    required this.onOpenGallery,
+    required this.onOpenDetail,
     required this.onSelectPhoto,
     required this.photos,
     required this.selected,
   });
 
   final BrowseMode mode;
-  final ValueChanged<PhotoRecord> onOpenGallery;
+  final ValueChanged<PhotoRecord> onOpenDetail;
   final ValueChanged<PhotoRecord> onSelectPhoto;
   final List<PhotoRecord> photos;
   final PhotoRecord? selected;
@@ -57,7 +57,7 @@ final class BrowseSurface extends StatelessWidget {
   Widget build(BuildContext context) {
     return switch (mode) {
       BrowseMode.waterfall => PhotoGrid(
-        onOpenGallery: onOpenGallery,
+        onOpenDetail: onOpenDetail,
         onSelectPhoto: onSelectPhoto,
         photos: photos,
         selected: selected,
@@ -77,13 +77,13 @@ final class BrowseSurface extends StatelessWidget {
 
 final class PhotoGrid extends StatelessWidget {
   const PhotoGrid({
-    required this.onOpenGallery,
+    required this.onOpenDetail,
     required this.onSelectPhoto,
     required this.photos,
     required this.selected,
   });
 
-  final ValueChanged<PhotoRecord> onOpenGallery;
+  final ValueChanged<PhotoRecord> onOpenDetail;
   final ValueChanged<PhotoRecord> onSelectPhoto;
   final List<PhotoRecord> photos;
   final PhotoRecord? selected;
@@ -115,7 +115,7 @@ final class PhotoGrid extends StatelessWidget {
           itemBuilder: (context, index) {
             final record = photos[index];
             return PhotoCardTile(
-              onOpenGallery: () => onOpenGallery(record),
+              onOpenDetail: () => onOpenDetail(record),
               onSelect: () => onSelectPhoto(record),
               record: record,
               selected: selected?.photo.id == record.photo.id,
@@ -129,13 +129,13 @@ final class PhotoGrid extends StatelessWidget {
 
 final class PhotoCardTile extends StatefulWidget {
   const PhotoCardTile({
-    required this.onOpenGallery,
+    required this.onOpenDetail,
     required this.onSelect,
     required this.record,
     required this.selected,
   });
 
-  final VoidCallback onOpenGallery;
+  final VoidCallback onOpenDetail;
   final VoidCallback onSelect;
   final PhotoRecord record;
   final bool selected;
@@ -154,7 +154,7 @@ final class _PhotoCardTileState extends State<PhotoCardTile> {
         now.difference(_lastTapAt!) <= const Duration(milliseconds: 320);
     _lastTapAt = isDoubleTap ? null : now;
     widget.onSelect();
-    if (isDoubleTap) widget.onOpenGallery();
+    if (isDoubleTap) widget.onOpenDetail();
   }
 
   @override
@@ -166,9 +166,7 @@ final class _PhotoCardTileState extends State<PhotoCardTile> {
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(20),
         side: BorderSide(
-          color: widget.selected
-              ? Colors.amber.shade700
-              : Colors.grey.shade200,
+          color: widget.selected ? Colors.amber.shade700 : Colors.grey.shade200,
           width: widget.selected ? 2 : 1,
         ),
       ),

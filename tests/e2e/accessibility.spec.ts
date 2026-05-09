@@ -63,13 +63,22 @@ test.describe("ChronoPic accessibility and keyboard runtime", () => {
     await expect(page.getByRole("dialog", { name: /detail/i })).not.toBeVisible();
 
     await photoCard.dblclick();
+    const detailDialog = page.getByRole("dialog", { name: /detail/i });
+    await expect(detailDialog).toBeVisible({ timeout: 10_000 });
+    await expect(detailDialog.getByText("Detail View", { exact: true })).toBeVisible();
+    await expect(detailDialog.getByRole("button", { name: /^gallery$/i })).toBeVisible();
+
+    await detailDialog.getByRole("button", { name: /^gallery$/i }).click();
     const galleryDialog = page.getByRole("dialog", { name: /gallery/i });
     await expect(galleryDialog).toBeVisible({ timeout: 10_000 });
     await expect(page.getByText("Gallery View", { exact: true })).toBeVisible();
     await expect(galleryDialog.getByText("keyboard-lake.png", { exact: true })).toBeVisible();
 
+    await page.keyboard.press("d");
+    await expect(page.getByRole("dialog", { name: /detail/i })).toBeVisible();
+
     await page.keyboard.press("Escape");
-    await expect(page.getByRole("dialog", { name: /gallery/i })).not.toBeVisible();
+    await expect(page.getByRole("dialog", { name: /detail/i })).not.toBeVisible();
 
     await photoCard.focus();
     await page.keyboard.press("g");

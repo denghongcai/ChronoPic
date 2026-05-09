@@ -197,6 +197,15 @@ void main() {
     await tester.pump(const Duration(milliseconds: 80));
     await tester.tap(firstCard);
     await tester.pumpAndSettle();
+    expect(find.byKey(const Key('focused-detail-view')), findsOneWidget);
+    expect(find.byKey(const Key('focused-detail-inspector')), findsOneWidget);
+    expect(
+      find.byKey(const Key('focused-detail-gallery-button')),
+      findsOneWidget,
+    );
+
+    await tester.tap(find.byKey(const Key('focused-detail-gallery-button')));
+    await tester.pumpAndSettle();
     expect(find.byKey(const Key('gallery-dialog')), findsOneWidget);
     expect(find.byKey(const Key('gallery-counter')), findsOneWidget);
     expect(find.byKey(const Key('gallery-keyboard-hint')), findsOneWidget);
@@ -225,6 +234,11 @@ void main() {
     await tester.sendKeyEvent(LogicalKeyboardKey.keyD);
     await tester.pumpAndSettle();
     expect(find.byKey(const Key('gallery-dialog')), findsNothing);
+    expect(find.byKey(const Key('focused-detail-view')), findsOneWidget);
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('focused-detail-view')), findsNothing);
 
     await tester.ensureVisible(find.byKey(const Key('open-gallery-button')));
     await tester.tap(find.byKey(const Key('open-gallery-button')));
@@ -320,6 +334,10 @@ void main() {
     expect(find.byKey(const Key('gallery-dialog')), findsOneWidget);
     await tester.tap(find.byKey(const Key('open-inspector-button')));
     await tester.pumpAndSettle();
+    expect(find.byKey(const Key('focused-detail-view')), findsOneWidget);
+    await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('focused-detail-view')), findsNothing);
     await tester.ensureVisible(find.byKey(const Key('rollback-button')));
     await tester.tap(find.byKey(const Key('rollback-button')));
     await tester.pump();
