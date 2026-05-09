@@ -6069,3 +6069,25 @@ This file is the local execution record for ChronoPic. It complements `PLAN.md` 
   marked `Passed` with the integration-test command as evidence.
 - Next:
   record the iOS deep E2E gate and then run Phase 6.5 closeout verification.
+
+### 2026-05-10 Step 227
+
+- Implemented Phase 6.5 Task 6:
+  iOS deep E2E gate recording.
+- Updated `docs/mobile-e2e-verification.md` with the required macOS/Xcode
+  commands:
+  `flutter build ios --debug --no-codesign`
+  and
+  `flutter run -d <ios-device-or-simulator-id>`.
+- Recorded the required iOS evidence:
+  denied permission screenshot,
+  limited-library screenshot and import count,
+  full-library import/browse evidence,
+  restart persistence screenshot,
+  and metadata backup restore JSON plus relaunch screenshot.
+- Updated `docs/mobile-productization.md` with the same iOS deep E2E gate so
+  the mobile productization doc and Phase 6.5 evidence matrix stay aligned.
+- Kept every iOS scenario marked `Blocked` because this Linux workstation cannot
+  run Xcode, iOS simulators, or iOS signing.
+- Next:
+  run the full Phase 6.5 closeout verification suite and update phase status.

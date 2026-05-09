@@ -446,7 +446,7 @@ git commit -m "Add mobile app workflow integration tests"
 - Modify: `docs/mobile-productization.md`
 - Modify: `AGENTS.md`
 
-- [ ] **Step 1: Add macOS/Xcode command requirements**
+- [x] **Step 1: Add macOS/Xcode command requirements**
 
 Record:
 
@@ -464,11 +464,11 @@ Required iOS evidence:
 - restart persistence screenshot,
 - backup restore JSON summary and relaunch screenshot.
 
-- [ ] **Step 2: Mark iOS state accurately**
+- [x] **Step 2: Mark iOS state accurately**
 
 Status should remain `Blocked` or `Pending macOS/Xcode evidence` until it is actually run from macOS/Xcode. Do not mark iOS complete from Linux-only evidence.
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add docs/mobile-e2e-verification.md docs/mobile-productization.md AGENTS.md

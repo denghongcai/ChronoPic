@@ -250,3 +250,34 @@ cd chronopic_flutter/apps/chronopic
 flutter build ios --debug --no-codesign
 flutter run -d <ios-device-id>
 ```
+
+## iOS Deep E2E Gate
+
+Recorded on 2026-05-10 during Phase 6.5.
+
+Status:
+
+- Blocked on this Linux workstation.
+- Requires macOS with Xcode and either an iOS simulator or signed physical iOS
+  target.
+- Must not be marked complete from Android, Linux desktop, or static iOS file
+  evidence.
+
+Required commands:
+
+```bash
+cd chronopic_flutter/apps/chronopic
+flutter build ios --debug --no-codesign
+flutter run -d <ios-device-or-simulator-id>
+```
+
+Required evidence:
+
+- Photo permission denied screenshot showing the recoverable denied state.
+- Limited library access screenshot plus import count after selecting a limited
+  set of photos.
+- Full library access import count plus browse UI after granting full access.
+- Restart persistence relaunch screenshot showing browse state rather than the
+  first-run state.
+- Metadata backup restore JSON summary plus relaunch screenshot after restoring
+  that backup into a clean app state.

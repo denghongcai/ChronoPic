@@ -35,10 +35,10 @@ after Phase 6 mobile productization and before Phase 7 release/cutover.
 | Scenario | Required Evidence | Status | Notes |
 | --- | --- | --- | --- |
 | Photo permission denied | Simulator/device screenshot | Blocked | Requires macOS/Xcode |
-| Limited library access | Simulator/device screenshot and import count | Blocked | Requires macOS/Xcode |
-| Full library access | Import count and browse UI | Blocked | Requires macOS/Xcode |
-| Restart persistence | Relaunch screenshot | Blocked | Requires macOS/Xcode |
-| Metadata backup restore | Backup JSON summary and relaunch screenshot | Blocked | Requires macOS/Xcode |
+| Limited library access | Simulator/device screenshot and import count | Blocked | Requires macOS/Xcode selected-library evidence |
+| Full library access | Import count and browse UI | Blocked | Requires macOS/Xcode full-library evidence |
+| Restart persistence | Relaunch screenshot | Blocked | Requires macOS/Xcode relaunch evidence |
+| Metadata backup restore | Backup JSON summary and relaunch screenshot | Blocked | Requires macOS/Xcode restore evidence |
 
 ## Commands
 
@@ -114,3 +114,31 @@ flutter test integration_test/mobile_deep_e2e_test.dart -d emulator-5554
   tappable,
   and app startup now loads persisted locale settings rather than only AI/map
   settings.
+
+### iOS macOS/Xcode Gate
+
+These commands must be run on macOS with Xcode installed and either an iOS
+simulator or a signed physical iOS target:
+
+```bash
+cd chronopic_flutter/apps/chronopic
+flutter build ios --debug --no-codesign
+flutter run -d <ios-device-or-simulator-id>
+```
+
+Required evidence before iOS can move out of `Blocked`:
+
+- Photo permission denied:
+  simulator/device screenshot showing the recoverable denied state.
+- Limited library access:
+  simulator/device screenshot and import count after selecting a limited set of
+  photos.
+- Full library access:
+  import count and browse UI after granting full photo-library access.
+- Restart persistence:
+  relaunch screenshot showing browse state rather than first-run state.
+- Metadata backup restore:
+  backup JSON summary and relaunch screenshot after restoring that metadata
+  backup into a clean app state.
+
+Linux-only static review is not sufficient for iOS completion.
