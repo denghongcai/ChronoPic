@@ -926,7 +926,7 @@ git commit -m "Record iOS mobile verification constraints"
 - Modify: `docs/mobile-productization.md`
 - Modify: `AGENTS.md`
 
-- [ ] **Step 1: Run full desktop regression gate**
+- [x] **Step 1: Run full desktop regression gate**
 
 Run:
 
@@ -944,7 +944,7 @@ Expected:
 - All Electron reference/runtime tests pass.
 - If `pnpm test` cleans desktop output, rerun `pnpm build` before direct Electron Playwright specs.
 
-- [ ] **Step 2: Run full Flutter regression gate**
+- [x] **Step 2: Run full Flutter regression gate**
 
 Run:
 
@@ -960,7 +960,7 @@ Expected:
 - Desktop parity remains intact.
 - Mobile source, scan, and UI tests pass.
 
-- [ ] **Step 3: Run mobile platform gates**
+- [x] **Step 3: Run mobile platform gates**
 
 Run what the local machine can actually support:
 
@@ -977,7 +977,14 @@ flutter run -d <android-device-id>
 
 For iOS, do not mark the real-device gate complete on Linux. Record the macOS/Xcode command requirements in `docs/mobile-productization.md`.
 
-- [ ] **Step 4: Update phase docs**
+Current status on 2026-05-09:
+`flutter build apk --debug` passes,
+`flutter devices` lists only Linux desktop,
+Android real-device `flutter run` is blocked until an Android emulator or
+physical device is connected,
+and iOS remains a macOS/Xcode verification gate.
+
+- [x] **Step 4: Update phase docs**
 
 Update `PLAN.md` and `docs/flutter-refactor-phases.md` with:
 
@@ -987,7 +994,7 @@ Update `PLAN.md` and `docs/flutter-refactor-phases.md` with:
 - iOS blocked verification reason if macOS/Xcode is unavailable,
 - remaining Phase 7 cutover requirements.
 
-- [ ] **Step 5: Final diff and commit**
+- [x] **Step 5: Final diff and commit**
 
 Run:
 

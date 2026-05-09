@@ -659,11 +659,42 @@ Exit gate:
 
 Status:
 
-- Planned on 2026-05-09 after the Linux desktop baseline freeze.
-- Android is the first executable mobile target from the current Linux workstation.
-- iOS can be scaffolded and statically reviewed here, but its real-device exit
-  gate requires macOS/Xcode and must not be marked complete from Linux-only
-  evidence.
+- Implemented and locally verified on 2026-05-09 through the gates available on
+  this Linux workstation.
+- Android/iOS runners are scaffolded with photo-library permission
+  declarations.
+- Android media-library access is implemented through a real
+  `MediaSourceAdapter` backed by a testable gateway and `photo_manager`.
+- Mobile scan progress, limited access, denied permission, pause, resume, and
+  retry behavior are covered by Dart/widget tests.
+- Mobile first-run onboarding uses the photo library as the primary entry
+  instead of desktop folder import.
+- The Android user-state toolchain is configured with Temurin JDK `17.0.19`,
+  Android SDK `36.0.0`,
+  platform `android-36`,
+  build-tools `36.0.0`,
+  and NDK `28.2.13676358`.
+- `flutter build apk --debug` passes and emits
+  `chronopic_flutter/apps/chronopic/build/app/outputs/flutter-apk/app-debug.apk`.
+- Android real-device smoke is still blocked because `flutter devices` lists no
+  Android emulator or physical Android device on this workstation.
+- iOS is scaffolded and statically reviewed here, but its real-device exit gate
+  requires macOS/Xcode and must not be marked complete from Linux-only evidence.
+- Desktop parity remains green after Phase 6:
+  Electron `pnpm` gates,
+  Electron Playwright gates,
+  Flutter package tests,
+  Flutter UI/parity tests,
+  Flutter analyzer,
+  and Android debug build all pass locally.
+
+Remaining before Phase 7 cutover:
+
+- Run Android denied/limited/full-access, restart-persistence, and backup-restore
+  smoke checks on a real Android emulator or device.
+- Run `flutter build ios --debug --no-codesign` and `flutter run` from
+  macOS/Xcode against an iOS target.
+- Complete release signing, mobile privacy disclosures, and migration packaging.
 
 ## Phase 7: Release, Migration, And Cutover
 

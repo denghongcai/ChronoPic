@@ -2347,7 +2347,20 @@ These are intentionally recorded as candidate directions rather than committed p
   Android smoke verification,
   and iOS verification constraints.
 - Current status:
-  planned on 2026-05-09 after the desktop baseline freeze.
+  implemented and locally verified on 2026-05-09 through the Linux workstation
+  gates that are available here.
+  Android runners,
+  photo/media permissions,
+  photo-library media source,
+  mobile scan orchestration,
+  mobile onboarding,
+  Android user-state toolchain,
+  and Android debug APK build are complete.
+  Android real-device smoke remains blocked because `flutter devices` lists no
+  Android emulator or physical Android device.
+  iOS runner metadata and photo-library usage descriptions are scaffolded and
+  statically reviewed,
+  but iOS real-device verification requires macOS/Xcode.
 - Execution order:
   start with Android tooling/readiness and platform scaffolding,
   then implement the mobile `MediaSourceAdapter`,
@@ -2358,6 +2371,28 @@ These are intentionally recorded as candidate directions rather than committed p
   iOS code/config can be prepared on this Linux workstation,
   but iOS real-device verification must be done from macOS/Xcode before the
   iOS exit gate can be closed.
+- Verification evidence:
+  Electron regression gates pass with `pnpm test`,
+  `pnpm typecheck`,
+  `pnpm build`,
+  `pnpm run e2e:accessibility`,
+  `pnpm run e2e:runtime`,
+  and
+  `pnpm run e2e:prepare && pnpm exec playwright test -c tests/e2e/playwright.config.ts i18n.spec.ts`.
+  Flutter regression gates pass with Dart analyze,
+  Dart package tests,
+  Flutter UI/parity tests,
+  and `flutter build apk --debug`.
+- Remaining before Phase 7 cutover:
+  connect an Android emulator or physical device and run the denied,
+  limited,
+  full-access,
+  restart-persistence,
+  and backup-restore smoke checks;
+  run the iOS build/run gate from macOS/Xcode;
+  then handle release signing,
+  mobile privacy disclosures,
+  and migration/cutover packaging.
 
 - Person / face grouping:
   add person-like memory grouping only after the app has a real person-recognition or clustering signal.

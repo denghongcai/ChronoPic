@@ -143,6 +143,42 @@ Unverified until an Android device is available:
 - Backup export/restore on Android.
 - Indexed asset count from Android photo-library import.
 
+## Phase 6 Closeout Gate
+
+Captured on 2026-05-09.
+
+Electron reference/runtime gates:
+
+- `pnpm test`: passed.
+- `pnpm typecheck`: passed.
+- `pnpm build`: passed.
+- `pnpm run e2e:accessibility`: passed.
+- `pnpm run e2e:runtime`: passed.
+- `pnpm run e2e:prepare && pnpm exec playwright test -c tests/e2e/playwright.config.ts i18n.spec.ts`:
+  passed.
+
+Flutter package/UI gates:
+
+- `dart analyze packages/chronopic_media packages/chronopic_app packages/chronopic_ui apps/chronopic`:
+  passed.
+- `dart test packages/chronopic_media/test packages/chronopic_app/test`:
+  passed.
+- `flutter test packages/chronopic_ui/test/chronopic_home_test.dart packages/chronopic_ui/test/linux_desktop_parity_test.dart packages/chronopic_ui/test/mobile_productization_test.dart`:
+  passed.
+
+Mobile platform gates:
+
+- `flutter build apk --debug`:
+  passed.
+- `flutter devices`:
+  only `Linux (desktop)` is connected.
+- `flutter run -d <android-device-id>`:
+  not run because no Android emulator or physical device is connected.
+- iOS run/build:
+  not run because this Linux workstation cannot provide Xcode,
+  iOS simulators,
+  or iOS signing.
+
 ## iOS Verification Constraint
 
 Static review on 2026-05-09:
