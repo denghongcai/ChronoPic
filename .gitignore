@@ -4,6 +4,7 @@ coverage
 .turbo
 .vite
 .codex
+.tmp/
 test-results
 *.tsbuildinfo
 **/.dart_tool/

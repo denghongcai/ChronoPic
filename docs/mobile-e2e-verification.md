@@ -7,11 +7,12 @@ after Phase 6 mobile productization and before Phase 7 release/cutover.
 
 ## Android Target
 
-- AVD/device:
-- Android release:
-- API level:
-- App build:
+- AVD/device: `chronopic_api36` / `emulator-5554`
+- Android release: `16`
+- API level: `36`
+- App build: debug APK from `chronopic_flutter/apps/chronopic`
 - Test media fixture:
+  two launcher PNG files pushed to `/sdcard/Pictures/ChronoPicDeepE2E`
 
 ## Android Required Scenarios
 
@@ -42,3 +43,26 @@ after Phase 6 mobile productization and before Phase 7 release/cutover.
 ## Commands
 
 Record exact commands and outputs for every completed scenario.
+
+### Android Runner
+
+```bash
+ANDROID_DEVICE_ID=emulator-5554 chronopic_flutter/tool/mobile_e2e/android_deep_e2e.sh
+```
+
+Expected skeleton evidence:
+
+- `.tmp/mobile-e2e/android/01-first-run.png`
+- `.tmp/mobile-e2e/android/01-first-run.xml`
+
+2026-05-10 skeleton result:
+
+- Command:
+  `ANDROID_DEVICE_ID=emulator-5554 chronopic_flutter/tool/mobile_e2e/android_deep_e2e.sh`
+- Result:
+  exit 0 after APK build/install,
+  two PNG media fixtures pushed,
+  app launched,
+  and first-run evidence captured.
+- First-run assertion:
+  `01-first-run.xml` contains `Choose Photos`.

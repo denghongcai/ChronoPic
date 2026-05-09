@@ -197,7 +197,7 @@ git commit -m "Add stable mobile E2E hooks"
 - Modify: `docs/mobile-e2e-verification.md`
 - Modify: `AGENTS.md`
 
-- [ ] **Step 1: Create the runner skeleton**
+- [x] **Step 1: Create the runner skeleton**
 
 Create `chronopic_flutter/tool/mobile_e2e/android_deep_e2e.sh`:
 
@@ -239,7 +239,7 @@ adb -s "$DEVICE_ID" shell cat /sdcard/window.xml > "$OUT_DIR/01-first-run.xml"
 echo "Android deep E2E runner prepared $OUT_DIR"
 ```
 
-- [ ] **Step 2: Make it executable**
+- [x] **Step 2: Make it executable**
 
 Run:
 
@@ -247,7 +247,7 @@ Run:
 chmod +x chronopic_flutter/tool/mobile_e2e/android_deep_e2e.sh
 ```
 
-- [ ] **Step 3: Run the skeleton**
+- [x] **Step 3: Run the skeleton**
 
 Run:
 
@@ -262,7 +262,7 @@ Expected:
 - Two PNG media fixtures are pushed.
 - `.tmp/mobile-e2e/android/01-first-run.png` and `.xml` exist.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add chronopic_flutter/tool/mobile_e2e/android_deep_e2e.sh docs/mobile-e2e-verification.md AGENTS.md

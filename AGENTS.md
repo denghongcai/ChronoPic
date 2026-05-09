@@ -5959,3 +5959,33 @@ This file is the local execution record for ChronoPic. It complements `PLAN.md` 
   `cd chronopic_flutter && flutter test packages/chronopic_ui/test/mobile_productization_test.dart`.
 - Next:
   build the Android deep E2E runner.
+
+### 2026-05-10 Step 224
+
+- Started Phase 6.5 Task 3:
+  Android deep E2E runner.
+- Added the runner skeleton:
+  `chronopic_flutter/tool/mobile_e2e/android_deep_e2e.sh`.
+- The skeleton prepares an output directory,
+  waits for `emulator-5554`,
+  builds and installs the debug APK,
+  clears app state,
+  injects two PNG media fixtures,
+  launches the app,
+  and captures first-run screenshot/XML evidence.
+- Hardened the install/capture path after the first run exposed two
+  environment-specific emulator issues:
+  plain `adb install -r` hung on this headless AVD,
+  and Android system ANR dialogs could briefly cover the app during capture.
+  The runner now uses bounded `adb install -r -t --no-streaming` and waits for
+  the ChronoPic first-run UI before writing final evidence.
+- Updated `docs/mobile-e2e-verification.md` with the runner command and
+  expected skeleton evidence artifacts.
+- Current status:
+  script created and executed successfully on `emulator-5554`;
+  `01-first-run.png` and `01-first-run.xml` were generated under
+  `.tmp/mobile-e2e/android`,
+  and the XML contains `Choose Photos`.
+- Next:
+  commit the runner skeleton,
+  then automate Android permission and import checks.
