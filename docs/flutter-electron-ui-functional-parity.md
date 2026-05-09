@@ -13,7 +13,7 @@
 | Memory detail management | `test-results/flutter-electron-parity/electron/09-memory-detail.png` | `test-results/flutter-electron-parity/flutter/09-memory-detail.png` | Accepted Difference | Flutter matches the Electron memory detail workflow, cover-led hero, timestamp, custom-cover status, description, story outline, chapter metadata, and lower management actions. Accepted difference: exact chip colors/icon treatment/card spacing differ slightly while preserving function. | `223d9e8` |
 | Settings | `test-results/flutter-electron-parity/electron/10-settings.png` | `test-results/flutter-electron-parity/flutter/10-settings.png` | Accepted Difference | Flutter matches the Electron settings workflow and first-viewport density while preserving additional lower-panel path, map, source, and secret-safe AI controls. Accepted difference: exact section heights and lower-panel density differ because Flutter exposes desktop-only file-path controls below the first viewport. | `223d9e8` |
 | Notifications / AI queue | `test-results/flutter-electron-parity/electron/11-notifications.png` | `test-results/flutter-electron-parity/flutter/11-notifications.png` | Accepted Difference | Flutter matches the Electron notifications workflow, AI queue and memory candidate cards, semantic chips, retry, and suggestions handoff. Accepted difference: exact button color semantics and card spacing differ slightly between renderers. | `223d9e8` |
-| Chinese locale | `test-results/flutter-electron-parity/electron/12-zh-locale.png` | `test-results/flutter-electron-parity/flutter/12-zh-locale.png` | Accepted Difference | Phase 5.10 localizes app-owned Flutter zh UI across selected-photo banners, active filter labels, status messages, Detail/Gallery controls, memory actions, settings actions, notifications, map controls, and timeline actions. Accepted difference: fixture-authored filenames, captions, memory names, imported descriptions, tags, and AI text remain source data rather than translated UI. | Pending local commit |
+| Chinese locale | `test-results/flutter-electron-parity/electron/12-zh-locale.png` | `test-results/flutter-electron-parity/flutter/12-zh-locale.png` | Accepted Difference | Phase 5.10 localizes app-owned Flutter zh UI across selected-photo banners, active filter labels, status messages, Detail/Gallery controls, memory actions, settings actions, notifications, map controls, and timeline actions. Accepted difference: fixture-authored filenames, captions, memory names, imported descriptions, tags, and AI text remain source data rather than translated UI. | `acb6794` |
 | Restart persistence | `test-results/flutter-electron-parity/electron/13-restart-persistence.png` | `test-results/flutter-electron-parity/flutter/13-restart-persistence.png` | Accepted Difference | Restored photo cards preserve the same selected-photo and detail-first double-click/double-tap activation contract after restart. Accepted difference: exact card dimensions and browse spacing follow the same adaptive-layout difference as populated browse. | `96ba222` |
 
 ## Evidence Rules
@@ -61,6 +61,17 @@
   refreshed focused Flutter screenshots,
   refreshed Electron references,
   and regenerated compare artifacts for affected surfaces.
+- Desktop baseline freeze:
+  refreshed all 13 Electron screenshots,
+  refreshed all 13 Flutter screenshots,
+  regenerated all 13 side-by-side compare images plus the contact sheet,
+  and reran the desktop verification gate after commit `acb6794`.
+  The final Electron E2E order was:
+  `pnpm build`,
+  `pnpm run e2e:accessibility`,
+  `pnpm run e2e:runtime`,
+  and
+  `pnpm run e2e:prepare && pnpm exec playwright test -c tests/e2e/playwright.config.ts i18n.spec.ts`.
 
 ## Remaining Closure Order
 

@@ -5495,3 +5495,39 @@ This file is the local execution record for ChronoPic. It complements `PLAN.md` 
 - Next:
   continue the same evidence-first review process for any newly identified
   feature/UI deltas before opening Phase 6 mobile productization work.
+
+### 2026-05-09 Step 211
+
+- Performed the desktop baseline freeze gate after commit `acb6794`.
+- Updated
+  `docs/flutter-electron-ui-functional-parity.md`
+  so the Chinese-locale row points to fix commit `acb6794` instead of
+  `Pending local commit`.
+- Refreshed full visual evidence:
+  all 13 Electron parity screenshots,
+  all 13 Flutter parity screenshots,
+  all 13 side-by-side compare images,
+  and
+  `test-results/flutter-electron-parity/compare/all-surfaces-contact.png`.
+- Verification commands passed:
+  `node scripts/capture-electron-parity.mjs`,
+  `file test-results/flutter-electron-parity/electron/*.png`,
+  `cd chronopic_flutter && bash tool/capture_flutter_parity.sh all`,
+  `cd chronopic_flutter && file ../test-results/flutter-electron-parity/flutter/*.png`,
+  compare artifact generation with `montage`,
+  `pnpm test`,
+  `pnpm typecheck`,
+  `pnpm build`,
+  `pnpm run e2e:accessibility`,
+  `pnpm run e2e:runtime`,
+  `pnpm run e2e:prepare && pnpm exec playwright test -c tests/e2e/playwright.config.ts i18n.spec.ts`,
+  `cd chronopic_flutter && dart analyze packages/chronopic_ui apps/chronopic`,
+  `cd chronopic_flutter && flutter test packages/chronopic_ui/test/chronopic_home_test.dart packages/chronopic_ui/test/linux_desktop_parity_test.dart`,
+  and
+  `git diff --check`.
+- Gate-order note:
+  after `pnpm test` runs, `pnpm build` must run again before direct Electron
+  Playwright specs because the test script cleans desktop build output.
+- Result:
+  the Linux desktop Flutter/Electron baseline is frozen locally with no open
+  parity-matrix `Gap` rows.
