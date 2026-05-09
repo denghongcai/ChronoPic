@@ -520,9 +520,11 @@ Status:
 - Planned on 2026-05-09.
 - Code comparison found Electron currently double-clicks into detail,
   while Flutter grid cards only select.
-- Implemented locally on 2026-05-09.
+- Implemented and pushed on 2026-05-09.
 - Implementation commit:
   `7efb12e`.
+- Evidence commit:
+  `fb01fe5`.
 - Electron accessibility E2E now covers Enter-to-detail,
   double-click-to-gallery,
   selected-card `G`-to-gallery,

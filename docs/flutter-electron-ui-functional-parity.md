@@ -51,6 +51,9 @@
   `test-results/flutter-electron-parity/compare/07-favorites-compare.png`,
   and
   `test-results/flutter-electron-parity/compare/13-restart-persistence-compare.png`.
+- Phase 5.8 handoff:
+  branch `flutter-refactor-phases` was pushed through evidence commit
+  `fb01fe5`.
 
 ## Closure Order
 

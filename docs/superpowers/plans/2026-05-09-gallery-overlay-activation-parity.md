@@ -598,7 +598,7 @@
   - `dart analyze packages/chronopic_ui apps/chronopic` passes.
   - `flutter test packages/chronopic_ui/test/linux_desktop_parity_test.dart packages/chronopic_ui/test/chronopic_home_test.dart` passes.
 
-- [ ] **Step 6: Commit and push**
+- [x] **Step 6: Commit and push**
 
   Run:
 
@@ -614,6 +614,9 @@
   - Implementation commit `7efb12e` records the Electron and Flutter gallery
     activation changes.
   - Matrix rows now reference `7efb12e` for the four reopened surfaces.
+  - Evidence commit `fb01fe5` records the phase closure.
+  - `git push` updated `github.com:denghongcai/ChronoPic.git`
+    branch `flutter-refactor-phases` from `a7c1f49` to `fb01fe5`.
 
 ## Self-Review
 
