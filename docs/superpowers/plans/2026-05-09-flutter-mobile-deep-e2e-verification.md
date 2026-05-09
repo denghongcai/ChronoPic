@@ -44,7 +44,7 @@
 - Create: `docs/mobile-e2e-verification.md`
 - Modify: `AGENTS.md`
 
-- [ ] **Step 1: Create the evidence matrix**
+- [x] **Step 1: Create the evidence matrix**
 
 Create `docs/mobile-e2e-verification.md` with these sections:
 
@@ -94,11 +94,11 @@ This document records repeatable mobile end-to-end verification for ChronoPic af
 Record exact commands and outputs for every completed scenario.
 ```
 
-- [ ] **Step 2: Update AGENTS**
+- [x] **Step 2: Update AGENTS**
 
 Add an `AGENTS.md` step stating that Phase 6.5 has started and the evidence matrix has been created.
 
-- [ ] **Step 3: Verify docs**
+- [x] **Step 3: Verify docs**
 
 Run:
 
@@ -108,7 +108,7 @@ git diff --check
 
 Expected: exit 0.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add docs/mobile-e2e-verification.md AGENTS.md

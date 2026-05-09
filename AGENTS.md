@@ -5905,3 +5905,22 @@ This file is the local execution record for ChronoPic. It complements `PLAN.md` 
   `git diff --check` passed.
 - Next:
   commit this phase-plan update when requested.
+
+### 2026-05-10 Step 222
+
+- Started executing Phase 6.5:
+  `Flutter Mobile Deep E2E Verification`.
+- Created the durable mobile E2E evidence matrix:
+  `docs/mobile-e2e-verification.md`.
+- The matrix now records Android target metadata,
+  required Android scenarios,
+  blocked iOS scenarios that need macOS/Xcode evidence,
+  and a command-output section for exact verification records.
+- Current status:
+  Task 1 documentation has landed locally;
+  Android and iOS scenario rows remain pending/blocked until real evidence is
+  produced by the later Phase 6.5 runners and tests.
+- Verification:
+  `git diff --check` passed.
+- Next:
+  add stable mobile test hooks.
