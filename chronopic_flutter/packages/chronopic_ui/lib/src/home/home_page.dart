@@ -357,11 +357,14 @@ final class FirstRunPanel extends StatelessWidget {
               runSpacing: 10,
               children: [
                 if (mobile)
-                  FilledButton.icon(
-                    key: const Key('choose-photo-library-button'),
-                    onPressed: onChoosePhotos,
-                    icon: const Icon(Icons.photo_library_outlined),
-                    label: Text(_localized(labels, 'Choose Photos', '选择照片')),
+                  KeyedSubtree(
+                    key: const ValueKey<String>('mobile-choose-photos'),
+                    child: FilledButton.icon(
+                      key: const Key('choose-photo-library-button'),
+                      onPressed: onChoosePhotos,
+                      icon: const Icon(Icons.photo_library_outlined),
+                      label: Text(_localized(labels, 'Choose Photos', '选择照片')),
+                    ),
                   )
                 else
                   FilledButton.icon(
@@ -896,11 +899,14 @@ final class _BrowseToolbar extends StatelessWidget {
                 onChanged: onSearchChanged,
               ),
             ),
-            OutlinedButton.icon(
-              key: const Key('select-mode-button'),
-              onPressed: () {},
-              icon: const Icon(Icons.check_circle_outline, size: 18),
-              label: Text(_localized(labels, 'Select', '选择')),
+            KeyedSubtree(
+              key: const ValueKey<String>('mobile-select-mode'),
+              child: OutlinedButton.icon(
+                key: const Key('select-mode-button'),
+                onPressed: () {},
+                icon: const Icon(Icons.check_circle_outline, size: 18),
+                label: Text(_localized(labels, 'Select', '选择')),
+              ),
             ),
             OutlinedButton.icon(
               key: const Key('filter-toggle-button'),

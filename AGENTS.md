@@ -5924,3 +5924,38 @@ This file is the local execution record for ChronoPic. It complements `PLAN.md` 
   `git diff --check` passed.
 - Next:
   add stable mobile test hooks.
+
+### 2026-05-10 Step 223
+
+- Implemented Phase 6.5 Task 2:
+  stable mobile E2E hooks.
+- Added failing widget-test assertions first for:
+  `mobile-choose-photos`,
+  `mobile-browse-surface`,
+  `mobile-select-mode`,
+  `mobile-open-detail`,
+  `mobile-open-gallery`,
+  and `mobile-create-memory`.
+- Confirmed the red state with:
+  `cd chronopic_flutter && flutter test packages/chronopic_ui/test/mobile_productization_test.dart`
+  failing on missing mobile keys.
+- Added stable `ValueKey<String>` test hooks without changing behavior for:
+  choose photos,
+  browse surface,
+  select mode,
+  open detail,
+  open gallery,
+  favorite toggle,
+  add/remove memory,
+  memory cover,
+  memory rename,
+  memory description,
+  and create memory.
+- Preserved the existing desktop/parity keys by wrapping existing controls
+  instead of replacing their current keys.
+- Verification passed:
+  `cd chronopic_flutter && dart analyze packages/chronopic_ui apps/chronopic`
+  and
+  `cd chronopic_flutter && flutter test packages/chronopic_ui/test/mobile_productization_test.dart`.
+- Next:
+  build the Android deep E2E runner.

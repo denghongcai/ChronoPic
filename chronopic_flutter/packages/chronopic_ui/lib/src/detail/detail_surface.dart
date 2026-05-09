@@ -215,11 +215,14 @@ final class _FocusedDetailSurface extends StatelessWidget {
                           ),
                         ),
                         const Spacer(),
-                        _FocusedViewerButton(
-                          key: const Key('focused-detail-add-button'),
-                          onPressed: onAddToMemory,
-                          icon: const Icon(Icons.add),
-                          highlighted: true,
+                        KeyedSubtree(
+                          key: const ValueKey<String>('mobile-add-to-memory'),
+                          child: _FocusedViewerButton(
+                            key: const Key('focused-detail-add-button'),
+                            onPressed: onAddToMemory,
+                            icon: const Icon(Icons.add),
+                            highlighted: true,
+                          ),
                         ),
                         const SizedBox(width: 8),
                         _FocusedViewerButton(
@@ -244,18 +247,21 @@ final class _FocusedDetailSurface extends StatelessWidget {
                           icon: const Icon(Icons.arrow_forward),
                         ),
                         const SizedBox(width: 8),
-                        FilledButton(
-                          key: const Key('focused-detail-gallery-button'),
-                          onPressed: () => onOpenGallery(context),
-                          style: FilledButton.styleFrom(
-                            backgroundColor: Colors.grey.shade900,
-                            foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 18,
-                              vertical: 14,
+                        KeyedSubtree(
+                          key: const ValueKey<String>('mobile-open-gallery'),
+                          child: FilledButton(
+                            key: const Key('focused-detail-gallery-button'),
+                            onPressed: () => onOpenGallery(context),
+                            style: FilledButton.styleFrom(
+                              backgroundColor: Colors.grey.shade900,
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 18,
+                                vertical: 14,
+                              ),
                             ),
+                            child: Text(_localized(labels, 'Gallery', '图库')),
                           ),
-                          child: Text(_localized(labels, 'Gallery', '图库')),
                         ),
                       ],
                     ),
@@ -497,22 +503,28 @@ final class _FocusedDetailInspector extends StatelessWidget {
           spacing: 10,
           runSpacing: 10,
           children: [
-            FilledButton.icon(
-              key: const Key('open-gallery-button'),
-              onPressed: onOpenGallery,
-              icon: const Icon(Icons.fullscreen),
-              label: Text(_localized(labels, 'Open Gallery', '打开图库')),
-            ),
-            OutlinedButton.icon(
-              key: const Key('detail-favorite-button'),
-              onPressed: onToggleFavorite,
-              icon: Icon(
-                record.photo.favorite ? Icons.star : Icons.star_border,
+            KeyedSubtree(
+              key: const ValueKey<String>('mobile-open-gallery'),
+              child: FilledButton.icon(
+                key: const Key('open-gallery-button'),
+                onPressed: onOpenGallery,
+                icon: const Icon(Icons.fullscreen),
+                label: Text(_localized(labels, 'Open Gallery', '打开图库')),
               ),
-              label: Text(
-                record.photo.favorite
-                    ? _localized(labels, 'Unfavorite', '取消收藏')
-                    : _localized(labels, 'Favorite', '收藏'),
+            ),
+            KeyedSubtree(
+              key: const ValueKey<String>('mobile-favorite-toggle'),
+              child: OutlinedButton.icon(
+                key: const Key('detail-favorite-button'),
+                onPressed: onToggleFavorite,
+                icon: Icon(
+                  record.photo.favorite ? Icons.star : Icons.star_border,
+                ),
+                label: Text(
+                  record.photo.favorite
+                      ? _localized(labels, 'Unfavorite', '取消收藏')
+                      : _localized(labels, 'Favorite', '收藏'),
+                ),
               ),
             ),
             OutlinedButton.icon(
@@ -973,24 +985,30 @@ final class _DetailInspector extends StatelessWidget {
           spacing: 10,
           runSpacing: 10,
           children: [
-            FilledButton.icon(
-              key: const Key('open-gallery-button'),
-              onPressed: onOpenGallery,
-              icon: const Icon(Icons.fullscreen),
-              label: Text(_localized(labels, 'Open Gallery', '打开图库')),
-            ),
-            OutlinedButton.icon(
-              key: const Key('detail-favorite-button'),
-              onPressed: onToggleFavorite,
-              icon: Icon(
-                selected?.photo.favorite == true
-                    ? Icons.star
-                    : Icons.star_border,
+            KeyedSubtree(
+              key: const ValueKey<String>('mobile-open-gallery'),
+              child: FilledButton.icon(
+                key: const Key('open-gallery-button'),
+                onPressed: onOpenGallery,
+                icon: const Icon(Icons.fullscreen),
+                label: Text(_localized(labels, 'Open Gallery', '打开图库')),
               ),
-              label: Text(
-                selected?.photo.favorite == true
-                    ? _localized(labels, 'Unfavorite', '取消收藏')
-                    : _localized(labels, 'Favorite', '收藏'),
+            ),
+            KeyedSubtree(
+              key: const ValueKey<String>('mobile-favorite-toggle'),
+              child: OutlinedButton.icon(
+                key: const Key('detail-favorite-button'),
+                onPressed: onToggleFavorite,
+                icon: Icon(
+                  selected?.photo.favorite == true
+                      ? Icons.star
+                      : Icons.star_border,
+                ),
+                label: Text(
+                  selected?.photo.favorite == true
+                      ? _localized(labels, 'Unfavorite', '取消收藏')
+                      : _localized(labels, 'Favorite', '收藏'),
+                ),
               ),
             ),
             OutlinedButton.icon(

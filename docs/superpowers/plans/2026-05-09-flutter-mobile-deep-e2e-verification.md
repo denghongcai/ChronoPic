@@ -127,7 +127,7 @@ git commit -m "Add mobile E2E verification matrix"
 - Modify: `chronopic_flutter/packages/chronopic_ui/lib/src/memories/memory_pages.dart`
 - Test: `chronopic_flutter/packages/chronopic_ui/test/mobile_productization_test.dart`
 
-- [ ] **Step 1: Add failing assertions for stable keys**
+- [x] **Step 1: Add failing assertions for stable keys**
 
 Extend `mobile_productization_test.dart` with assertions for these keys:
 
@@ -149,7 +149,7 @@ flutter test packages/chronopic_ui/test/mobile_productization_test.dart
 
 Expected: fail until missing keys are added.
 
-- [ ] **Step 2: Add keys without changing behavior**
+- [x] **Step 2: Add keys without changing behavior**
 
 Add `ValueKey<String>` values to existing widgets only:
 
@@ -168,7 +168,7 @@ Add `ValueKey<String>` values to existing widgets only:
 
 Do not change layout, copy, navigation, or business logic in this task.
 
-- [ ] **Step 3: Verify keys**
+- [x] **Step 3: Verify keys**
 
 Run:
 
@@ -180,7 +180,7 @@ flutter test packages/chronopic_ui/test/mobile_productization_test.dart
 
 Expected: analyze passes and mobile widget tests pass.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add chronopic_flutter/packages/chronopic_ui

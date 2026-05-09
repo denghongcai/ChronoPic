@@ -32,6 +32,7 @@ void main() {
       find.byKey(const Key('choose-photo-library-button')),
       findsOneWidget,
     );
+    expect(find.byKey(const Key('mobile-choose-photos')), findsOneWidget);
     expect(find.byKey(const Key('choose-library-folder-button')), findsNothing);
     expect(find.text('Start with your photo library'), findsOneWidget);
   });
@@ -64,6 +65,23 @@ void main() {
     expect(service.listPhotos(const PhotoFilter(limit: 10)), hasLength(2));
     expect(find.textContaining('Limited photo access'), findsOneWidget);
     expect(find.textContaining('2 imported'), findsOneWidget);
+    expect(find.byKey(const Key('mobile-browse-surface')), findsOneWidget);
+    expect(find.byKey(const Key('mobile-select-mode')), findsOneWidget);
+    expect(find.byKey(const Key('mobile-open-detail')), findsWidgets);
+
+    await tester.ensureVisible(
+      find.byKey(const Key('mobile-open-detail')).first,
+    );
+    await tester.pump();
+    await tester.tap(find.byKey(const Key('mobile-open-detail')).first);
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('mobile-open-gallery')), findsWidgets);
+
+    await tester.tap(find.byKey(const Key('memories-nav')));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('mobile-create-memory')), findsOneWidget);
   });
 
   testWidgets('mobile denied permission shows recoverable status', (

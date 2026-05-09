@@ -383,11 +383,14 @@ final class _MemoryCollectionPanel extends StatelessWidget {
                     decoration: InputDecoration(labelText: labels.memoryName),
                   ),
                 ),
-                FilledButton.icon(
-                  key: const Key('create-memory-button'),
-                  onPressed: onCreateMemory,
-                  icon: const Icon(Icons.add),
-                  label: Text(labels.createMemory),
+                KeyedSubtree(
+                  key: const ValueKey<String>('mobile-create-memory'),
+                  child: FilledButton.icon(
+                    key: const Key('create-memory-button'),
+                    onPressed: onCreateMemory,
+                    icon: const Icon(Icons.add),
+                    label: Text(labels.createMemory),
+                  ),
                 ),
               ],
             ),
@@ -783,19 +786,25 @@ final class _MemoryManagementPanel extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 16),
-          TextField(
-            key: const Key('memory-title-field'),
-            controller: memoryTitleController,
-            decoration: InputDecoration(labelText: labels.memoryName),
+          KeyedSubtree(
+            key: const ValueKey<String>('mobile-memory-rename'),
+            child: TextField(
+              key: const Key('memory-title-field'),
+              controller: memoryTitleController,
+              decoration: InputDecoration(labelText: labels.memoryName),
+            ),
           ),
           const SizedBox(height: 12),
-          TextField(
-            key: const Key('memory-description-field'),
-            controller: memoryDescriptionController,
-            decoration: InputDecoration(
-              labelText: _localized(labels, 'Description', '描述'),
+          KeyedSubtree(
+            key: const ValueKey<String>('mobile-memory-description'),
+            child: TextField(
+              key: const Key('memory-description-field'),
+              controller: memoryDescriptionController,
+              decoration: InputDecoration(
+                labelText: _localized(labels, 'Description', '描述'),
+              ),
+              maxLines: 2,
             ),
-            maxLines: 2,
           ),
           const SizedBox(height: 12),
           Wrap(
@@ -808,23 +817,36 @@ final class _MemoryManagementPanel extends StatelessWidget {
                 icon: const Icon(Icons.save_outlined),
                 label: Text(_localized(labels, 'Save Memory', '保存记忆')),
               ),
-              OutlinedButton.icon(
-                key: const Key('add-to-memory-button'),
-                onPressed: selected == null ? null : onAddSelectedToMemory,
-                icon: const Icon(Icons.playlist_add),
-                label: Text(labels.addToMemory),
+              KeyedSubtree(
+                key: const ValueKey<String>('mobile-add-to-memory'),
+                child: OutlinedButton.icon(
+                  key: const Key('add-to-memory-button'),
+                  onPressed: selected == null ? null : onAddSelectedToMemory,
+                  icon: const Icon(Icons.playlist_add),
+                  label: Text(labels.addToMemory),
+                ),
               ),
-              OutlinedButton.icon(
-                key: const Key('set-memory-cover-button'),
-                onPressed: selected == null ? null : onSetCover,
-                icon: const Icon(Icons.wallpaper_outlined),
-                label: Text(_localized(labels, 'Set Cover', '设为封面')),
+              KeyedSubtree(
+                key: const ValueKey<String>('mobile-memory-cover'),
+                child: OutlinedButton.icon(
+                  key: const Key('set-memory-cover-button'),
+                  onPressed: selected == null ? null : onSetCover,
+                  icon: const Icon(Icons.wallpaper_outlined),
+                  label: Text(_localized(labels, 'Set Cover', '设为封面')),
+                ),
               ),
-              OutlinedButton.icon(
-                key: const Key('remove-from-memory-button'),
-                onPressed: selected == null ? null : onRemoveSelectedFromMemory,
-                icon: const Icon(Icons.remove_circle_outline),
-                label: Text(_localized(labels, 'Remove from Memory', '从记忆移除')),
+              KeyedSubtree(
+                key: const ValueKey<String>('mobile-remove-from-memory'),
+                child: OutlinedButton.icon(
+                  key: const Key('remove-from-memory-button'),
+                  onPressed: selected == null
+                      ? null
+                      : onRemoveSelectedFromMemory,
+                  icon: const Icon(Icons.remove_circle_outline),
+                  label: Text(
+                    _localized(labels, 'Remove from Memory', '从记忆移除'),
+                  ),
+                ),
               ),
               OutlinedButton.icon(
                 onPressed: onBackToMemories,

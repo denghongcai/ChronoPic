@@ -57,26 +57,29 @@ final class BrowseSurface extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return switch (mode) {
-      BrowseMode.waterfall => PhotoGrid(
-        labels: labels,
-        onOpenDetail: onOpenDetail,
-        onSelectPhoto: onSelectPhoto,
-        photos: photos,
-        selected: selected,
-      ),
-      BrowseMode.map => MapBrowseView(
-        labels: labels,
-        onSelectPhoto: onSelectPhoto,
-        photos: photos,
-      ),
-      BrowseMode.timeline => TimelineBrowseView(
-        labels: labels,
-        onSelectPhoto: onSelectPhoto,
-        photos: photos,
-        selected: selected,
-      ),
-    };
+    return KeyedSubtree(
+      key: const ValueKey<String>('mobile-browse-surface'),
+      child: switch (mode) {
+        BrowseMode.waterfall => PhotoGrid(
+          labels: labels,
+          onOpenDetail: onOpenDetail,
+          onSelectPhoto: onSelectPhoto,
+          photos: photos,
+          selected: selected,
+        ),
+        BrowseMode.map => MapBrowseView(
+          labels: labels,
+          onSelectPhoto: onSelectPhoto,
+          photos: photos,
+        ),
+        BrowseMode.timeline => TimelineBrowseView(
+          labels: labels,
+          onSelectPhoto: onSelectPhoto,
+          photos: photos,
+          selected: selected,
+        ),
+      },
+    );
   }
 }
 
@@ -180,81 +183,84 @@ final class _PhotoCardTileState extends State<PhotoCardTile> {
           width: widget.selected ? 2 : 1,
         ),
       ),
-      child: InkWell(
-        onTap: _handleTap,
-        child: Stack(
-          fit: StackFit.expand,
-          children: [
-            MediaPreview(record: widget.record, fit: BoxFit.cover),
-            const DecoratedBox(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [
-                    Color(0x00ffffff),
-                    Color(0x22f6f0e8),
-                    Color(0xdd1d1a16),
-                  ],
-                  stops: [0.35, 0.62, 1],
+      child: KeyedSubtree(
+        key: const ValueKey<String>('mobile-open-detail'),
+        child: InkWell(
+          onTap: _handleTap,
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              MediaPreview(record: widget.record, fit: BoxFit.cover),
+              const DecoratedBox(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [
+                      Color(0x00ffffff),
+                      Color(0x22f6f0e8),
+                      Color(0xdd1d1a16),
+                    ],
+                    stops: [0.35, 0.62, 1],
+                  ),
                 ),
               ),
-            ),
-            Positioned(
-              left: 16,
-              right: 16,
-              bottom: 14,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    widget.record.semantic.caption ??
-                        _basename(widget.record.photo.path),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 18,
-                      fontWeight: FontWeight.w900,
-                    ),
-                  ),
-                  const SizedBox(height: 6),
-                  Row(
-                    children: [
-                      Icon(
-                        widget.record.photo.favorite
-                            ? Icons.star
-                            : Icons.star_border,
-                        color: widget.record.photo.favorite
-                            ? Colors.amber.shade700
-                            : Colors.white70,
-                        size: 16,
+              Positioned(
+                left: 16,
+                right: 16,
+                bottom: 14,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      widget.record.semantic.caption ??
+                          _basename(widget.record.photo.path),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 18,
+                        fontWeight: FontWeight.w900,
                       ),
-                      const SizedBox(width: 6),
-                      Expanded(
-                        child: Text(
-                          widget.record.metadata.datetime == null
-                              ? _localized(widget.labels, 'No date', '无日期')
-                              : _formatDate(
-                                  DateTime.fromMillisecondsSinceEpoch(
-                                    widget.record.metadata.datetime!,
-                                  ).toLocal(),
-                                ),
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                            color: Colors.white70,
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
+                    ),
+                    const SizedBox(height: 6),
+                    Row(
+                      children: [
+                        Icon(
+                          widget.record.photo.favorite
+                              ? Icons.star
+                              : Icons.star_border,
+                          color: widget.record.photo.favorite
+                              ? Colors.amber.shade700
+                              : Colors.white70,
+                          size: 16,
+                        ),
+                        const SizedBox(width: 6),
+                        Expanded(
+                          child: Text(
+                            widget.record.metadata.datetime == null
+                                ? _localized(widget.labels, 'No date', '无日期')
+                                : _formatDate(
+                                    DateTime.fromMillisecondsSinceEpoch(
+                                      widget.record.metadata.datetime!,
+                                    ).toLocal(),
+                                  ),
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              color: Colors.white70,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                            ),
                           ),
                         ),
-                      ),
-                    ],
-                  ),
-                ],
+                      ],
+                    ),
+                  ],
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
