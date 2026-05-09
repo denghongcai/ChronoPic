@@ -5719,3 +5719,57 @@ This file is the local execution record for ChronoPic. It complements `PLAN.md` 
   then continue into Task 5 with Android toolchain verification,
   Android debug APK build,
   and device-smoke status recording.
+
+### 2026-05-09 Step 217
+
+- Partially completed Phase 6 Task 5:
+  Android Build And Device Smoke.
+- Ran:
+  `cd chronopic_flutter && flutter doctor -v`
+  and
+  `cd chronopic_flutter && flutter devices`.
+- Initial Android build attempt failed because Flutter was using system Java 11
+  at `/usr/lib/jvm/java-11-openjdk-amd64`,
+  while the Android Gradle plugin requires Java 17.
+- Installed user-state Temurin JDK `17.0.19+10` under:
+  `/home/dhc/.local/share/jdks/temurin-17`,
+  then configured Flutter with:
+  `flutter config --jdk-dir=/home/dhc/.local/share/jdks/temurin-17`.
+- Installed user-state Android SDK command-line tools from Google's current
+  Linux package:
+  `commandlinetools-linux-14742923_latest.zip`.
+- Installed Android SDK packages under:
+  `/home/dhc/.local/share/android-sdk`,
+  including `platform-tools`,
+  `platforms;android-36`,
+  `build-tools;36.0.0`,
+  `build-tools;35.0.0`,
+  and `ndk;28.2.13676358`.
+- Configured Flutter with:
+  `flutter config --android-sdk=/home/dhc/.local/share/android-sdk`.
+- Updated the ignored Android runner local config so this checkout uses the
+  user-state SDK:
+  `chronopic_flutter/apps/chronopic/android/local.properties`.
+- Verified `flutter doctor -v` reports the Android toolchain healthy with SDK
+  version `36.0.0`,
+  platform `android-36`,
+  build-tools `36.0.0`,
+  Java `17.0.19`,
+  and accepted Android licenses.
+- Verified `flutter devices` still lists only:
+  `Linux (desktop)`.
+- Verified Android debug build with:
+  `cd chronopic_flutter/apps/chronopic && flutter build apk --debug`.
+  Result:
+  `build/app/outputs/flutter-apk/app-debug.apk`
+  was built successfully.
+- Recorded the Android build gate and remaining real-device smoke blocker in:
+  `docs/mobile-productization.md`.
+- Remaining Task 5 blocker:
+  no Android emulator or physical Android device is connected,
+  so denied/limited/full permission flows,
+  restart persistence,
+  and backup restore cannot yet be real-device smoked.
+- Next:
+  commit the Task 5 documentation update,
+  then continue into Task 6 iOS static review and constraint recording.

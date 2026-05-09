@@ -807,7 +807,7 @@ git commit -m "Add mobile photo library onboarding"
 - Modify: `docs/mobile-productization.md`
 - Modify: `AGENTS.md`
 
-- [ ] **Step 1: Verify Android toolchain**
+- [x] **Step 1: Verify Android toolchain**
 
 Run:
 
@@ -822,7 +822,7 @@ Expected:
 - At least one Android emulator or physical device is listed before real smoke is marked complete.
 - If SDK licenses are missing, run `flutter doctor --android-licenses` outside CI and record it.
 
-- [ ] **Step 2: Build Android debug**
+- [x] **Step 2: Build Android debug**
 
 Run:
 
@@ -850,7 +850,11 @@ Manual smoke:
 - Restart the app and confirm indexed assets, edits, favorites, memories, and locale settings persist.
 - Export and restore a backup; confirm original media files are referenced, not copied.
 
-- [ ] **Step 4: Record evidence**
+Current status on 2026-05-09:
+blocked because `flutter devices` lists only the Linux desktop target and no
+Android emulator or physical Android device.
+
+- [x] **Step 4: Record evidence**
 
 Update `docs/mobile-productization.md` with:
 
@@ -861,7 +865,7 @@ Update `docs/mobile-productization.md` with:
 - backup restore result,
 - skipped checks with reason.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add docs/mobile-productization.md AGENTS.md
