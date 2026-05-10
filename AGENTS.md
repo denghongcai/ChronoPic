@@ -6857,3 +6857,51 @@ This file is the local execution record for ChronoPic. It complements `PLAN.md` 
   Result:
   both commands passed;
   Vite emitted the existing large chunk warning only.
+
+### 2026-05-10 Step 245
+
+- Prepared the `v0.1.4` release after the Phase 7 branch was committed and
+  pushed.
+- Confirmed the latest existing tag and GitHub release are `v0.1.3`,
+  so this release uses the next tag:
+  `v0.1.4`.
+- Bumped package versions from `0.1.3` to `0.1.4` across the root package,
+  desktop app package,
+  and workspace package manifests.
+- Added Flutter app version metadata:
+  `chronopic_flutter/apps/chronopic/pubspec.yaml` now declares
+  `version: 0.1.4+4`.
+- Updated `README.md`,
+  `DEVELOPMENT.md`,
+  `PLAN.md`,
+  `docs/flutter-release-checklist.md`,
+  `docs/flutter-refactor-phases.md`,
+  and the Phase 7 execution plan so release docs and Linux artifact names point
+  to `v0.1.4` /
+  `chronopic-flutter-linux-x64-0.1.4.tar.gz`.
+- Next:
+  rerun release verification with the bumped version,
+  commit the version preparation,
+  merge `flutter-refactor-phases` into `main`,
+  tag `v0.1.4`,
+  and verify the GitHub Release.
+- Verification passed after the version bump:
+  `pnpm test`,
+  `pnpm typecheck`,
+  `pnpm build`,
+  Flutter analyze,
+  Dart package tests,
+  Electron backup import test,
+  Flutter UI/parity tests,
+  Android debug build,
+  signed Android release APK/AAB build,
+  Flutter Linux release build,
+  Android/Linux release artifact verification,
+  Android E2E run artifact assertions,
+  workflow YAML parse,
+  and `git diff --check`.
+- Generated local release artifacts for `v0.1.4`:
+  `dist/flutter-release/android/chronopic-flutter-android-release.apk`,
+  `dist/flutter-release/android/chronopic-flutter-android-release.aab`,
+  `dist/flutter-release/linux/chronopic-flutter-linux-x64-0.1.4.tar.gz`,
+  and matching `.sha256` files.

@@ -554,7 +554,7 @@
   Generated artifacts:
   `dist/flutter-release/android/chronopic-flutter-android-release.apk`,
   `dist/flutter-release/android/chronopic-flutter-android-release.aab`,
-  `dist/flutter-release/linux/chronopic-flutter-linux-x64-0.1.3.tar.gz`,
+  `dist/flutter-release/linux/chronopic-flutter-linux-x64-0.1.4.tar.gz`,
   and matching `.sha256` files.
 
 - [x] **Step 5: Close docs**
