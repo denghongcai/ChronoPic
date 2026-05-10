@@ -7144,3 +7144,75 @@ This file is the local execution record for ChronoPic. It complements `PLAN.md` 
   Android AAB,
   Linux x64 tarball,
   and matching checksum assets.
+
+### 2026-05-10 Step 253
+
+- Fixed the Flutter desktop selected-photo interaction reported from runtime
+  screenshot review.
+- Root cause:
+  `HomePage` still rendered a normal browse-page inline `DetailSurface` when a
+  photo was selected,
+  so single click appended a detail editor below the waterfall page even though
+  the Electron parity contract says single click only selects.
+- Removed the normal browse inline detail rendering.
+  Waterfall selection now keeps only the selected-photo banner and card
+  highlight;
+  focused Detail still opens through double click,
+  Enter,
+  or the existing focused-detail entry points.
+- Updated Flutter tests that were still assuming inline detail:
+  map/timeline tests now verify selected-photo state first and open focused
+  Detail explicitly,
+  Linux desktop parity edit/favorite/restart checks now enter focused Detail
+  before asserting inspector/edit controls,
+  and the first browse smoke test asserts that single-click selection does not
+  show `Detail view and gallery view` or edit fields.
+- Added focused-detail inspector status feedback for save/validation messages,
+  so edit feedback remains visible inside the overlay instead of being hidden
+  behind the shell status bar.
+- Verification commands passed:
+  `cd chronopic_flutter && flutter analyze`,
+  `cd chronopic_flutter && flutter test packages/chronopic_ui/test/chronopic_home_test.dart packages/chronopic_ui/test/linux_desktop_parity_test.dart`,
+  and
+  `cd chronopic_flutter && bash tool/capture_flutter_parity.sh populated-grid detail`.
+- Verification scenes from `docs/agent-verification-script.md`:
+  Scene 3 scan/browse covered by the refreshed populated-grid screenshot at
+  `test-results/flutter-electron-parity/flutter/02-populated-grid.png`;
+  Scene 4 focused viewing covered by
+  `test-results/flutter-electron-parity/flutter/05-detail.png`;
+  Scene 5 edit feedback covered by the Linux desktop parity edit flow;
+  Scene 7 restart persistence covered by the Linux desktop parity restart test.
+- Skipped full Electron recapture because this change is a Flutter-only
+  correction back to the already documented Electron interaction contract.
+
+### 2026-05-10 Step 254
+
+- Prepared the `v0.1.6` Flutter release for the single-click/detail parity
+  correction.
+- Bumped release metadata from `0.1.5` to `0.1.6`,
+  including root `package.json`,
+  `chronopic_flutter/apps/chronopic/pubspec.yaml` as `0.1.6+6`,
+  README current artifact names,
+  DEVELOPMENT release examples,
+  and the Flutter release checklist's Linux artifact expectation.
+- Re-verified source gates with:
+  `cd chronopic_flutter && flutter analyze`,
+  `cd chronopic_flutter && dart test packages/chronopic_domain/test packages/chronopic_database/test packages/chronopic_app/test packages/chronopic_media/test`,
+  and
+  `cd chronopic_flutter && flutter test packages/chronopic_ui/test/chronopic_home_test.dart packages/chronopic_ui/test/linux_desktop_parity_test.dart`.
+- Rebuilt and verified release artifacts with:
+  `CHRONOPIC_ANDROID_STORE_FILE="$PWD/.tmp/release-signing/chronopic-upload.jks" CHRONOPIC_ANDROID_STORE_PASSWORD=chronopic-local-pass CHRONOPIC_ANDROID_KEY_ALIAS=chronopic-upload CHRONOPIC_ANDROID_KEY_PASSWORD=chronopic-local-pass chronopic_flutter/tool/release/build_android_release.sh`,
+  `chronopic_flutter/tool/release/build_linux_release.sh`,
+  and
+  `node chronopic_flutter/tool/release/verify_flutter_release_artifacts.mjs android linux`.
+- Result:
+  source checks passed,
+  Android APK/AAB were rebuilt,
+  Linux release tarball
+  `chronopic-flutter-linux-x64-0.1.6.tar.gz` was rebuilt,
+  and the release verifier found all six expected Flutter assets.
+- Next:
+  commit and push `main`,
+  tag `v0.1.6`,
+  publish the GitHub Release,
+  and verify downloaded public assets.

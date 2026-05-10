@@ -113,8 +113,8 @@ void main() {
       findsOneWidget,
     );
     expect(find.text('SELECTED PHOTO'), findsOneWidget);
-    expect(find.text('Detail view and gallery view'), findsOneWidget);
-    expect(find.text('Edit caption'), findsOneWidget);
+    expect(find.text('Detail view and gallery view'), findsNothing);
+    expect(find.text('Edit caption'), findsNothing);
   });
 
   testWidgets('adapts the desktop photo grid to available width', (
@@ -287,8 +287,17 @@ void main() {
     await tester.pump();
     expect(
       find.text('/fixture/chronopic/library/backup-lake.png'),
+      findsNothing,
+    );
+    await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('focused-detail-view')), findsOneWidget);
+    expect(
+      find.text('/fixture/chronopic/library/backup-lake.png'),
       findsWidgets,
     );
+    await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+    await tester.pumpAndSettle();
 
     await tester.tap(find.text('Timeline'));
     await tester.pump();
@@ -312,10 +321,16 @@ void main() {
     );
     await tester.tap(find.byKey(const Key('timeline-photo-photo-city')));
     await tester.pump();
+    expect(find.byKey(const Key('focused-detail-view')), findsNothing);
+    await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('focused-detail-view')), findsOneWidget);
     expect(
       find.text('/fixture/chronopic/library/backup-city.png'),
       findsWidgets,
     );
+    await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+    await tester.pumpAndSettle();
   });
 
   testWidgets('supports AI settings, queue retry, and candidate actions', (

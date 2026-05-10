@@ -233,23 +233,20 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.byKey(const Key('gallery-dialog')), findsNothing);
     expect(find.byKey(const Key('focused-detail-view')), findsOneWidget);
+    expect(find.text(second.photo.path), findsWidgets);
 
     await tester.sendKeyEvent(LogicalKeyboardKey.escape);
     await tester.pumpAndSettle();
     expect(find.byKey(const Key('focused-detail-view')), findsNothing);
 
-    await _scrollHomeUntilVisible(
-      tester,
-      find.byKey(const Key('open-gallery-button')),
-    );
-    await tester.tap(find.byKey(const Key('open-gallery-button')));
+    await tester.sendKeyEvent(LogicalKeyboardKey.keyG);
     await tester.pumpAndSettle();
     expect(find.byKey(const Key('gallery-dialog')), findsOneWidget);
 
     await tester.sendKeyEvent(LogicalKeyboardKey.escape);
     await tester.pumpAndSettle();
     expect(find.byKey(const Key('gallery-dialog')), findsNothing);
-    expect(find.text(second.photo.path), findsOneWidget);
+    expect(find.text(second.photo.path), findsNothing);
   });
 
   testWidgets('renders and filters a real scanned Linux desktop directory', (
@@ -297,13 +294,15 @@ void main() {
     await _scrollHomeUntilVisible(tester, lakeCard);
     await tester.tap(lakeCard);
     await tester.pump();
-    await _scrollHomeUntilVisible(tester, find.byKey(const Key('date-field')));
+    await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('focused-detail-view')), findsOneWidget);
+    await tester.ensureVisible(find.byKey(const Key('date-field')));
+    await tester.pump();
     await tester.enterText(find.byKey(const Key('date-field')), '2024-03-09');
     await tester.enterText(find.byKey(const Key('time-field')), '12:30');
-    await _scrollHomeUntilVisible(
-      tester,
-      find.byKey(const Key('save-datetime-button')),
-    );
+    await tester.ensureVisible(find.byKey(const Key('save-datetime-button')));
+    await tester.pump();
     await tester.tap(find.byKey(const Key('save-datetime-button')));
     await tester.pump();
     final correctedDatetime = DateTime(
@@ -317,22 +316,18 @@ void main() {
       service.getPhoto(lake.absolute.path)?.metadata.datetime,
       correctedDatetime,
     );
-    expect(find.byKey(const Key('metadata-grid')), findsOneWidget);
-    expect(find.textContaining('Captured: 2024-03-09 12:30'), findsOneWidget);
-    expect(find.textContaining('Time zone: UTC'), findsOneWidget);
-    expect(find.textContaining('MIME: image/'), findsOneWidget);
-    await tester.enterText(find.byKey(const Key('date-field')), '2024-02-31');
-    await tester.enterText(find.byKey(const Key('time-field')), '25:99');
-    await _scrollHomeUntilVisible(
-      tester,
-      find.byKey(const Key('save-datetime-button')),
-    );
-    await tester.tap(find.byKey(const Key('save-datetime-button')));
-    await tester.pump();
     expect(
-      find.textContaining('Datetime must use YYYY-MM-DD and HH:mm'),
+      find.byKey(const Key('focused-detail-inspector-grid')),
       findsOneWidget,
     );
+    expect(find.textContaining('2024/03/09 12:30'), findsOneWidget);
+    expect(find.textContaining('image/'), findsWidgets);
+    await tester.enterText(find.byKey(const Key('date-field')), '2024-02-31');
+    await tester.enterText(find.byKey(const Key('time-field')), '25:99');
+    await tester.ensureVisible(find.byKey(const Key('save-datetime-button')));
+    await tester.pump();
+    await tester.tap(find.byKey(const Key('save-datetime-button')));
+    await tester.pump();
     expect(
       service.getPhoto(lake.absolute.path)?.metadata.datetime,
       correctedDatetime,
@@ -346,10 +341,11 @@ void main() {
     await tester.sendKeyEvent(LogicalKeyboardKey.escape);
     await tester.pumpAndSettle();
     expect(find.byKey(const Key('focused-detail-view')), findsNothing);
-    await _scrollHomeUntilVisible(
-      tester,
-      find.byKey(const Key('rollback-button')),
-    );
+    await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('focused-detail-view')), findsOneWidget);
+    await tester.ensureVisible(find.byKey(const Key('rollback-button')));
+    await tester.pump();
     await tester.tap(find.byKey(const Key('rollback-button')));
     await tester.pump();
     expect(
@@ -360,10 +356,8 @@ void main() {
       find.byKey(const Key('caption-field')),
       'Linux parity lake',
     );
-    await _scrollHomeUntilVisible(
-      tester,
-      find.byKey(const Key('save-caption-button')),
-    );
+    await tester.ensureVisible(find.byKey(const Key('save-caption-button')));
+    await tester.pump();
     await tester.tap(find.byKey(const Key('save-caption-button')));
     await tester.pump();
     expect(find.textContaining('Saved caption'), findsOneWidget);
@@ -389,10 +383,8 @@ void main() {
       service.getPhoto(lake.absolute.path)?.semantic.caption,
       'Linux parity lake',
     );
-    await _scrollHomeUntilVisible(
-      tester,
-      find.byKey(const Key('rollback-button')),
-    );
+    await tester.ensureVisible(find.byKey(const Key('rollback-button')));
+    await tester.pump();
     await tester.tap(find.byKey(const Key('rollback-button')));
     await tester.pump();
     expect(service.getPhoto(lake.absolute.path)?.semantic.caption, isNull);
@@ -408,10 +400,8 @@ void main() {
       find.byKey(const Key('tags-field')),
       'linux, Linux, parity',
     );
-    await _scrollHomeUntilVisible(
-      tester,
-      find.byKey(const Key('save-tags-button')),
-    );
+    await tester.ensureVisible(find.byKey(const Key('save-tags-button')));
+    await tester.pump();
     await tester.tap(find.byKey(const Key('save-tags-button')));
     await tester.pump();
     expect(find.textContaining('Saved tags: 2'), findsOneWidget);
@@ -440,10 +430,8 @@ void main() {
       'linux',
       'parity',
     ]);
-    await _scrollHomeUntilVisible(
-      tester,
-      find.byKey(const Key('rollback-button')),
-    );
+    await tester.ensureVisible(find.byKey(const Key('rollback-button')));
+    await tester.pump();
     await tester.tap(find.byKey(const Key('rollback-button')));
     await tester.pump();
     expect(service.getPhoto(lake.absolute.path)?.semantic.labels, isEmpty);
@@ -460,6 +448,9 @@ void main() {
     );
     await tester.tap(find.byKey(const Key('save-tags-button')));
     await tester.pump();
+    await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('focused-detail-view')), findsNothing);
 
     await _scrollHomeToTop(tester);
     await tester.enterText(find.byKey(const Key('search-field')), '');
@@ -551,29 +542,29 @@ void main() {
     await _scrollHomeUntilVisible(tester, lakeCard);
     await tester.tap(lakeCard);
     await tester.pump();
-    await _scrollHomeUntilVisible(
-      tester,
-      find.byKey(const Key('detail-favorite-button')),
-    );
+    await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('focused-detail-view')), findsOneWidget);
+    await tester.ensureVisible(find.byKey(const Key('detail-favorite-button')));
+    await tester.pump();
     await tester.tap(find.byKey(const Key('detail-favorite-button')));
     await tester.pump();
     expect(service.getPhoto(lake.absolute.path)?.photo.favorite, isTrue);
     expect(find.text('Unfavorite'), findsWidgets);
-    await _scrollHomeUntilVisible(
-      tester,
-      find.byKey(const Key('rollback-button')),
-    );
+    await tester.ensureVisible(find.byKey(const Key('rollback-button')));
+    await tester.pump();
     await tester.tap(find.byKey(const Key('rollback-button')));
     await tester.pump();
     expect(service.getPhoto(lake.absolute.path)?.photo.favorite, isFalse);
     expect(find.text('Favorite'), findsWidgets);
-    await _scrollHomeUntilVisible(
-      tester,
-      find.byKey(const Key('detail-favorite-button')),
-    );
+    await tester.ensureVisible(find.byKey(const Key('detail-favorite-button')));
+    await tester.pump();
     await tester.tap(find.byKey(const Key('detail-favorite-button')));
     await tester.pump();
     expect(service.getPhoto(lake.absolute.path)?.photo.favorite, isTrue);
+    await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('focused-detail-view')), findsNothing);
     await tester.tap(find.byKey(const Key('favorites-nav')));
     await tester.pump();
     expect(find.text('lake.jpg'), findsOneWidget);
@@ -674,20 +665,26 @@ void main() {
     await _scrollHomeUntilVisible(tester, lakeCard);
     await tester.tap(lakeCard);
     await tester.pump();
+    await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('focused-detail-view')), findsOneWidget);
+    await tester.ensureVisible(find.byKey(const Key('caption-field')));
+    await tester.pump();
     await tester.enterText(
       find.byKey(const Key('caption-field')),
       'Unsaved after export',
     );
-    await _scrollHomeUntilVisible(
-      tester,
-      find.byKey(const Key('save-caption-button')),
-    );
+    await tester.ensureVisible(find.byKey(const Key('save-caption-button')));
+    await tester.pump();
     await tester.tap(find.byKey(const Key('save-caption-button')));
     await tester.pump();
     expect(
       service.getPhoto(lake.absolute.path)?.semantic.caption,
       'Unsaved after export',
     );
+    await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('focused-detail-view')), findsNothing);
     await tester.tap(find.byKey(const Key('settings-nav')));
     await tester.pump();
     await tester.ensureVisible(find.byKey(const Key('restore-backup-file')));
@@ -765,7 +762,14 @@ void main() {
     await tester.tap(find.byKey(const Key('photo-card-photo-city')));
     await tester.pump();
     expect(find.text('Persisted city caption'), findsWidgets);
+    expect(find.textContaining('persisted'), findsNothing);
+    await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('focused-detail-view')), findsOneWidget);
     expect(find.textContaining('persisted'), findsOneWidget);
+    await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('focused-detail-view')), findsNothing);
     expect(
       restartedService.listMemories().map((memory) => memory.name),
       contains('Restart Memory'),

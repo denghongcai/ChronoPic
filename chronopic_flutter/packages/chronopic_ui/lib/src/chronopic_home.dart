@@ -356,6 +356,7 @@ final class _ChronoPicHomeState extends State<ChronoPicHome> {
           selected: _selected,
           sortBy: _sortBy,
           sortDirection: _sortDirection,
+          status: _status,
           tagController: _tagFilterController,
           tagsController: _tagsController,
           timeController: _timeController,

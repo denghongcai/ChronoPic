@@ -1,6 +1,6 @@
 name: chronopic
 publish_to: none
-version: 0.1.5+5
+version: 0.1.6+6
 environment:
   sdk: ^3.11.5
 resolution: workspace

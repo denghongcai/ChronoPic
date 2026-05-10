@@ -51,6 +51,7 @@ final class HomePage extends StatelessWidget {
     required this.selected,
     required this.sortBy,
     required this.sortDirection,
+    required this.status,
     required this.tagController,
     required this.tagsController,
     required this.timeController,
@@ -106,6 +107,7 @@ final class HomePage extends StatelessWidget {
   final PhotoRecord? selected;
   final PhotoSortBy sortBy;
   final SortDirection sortDirection;
+  final String status;
   final TextEditingController tagController;
   final TextEditingController tagsController;
   final TextEditingController timeController;
@@ -147,6 +149,7 @@ final class HomePage extends StatelessWidget {
           onToggleFavorite: onToggleFavorite,
           photos: photos,
           record: selected,
+          status: status,
           tagsController: tagsController,
           timeController: timeController,
         ),
@@ -292,30 +295,6 @@ final class HomePage extends StatelessWidget {
                     icon: const Icon(Icons.expand_more),
                     label: Text(_localized(labels, 'Load more', '加载更多')),
                   ),
-                ),
-              ),
-            ),
-          if (!detailFirst && selected != null)
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.only(top: 18),
-                child: DetailSurface(
-                  captionController: captionController,
-                  dateController: dateController,
-                  labels: labels,
-                  onAddToMemory: onAddToMemory,
-                  onCloseFocused: onCloseFocusedDetail,
-                  onOpenGallery: onOpenGallery,
-                  onRollback: onRollback,
-                  onSaveCaption: onSaveCaption,
-                  onSaveDatetime: onSaveDatetime,
-                  onSaveTags: onSaveTags,
-                  onSelectPhoto: onSelectPhoto,
-                  onToggleFavorite: onToggleFavorite,
-                  photos: photos,
-                  record: selected,
-                  tagsController: tagsController,
-                  timeController: timeController,
                 ),
               ),
             ),

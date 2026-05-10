@@ -4,8 +4,8 @@ This document is for contributors and code agents working on ChronoPic. The user
 
 ## Repository Status
 
-- Current package version: `0.1.5`
-- Latest verified release: `v0.1.5`
+- Current package version: `0.1.6`
+- Latest verified release: `v0.1.6`
 - Package manager: `pnpm@10.0.0`
 - Runtime baseline: Node.js 24
 - Planning source: [PLAN.md](PLAN.md)
@@ -132,8 +132,8 @@ chronopic-<target>-<arch>-<tag>.tar.gz.sha256
 Pushing a version tag that starts with `v` runs [.github/workflows/release.yml](.github/workflows/release.yml):
 
 ```sh
-git tag v0.1.5
-git push origin v0.1.5
+git tag v0.1.6
+git push origin v0.1.6
 ```
 
 The release workflow:

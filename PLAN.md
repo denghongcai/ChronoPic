@@ -2544,7 +2544,7 @@ These are intentionally recorded as candidate directions rather than committed p
      `node chronopic_flutter/tool/release/verify_flutter_release_artifacts.mjs android linux`
      verifies APK/AAB/Linux sha256 files.
   4. Flutter Linux release artifact:
-     build `chronopic-flutter-linux-x64-0.1.5.tar.gz`,
+     build `chronopic-flutter-linux-x64-0.1.6.tar.gz`,
      create `.sha256`,
      and verify the archive contains the Flutter `chronopic` executable.
      Implementation status:
@@ -2701,6 +2701,27 @@ These are intentionally recorded as candidate directions rather than committed p
   `test-results/flutter-adaptive-phase8/1600-detail.png`,
   and
   `test-results/flutter-adaptive-phase8/2048-detail.png`.
+- Post-release interaction correction on 2026-05-10:
+  fixed a Flutter desktop regression where single-click selection appended an
+  inline `DetailSurface` below the waterfall page.
+  The Electron parity contract remains:
+  single click selects only,
+  double click or Enter opens focused Detail,
+  and Gallery remains a focused overlay mode.
+  Focused Detail now shows save/validation status inside the inspector overlay
+  so edit feedback is visible without relying on the hidden shell status bar.
+- Post-release correction verification:
+  `cd chronopic_flutter && flutter analyze`,
+  `cd chronopic_flutter && flutter test packages/chronopic_ui/test/chronopic_home_test.dart packages/chronopic_ui/test/linux_desktop_parity_test.dart`,
+  and
+  `cd chronopic_flutter && bash tool/capture_flutter_parity.sh populated-grid detail`
+  all passed.
+  Screenshot evidence:
+  `test-results/flutter-electron-parity/flutter/02-populated-grid.png`
+  confirms selected browse state has no bottom inline detail,
+  and
+  `test-results/flutter-electron-parity/flutter/05-detail.png`
+  confirms focused Detail remains available.
 
 - Person / face grouping:
   add person-like memory grouping only after the app has a real person-recognition or clustering signal.

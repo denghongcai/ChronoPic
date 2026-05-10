@@ -19,6 +19,7 @@ final class DetailSurface extends StatelessWidget {
     required this.tagsController,
     required this.timeController,
     this.focusedMode = false,
+    this.status,
   });
 
   final TextEditingController captionController;
@@ -36,6 +37,7 @@ final class DetailSurface extends StatelessWidget {
   final VoidCallback onToggleFavorite;
   final List<PhotoRecord> photos;
   final PhotoRecord? record;
+  final String? status;
   final TextEditingController tagsController;
   final TextEditingController timeController;
 
@@ -58,6 +60,7 @@ final class DetailSurface extends StatelessWidget {
         onToggleFavorite: onToggleFavorite,
         photos: photos,
         record: selected,
+        status: status,
         tagsController: tagsController,
         timeController: timeController,
       );
@@ -153,6 +156,7 @@ final class _FocusedDetailSurface extends StatelessWidget {
     required this.onToggleFavorite,
     required this.photos,
     required this.record,
+    required this.status,
     required this.tagsController,
     required this.timeController,
   });
@@ -171,6 +175,7 @@ final class _FocusedDetailSurface extends StatelessWidget {
   final VoidCallback onToggleFavorite;
   final List<PhotoRecord> photos;
   final PhotoRecord record;
+  final String? status;
   final TextEditingController tagsController;
   final TextEditingController timeController;
 
@@ -298,6 +303,7 @@ final class _FocusedDetailSurface extends StatelessWidget {
             onSaveTags: onSaveTags,
             onToggleFavorite: onToggleFavorite,
             record: record,
+            status: status,
             tagsController: tagsController,
             timeController: timeController,
           ),
@@ -471,6 +477,7 @@ final class _FocusedDetailInspector extends StatelessWidget {
     required this.onSaveTags,
     required this.onToggleFavorite,
     required this.record,
+    required this.status,
     required this.tagsController,
     required this.timeController,
   });
@@ -485,6 +492,7 @@ final class _FocusedDetailInspector extends StatelessWidget {
   final VoidCallback onSaveTags;
   final VoidCallback onToggleFavorite;
   final PhotoRecord record;
+  final String? status;
   final TextEditingController tagsController;
   final TextEditingController timeController;
 
@@ -511,6 +519,12 @@ final class _FocusedDetailInspector extends StatelessWidget {
           ],
         ),
         const SizedBox(height: 10),
+        if (status != null &&
+            status!.trim().isNotEmpty &&
+            _showStatusBanner(labels, status!.trim())) ...[
+          _FocusedDetailStatusBanner(message: status!.trim()),
+          const SizedBox(height: 10),
+        ],
         Text(
           _basename(record.photo.path),
           maxLines: 2,
@@ -650,6 +664,47 @@ final class _InspectorHealthPill extends StatelessWidget {
           fontWeight: FontWeight.w800,
           fontSize: 11,
           letterSpacing: 1.3,
+        ),
+      ),
+    );
+  }
+}
+
+final class _FocusedDetailStatusBanner extends StatelessWidget {
+  const _FocusedDetailStatusBanner({required this.message});
+
+  final String message;
+
+  @override
+  Widget build(BuildContext context) {
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: const Color(0xfffff7ed),
+        border: Border.all(color: const Color(0xfffed7aa)),
+        borderRadius: BorderRadius.circular(14),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Icon(
+              Icons.info_outline,
+              size: 18,
+              color: Color(0xff9a5a1f),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                message,
+                style: const TextStyle(
+                  color: Color(0xff71430f),
+                  fontSize: 13,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );
