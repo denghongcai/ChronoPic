@@ -6952,3 +6952,24 @@ This file is the local execution record for ChronoPic. It complements `PLAN.md` 
   caveat:
   configure Android signing secrets before relying on the automated Android
   release job.
+
+### 2026-05-10 Step 247
+
+- Configured the four GitHub Actions Android release signing secrets for
+  `denghongcai/ChronoPic`:
+  `CHRONOPIC_ANDROID_KEYSTORE_BASE64`,
+  `CHRONOPIC_ANDROID_STORE_PASSWORD`,
+  `CHRONOPIC_ANDROID_KEY_ALIAS`,
+  and
+  `CHRONOPIC_ANDROID_KEY_PASSWORD`.
+- Secret values were written through `gh secret set` from stdin,
+  without printing the keystore base64 value in the terminal output.
+- Verified secret presence with:
+  `gh secret list --repo denghongcai/ChronoPic --app actions`.
+  The four Android release secret names are now present.
+- Attempted to rerun the failed `v0.1.4` Release workflow after adding the
+  secrets,
+  but GitHub reported the original run as `startup_failure` with no rerun jobs.
+  Do not treat that old run as automated Android-release evidence.
+- Updated `docs/flutter-release-checklist.md` to record that the secrets are now
+  configured for the next tag-triggered Android release job.

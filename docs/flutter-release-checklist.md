@@ -218,8 +218,11 @@ but the Android release job failed because the four Android signing secrets
 above were not configured in GitHub Actions.
 The Android APK/AAB assets for `v0.1.4` were uploaded manually from the local
 signed release build after local artifact verification.
-Configure the secrets above before relying on a fully automated Android release
-job.
+The secrets above were configured after the `v0.1.4` publication on
+2026-05-10,
+so the next tag release can use the automated Android release job.
+Do not rely on the failed `v0.1.4` Android job itself as automation evidence;
+validate the next tag-triggered Android job end to end.
 
 The release workflow does not build or upload Electron Linux,
 macOS,
