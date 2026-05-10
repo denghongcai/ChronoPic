@@ -139,7 +139,7 @@ final class _MobileShell extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       body: SafeArea(
-        bottom: false,
+        bottom: true,
         child: Column(
           children: [
             Padding(
@@ -193,38 +193,45 @@ final class _MobileShell extends StatelessWidget {
                 ],
               ),
             ),
-            SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
+            Padding(
               padding: const EdgeInsets.fromLTRB(12, 0, 12, 10),
               child: Row(
                 children: [
-                  _MobileNavItem(
-                    active: activePage == _DesktopPage.home && !favoriteOnly,
-                    icon: Icons.photo_library_outlined,
-                    keyName: 'all-photos-nav',
-                    label: labels.allPhotos,
-                    onPressed: onAllPhotos,
+                  Expanded(
+                    child: _MobileNavItem(
+                      active: activePage == _DesktopPage.home && !favoriteOnly,
+                      icon: Icons.photo_library_outlined,
+                      keyName: 'all-photos-nav',
+                      label: labels.allPhotos,
+                      onPressed: onAllPhotos,
+                    ),
                   ),
-                  _MobileNavItem(
-                    active: favoriteOnly,
-                    icon: Icons.star_border,
-                    keyName: 'favorites-nav',
-                    label: labels.favorites,
-                    onPressed: onFavorites,
+                  Expanded(
+                    child: _MobileNavItem(
+                      active: favoriteOnly,
+                      icon: Icons.star_border,
+                      keyName: 'favorites-nav',
+                      label: labels.favorites,
+                      onPressed: onFavorites,
+                    ),
                   ),
-                  _MobileNavItem(
-                    active: activePage == _DesktopPage.memories,
-                    icon: Icons.auto_stories_outlined,
-                    keyName: 'memories-nav',
-                    label: labels.memories,
-                    onPressed: onMemories,
+                  Expanded(
+                    child: _MobileNavItem(
+                      active: activePage == _DesktopPage.memories,
+                      icon: Icons.auto_stories_outlined,
+                      keyName: 'memories-nav',
+                      label: labels.memories,
+                      onPressed: onMemories,
+                    ),
                   ),
-                  _MobileNavItem(
-                    active: activePage == _DesktopPage.settings,
-                    icon: Icons.settings_outlined,
-                    keyName: 'settings-nav',
-                    label: labels.settings,
-                    onPressed: onSettings,
+                  Expanded(
+                    child: _MobileNavItem(
+                      active: activePage == _DesktopPage.settings,
+                      icon: Icons.settings_outlined,
+                      keyName: 'settings-nav',
+                      label: labels.settings,
+                      onPressed: onSettings,
+                    ),
                   ),
                 ],
               ),
@@ -234,6 +241,7 @@ final class _MobileShell extends StatelessWidget {
             Expanded(
               child: _ContentViewport(
                 child: child,
+                bottomPadding: 64,
                 horizontalPadding: 16,
                 maxWidth: 620,
                 ownsScroll: child is HomePage,
@@ -253,9 +261,11 @@ final class _ContentViewport extends StatelessWidget {
     required this.horizontalPadding,
     required this.maxWidth,
     required this.ownsScroll,
+    this.bottomPadding,
     this.verticalPadding = 24,
   });
 
+  final double? bottomPadding;
   final Widget child;
   final double horizontalPadding;
   final double maxWidth;
@@ -281,7 +291,7 @@ final class _ContentViewport extends StatelessWidget {
             horizontalPadding,
             verticalPadding,
             horizontalPadding,
-            ownsScroll ? 0 : verticalPadding,
+            bottomPadding ?? (ownsScroll ? 0 : verticalPadding),
           ),
           child: content,
         );
@@ -310,18 +320,31 @@ final class _MobileNavItem extends StatelessWidget {
     final foreground = active ? Colors.white : Colors.grey.shade800;
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 3),
-      child: TextButton.icon(
+      child: TextButton(
         key: Key(keyName),
         onPressed: onPressed,
-        icon: Icon(icon, size: 18),
-        label: Text(label),
         style: TextButton.styleFrom(
           backgroundColor: active ? Colors.grey.shade900 : Colors.grey.shade100,
           foregroundColor: foreground,
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          minimumSize: const Size(0, 54),
+          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(999),
+            borderRadius: BorderRadius.circular(18),
           ),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 18),
+            const SizedBox(height: 3),
+            Text(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              textAlign: TextAlign.center,
+              style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700),
+            ),
+          ],
         ),
       ),
     );

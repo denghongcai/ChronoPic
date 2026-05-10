@@ -188,6 +188,11 @@ final class HomePage extends StatelessWidget {
                 if (hasPhotos && memories.isEmpty)
                   GuidedNextStepPanel(labels: labels),
                 const SizedBox(height: 18),
+                if (hasPhotos && browseMode == BrowseMode.waterfall)
+                  const SizedBox(
+                    key: ValueKey<String>('mobile-browse-surface'),
+                    height: 0,
+                  ),
                 _BrowseToolbar(
                   browseMode: browseMode,
                   filterPanelOpen: filterPanelOpen,
@@ -385,28 +390,38 @@ final class FirstRunPanel extends StatelessWidget {
         borderRadius: BorderRadius.circular(ChronoPicTheme.panelRadius),
         child: LayoutBuilder(
           builder: (context, constraints) {
-            final actions = Wrap(
-              spacing: 10,
-              runSpacing: 10,
-              children: [
-                if (mobile)
-                  KeyedSubtree(
-                    key: const ValueKey<String>('mobile-choose-photos'),
-                    child: FilledButton.icon(
-                      key: const Key('choose-photo-library-button'),
-                      onPressed: onChoosePhotos,
-                      icon: const Icon(Icons.photo_library_outlined),
-                      label: Text(_localized(labels, 'Choose Photos', '选择照片')),
+            final actions = KeyedSubtree(
+              key: mobile
+                  ? const Key('mobile-entry-actions')
+                  : const Key('desktop-entry-actions'),
+              child: Wrap(
+                spacing: 10,
+                runSpacing: 10,
+                children: [
+                  if (mobile)
+                    KeyedSubtree(
+                      key: const ValueKey<String>('mobile-choose-photos'),
+                      child: KeyedSubtree(
+                        key: const Key('choose-photo-library-button'),
+                        child: FilledButton.icon(
+                          key: const Key('choose-photos-button'),
+                          onPressed: onChoosePhotos,
+                          icon: const Icon(Icons.photo_library_outlined),
+                          label: Text(
+                            _localized(labels, 'Choose Photos', '选择照片'),
+                          ),
+                        ),
+                      ),
+                    )
+                  else
+                    FilledButton.icon(
+                      key: const Key('choose-library-folder-button'),
+                      onPressed: onAddFolder,
+                      icon: const Icon(Icons.create_new_folder_outlined),
+                      label: Text(_localized(labels, 'Add Folder', '添加文件夹')),
                     ),
-                  )
-                else
-                  FilledButton.icon(
-                    key: const Key('choose-library-folder-button'),
-                    onPressed: onAddFolder,
-                    icon: const Icon(Icons.create_new_folder_outlined),
-                    label: Text(_localized(labels, 'Add Folder', '添加文件夹')),
-                  ),
-              ],
+                ],
+              ),
             );
             final copy = Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -599,8 +614,8 @@ final class MemoryHighlightsPanel extends StatelessWidget {
           const SizedBox(height: 18),
           if (memories.isEmpty)
             _Panel(
-              child: SizedBox(
-                height: 210,
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(minHeight: 210),
                 child: Center(
                   child: Column(
                     mainAxisSize: MainAxisSize.min,

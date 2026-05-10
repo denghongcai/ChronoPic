@@ -5,7 +5,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_DIR="$(cd "$SCRIPT_DIR/../../.." && pwd)"
 APP_DIR="$ROOT_DIR/chronopic_flutter/apps/chronopic"
 DEVICE_ID="${ANDROID_DEVICE_ID:-emulator-5554}"
-PACKAGE_NAME="com.example.chronopic"
+PACKAGE_NAME="ai.chronopic.app"
 RUN_ID="${MOBILE_E2E_RUN_ID:-$(date -u +%Y%m%dT%H%M%SZ)}"
 OUT_DIR="${MOBILE_E2E_OUT_DIR:-$ROOT_DIR/.tmp/mobile-e2e/android/$RUN_ID}"
 ASSERT_SCRIPT="$SCRIPT_DIR/assert_android_deep_e2e_artifacts.mjs"
@@ -338,7 +338,7 @@ run_restart_and_backup_restore() {
   log "checking restart persistence"
   adb -s "$DEVICE_ID" shell am force-stop "$PACKAGE_NAME"
   launch_app
-  wait_for_ui_contains "05-restart" "Select"
+  wait_for_ui_contains "05-restart" "2 items"
 
   log "checking metadata backup restore"
   adb -s "$DEVICE_ID" shell run-as "$PACKAGE_NAME" cat /data/user/0/$PACKAGE_NAME/code_cache/.local/share/chronopic_flutter/chronopic-backup.json > "$OUT_DIR/backup.json"
@@ -349,8 +349,7 @@ run_restart_and_backup_restore() {
   adb -s "$DEVICE_ID" shell run-as "$PACKAGE_NAME" mkdir -p /data/user/0/$PACKAGE_NAME/code_cache/.local/share/chronopic_flutter
   adb -s "$DEVICE_ID" shell run-as "$PACKAGE_NAME" cp /data/local/tmp/chronopic-backup.json /data/user/0/$PACKAGE_NAME/code_cache/.local/share/chronopic_flutter/chronopic-backup.json
   launch_app
-  wait_for_ui_contains "06-restore" "Select"
-  assert_ui_contains "06-restore" "2 items"
+  wait_for_ui_contains "06-restore" "2 items"
 }
 
 adb -s "$DEVICE_ID" wait-for-device

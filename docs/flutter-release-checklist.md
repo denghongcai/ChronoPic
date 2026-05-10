@@ -40,19 +40,15 @@ Checked on 2026-05-10:
 
 ## Android Identity Gate
 
-Current package id:
+Production package id:
 
 ```text
-com.example.chronopic
+ai.chronopic.app
 ```
-
-This id is not production-safe.
-Release APK/AAB artifacts built before a final package id decision are technical
-verification artifacts only and must not be uploaded as a production app.
 
 Before production upload:
 
-- Confirm final `applicationId`.
+- Confirm the `applicationId` is still `ai.chronopic.app`.
 - Confirm app name,
   Play Console app ownership,
   and Play App Signing setup.

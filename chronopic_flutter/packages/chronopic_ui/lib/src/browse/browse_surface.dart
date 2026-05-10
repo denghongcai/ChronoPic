@@ -212,25 +212,30 @@ final class PhotoCardTile extends StatefulWidget {
 final class _PhotoCardTileState extends State<PhotoCardTile> {
   Duration? _lastPointerDownAt;
 
-  void _handlePointerDown(PointerDownEvent event) {
+  void _handlePointerDown(
+    PointerDownEvent event, {
+    required bool openOnSingleTap,
+  }) {
     final now = event.timeStamp;
     final isDoubleTap =
         _lastPointerDownAt != null &&
         now - _lastPointerDownAt! <= const Duration(milliseconds: 320);
     _lastPointerDownAt = isDoubleTap ? null : now;
     widget.onSelect();
-    if (isDoubleTap) widget.onOpenDetail();
+    if (openOnSingleTap || isDoubleTap) widget.onOpenDetail();
   }
 
   @override
   Widget build(BuildContext context) {
+    final openOnSingleTap = MediaQuery.sizeOf(context).width < 720;
     return Listener(
       key: Key('photo-card-${widget.record.photo.id}'),
       behavior: HitTestBehavior.opaque,
-      onPointerDown: _handlePointerDown,
+      onPointerDown: (event) =>
+          _handlePointerDown(event, openOnSingleTap: openOnSingleTap),
       child: Semantics(
         button: true,
-        onTap: widget.onSelect,
+        onTap: openOnSingleTap ? widget.onOpenDetail : widget.onSelect,
         child: Card(
           clipBehavior: Clip.antiAlias,
           color: Colors.black,

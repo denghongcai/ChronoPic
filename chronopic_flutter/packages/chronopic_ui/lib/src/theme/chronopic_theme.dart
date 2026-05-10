@@ -102,40 +102,56 @@ final class _SectionHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
+    final textContent = Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Expanded(
-          child: Column(
+        if (eyebrow != null) ...[
+          Text(
+            eyebrow!,
+            style: TextStyle(
+              color: Colors.grey.shade600,
+              fontSize: 11,
+              fontWeight: FontWeight.w800,
+              letterSpacing: 4,
+            ),
+          ),
+          const SizedBox(height: 8),
+        ],
+        Text(title, style: Theme.of(context).textTheme.titleLarge),
+        if (description != null) ...[
+          const SizedBox(height: 4),
+          Text(
+            description!,
+            style: Theme.of(
+              context,
+            ).textTheme.bodyMedium?.copyWith(color: Colors.grey.shade600),
+          ),
+        ],
+      ],
+    );
+    final trailing = this.trailing;
+    if (trailing == null) return textContent;
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        if (constraints.maxWidth < 520) {
+          return Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              if (eyebrow != null) ...[
-                Text(
-                  eyebrow!,
-                  style: TextStyle(
-                    color: Colors.grey.shade600,
-                    fontSize: 11,
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: 4,
-                  ),
-                ),
-                const SizedBox(height: 8),
-              ],
-              Text(title, style: Theme.of(context).textTheme.titleLarge),
-              if (description != null) ...[
-                const SizedBox(height: 4),
-                Text(
-                  description!,
-                  style: Theme.of(
-                    context,
-                  ).textTheme.bodyMedium?.copyWith(color: Colors.grey.shade600),
-                ),
-              ],
+              textContent,
+              const SizedBox(height: 12),
+              Align(alignment: Alignment.centerLeft, child: trailing),
             ],
-          ),
-        ),
-        ?trailing,
-      ],
+          );
+        }
+        return Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(child: textContent),
+            trailing,
+          ],
+        );
+      },
     );
   }
 }

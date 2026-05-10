@@ -208,7 +208,7 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
 APP_DIR="$ROOT_DIR/chronopic_flutter/apps/chronopic"
 DEVICE_ID="${ANDROID_DEVICE_ID:-emulator-5554}"
-PACKAGE_NAME="com.example.chronopic"
+PACKAGE_NAME="ai.chronopic.app"
 OUT_DIR="${MOBILE_E2E_OUT_DIR:-$ROOT_DIR/.tmp/mobile-e2e/android}"
 
 mkdir -p "$OUT_DIR"

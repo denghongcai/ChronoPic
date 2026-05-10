@@ -7251,3 +7251,112 @@ This file is the local execution record for ChronoPic. It complements `PLAN.md` 
   Android AAB,
   Linux x64 tarball,
   and matching checksum assets.
+
+### 2026-05-10 Step 256
+
+- Recorded the next two planned phases after `v0.1.6`.
+- User decisions captured:
+  GitHub Actions `startup_failure` was handled by the user and should not be
+  treated as the current next blocker;
+  real Electron migration sample validation should not be pursued;
+  Android production package id is `ai.chronopic.app`.
+- Added
+  `docs/superpowers/plans/2026-05-10-flutter-desktop-interaction-regression-audit.md`
+  for Phase 9.
+  The phase requires an evidence-first desktop interaction audit against the
+  Electron reference,
+  including single-click selection,
+  double-click/Enter focused Detail,
+  Gallery/Detail keyboard transitions,
+  edit feedback visibility,
+  incremental 20-item loading,
+  and adaptive layout screenshots at 1366,
+  1600,
+  and 2048 widths.
+- Added
+  `docs/superpowers/plans/2026-05-10-flutter-mobile-ui-refine.md`
+  for Phase 10.
+  The phase covers Android package identity,
+  mobile first-run,
+  permission recovery,
+  scoped import,
+  scan progress,
+  browse/search/filter,
+  mobile Detail/Gallery overlays,
+  edit feedback,
+  memories,
+  settings,
+  backup/restore,
+  Android E2E evidence,
+  and the iOS macOS/Xcode blocked boundary.
+- Updated `PLAN.md` with Phase 9 and Phase 10 entries.
+- Updated `docs/flutter-refactor-phases.md` with the same phase summaries and
+  exit gates.
+- No code changes were made in this step;
+  package id implementation remains part of Phase 10 execution.
+
+### 2026-05-10 Step 257
+
+- Executed Phase 9 and Phase 10 locally.
+- Phase 9 desktop interaction audit:
+  refreshed Electron screenshots with
+  `node scripts/capture-electron-parity.mjs`;
+  refreshed Flutter screenshots with
+  `cd chronopic_flutter && bash tool/capture_flutter_parity.sh all`;
+  generated compare artifacts with
+  `node scripts/compare-flutter-electron-parity.mjs`;
+  and captured desktop adaptive browse/detail screenshots at 1366,
+  1600,
+  and 2048 widths with
+  `cd chronopic_flutter && bash tool/capture_flutter_adaptive_regression.sh`.
+- Fixed the Electron parity capture script so it runs the desktop Electron and
+  native-module guards before Playwright launches the app.
+  This avoids stale Electron/native runtime state when capture bypasses the
+  normal desktop startup scripts.
+- Strengthened Flutter UI regression coverage:
+  desktop single-click selection no longer opens an inline detail surface,
+  double-click/Enter opens focused Detail,
+  mobile first-run uses photo-library selection as the primary entry,
+  mobile photo tap opens focused Detail,
+  and a 25-photo fixture confirms the browse query starts at 20 items and
+  lazy-loads to 25.
+- Phase 10 product identity:
+  updated Android namespace/applicationId,
+  Android `MainActivity` package path,
+  Android E2E package constants,
+  iOS bundle metadata,
+  Linux application id,
+  README,
+  and release/mobile docs to use `ai.chronopic.app`.
+- Mobile UI refine:
+  added mobile-specific first-run action keys,
+  hid desktop add-folder entry from the mobile first viewport,
+  made the mobile top navigation fit four actions at phone width,
+  added safe-area and bottom padding for mobile content,
+  improved narrow section-header wrapping,
+  and kept desktop double-click behavior while allowing single-tap Detail on
+  mobile.
+- Updated evidence docs:
+  `docs/flutter-desktop-interaction-regression-audit.md`,
+  `docs/flutter-mobile-ui-refine-audit.md`,
+  `docs/mobile-e2e-verification.md`,
+  `docs/mobile-productization.md`,
+  `PLAN.md`,
+  and `docs/flutter-refactor-phases.md`.
+- Verification passed:
+  `pnpm build`,
+  `cd chronopic_flutter && flutter analyze`,
+  `cd chronopic_flutter && dart test packages/chronopic_domain/test packages/chronopic_database/test packages/chronopic_app/test packages/chronopic_media/test`,
+  `cd chronopic_flutter && flutter test packages/chronopic_ui/test/chronopic_home_test.dart packages/chronopic_ui/test/linux_desktop_parity_test.dart packages/chronopic_ui/test/mobile_productization_test.dart`,
+  `cd chronopic_flutter/apps/chronopic && flutter build apk --debug`,
+  and
+  `MOBILE_E2E_RUN_ID=phase10-final-browse-state bash chronopic_flutter/tool/mobile_e2e/android_deep_e2e.sh`.
+- Final Android deep E2E evidence:
+  `.tmp/mobile-e2e/android/phase10-final-browse-state/`.
+  The runner summary reports `status: passed` and
+  `packageName: ai.chronopic.app`;
+  the artifact assertion helper passed as part of the run.
+- `adb shell pm list packages | rg 'ai\.chronopic\.app'`
+  returned `package:ai.chronopic.app`.
+- Skipped iOS live verification because this Linux workstation still cannot run
+  macOS/Xcode simulator or signing checks.

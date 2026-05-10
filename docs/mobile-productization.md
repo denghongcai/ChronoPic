@@ -169,12 +169,12 @@ Smoke evidence:
   `READ_MEDIA_IMAGES=false`,
   and `READ_MEDIA_VIDEO=false`.
 - Restart persistence:
-  after `adb shell am force-stop com.example.chronopic` and relaunch,
+  after `adb shell am force-stop ai.chronopic.app` and relaunch,
   the app returned to the existing browse surface with the `Select` action
   instead of the first-run-only state.
 - Backup restore:
   the automatic metadata backup at
-  `/data/user/0/com.example.chronopic/code_cache/.local/share/chronopic_flutter/chronopic-backup.json`
+  `/data/user/0/ai.chronopic.app/code_cache/.local/share/chronopic_flutter/chronopic-backup.json`
   contained `2` photos and `1` library source.
   After clearing app data,
   injecting that JSON back into the default backup path,
@@ -195,10 +195,8 @@ Implementation note:
 
 Captured on 2026-05-10 during Phase 7 Task 4.
 
-- Current Android `applicationId`:
-  `com.example.chronopic`.
-  This is a technical-verification id only and is not production-safe.
-  A final package id must be confirmed before Play upload.
+- Android `applicationId`:
+  `ai.chronopic.app`.
 - Release signing now reads local ignored
   `chronopic_flutter/apps/chronopic/android/key.properties`
   or CI environment variables:
@@ -219,6 +217,38 @@ Captured on 2026-05-10 during Phase 7 Task 4.
   ```bash
   chronopic_flutter/tool/release/build_android_release.sh
   ```
+
+## Phase 10 Mobile UI Refine Evidence
+
+Captured on 2026-05-10 after the Android package id moved to
+`ai.chronopic.app`.
+
+- Final Android deep E2E command:
+
+  ```bash
+  MOBILE_E2E_RUN_ID=phase10-final-browse-state \
+    chronopic_flutter/tool/mobile_e2e/android_deep_e2e.sh
+  ```
+
+- Result:
+  passed.
+- Evidence directory:
+  `.tmp/mobile-e2e/android/phase10-final-browse-state/`.
+- Runner summary:
+  `summary.json` reports `status: passed` and
+  `packageName: ai.chronopic.app`.
+- Installed package check:
+  `adb shell pm list packages | rg 'ai\.chronopic\.app'`
+  returned `package:ai.chronopic.app`.
+- Covered scenarios:
+  first-run baseline,
+  permission denied recovery,
+  full photo-library access,
+  limited selected-photo access,
+  restart persistence,
+  and metadata backup restore.
+- Mobile UI refine matrix:
+  [flutter-mobile-ui-refine-audit.md](flutter-mobile-ui-refine-audit.md).
 
 - Artifact verification command:
 

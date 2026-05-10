@@ -301,7 +301,7 @@
 
 - [x] **Step 1: Record release identity decision gate**
 
-  Current Android package id is `com.example.chronopic`.
+  Android production package id is `ai.chronopic.app`.
   It is not release-safe.
   Before signing a real production release,
   confirm and record the final Android `applicationId`.

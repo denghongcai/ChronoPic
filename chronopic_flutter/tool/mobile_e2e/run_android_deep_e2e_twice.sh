@@ -4,7 +4,7 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_DIR="$(cd "$SCRIPT_DIR/../../.." && pwd)"
 DEVICE_ID="${ANDROID_DEVICE_ID:-emulator-5554}"
-PACKAGE_NAME="com.example.chronopic"
+PACKAGE_NAME="ai.chronopic.app"
 RUN_ID="${MOBILE_E2E_REPEAT_ID:-$(date -u +%Y%m%dT%H%M%SZ)}"
 BASE_OUT_DIR="${MOBILE_E2E_REPEAT_OUT_DIR:-$ROOT_DIR/.tmp/mobile-e2e/android-repeat/$RUN_ID}"
 RUNNER="$SCRIPT_DIR/android_deep_e2e.sh"

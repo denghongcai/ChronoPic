@@ -115,6 +115,14 @@ void main() {
     expect(find.text('SELECTED PHOTO'), findsOneWidget);
     expect(find.text('Detail view and gallery view'), findsNothing);
     expect(find.text('Edit caption'), findsNothing);
+    expect(find.byKey(const Key('focused-detail-view')), findsNothing);
+
+    await tester.tap(lakeCard);
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('focused-detail-view')), findsOneWidget);
+    await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('focused-detail-view')), findsNothing);
   });
 
   testWidgets('adapts the desktop photo grid to available width', (

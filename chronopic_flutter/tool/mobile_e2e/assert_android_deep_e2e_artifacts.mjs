@@ -102,10 +102,9 @@ requireContains('04-permissions.txt', 'android.permission.READ_MEDIA_VISUAL_USER
 requireContains('04-permissions.txt', 'android.permission.READ_MEDIA_IMAGES: granted=false');
 
 requireFile('05-restart.png');
-requireContains('05-restart.xml', 'Select');
+requireContains('05-restart.xml', `${expectedPhotoCount} items`);
 
 requireFile('06-restore.png');
-requireContains('06-restore.xml', 'Select');
 requireContains('06-restore.xml', `${expectedPhotoCount} items`);
 assertBackupPhotoCount('backup.json');
 

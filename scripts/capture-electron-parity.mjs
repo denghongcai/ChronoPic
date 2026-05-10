@@ -1,4 +1,5 @@
 import { _electron as electron, expect } from "@playwright/test";
+import { spawnSync } from "node:child_process";
 import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
@@ -22,6 +23,29 @@ const screenshotNames = {
   zhLocale: "12-zh-locale.png",
   restartPersistence: "13-restart-persistence.png",
 };
+
+function runDesktopGuard(scriptName) {
+  const result = spawnSync(
+    "pnpm",
+    ["--filter", "@chronopic/desktop", "run", scriptName],
+    {
+      cwd: repoRoot,
+      encoding: "utf8",
+      stdio: "pipe",
+    },
+  );
+  if (result.status !== 0) {
+    throw new Error(
+      [
+        `Failed to run desktop guard: ${scriptName}`,
+        result.stdout.trim(),
+        result.stderr.trim(),
+      ]
+        .filter(Boolean)
+        .join("\n"),
+    );
+  }
+}
 
 async function launchChronoPic(userDataDir) {
   const { VITE_DEV_SERVER_URL: _viteDevServerUrl, ...baseEnv } = process.env;
@@ -82,6 +106,9 @@ async function closeDialogIfOpen(page) {
 }
 
 async function main() {
+  runDesktopGuard("ensure:electron");
+  runDesktopGuard("ensure:native");
+
   await fs.rm(outputDir, { recursive: true, force: true });
   await fs.mkdir(outputDir, { recursive: true });
 

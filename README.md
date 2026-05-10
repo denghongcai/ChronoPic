@@ -28,9 +28,7 @@ new releases use the Flutter line.
 
 - Releases are portable, unpacked desktop bundles rather than installers.
 - Android uses local or CI-provided release signing material.
-- The current Android package id is still `com.example.chronopic`,
-  so Phase 7 APK/AAB builds are technical verification artifacts until the
-  final production id is chosen.
+- Android production package id is `ai.chronopic.app`.
 - macOS/iOS release builds require macOS/Xcode and are not produced from this
   Linux environment.
 - Windows builds are not part of the Flutter Phase 7 release line yet.

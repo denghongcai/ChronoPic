@@ -926,8 +926,7 @@ Deliverables:
   and Data safety notes.
   Current status:
   complete for technical release verification.
-  Current `applicationId` is still `com.example.chronopic`,
-  so artifacts are not production-uploadable until the final id is chosen.
+  Phase 10 updates the production `applicationId` to `ai.chronopic.app`.
   Evidence:
   missing signing fails release builds with a clear message,
   local signed release APK/AAB build passes,
@@ -1016,3 +1015,136 @@ Exit gate:
 - Do not remove the Electron reference app until the Flutter parity and
   migration gates are met.
 - Do not produce new Electron release assets during Phase 7.
+
+## Phase 9: Flutter Desktop Interaction Regression Audit
+
+Status:
+completed locally on 2026-05-10.
+
+Purpose:
+audit Flutter Linux desktop interactions after the v0.1.6 selected-photo
+regression and re-check desktop adaptive layout against the Electron reference.
+
+Plan:
+
+- [docs/superpowers/plans/2026-05-10-flutter-desktop-interaction-regression-audit.md](superpowers/plans/2026-05-10-flutter-desktop-interaction-regression-audit.md)
+
+Inputs:
+
+- GitHub Actions `startup_failure` is no longer a phase blocker because the
+  user handled it outside this work.
+- Real Electron migration sample validation is no longer in scope.
+- Electron remains the interaction reference for desktop.
+
+Audit requirements:
+
+- Single click selects only.
+- Double click or Enter opens focused Detail.
+- `G` opens or switches to Gallery.
+- `D` switches from Gallery to Detail.
+- Escape closes focused overlays.
+- Arrow keys navigate adjacent media.
+- Edit feedback is visible inside the focused Detail overlay.
+- Waterfall browse starts at 20 items and loads more incrementally.
+- Desktop adaptive layout is rechecked at 1366,
+  1600,
+  and 2048 pixel widths.
+
+Exit gate:
+
+- `docs/flutter-desktop-interaction-regression-audit.md` is complete with no
+  `Pending` rows.
+- Electron and Flutter screenshot evidence is refreshed where relevant.
+- Adaptive screenshots are recorded for browse/detail at the required widths.
+- Any confirmed mismatch is fixed with a focused test or recorded as an
+  accepted difference.
+
+Closeout evidence:
+
+- `docs/flutter-desktop-interaction-regression-audit.md` has no `Pending`
+  rows.
+- Electron screenshots:
+  `test-results/flutter-electron-parity/electron/*.png`.
+- Flutter screenshots:
+  `test-results/flutter-electron-parity/flutter/*.png`.
+- Compare artifacts:
+  `test-results/flutter-electron-parity/compare/*.png`.
+- Adaptive screenshots:
+  `test-results/flutter-adaptive-regression/*.png`.
+- Verification passed:
+  `pnpm build`,
+  `node scripts/capture-electron-parity.mjs`,
+  `cd chronopic_flutter && bash tool/capture_flutter_parity.sh all`,
+  `node scripts/compare-flutter-electron-parity.mjs`,
+  `cd chronopic_flutter && bash tool/capture_flutter_adaptive_regression.sh`,
+  and the focused Flutter UI/parity tests.
+
+## Phase 10: Flutter Mobile UI Refine
+
+Status:
+completed locally on 2026-05-10.
+
+Purpose:
+refine the Flutter mobile UI into a production-quality Android touch experience
+without weakening the desktop interaction contract.
+
+Plan:
+
+- [docs/superpowers/plans/2026-05-10-flutter-mobile-ui-refine.md](superpowers/plans/2026-05-10-flutter-mobile-ui-refine.md)
+
+Product identity decision:
+
+- Android production package id:
+  `ai.chronopic.app`.
+- Android E2E package constants and docs should move to the same id.
+- iOS bundle metadata may be prepared,
+  but iOS live verification remains blocked until macOS/Xcode evidence exists.
+
+Mobile UI surfaces:
+
+- First-run entry.
+- Permission denied recovery.
+- Scoped photo import.
+- Scan progress.
+- Browse waterfall.
+- Search/filter/sort.
+- Detail overlay.
+- Gallery overlay.
+- Edit metadata feedback.
+- Favorites.
+- Memories.
+- Settings.
+- Backup/restore.
+- Restart persistence.
+
+Exit gate:
+
+- Flutter analyze passes.
+- Dart package tests pass.
+- Flutter desktop/mobile UI tests pass.
+- Android debug build passes with `ai.chronopic.app`.
+- Android deep E2E runner and artifact assertions pass.
+- `docs/flutter-mobile-ui-refine-audit.md`,
+  `docs/mobile-e2e-verification.md`,
+  and `docs/mobile-productization.md` contain the final evidence.
+
+Closeout evidence:
+
+- Android package id is `ai.chronopic.app`.
+- Final Android deep E2E output:
+  `.tmp/mobile-e2e/android/phase10-final-browse-state/`.
+- Final Android deep E2E summary:
+  `status: passed`,
+  `packageName: ai.chronopic.app`.
+- Artifact assertion helper passed as part of the runner.
+- Verification passed:
+  `cd chronopic_flutter && flutter analyze`,
+  `cd chronopic_flutter && dart test packages/chronopic_domain/test packages/chronopic_database/test packages/chronopic_app/test packages/chronopic_media/test`,
+  `cd chronopic_flutter && flutter test packages/chronopic_ui/test/chronopic_home_test.dart packages/chronopic_ui/test/linux_desktop_parity_test.dart packages/chronopic_ui/test/mobile_productization_test.dart`,
+  `cd chronopic_flutter/apps/chronopic && flutter build apk --debug`,
+  and
+  `MOBILE_E2E_RUN_ID=phase10-final-browse-state bash chronopic_flutter/tool/mobile_e2e/android_deep_e2e.sh`.
+
+Blocked boundary:
+
+- iOS live verification remains blocked until macOS/Xcode evidence exists.

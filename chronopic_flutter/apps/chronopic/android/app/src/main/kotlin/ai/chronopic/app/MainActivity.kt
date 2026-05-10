@@ -1,4 +1,4 @@
-package com.example.chronopic
+package ai.chronopic.app
 
 import io.flutter.embedding.android.FlutterActivity
 

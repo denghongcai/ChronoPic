@@ -14,6 +14,9 @@ after Phase 6 mobile productization and before Phase 7 release/cutover.
 - Test media fixture:
   two launcher PNG files pushed to `/sdcard/Pictures/ChronoPicDeepE2E`
 
+Mobile UI refine evidence is tracked in
+[flutter-mobile-ui-refine-audit.md](flutter-mobile-ui-refine-audit.md).
+
 ## Android Required Scenarios
 
 | Scenario | Required Evidence | Status | Notes |
@@ -185,6 +188,36 @@ Actions workflow:
   `node chronopic_flutter/tool/mobile_e2e/assert_android_deep_e2e_artifacts.mjs .tmp/mobile-e2e/android-repeat/20260510T044545Z/run-2`.
 - Evidence count:
   `63` files under `.tmp/mobile-e2e/android-repeat/20260510T044545Z`.
+
+2026-05-10 Phase 10 mobile UI refine result:
+
+- Command:
+  `MOBILE_E2E_RUN_ID=phase10-final-browse-state bash chronopic_flutter/tool/mobile_e2e/android_deep_e2e.sh`.
+- Result:
+  passed.
+- Evidence directory:
+  `.tmp/mobile-e2e/android/phase10-final-browse-state/`.
+- Package id:
+  `ai.chronopic.app`.
+- Scenarios passed:
+  first-run baseline,
+  permission-denied recovery,
+  full photo-library access,
+  limited selected-photo access,
+  restart persistence,
+  and metadata backup restore.
+- Artifact assertion:
+  passed as part of the runner and checked the required screenshots,
+  XML files,
+  permissions dump,
+  `backup.json`,
+  and `summary.json`.
+- Mobile-layout assertion update:
+  restart and restore now assert browse-state recovery with `2 items`
+  instead of relying on the scroll-dependent `Select` button being visible in
+  the first UI dump.
+- Screenshot size check:
+  all PNG evidence in the run is 1080x2400.
 
 ### Android App-Owned Integration Test
 
