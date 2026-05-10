@@ -26,7 +26,8 @@ enum MemoryCandidateSource {
   person,
   mixed;
 
-  static MemoryCandidateSource parse(String value) => MemoryCandidateSource.values.byName(value);
+  static MemoryCandidateSource parse(String value) =>
+      MemoryCandidateSource.values.byName(value);
 }
 
 enum MemoryCandidateStatus {
@@ -34,7 +35,8 @@ enum MemoryCandidateStatus {
   accepted,
   rejected;
 
-  static MemoryCandidateStatus parse(String value) => MemoryCandidateStatus.values.byName(value);
+  static MemoryCandidateStatus parse(String value) =>
+      MemoryCandidateStatus.values.byName(value);
 }
 
 enum LocaleSetting {
@@ -46,7 +48,9 @@ enum LocaleSetting {
   final String wireName;
 
   static LocaleSetting parse(String value) {
-    return LocaleSetting.values.firstWhere((locale) => locale.wireName == value);
+    return LocaleSetting.values.firstWhere(
+      (locale) => locale.wireName == value,
+    );
   }
 }
 
@@ -60,26 +64,17 @@ enum AiOutputLocale {
   final String wireName;
 
   static AiOutputLocale parse(String value) {
-    return AiOutputLocale.values.firstWhere((locale) => locale.wireName == value);
+    return AiOutputLocale.values.firstWhere(
+      (locale) => locale.wireName == value,
+    );
   }
 }
 
-enum BrowseMode {
-  waterfall,
-  map,
-  timeline;
-}
+enum BrowseMode { waterfall, map, timeline }
 
-enum PhotoSortBy {
-  datetime,
-  updatedAt,
-  path;
-}
+enum PhotoSortBy { datetime, updatedAt, path }
 
-enum SortDirection {
-  asc,
-  desc;
-}
+enum SortDirection { asc, desc }
 
 final class AiSettings {
   const AiSettings({
@@ -104,11 +99,11 @@ final class AiSettings {
   final String providerName;
 
   JsonMap toJson() => {
-        'apiKey': apiKey,
-        'baseURL': baseURL,
-        'model': model,
-        'providerName': providerName,
-      };
+    'apiKey': apiKey,
+    'baseURL': baseURL,
+    'model': model,
+    'providerName': providerName,
+  };
 }
 
 final class AiReadiness {
@@ -139,7 +134,11 @@ AiReadiness getAiReadiness(AiSettings settings) {
       present.add(entry.key);
     }
   }
-  return AiReadiness(configured: missing.isEmpty, presentFields: present, missingFields: missing);
+  return AiReadiness(
+    configured: missing.isEmpty,
+    presentFields: present,
+    missingFields: missing,
+  );
 }
 
 final class MapSettings {
@@ -155,10 +154,7 @@ final class MapSettings {
   final String apiKey;
   final String securityJsCode;
 
-  JsonMap toJson() => {
-        'apiKey': apiKey,
-        'securityJsCode': securityJsCode,
-      };
+  JsonMap toJson() => {'apiKey': apiKey, 'securityJsCode': securityJsCode};
 }
 
 final class LocaleSettings {
@@ -167,7 +163,9 @@ final class LocaleSettings {
   factory LocaleSettings.fromJson(JsonMap json) {
     return LocaleSettings(
       locale: LocaleSetting.parse(json['locale'] as String? ?? 'en-US'),
-      aiOutputLocale: AiOutputLocale.parse(json['aiOutputLocale'] as String? ?? 'follow-ui'),
+      aiOutputLocale: AiOutputLocale.parse(
+        json['aiOutputLocale'] as String? ?? 'follow-ui',
+      ),
     );
   }
 
@@ -175,19 +173,25 @@ final class LocaleSettings {
   final AiOutputLocale aiOutputLocale;
 
   JsonMap toJson() => {
-        'locale': locale.wireName,
-        'aiOutputLocale': aiOutputLocale.wireName,
-      };
+    'locale': locale.wireName,
+    'aiOutputLocale': aiOutputLocale.wireName,
+  };
 }
 
 final class BackupSettings {
-  const BackupSettings({required this.ai, required this.map, required this.locale});
+  const BackupSettings({
+    required this.ai,
+    required this.map,
+    required this.locale,
+  });
 
   factory BackupSettings.fromJson(JsonMap json) {
     return BackupSettings(
       ai: AiSettings.fromJson((json['ai'] as Map).cast<String, Object?>()),
       map: MapSettings.fromJson((json['map'] as Map).cast<String, Object?>()),
-      locale: LocaleSettings.fromJson((json['locale'] as Map).cast<String, Object?>()),
+      locale: LocaleSettings.fromJson(
+        (json['locale'] as Map).cast<String, Object?>(),
+      ),
     );
   }
 
@@ -196,10 +200,10 @@ final class BackupSettings {
   final LocaleSettings locale;
 
   JsonMap toJson() => {
-        'ai': ai.toJson(),
-        'map': map.toJson(),
-        'locale': locale.toJson(),
-      };
+    'ai': ai.toJson(),
+    'map': map.toJson(),
+    'locale': locale.toJson(),
+  };
 }
 
 final class Photo {
@@ -220,12 +224,12 @@ final class Photo {
       id: json['id'] as String,
       path: json['path'] as String,
       hash: json['hash'] as String?,
-      size: json['size'] as int,
+      size: _int(json['size']),
       mime: json['mime'] as String,
       thumbnailPath: json['thumbnailPath'] as String?,
       favorite: json['favorite'] as bool? ?? false,
-      createdAt: json['createdAt'] as int,
-      updatedAt: json['updatedAt'] as int,
+      createdAt: _int(json['createdAt']),
+      updatedAt: _int(json['updatedAt']),
     );
   }
 
@@ -240,16 +244,16 @@ final class Photo {
   final int updatedAt;
 
   JsonMap toJson() => {
-        'id': id,
-        'path': path,
-        'hash': hash,
-        'size': size,
-        'mime': mime,
-        'thumbnailPath': thumbnailPath,
-        'favorite': favorite,
-        'createdAt': createdAt,
-        'updatedAt': updatedAt,
-      };
+    'id': id,
+    'path': path,
+    'hash': hash,
+    'size': size,
+    'mime': mime,
+    'thumbnailPath': thumbnailPath,
+    'favorite': favorite,
+    'createdAt': createdAt,
+    'updatedAt': updatedAt,
+  };
 }
 
 final class Metadata {
@@ -266,7 +270,7 @@ final class Metadata {
   factory Metadata.fromJson(JsonMap json) {
     return Metadata(
       photoId: json['photoId'] as String,
-      datetime: json['datetime'] as int?,
+      datetime: _intOrNull(json['datetime']),
       lat: (json['lat'] as num?)?.toDouble(),
       lng: (json['lng'] as num?)?.toDouble(),
       camera: json['camera'] as String?,
@@ -284,14 +288,14 @@ final class Metadata {
   final String? originalDatetimeText;
 
   JsonMap toJson() => {
-        'photoId': photoId,
-        'datetime': datetime,
-        'lat': lat,
-        'lng': lng,
-        'camera': camera,
-        'confidence': confidence,
-        'originalDatetimeText': originalDatetimeText,
-      };
+    'photoId': photoId,
+    'datetime': datetime,
+    'lat': lat,
+    'lng': lng,
+    'camera': camera,
+    'confidence': confidence,
+    'originalDatetimeText': originalDatetimeText,
+  };
 }
 
 final class Semantic {
@@ -322,7 +326,7 @@ final class Semantic {
       aiStatus: AiPipelineStatus.parse(json['aiStatus'] as String),
       aiProvider: json['aiProvider'] as String?,
       aiModel: json['aiModel'] as String?,
-      aiProcessedAt: json['aiProcessedAt'] as int?,
+      aiProcessedAt: _intOrNull(json['aiProcessedAt']),
       aiError: json['aiError'] as String?,
     );
   }
@@ -341,19 +345,19 @@ final class Semantic {
   final String? aiError;
 
   JsonMap toJson() => {
-        'photoId': photoId,
-        'labels': labels,
-        'caption': caption,
-        'generatedLabels': generatedLabels,
-        'generatedCaption': generatedCaption,
-        'summary': summary,
-        'embeddingRef': embeddingRef,
-        'aiStatus': aiStatus.name,
-        'aiProvider': aiProvider,
-        'aiModel': aiModel,
-        'aiProcessedAt': aiProcessedAt,
-        'aiError': aiError,
-      };
+    'photoId': photoId,
+    'labels': labels,
+    'caption': caption,
+    'generatedLabels': generatedLabels,
+    'generatedCaption': generatedCaption,
+    'summary': summary,
+    'embeddingRef': embeddingRef,
+    'aiStatus': aiStatus.name,
+    'aiProvider': aiProvider,
+    'aiModel': aiModel,
+    'aiProcessedAt': aiProcessedAt,
+    'aiError': aiError,
+  };
 }
 
 final class IndexState {
@@ -374,10 +378,10 @@ final class IndexState {
       indexed: json['indexed'] as bool,
       aiProcessed: json['aiProcessed'] as bool,
       error: json['error'] as String?,
-      lastIndexedAt: json['lastIndexedAt'] as int?,
+      lastIndexedAt: _intOrNull(json['lastIndexedAt']),
       duplicateOf: json['duplicateOf'] as String?,
-      sourceUpdatedAt: json['sourceUpdatedAt'] as int?,
-      missingAt: json['missingAt'] as int?,
+      sourceUpdatedAt: _intOrNull(json['sourceUpdatedAt']),
+      missingAt: _intOrNull(json['missingAt']),
     );
   }
 
@@ -391,15 +395,15 @@ final class IndexState {
   final int? missingAt;
 
   JsonMap toJson() => {
-        'photoId': photoId,
-        'indexed': indexed,
-        'aiProcessed': aiProcessed,
-        'error': error,
-        'lastIndexedAt': lastIndexedAt,
-        'duplicateOf': duplicateOf,
-        'sourceUpdatedAt': sourceUpdatedAt,
-        'missingAt': missingAt,
-      };
+    'photoId': photoId,
+    'indexed': indexed,
+    'aiProcessed': aiProcessed,
+    'error': error,
+    'lastIndexedAt': lastIndexedAt,
+    'duplicateOf': duplicateOf,
+    'sourceUpdatedAt': sourceUpdatedAt,
+    'missingAt': missingAt,
+  };
 }
 
 final class PhotoRecord {
@@ -413,9 +417,15 @@ final class PhotoRecord {
   factory PhotoRecord.fromJson(JsonMap json) {
     return PhotoRecord(
       photo: Photo.fromJson((json['photo'] as Map).cast<String, Object?>()),
-      metadata: Metadata.fromJson((json['metadata'] as Map).cast<String, Object?>()),
-      semantic: Semantic.fromJson((json['semantic'] as Map).cast<String, Object?>()),
-      indexState: IndexState.fromJson((json['indexState'] as Map).cast<String, Object?>()),
+      metadata: Metadata.fromJson(
+        (json['metadata'] as Map).cast<String, Object?>(),
+      ),
+      semantic: Semantic.fromJson(
+        (json['semantic'] as Map).cast<String, Object?>(),
+      ),
+      indexState: IndexState.fromJson(
+        (json['indexState'] as Map).cast<String, Object?>(),
+      ),
     );
   }
 
@@ -425,11 +435,11 @@ final class PhotoRecord {
   final IndexState indexState;
 
   JsonMap toJson() => {
-        'photo': photo.toJson(),
-        'metadata': metadata.toJson(),
-        'semantic': semantic.toJson(),
-        'indexState': indexState.toJson(),
-      };
+    'photo': photo.toJson(),
+    'metadata': metadata.toJson(),
+    'semantic': semantic.toJson(),
+    'indexState': indexState.toJson(),
+  };
 }
 
 final class LibrarySource {
@@ -447,9 +457,9 @@ final class LibrarySource {
       id: json['id'] as String,
       path: json['path'] as String,
       isActive: json['isActive'] as bool,
-      createdAt: json['createdAt'] as int,
-      updatedAt: json['updatedAt'] as int,
-      lastScanAt: json['lastScanAt'] as int?,
+      createdAt: _int(json['createdAt']),
+      updatedAt: _int(json['updatedAt']),
+      lastScanAt: _intOrNull(json['lastScanAt']),
     );
   }
 
@@ -461,13 +471,13 @@ final class LibrarySource {
   final int? lastScanAt;
 
   JsonMap toJson() => {
-        'id': id,
-        'path': path,
-        'isActive': isActive,
-        'createdAt': createdAt,
-        'updatedAt': updatedAt,
-        'lastScanAt': lastScanAt,
-      };
+    'id': id,
+    'path': path,
+    'isActive': isActive,
+    'createdAt': createdAt,
+    'updatedAt': updatedAt,
+    'lastScanAt': lastScanAt,
+  };
 }
 
 final class EditHistory {
@@ -488,8 +498,8 @@ final class EditHistory {
       fieldName: json['fieldName'] as String,
       previousValue: json['previousValue'] as String?,
       nextValue: json['nextValue'] as String?,
-      createdAt: json['createdAt'] as int,
-      rolledBackAt: json['rolledBackAt'] as int?,
+      createdAt: _int(json['createdAt']),
+      rolledBackAt: _intOrNull(json['rolledBackAt']),
     );
   }
 
@@ -502,14 +512,14 @@ final class EditHistory {
   final int? rolledBackAt;
 
   JsonMap toJson() => {
-        'id': id,
-        'photoId': photoId,
-        'fieldName': fieldName,
-        'previousValue': previousValue,
-        'nextValue': nextValue,
-        'createdAt': createdAt,
-        'rolledBackAt': rolledBackAt,
-      };
+    'id': id,
+    'photoId': photoId,
+    'fieldName': fieldName,
+    'previousValue': previousValue,
+    'nextValue': nextValue,
+    'createdAt': createdAt,
+    'rolledBackAt': rolledBackAt,
+  };
 }
 
 final class Memory {
@@ -540,18 +550,18 @@ final class Memory {
       description: json['description'] as String?,
       coverPhotoId: json['coverPhotoId'] as String?,
       coverThumbnailPath: json['coverThumbnailPath'] as String?,
-      photoCount: json['photoCount'] as int,
+      photoCount: _int(json['photoCount']),
       generatedName: json['generatedName'] as String?,
       generatedDescription: json['generatedDescription'] as String?,
       generatedLabels: _stringList(json['generatedLabels']),
       aiStatus: AiPipelineStatus.parse(json['aiStatus'] as String),
       aiProvider: json['aiProvider'] as String?,
       aiModel: json['aiModel'] as String?,
-      aiProcessedAt: json['aiProcessedAt'] as int?,
+      aiProcessedAt: _intOrNull(json['aiProcessedAt']),
       aiError: json['aiError'] as String?,
       source: MemorySource.parse(json['source'] as String),
-      createdAt: json['createdAt'] as int,
-      updatedAt: json['updatedAt'] as int,
+      createdAt: _int(json['createdAt']),
+      updatedAt: _int(json['updatedAt']),
     );
   }
 
@@ -574,34 +584,38 @@ final class Memory {
   final int updatedAt;
 
   JsonMap toJson() => {
-        'id': id,
-        'name': name,
-        'description': description,
-        'coverPhotoId': coverPhotoId,
-        'coverThumbnailPath': coverThumbnailPath,
-        'photoCount': photoCount,
-        'generatedName': generatedName,
-        'generatedDescription': generatedDescription,
-        'generatedLabels': generatedLabels,
-        'aiStatus': aiStatus.name,
-        'aiProvider': aiProvider,
-        'aiModel': aiModel,
-        'aiProcessedAt': aiProcessedAt,
-        'aiError': aiError,
-        'source': source.name,
-        'createdAt': createdAt,
-        'updatedAt': updatedAt,
-      };
+    'id': id,
+    'name': name,
+    'description': description,
+    'coverPhotoId': coverPhotoId,
+    'coverThumbnailPath': coverThumbnailPath,
+    'photoCount': photoCount,
+    'generatedName': generatedName,
+    'generatedDescription': generatedDescription,
+    'generatedLabels': generatedLabels,
+    'aiStatus': aiStatus.name,
+    'aiProvider': aiProvider,
+    'aiModel': aiModel,
+    'aiProcessedAt': aiProcessedAt,
+    'aiError': aiError,
+    'source': source.name,
+    'createdAt': createdAt,
+    'updatedAt': updatedAt,
+  };
 }
 
 final class MemoryPhoto {
-  const MemoryPhoto({required this.memoryId, required this.photoId, required this.addedAt});
+  const MemoryPhoto({
+    required this.memoryId,
+    required this.photoId,
+    required this.addedAt,
+  });
 
   factory MemoryPhoto.fromJson(JsonMap json) {
     return MemoryPhoto(
       memoryId: json['memoryId'] as String,
       photoId: json['photoId'] as String,
-      addedAt: json['addedAt'] as int,
+      addedAt: _int(json['addedAt']),
     );
   }
 
@@ -610,10 +624,10 @@ final class MemoryPhoto {
   final int addedAt;
 
   JsonMap toJson() => {
-        'memoryId': memoryId,
-        'photoId': photoId,
-        'addedAt': addedAt,
-      };
+    'memoryId': memoryId,
+    'photoId': photoId,
+    'addedAt': addedAt,
+  };
 }
 
 final class MemoryCandidate {
@@ -650,8 +664,8 @@ final class MemoryCandidate {
       coverThumbnailPath: json['coverThumbnailPath'] as String?,
       generatedLabels: _stringList(json['generatedLabels']),
       acceptedMemoryId: json['acceptedMemoryId'] as String?,
-      createdAt: json['createdAt'] as int,
-      updatedAt: json['updatedAt'] as int,
+      createdAt: _int(json['createdAt']),
+      updatedAt: _int(json['updatedAt']),
     );
   }
 
@@ -672,22 +686,22 @@ final class MemoryCandidate {
   final int updatedAt;
 
   JsonMap toJson() => {
-        'id': id,
-        'signature': signature,
-        'title': title,
-        'description': description,
-        'reason': reason,
-        'confidence': confidence,
-        'source': source.name,
-        'status': status.name,
-        'photoIds': photoIds,
-        'coverPhotoId': coverPhotoId,
-        'coverThumbnailPath': coverThumbnailPath,
-        'generatedLabels': generatedLabels,
-        'acceptedMemoryId': acceptedMemoryId,
-        'createdAt': createdAt,
-        'updatedAt': updatedAt,
-      };
+    'id': id,
+    'signature': signature,
+    'title': title,
+    'description': description,
+    'reason': reason,
+    'confidence': confidence,
+    'source': source.name,
+    'status': status.name,
+    'photoIds': photoIds,
+    'coverPhotoId': coverPhotoId,
+    'coverThumbnailPath': coverThumbnailPath,
+    'generatedLabels': generatedLabels,
+    'acceptedMemoryId': acceptedMemoryId,
+    'createdAt': createdAt,
+    'updatedAt': updatedAt,
+  };
 }
 
 final class PhotoFilter {
@@ -728,4 +742,15 @@ final class PhotoFilter {
 
 List<String> _stringList(Object? value) {
   return ((value as List?) ?? const <Object?>[]).cast<String>();
+}
+
+int _int(Object? value) {
+  if (value is int) return value;
+  if (value is num) return value.toInt();
+  throw FormatException('Expected integer-compatible JSON number, got $value');
+}
+
+int? _intOrNull(Object? value) {
+  if (value == null) return null;
+  return _int(value);
 }

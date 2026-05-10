@@ -14,19 +14,26 @@ Download ChronoPic from the GitHub Releases page:
 
 https://github.com/denghongcai/ChronoPic/releases/latest
 
-Current desktop archives:
+Current Flutter release artifacts:
 
-- Linux: `chronopic-linux-x64-v0.1.3.tar.gz`
-- macOS: `chronopic-macos-arm64-v0.1.3.tar.gz`
-- Windows: `chronopic-windows-x64-v0.1.3.tar.gz`
+- Android APK: `chronopic-flutter-android-release.apk`
+- Android App Bundle: `chronopic-flutter-android-release.aab`
+- Linux desktop: `chronopic-flutter-linux-x64-0.1.3.tar.gz`
 
-Each archive has a matching `.sha256` checksum file.
+Each artifact has a matching `.sha256` checksum file.
+Electron desktop archives are historical artifacts only;
+new releases use the Flutter line.
 
 ## Current Limitations
 
 - Releases are portable, unpacked desktop bundles rather than installers.
-- macOS builds are not notarized yet.
-- Windows builds are not signed yet.
+- Android uses local or CI-provided release signing material.
+- The current Android package id is still `com.example.chronopic`,
+  so Phase 7 APK/AAB builds are technical verification artifacts until the
+  final production id is chosen.
+- macOS/iOS release builds require macOS/Xcode and are not produced from this
+  Linux environment.
+- Windows builds are not part of the Flutter Phase 7 release line yet.
 - Auto-update is not implemented yet.
 - Backups do not copy original photo files; they export ChronoPic's local catalog projection and settings.
 

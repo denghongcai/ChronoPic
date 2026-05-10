@@ -1,0 +1,81 @@
+name: Android Deep E2E
+
+on:
+  workflow_dispatch:
+    inputs:
+      api_level:
+        description: Android API level to run the emulator with.
+        required: true
+        default: "36"
+      device_profile:
+        description: Android virtual device profile.
+        required: true
+        default: pixel_7
+
+permissions:
+  contents: read
+
+jobs:
+  android-deep-e2e:
+    name: Android deep E2E
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Set up Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+
+      - name: Set up Java
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Set up Flutter stable
+        run: |
+          set -euo pipefail
+          git clone https://github.com/flutter/flutter.git --branch stable --depth 1 "$RUNNER_TEMP/flutter"
+          echo "$RUNNER_TEMP/flutter/bin" >> "$GITHUB_PATH"
+
+      - name: Flutter doctor
+        run: flutter doctor -v
+
+      - name: Install Flutter dependencies
+        run: |
+          cd chronopic_flutter
+          flutter pub get
+
+      - name: Enable KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      - name: Android deep E2E two-run gate
+        uses: reactivecircus/android-emulator-runner@v2.37.0
+        with:
+          api-level: ${{ inputs.api_level }}
+          target: google_apis
+          arch: x86_64
+          profile: ${{ inputs.device_profile }}
+          emulator-boot-timeout: 900
+          disable-animations: true
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none -camera-front none
+          script: |
+            set -euo pipefail
+            MOBILE_E2E_REPEAT_ID="gha-${{ github.run_id }}-${{ github.run_attempt }}" \
+              ANDROID_DEVICE_ID=emulator-5554 \
+              chronopic_flutter/tool/mobile_e2e/run_android_deep_e2e_twice.sh
+
+      - name: Upload Android deep E2E artifacts
+        if: always()
+        uses: actions/upload-artifact@v7.0.1
+        with:
+          name: android-deep-e2e-${{ github.run_id }}-${{ github.run_attempt }}
+          path: .tmp/mobile-e2e/android-repeat/
+          if-no-files-found: error

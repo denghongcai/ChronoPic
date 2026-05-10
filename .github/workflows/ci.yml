@@ -12,7 +12,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
 
       - name: Set up pnpm
         uses: pnpm/action-setup@v6
@@ -20,7 +20,7 @@ jobs:
           version: 10.0.0
 
       - name: Set up Node
-        uses: actions/setup-node@v5
+        uses: actions/setup-node@v6
         with:
           node-version: 24
           cache: pnpm
@@ -52,11 +52,52 @@ jobs:
       - name: Backup E2E
         run: xvfb-run -a pnpm run e2e:backup
 
-      - name: Package Linux Artifact
-        run: pnpm run package:linux
+  flutter:
+    runs-on: ubuntu-latest
 
-      - name: Verify Linux Package
-        run: pnpm run package:verify
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
 
-      - name: Packaged E2E
-        run: xvfb-run -a pnpm run e2e:packaged
+      - name: Set up Java
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Set up Flutter stable
+        run: |
+          set -euo pipefail
+          git clone https://github.com/flutter/flutter.git --branch stable --depth 1 "$RUNNER_TEMP/flutter"
+          echo "$RUNNER_TEMP/flutter/bin" >> "$GITHUB_PATH"
+
+      - name: Flutter doctor
+        run: flutter doctor -v
+
+      - name: Install Flutter dependencies
+        run: |
+          cd chronopic_flutter
+          flutter pub get
+
+      - name: Dart analyze
+        run: |
+          cd chronopic_flutter
+          dart analyze packages/chronopic_media packages/chronopic_app packages/chronopic_ui apps/chronopic
+
+      - name: Dart package tests
+        run: |
+          cd chronopic_flutter
+          dart test packages/chronopic_media/test packages/chronopic_app/test
+
+      - name: Flutter UI and parity tests
+        run: |
+          cd chronopic_flutter
+          flutter test \
+            packages/chronopic_ui/test/chronopic_home_test.dart \
+            packages/chronopic_ui/test/linux_desktop_parity_test.dart \
+            packages/chronopic_ui/test/mobile_productization_test.dart
+
+      - name: Android debug build
+        run: |
+          cd chronopic_flutter/apps/chronopic
+          flutter build apk --debug

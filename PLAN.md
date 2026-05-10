@@ -2481,37 +2481,122 @@ These are intentionally recorded as candidate directions rather than committed p
   and `P66-002` isolated Playwright artifacts so E2E runs no longer delete
   parity screenshot evidence.
 
-### Post 6.6 Candidate Work
+### 7. Flutter Release Readiness And Cutover
 
-- Android deep E2E runner hardening:
-  improve `adb`/`uiautomator` retry logging,
-  assert required screenshot/XML/backup artifacts after every run,
-  and repeat the clean-emulator runner twice to catch flake before release work
-  starts.
-- Release signing and Android distribution readiness:
-  add signing configuration that keeps keystores and passwords out of git,
-  build debug plus release APK/AAB artifacts,
-  record Play Store photo-permission/privacy disclosure text,
-  and document the Android release checklist.
-- Migration and cutover compatibility:
-  verify Flutter backup import against real Electron backup fixtures,
-  document the Electron-to-Flutter migration path,
-  and decide whether direct old SQLite import is still needed after backup
-  import coverage is proven.
-- CI gate promotion:
-  add or extend CI/manual workflows for Flutter analyze,
-  Dart package tests,
-  Flutter UI/parity tests,
-  Android debug build,
-  and optionally a manually triggered Android emulator E2E workflow.
-- iOS live verification:
-  run the recorded macOS/Xcode build/run gate,
-  capture the required permission/import/restart/backup evidence,
-  and only then mark iOS release-verified.
-- Large-library and accessibility sweep:
-  measure Flutter desktop/mobile behavior with larger fixture libraries,
-  re-check keyboard/focus/accessibility behavior,
-  and fix only issues that block release confidence.
+- Implementation plan:
+  [docs/superpowers/plans/2026-05-10-flutter-release-readiness-and-cutover.md](docs/superpowers/plans/2026-05-10-flutter-release-readiness-and-cutover.md)
+- Status:
+  complete on 2026-05-10.
+- Scope:
+  Android deep E2E runner hardening,
+  Electron-backup migration compatibility,
+  Flutter Android/Linux release artifacts,
+  Flutter CI/release workflow promotion,
+  and Flutter-only release documentation.
+- Explicit release decision:
+  Flutter is the release target.
+  Electron is no longer released;
+  it remains only as reference and migration source until cutover is complete.
+- Planned execution order:
+  1. Android deep E2E runner hardening:
+     improve `adb`/`uiautomator` retry logging,
+     assert required screenshot/XML/backup artifacts after every run,
+     write summary JSON,
+     and repeat the clean-emulator runner twice to catch flake before release
+     work starts.
+     Implementation status:
+     helper,
+     runner logging/summary hardening,
+     two-run wrapper,
+     and live two-run emulator evidence are complete.
+     Evidence:
+     `.tmp/mobile-e2e/android-repeat/20260510T044545Z/combined-summary.json`
+     reports `passed`.
+  2. Migration and cutover compatibility:
+     verify Flutter backup import against a sanitized real Electron backup
+     fixture,
+     document the Electron-to-Flutter migration path,
+     and decide whether direct old SQLite import is still needed after backup
+     import coverage is proven.
+     Implementation status:
+     complete.
+     Evidence:
+     `pnpm run e2e:backup`,
+     `node scripts/write-flutter-migration-fixtures.mjs`,
+     and
+     `cd chronopic_flutter && dart test packages/chronopic_app/test/electron_backup_import_test.dart`
+     pass.
+     Direct old SQLite import is not required for Phase 7 unless JSON backup
+     export/restore fails on a real user backup.
+  3. Release signing and Android distribution readiness:
+     add secret-safe signing configuration,
+     build release APK/AAB artifacts,
+     record Play Store photo-permission/privacy disclosure text,
+     and document the Android release checklist.
+     Implementation status:
+     complete for technical release verification.
+     Current `applicationId` is still `com.example.chronopic`,
+     so artifacts are not production-uploadable until the final id is chosen.
+     Evidence:
+     unsigned/missing-signing release build fails with a clear message,
+     local signed release APK/AAB build passes,
+     and
+     `node chronopic_flutter/tool/release/verify_flutter_release_artifacts.mjs android linux`
+     verifies APK/AAB/Linux sha256 files.
+  4. Flutter Linux release artifact:
+     build `chronopic-flutter-linux-x64-0.1.3.tar.gz`,
+     create `.sha256`,
+     and verify the archive contains the Flutter `chronopic` executable.
+     Implementation status:
+     complete locally.
+     Evidence:
+     `chronopic_flutter/tool/release/build_linux_release.sh`
+     and
+     `node chronopic_flutter/tool/release/verify_flutter_release_artifacts.mjs linux`
+     pass.
+  5. CI gate promotion:
+     add or extend CI/manual workflows for Flutter analyze,
+     Dart package tests,
+     Flutter UI/parity tests,
+     Android debug build,
+     and optionally a manually triggered Android emulator E2E workflow.
+     Implementation status:
+     complete.
+     CI now has a Flutter job,
+     `.github/workflows/android-deep-e2e.yml` provides a manually triggered
+     Android emulator deep E2E gate,
+     Electron package verification is no longer a CI release gate,
+     and Android deep E2E remains both a local and manual CI Phase 7 gate.
+  6. Flutter release workflow:
+     replace Electron tag-release assets with Flutter Android and Flutter Linux
+     artifacts.
+     Do not publish new Electron release assets.
+     Implementation status:
+     complete.
+     Tag release workflow now uploads Flutter Android and Flutter Linux assets
+     only.
+     iOS remains blocked until macOS/Xcode signing and E2E evidence exist.
+- Final Phase 7 gate:
+  passed on 2026-05-10.
+  Evidence:
+  `pnpm test && pnpm typecheck && pnpm build`,
+  Flutter analyze/package tests/widget tests,
+  `flutter build apk --debug`,
+  Android two-run E2E hardening,
+  signed Android release build,
+  Linux release build,
+  combined Android/Linux artifact verification,
+  and `git diff --check` all passed locally.
+- Version rule:
+  before adding or changing dependencies,
+  GitHub Actions,
+  Android SDK/Gradle/Flutter setup,
+  or release tooling,
+  check the latest stable version from official sources and record the selected
+  version in `AGENTS.md`.
+- iOS:
+  keep the existing macOS/Xcode live verification gate blocked until real
+  Apple-toolchain evidence exists.
 
 - Person / face grouping:
   add person-like memory grouping only after the app has a real person-recognition or clustering signal.

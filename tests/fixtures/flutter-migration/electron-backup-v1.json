@@ -1,0 +1,177 @@
+{
+  "app": "ChronoPic",
+  "schemaVersion": 1,
+  "exportedAt": 1715500000000,
+  "settings": {
+    "ai": {
+      "apiKey": "",
+      "baseURL": "",
+      "model": "",
+      "providerName": "openai-compatible"
+    },
+    "map": {
+      "apiKey": "fixture-amap-key",
+      "securityJsCode": "fixture-amap-security"
+    },
+    "locale": {
+      "locale": "zh-CN",
+      "aiOutputLocale": "zh-CN"
+    }
+  },
+  "librarySources": [
+    {
+      "id": "source-electron-backup",
+      "path": "/fixture/electron-backup/library",
+      "isActive": true,
+      "createdAt": 1715500000000,
+      "updatedAt": 1715500010000,
+      "lastScanAt": 1715500020000
+    }
+  ],
+  "photos": [
+    {
+      "photo": {
+        "id": "electron-photo-city",
+        "path": "/fixture/electron-backup/library/backup-city.png",
+        "hash": "bb7c2770dba18b7baf177361e5019991a01aa1c3810ef711e7b811e020c55bb8",
+        "size": 77,
+        "mime": "image/png",
+        "thumbnailPath": "/fixture/electron-backup/thumbs/electron-photo-city.jpg",
+        "favorite": true,
+        "createdAt": 1715500001000.3997,
+        "updatedAt": 1715500010000
+      },
+      "metadata": {
+        "photoId": "electron-photo-city",
+        "datetime": 1715500001000.3997,
+        "lat": null,
+        "lng": null,
+        "camera": null,
+        "confidence": 0.55,
+        "originalDatetimeText": null
+      },
+      "semantic": {
+        "photoId": "electron-photo-city",
+        "labels": [
+          "backup",
+          "restore"
+        ],
+        "caption": "Backup E2E caption",
+        "generatedLabels": [],
+        "generatedCaption": null,
+        "summary": null,
+        "embeddingRef": null,
+        "aiStatus": "disabled",
+        "aiProvider": null,
+        "aiModel": null,
+        "aiProcessedAt": null,
+        "aiError": null
+      },
+      "indexState": {
+        "photoId": "electron-photo-city",
+        "indexed": true,
+        "aiProcessed": false,
+        "error": null,
+        "lastIndexedAt": 1715500010000,
+        "duplicateOf": null,
+        "sourceUpdatedAt": 1715500001000.3997,
+        "missingAt": null
+      }
+    },
+    {
+      "photo": {
+        "id": "electron-photo-lake",
+        "path": "/fixture/electron-backup/library/backup-lake.png",
+        "hash": "bb7c2770dba18b7baf177361e5019991a01aa1c3810ef711e7b811e020c55bb8",
+        "size": 77,
+        "mime": "image/png",
+        "thumbnailPath": "/fixture/electron-backup/thumbs/electron-photo-lake.jpg",
+        "favorite": false,
+        "createdAt": 1715500002000.3997,
+        "updatedAt": 1715500020000
+      },
+      "metadata": {
+        "photoId": "electron-photo-lake",
+        "datetime": 1715500002000.3997,
+        "lat": null,
+        "lng": null,
+        "camera": null,
+        "confidence": 0.55,
+        "originalDatetimeText": null
+      },
+      "semantic": {
+        "photoId": "electron-photo-lake",
+        "labels": [],
+        "caption": null,
+        "generatedLabels": [],
+        "generatedCaption": null,
+        "summary": null,
+        "embeddingRef": null,
+        "aiStatus": "disabled",
+        "aiProvider": null,
+        "aiModel": null,
+        "aiProcessedAt": null,
+        "aiError": null
+      },
+      "indexState": {
+        "photoId": "electron-photo-lake",
+        "indexed": true,
+        "aiProcessed": false,
+        "error": null,
+        "lastIndexedAt": 1715500020000,
+        "duplicateOf": null,
+        "sourceUpdatedAt": 1715500002000.3997,
+        "missingAt": null
+      }
+    }
+  ],
+  "memories": [
+    {
+      "id": "electron-memory-backup-e2e",
+      "name": "Backup E2E",
+      "description": "Restored story",
+      "coverPhotoId": "electron-photo-city",
+      "coverThumbnailPath": "/fixture/electron-backup/thumbs/electron-photo-city.jpg",
+      "photoCount": 1,
+      "generatedName": null,
+      "generatedDescription": null,
+      "generatedLabels": [],
+      "aiStatus": "disabled",
+      "aiProvider": null,
+      "aiModel": null,
+      "aiProcessedAt": null,
+      "aiError": null,
+      "source": "manual",
+      "createdAt": 1715500050000,
+      "updatedAt": 1715500060000
+    }
+  ],
+  "memoryPhotos": [
+    {
+      "memoryId": "electron-memory-backup-e2e",
+      "photoId": "electron-photo-city",
+      "addedAt": 1715500070000
+    }
+  ],
+  "editHistory": [
+    {
+      "id": "electron-edit-caption-city",
+      "photoId": "electron-photo-city",
+      "fieldName": "caption",
+      "previousValue": null,
+      "nextValue": "Backup E2E caption",
+      "createdAt": 1715500080000,
+      "rolledBackAt": null
+    },
+    {
+      "id": "electron-edit-labels-city",
+      "photoId": "electron-photo-city",
+      "fieldName": "labels",
+      "previousValue": "[]",
+      "nextValue": "[\"backup\",\"restore\"]",
+      "createdAt": 1715500080001,
+      "rolledBackAt": null
+    }
+  ],
+  "memoryCandidates": []
+}

@@ -1,0 +1,14 @@
+# Copy to android/key.properties for local signed release builds.
+# Do not commit android/key.properties or keystore files.
+#
+# Equivalent CI environment variables:
+# CHRONOPIC_ANDROID_STORE_FILE
+# CHRONOPIC_ANDROID_STORE_PASSWORD
+# CHRONOPIC_ANDROID_KEY_ALIAS
+# CHRONOPIC_ANDROID_KEY_PASSWORD
+#
+# storeFile may be absolute or relative to chronopic_flutter/apps/chronopic/android.
+storeFile=/absolute/path/to/chronopic-upload-keystore.jks
+storePassword=change-me
+keyAlias=chronopic-upload
+keyPassword=change-me

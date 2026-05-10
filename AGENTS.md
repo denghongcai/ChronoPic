@@ -6333,3 +6333,527 @@ This file is the local execution record for ChronoPic. It complements `PLAN.md` 
   migration/cutover compatibility,
   CI gate promotion,
   or iOS live verification.
+
+### 2026-05-10 Step 235
+
+- Planned Phase 7 after user selected the remaining Post 6.6 work:
+  Android deep E2E runner hardening,
+  migration and cutover compatibility,
+  release signing and Android distribution readiness,
+  CI gate promotion,
+  and Flutter release.
+- Added implementation plan:
+  `docs/superpowers/plans/2026-05-10-flutter-release-readiness-and-cutover.md`.
+- Updated `PLAN.md` and `docs/flutter-refactor-phases.md` so Phase 7 is now
+  `Flutter Release Readiness And Cutover`.
+- Recorded the explicit release decision:
+  Flutter is the release target;
+  Electron is no longer released and remains only as reference and migration
+  source until cutover is complete.
+- Recorded the implementation order:
+  harden Android deep E2E runner,
+  prove Electron-backup migration into Flutter,
+  add Android signing/release artifacts,
+  add Flutter Linux release artifacts,
+  promote Flutter gates into CI,
+  and replace tag-triggered Electron release assets with Flutter Android/Linux
+  assets.
+- Recorded the dependency/version rule:
+  before changing or adding dependencies,
+  GitHub Actions,
+  Android/Gradle/Flutter setup,
+  or release tools,
+  check the latest stable version from official sources and record the selected
+  versions here.
+- Next:
+  run documentation formatting verification,
+  then start Phase 7 Task 2 with Android deep E2E runner hardening when
+  implementation is requested.
+
+### 2026-05-10 Step 236
+
+- Started Phase 7 Task 2:
+  Android deep E2E runner hardening.
+- Added the artifact assertion helper:
+  `chronopic_flutter/tool/mobile_e2e/assert_android_deep_e2e_artifacts.mjs`.
+  It validates all required Android shell-runner screenshots,
+  XML dumps,
+  permission dumps,
+  and `backup.json`,
+  including the 2-photo import/restore contract.
+- Hardened `chronopic_flutter/tool/mobile_e2e/android_deep_e2e.sh` with:
+  timestamped logs,
+  device id in every log line,
+  scenario start/end markers,
+  named `uiautomator dump` retry attempts,
+  required artifact checks after capture,
+  timestamped default output directories,
+  `summary.json`,
+  and the new artifact assertion helper before success exit.
+- Added the two-run wrapper:
+  `chronopic_flutter/tool/mobile_e2e/run_android_deep_e2e_twice.sh`.
+  It creates clean `run-1` and `run-2` directories under
+  `.tmp/mobile-e2e/android-repeat/<timestamp>/`,
+  clears app/media state before each pass,
+  runs the single Android deep E2E runner twice,
+  rechecks artifacts after each pass,
+  and writes `combined-summary.json`.
+- Updated `docs/mobile-e2e-verification.md` with the hardened runner contract,
+  artifact assertion command,
+  two-run wrapper command,
+  and output directory layout.
+- Verification passed:
+  `bash -n chronopic_flutter/tool/mobile_e2e/android_deep_e2e.sh`,
+  `bash -n chronopic_flutter/tool/mobile_e2e/run_android_deep_e2e_twice.sh`,
+  `node --check chronopic_flutter/tool/mobile_e2e/assert_android_deep_e2e_artifacts.mjs`,
+  and a generated temporary complete artifact directory checked by
+  `assert_android_deep_e2e_artifacts.mjs`.
+- Remaining for Task 2:
+  run
+  `ANDROID_DEVICE_ID=emulator-5554 chronopic_flutter/tool/mobile_e2e/run_android_deep_e2e_twice.sh`
+  against a live clean emulator and record the two-pass evidence.
+
+### 2026-05-10 Step 237
+
+- Completed Phase 7 Task 2 live Android deep E2E hardening verification.
+- Attempted to launch the AVD with Flutter first:
+  `flutter emulators --launch chronopic_api36`.
+  It failed because this WSL environment has no `/dev/kvm`.
+- Confirmed the Android environment:
+  `flutter doctor -v` reports Flutter stable `3.41.9`,
+  Dart `3.11.5`,
+  Android SDK `36.0.0`,
+  Emulator `36.5.11.0`,
+  and Android toolchain ready.
+- Started the AVD through the SDK emulator in software mode:
+  `/home/dhc/.local/share/android-sdk/emulator/emulator -avd chronopic_api36 -no-window -no-audio -no-boot-anim -gpu swiftshader_indirect -accel off -no-snapshot-load -no-snapshot-save -no-metrics`.
+- Live runner execution exposed two real hardening gaps:
+  immediately after software-emulated boot,
+  `/sdcard/Pictures` can briefly return
+  `Transport endpoint is not connected`;
+  and the system permission controller can miss the
+  `ALLOW LIMITED ACCESS` tap on a slow emulator.
+- Fixed both gaps:
+  the single runner and two-run wrapper now wait for external storage before
+  media cleanup and retry fixture cleanup;
+  the limited-access flow now retries the permission tap until the Photo Picker
+  text is actually present.
+- Re-ran the full two-pass command:
+  `ANDROID_DEVICE_ID=emulator-5554 chronopic_flutter/tool/mobile_e2e/run_android_deep_e2e_twice.sh`.
+- Result:
+  passed.
+  Evidence directory:
+  `.tmp/mobile-e2e/android-repeat/20260510T035600Z/`.
+  `combined-summary.json` reports `status: passed`,
+  with both `run-1` and `run-2` marked `passed`.
+- Post-run artifact helper verification passed for both runs:
+  `node chronopic_flutter/tool/mobile_e2e/assert_android_deep_e2e_artifacts.mjs .tmp/mobile-e2e/android-repeat/20260510T035600Z/run-1`
+  and
+  `node chronopic_flutter/tool/mobile_e2e/assert_android_deep_e2e_artifacts.mjs .tmp/mobile-e2e/android-repeat/20260510T035600Z/run-2`.
+- Evidence count:
+  `63` files under `.tmp/mobile-e2e/android-repeat/20260510T035600Z`.
+- Formatting verification passed:
+  `git diff --check`.
+- Next:
+  start Phase 7 Task 3,
+  proving Flutter migration/cutover compatibility with a sanitized real
+  Electron backup fixture.
+
+### 2026-05-10 Step 238
+
+- Completed Phase 7 Task 3:
+  migration and cutover compatibility.
+- Found a real Electron-to-Flutter compatibility issue before adding the
+  migration fixture:
+  Electron backup JSON can contain fractional millisecond JavaScript numbers
+  for filesystem-derived timestamps,
+  while Flutter domain parsing used `as int` casts.
+- Added a red/green domain contract test:
+  `chronopic_flutter/packages/chronopic_domain/test/backup_contract_test.dart`
+  now verifies fractional Electron timestamp numbers are accepted and truncated
+  to Dart `int` values.
+  The test failed before the parser change and passed after the fix.
+- Updated Flutter domain backup/model parsing so integer-compatible JSON
+  numbers accept both `int` and `num` values:
+  backup `exportedAt`,
+  library source timestamps,
+  photo timestamps and size,
+  metadata datetime,
+  semantic AI processed timestamp,
+  index timestamps,
+  edit timestamps,
+  memory timestamps,
+  memory membership timestamp,
+  and memory-candidate timestamps.
+- Added the migration fixture generator:
+  `scripts/write-flutter-migration-fixtures.mjs`.
+  It reads the latest real Electron E2E backup,
+  removes local `/tmp` and home paths,
+  replaces Electron E2E secret placeholders,
+  normalizes IDs and fixture paths,
+  preserves the Electron JSON shape,
+  and writes deterministic migration fixtures.
+- Generated:
+  `tests/fixtures/flutter-migration/electron-backup-v1.json`
+  and
+  `tests/fixtures/flutter-migration/electron-backup-v1.expected.json`.
+- Added Flutter app-service import coverage:
+  `chronopic_flutter/packages/chronopic_app/test/electron_backup_import_test.dart`.
+  The test verifies preview counts,
+  restore result counts,
+  favorite state,
+  captions,
+  tags,
+  edited datetimes,
+  memory metadata,
+  memory membership,
+  locale settings,
+  map settings,
+  and AI status/generated-label fields.
+- Added cutover documentation:
+  `docs/flutter-migration-cutover.md`.
+  Decision:
+  direct old SQLite import is not required for Phase 7 while JSON backup export
+  and Flutter restore are covered;
+  keep Electron installed as fallback until user restore counts are verified.
+- Verification passed:
+  `pnpm run e2e:backup`,
+  `node scripts/write-flutter-migration-fixtures.mjs`,
+  `cd chronopic_flutter && dart test packages/chronopic_domain/test/backup_contract_test.dart`,
+  and
+  `cd chronopic_flutter && dart test packages/chronopic_app/test/electron_backup_import_test.dart`.
+- Next:
+  start Phase 7 Task 4,
+  Android release signing and distribution readiness.
+
+### 2026-05-10 Step 239
+
+- Completed Phase 7 Task 4:
+  Android release signing and distribution readiness.
+- Checked official sources before changing release/signing behavior:
+  Flutter Android deployment docs
+  `https://docs.flutter.dev/deployment/android`,
+  Android app-signing docs
+  `https://developer.android.com/studio/publish/app-signing`,
+  Google Play Photo and Video Permissions policy
+  `https://support.google.com/googleplay/android-developer/answer/14115180`,
+  and Google Play Data safety documentation
+  `https://support.google.com/googleplay/android-developer/answer/10787469`.
+- Recorded the Android identity gate:
+  current `applicationId` is still `com.example.chronopic`,
+  so generated APK/AAB artifacts are technical verification artifacts only and
+  must not be uploaded as production until the final package id is chosen.
+- Updated
+  `chronopic_flutter/apps/chronopic/android/app/build.gradle.kts`:
+  release builds no longer use debug signing,
+  release signing reads ignored `android/key.properties` or CI environment
+  variables,
+  debug builds remain unaffected,
+  and missing release signing material fails release tasks with a clear message.
+- Added ignored signing template:
+  `chronopic_flutter/apps/chronopic/android/key.properties.example`.
+- Updated `.gitignore` so local Android signing properties and keystore files
+  are not tracked.
+- Added Android release tooling:
+  `chronopic_flutter/tool/release/build_android_release.sh`
+  and
+  `chronopic_flutter/tool/release/verify_flutter_release_artifacts.mjs`.
+- Added release checklist:
+  `docs/flutter-release-checklist.md`.
+  It records Flutter-only release line,
+  Android identity gate,
+  signing material handling,
+  release artifact names,
+  photo permission rationale,
+  Play Data safety notes,
+  and the blocked iOS gate.
+- Updated `docs/mobile-productization.md` with the Phase 7 Android release
+  readiness gate and verified artifacts.
+- Verification passed:
+  `bash -n chronopic_flutter/tool/release/build_android_release.sh`,
+  `node --check chronopic_flutter/tool/release/verify_flutter_release_artifacts.mjs`,
+  `cd chronopic_flutter/apps/chronopic && flutter build apk --debug`,
+  and missing-signing `flutter build apk --release` failed with the intended
+  explicit signing error.
+- Created a local temporary upload keystore under `.tmp/release-signing/` for
+  technical verification only.
+  No signing secret was committed.
+- Signed local technical release verification passed:
+  `CHRONOPIC_ANDROID_STORE_FILE=$PWD/.tmp/release-signing/chronopic-upload.jks CHRONOPIC_ANDROID_STORE_PASSWORD=chronopic-local-pass CHRONOPIC_ANDROID_KEY_ALIAS=chronopic-upload CHRONOPIC_ANDROID_KEY_PASSWORD=chronopic-local-pass chronopic_flutter/tool/release/build_android_release.sh`.
+- Artifact verification passed:
+  `node chronopic_flutter/tool/release/verify_flutter_release_artifacts.mjs`.
+- Generated artifacts:
+  `dist/flutter-release/android/chronopic-flutter-android-release.apk`,
+  `dist/flutter-release/android/chronopic-flutter-android-release.apk.sha256`,
+  `dist/flutter-release/android/chronopic-flutter-android-release.aab`,
+  and
+  `dist/flutter-release/android/chronopic-flutter-android-release.aab.sha256`.
+- Next:
+  start Phase 7 Task 5,
+  Flutter Linux release artifact generation.
+
+### 2026-05-10 Step 240
+
+- Completed Phase 7 Task 5:
+  Flutter Linux release artifact generation.
+- Added:
+  `chronopic_flutter/tool/release/build_linux_release.sh`.
+  The script runs `flutter build linux --release`,
+  stages the Flutter Linux bundle,
+  archives it as
+  `chronopic-flutter-linux-x64-0.1.3.tar.gz`,
+  writes it under `dist/flutter-release/linux/`,
+  and creates a `.sha256` file.
+- Extended:
+  `chronopic_flutter/tool/release/verify_flutter_release_artifacts.mjs`.
+  It now accepts target arguments:
+  `android`,
+  `linux`,
+  or both,
+  verifies sha256 files,
+  and confirms the Linux archive contains the `chronopic` executable.
+- Updated:
+  `docs/flutter-release-checklist.md`
+  with Linux release commands and artifact names.
+- Updated:
+  `README.md`
+  so current release artifacts are the Flutter Android APK/AAB and Flutter
+  Linux tarball.
+  Electron archives are described as historical only.
+- Verification passed:
+  `bash -n chronopic_flutter/tool/release/build_linux_release.sh`,
+  `node --check chronopic_flutter/tool/release/verify_flutter_release_artifacts.mjs`,
+  `chronopic_flutter/tool/release/build_linux_release.sh`,
+  `node chronopic_flutter/tool/release/verify_flutter_release_artifacts.mjs linux`,
+  and
+  `node chronopic_flutter/tool/release/verify_flutter_release_artifacts.mjs android linux`.
+- Generated artifacts:
+  `dist/flutter-release/linux/chronopic-flutter-linux-x64-0.1.3.tar.gz`
+  and
+  `dist/flutter-release/linux/chronopic-flutter-linux-x64-0.1.3.tar.gz.sha256`.
+- Next:
+  start Phase 7 Task 6,
+  promoting Flutter gates into CI.
+
+### 2026-05-10 Step 241
+
+- Completed Phase 7 Task 6:
+  CI gate promotion.
+- Verified current action tags from official GitHub repositories:
+  `actions/checkout` latest stable major is `v6`
+  with latest tag `v6.0.2`;
+  `actions/setup-node` latest stable major is `v6`
+  with latest tag `v6.4.0`;
+  `actions/setup-java` latest stable major is `v5`
+  with latest tag `v5.2.0`;
+  `pnpm/action-setup` latest stable major is `v6`
+  with latest tag `v6.0.6`.
+- Verified Flutter official stable branch:
+  `https://github.com/flutter/flutter.git` `refs/heads/stable`
+  points to `00b0c91f06209d9e4a41f71b7a512d6eb3b9c694`,
+  matching local Flutter stable `3.41.9`.
+- Updated `.github/workflows/ci.yml`:
+  `actions/checkout` is now `@v6`,
+  `actions/setup-node` is now `@v6`,
+  and existing `pnpm/action-setup@v6` remains current.
+- Added a separate Flutter CI job that clones Flutter from the official stable
+  branch rather than adding an unverified third-party Flutter setup action.
+  The job uses `actions/setup-java@v5` with Temurin 17 for Android debug
+  builds.
+- The Flutter CI job runs:
+  `dart analyze packages/chronopic_media packages/chronopic_app packages/chronopic_ui apps/chronopic`,
+  `dart test packages/chronopic_media/test packages/chronopic_app/test`,
+  Flutter UI/parity widget tests,
+  and `flutter build apk --debug`.
+- Removed Electron package-release gates from CI:
+  `pnpm run package:linux`,
+  `pnpm run package:verify`,
+  and `pnpm run e2e:packaged` are no longer CI release-readiness steps.
+  Electron runtime,
+  accessibility,
+  AI,
+  and backup E2E checks remain while Electron is still the reference app.
+- Documented the Android deep E2E runner as a local/manual Phase 7 release gate
+  in `docs/flutter-release-checklist.md` rather than making every CI run pay
+  for the full emulator/photo-picker workflow.
+- Local verification of the new Flutter CI command set passed:
+  `cd chronopic_flutter && dart analyze packages/chronopic_media packages/chronopic_app packages/chronopic_ui apps/chronopic`,
+  `cd chronopic_flutter && dart test packages/chronopic_media/test packages/chronopic_app/test`,
+  `cd chronopic_flutter && flutter test packages/chronopic_ui/test/chronopic_home_test.dart packages/chronopic_ui/test/linux_desktop_parity_test.dart packages/chronopic_ui/test/mobile_productization_test.dart`,
+  and
+  `cd chronopic_flutter/apps/chronopic && flutter build apk --debug`.
+- Next:
+  start Phase 7 Task 7,
+  replacing tag-triggered Electron release assets with Flutter Android/Linux
+  release assets.
+
+### 2026-05-10 Step 242
+
+- Completed Phase 7 Task 7:
+  replace tag-triggered Electron release assets with Flutter release assets.
+- Verified `actions/setup-java` official tags before adding it:
+  latest stable major is `v5`,
+  latest tag observed is `v5.2.0`.
+- Rewrote `.github/workflows/release.yml`:
+  the old Electron `desktop` matrix for Linux,
+  macOS,
+  and Windows is removed.
+- Added `flutter-android` release job:
+  checkout with `actions/checkout@v6`,
+  Java setup with `actions/setup-java@v5`,
+  Flutter from the official stable branch,
+  Flutter validation,
+  Android signing material restored from GitHub Secrets,
+  signed APK/AAB build through
+  `chronopic_flutter/tool/release/build_android_release.sh`,
+  artifact verification,
+  and upload of `dist/flutter-release/android/*`.
+- Required Android release secrets are:
+  `CHRONOPIC_ANDROID_KEYSTORE_BASE64`,
+  `CHRONOPIC_ANDROID_STORE_PASSWORD`,
+  `CHRONOPIC_ANDROID_KEY_ALIAS`,
+  and
+  `CHRONOPIC_ANDROID_KEY_PASSWORD`.
+- Added `flutter-linux` release job:
+  Linux build dependencies,
+  Flutter from the official stable branch,
+  `chronopic_flutter/tool/release/build_linux_release.sh`,
+  Linux artifact verification,
+  and upload of `dist/flutter-release/linux/*`.
+- Kept iOS blocked:
+  no iOS release job or asset upload was added because macOS/Xcode signing and
+  iOS E2E evidence do not exist yet.
+- Updated `docs/flutter-release-checklist.md` with the tag release workflow and
+  required secrets.
+- Next:
+  run the Phase 7 final release readiness gate and close the phase docs.
+
+### 2026-05-10 Step 243
+
+- Completed Phase 7 Task 8:
+  final Flutter release readiness gate and documentation closeout.
+- Final Node/Electron reference verification passed:
+  `pnpm test && pnpm typecheck && pnpm build`.
+  Result:
+  42 Node tests passed,
+  TypeScript passed,
+  and the workspace build completed.
+- Final Flutter verification passed:
+  `cd chronopic_flutter && dart analyze packages/chronopic_media packages/chronopic_app packages/chronopic_ui apps/chronopic`,
+  `cd chronopic_flutter && dart test packages/chronopic_media/test packages/chronopic_app/test`,
+  `cd chronopic_flutter && flutter test packages/chronopic_ui/test/chronopic_home_test.dart packages/chronopic_ui/test/linux_desktop_parity_test.dart packages/chronopic_ui/test/mobile_productization_test.dart`,
+  and
+  `cd chronopic_flutter/apps/chronopic && flutter build apk --debug`.
+- Final Android hardening gate passed:
+  `ANDROID_DEVICE_ID=emulator-5554 chronopic_flutter/tool/mobile_e2e/run_android_deep_e2e_twice.sh`.
+  Evidence:
+  `.tmp/mobile-e2e/android-repeat/20260510T044545Z/combined-summary.json`
+  reports `passed`,
+  with both clean emulator runs passed.
+- Agent verification script scene mapping:
+  Phase 7 changed release,
+  migration,
+  CI,
+  and mobile E2E infrastructure rather than Electron desktop runtime UI.
+  Manual Electron Playwright Scene 1 and Scene 7 were skipped for this final
+  closeout because no new Electron UI/runtime behavior was changed after the
+  existing Node/Electron reference gates;
+  Android E2E covered first-run permission,
+  denied recovery,
+  full access,
+  limited access,
+  restart persistence,
+  and backup/restore on the Flutter release line.
+- Independent Android artifact assertions passed:
+  `node chronopic_flutter/tool/mobile_e2e/assert_android_deep_e2e_artifacts.mjs .tmp/mobile-e2e/android-repeat/20260510T044545Z/run-1`
+  and
+  `node chronopic_flutter/tool/mobile_e2e/assert_android_deep_e2e_artifacts.mjs .tmp/mobile-e2e/android-repeat/20260510T044545Z/run-2`.
+  Each run validated required screenshots,
+  XML dumps,
+  limited-permission state,
+  restart evidence,
+  restore evidence,
+  backup JSON,
+  and summary JSON.
+- Final release artifact generation passed:
+  `CHRONOPIC_ANDROID_STORE_FILE=$PWD/.tmp/release-signing/chronopic-upload.jks CHRONOPIC_ANDROID_STORE_PASSWORD=chronopic-local-pass CHRONOPIC_ANDROID_KEY_ALIAS=chronopic-upload CHRONOPIC_ANDROID_KEY_PASSWORD=chronopic-local-pass chronopic_flutter/tool/release/build_android_release.sh`
+  and
+  `chronopic_flutter/tool/release/build_linux_release.sh`.
+  The temporary signing key remains under ignored `.tmp/release-signing/` and
+  is for technical verification only.
+- Final release artifact verification passed:
+  `node chronopic_flutter/tool/release/verify_flutter_release_artifacts.mjs android linux`.
+  Verified artifacts:
+  `dist/flutter-release/android/chronopic-flutter-android-release.apk`,
+  `dist/flutter-release/android/chronopic-flutter-android-release.aab`,
+  `dist/flutter-release/linux/chronopic-flutter-linux-x64-0.1.3.tar.gz`,
+  and matching `.sha256` files.
+- Completion audit reran the Flutter migration gate:
+  `cd chronopic_flutter && dart test packages/chronopic_app/test/electron_backup_import_test.dart`.
+  Result:
+  `00:00 +1: All tests passed!`.
+- Final whitespace check passed:
+  `git diff --check`.
+- Completion audit clarification:
+  `tests/packaging.test.ts` still keeps legacy Electron desktop packaging
+  script coverage because those scripts remain available for reference/local
+  use,
+  but the test names now say `legacy desktop packaging` so they no longer imply
+  Electron is still a release target.
+  Targeted verification passed:
+  `node --experimental-strip-types --test tests/packaging.test.ts`.
+- Updated `PLAN.md`,
+  `docs/flutter-refactor-phases.md`,
+  `docs/mobile-e2e-verification.md`,
+  `docs/flutter-migration-cutover.md`,
+  `docs/flutter-release-checklist.md`,
+  and the Phase 7 execution plan with final gate evidence.
+- Result:
+  Phase 7 is complete locally.
+  Flutter is now the release line;
+  new Electron release assets are no longer produced.
+  Android artifacts are technical verification artifacts until the final
+  `applicationId` and production upload key are chosen.
+
+### 2026-05-10 Step 244
+
+- Completion audit found and closed one remaining Phase 7 gap:
+  the original CI promotion requirement asked for an optional/manual Android
+  emulator E2E workflow,
+  not only local documentation.
+- Verified latest stable action tags from official GitHub repositories before
+  adding the workflow:
+  `reactivecircus/android-emulator-runner` latest stable tag is `v2.37.0`,
+  and `actions/upload-artifact` latest stable tag is `v7.0.1`.
+- Added `.github/workflows/android-deep-e2e.yml`.
+  It is a `workflow_dispatch` workflow with default API level `36`,
+  sets up Node 24,
+  Temurin 17,
+  Flutter stable,
+  enables KVM,
+  runs the hardened two-run Android deep E2E gate through
+  `reactivecircus/android-emulator-runner@v2.37.0`,
+  and uploads `.tmp/mobile-e2e/android-repeat/` artifacts with
+  `actions/upload-artifact@v7.0.1`.
+- Updated `tests/packaging.test.ts` so the release/CI contract now verifies the
+  manual Android deep E2E workflow as well as the Flutter-only release
+  workflow.
+- Updated `PLAN.md`,
+  `docs/flutter-refactor-phases.md`,
+  `docs/flutter-release-checklist.md`,
+  `docs/mobile-e2e-verification.md`,
+  and the Phase 7 execution plan so Android deep E2E is recorded as both a
+  local and manually triggered CI gate.
+- Verification passed:
+  `node --experimental-strip-types --test tests/packaging.test.ts`
+  and
+  `git diff --check`.
+- Re-ran the root test suite after adding the manual workflow contract:
+  `pnpm test`.
+  Result:
+  43 Node tests passed.
+- Re-ran the root typecheck/build gate after adding the manual workflow:
+  `pnpm typecheck && pnpm build`.
+  Result:
+  both commands passed;
+  Vite emitted the existing large chunk warning only.

@@ -867,68 +867,145 @@ Status:
   final evidence count/dimension checks,
   and `git diff --check` all passed.
 
-## Post 6.6 Candidate Work
+## Phase 7: Flutter Release Readiness And Cutover
 
-- Android deep E2E runner hardening:
-  improve `adb`/`uiautomator` retry logging,
-  assert required screenshot/XML/backup artifacts after every run,
-  and repeat the clean-emulator runner twice before release work starts.
-- Release signing and Android distribution readiness:
-  add secret-safe signing configuration,
-  build release APK/AAB artifacts,
-  record Play Store photo-permission/privacy disclosure text,
-  and document the Android release checklist.
-- Migration and cutover compatibility:
-  verify Flutter backup import against real Electron backup fixtures,
-  document the Electron-to-Flutter migration path,
-  and decide whether direct old SQLite import is still needed after backup
-  import coverage is proven.
-- CI gate promotion:
-  add or extend CI/manual workflows for Flutter analyze,
-  Dart package tests,
-  Flutter UI/parity tests,
-  Android debug build,
-  and optionally a manually triggered Android emulator E2E workflow.
-- iOS live verification:
-  run the recorded macOS/Xcode build/run gate,
-  capture the required permission/import/restart/backup evidence,
-  and only then mark iOS release-verified.
-- Large-library and accessibility sweep:
-  measure Flutter desktop/mobile behavior with larger fixture libraries,
-  re-check keyboard/focus/accessibility behavior,
-  and fix only issues that block release confidence.
+Purpose: make the Flutter rewrite shippable without producing new Electron
+release assets.
 
-Deferred candidate context:
+Implementation plan:
 
-- Flutter Linux desktop parity hardening was selected first because the desktop
-  UI/function match against the Electron reference remains the highest-risk
-  user-visible gate before release packaging.
-- The selected Phase 6.6 evidence scope covers home/library,
-  gallery/detail overlay,
-  memory list/detail,
-  search/filter/sort,
-  settings,
-  notifications,
-  Chinese locale,
-  restart persistence,
-  and metadata editing flows through existing detail/editing tests.
+- [docs/superpowers/plans/2026-05-10-flutter-release-readiness-and-cutover.md](superpowers/plans/2026-05-10-flutter-release-readiness-and-cutover.md)
 
-## Phase 7: Release, Migration, And Cutover
+Release target decision:
 
-Purpose: make the Flutter rewrite shippable without stranding existing Electron users.
+- Flutter Android is the primary executable mobile release target.
+- Flutter Linux is the supported desktop release artifact for this repo's
+  current runner.
+- Flutter iOS remains blocked until macOS/Xcode build,
+  signing,
+  and E2E evidence exist.
+- Electron is no longer a release target.
+  Keep it only as parity reference and migration source until cutover is
+  complete.
 
 Deliverables:
 
-- Add desktop packaging for macOS, Windows, and Linux.
-- Add mobile signing, entitlements, permissions descriptions, and privacy disclosures.
-- Provide Electron-to-Flutter import through the versioned backup JSON path first.
-- Decide whether direct old SQLite import is needed after backup import works.
-- Keep Electron release support for at least one transition cycle.
-- Add crash/error reporting strategy that does not upload user photos or local catalog contents.
+- Harden Android deep E2E runner:
+  clearer `adb`/`uiautomator` retry logs,
+  required screenshot/XML/permission/backup artifact assertions,
+  summary JSON,
+  and two clean emulator runs before release work proceeds.
+  Current status:
+  assertion helper,
+  runner logging/summary hardening,
+  two-run wrapper,
+  and live two-run emulator evidence are complete.
+  Evidence:
+  `.tmp/mobile-e2e/android-repeat/20260510T044545Z/combined-summary.json`
+  reports `passed`.
+- Prove migration and cutover compatibility:
+  generate a sanitized real Electron backup fixture,
+  restore it through Flutter app/domain code,
+  document the user migration path,
+  and decide whether direct old SQLite import is still needed.
+  Current status:
+  complete.
+  Evidence:
+  `pnpm run e2e:backup`,
+  `node scripts/write-flutter-migration-fixtures.mjs`,
+  and
+  `cd chronopic_flutter && dart test packages/chronopic_app/test/electron_backup_import_test.dart`
+  pass.
+  Direct old SQLite import is not required for Phase 7 unless JSON backup
+  export/restore fails on a real user backup.
+- Add Flutter Android release readiness:
+  secret-safe signing config,
+  release APK/AAB build,
+  sha256 artifacts,
+  Play Store photo-permission rationale,
+  and Data safety notes.
+  Current status:
+  complete for technical release verification.
+  Current `applicationId` is still `com.example.chronopic`,
+  so artifacts are not production-uploadable until the final id is chosen.
+  Evidence:
+  missing signing fails release builds with a clear message,
+  local signed release APK/AAB build passes,
+  and
+  `node chronopic_flutter/tool/release/verify_flutter_release_artifacts.mjs android linux`
+  verifies APK/AAB/Linux sha256 files.
+- Add Flutter Linux release readiness:
+  release bundle build,
+  tarball archive,
+  sha256 artifact,
+  and README release artifact updates.
+  Current status:
+  complete locally.
+  Evidence:
+  `chronopic_flutter/tool/release/build_linux_release.sh`
+  and
+  `node chronopic_flutter/tool/release/verify_flutter_release_artifacts.mjs linux`
+  pass.
+- Promote Flutter CI gates:
+  Flutter analyze,
+  Dart tests,
+  Flutter widget/parity tests,
+  Android debug build,
+  optional manual Android emulator E2E,
+  and no required Electron package-release gate.
+  Current status:
+  complete.
+  CI now has a Flutter job,
+  `.github/workflows/android-deep-e2e.yml` provides a manually triggered
+  Android emulator deep E2E gate,
+  Electron package verification is no longer a CI release gate,
+  and Android deep E2E remains both a local and manual CI Phase 7 gate.
+- Replace tag-triggered Electron release workflow with Flutter release workflow:
+  upload Flutter Android and Flutter Linux artifacts,
+  do not upload new Electron assets.
+  Current status:
+  complete.
+  Tag release workflow now uploads Flutter Android and Flutter Linux assets
+  only.
+  iOS remains blocked until macOS/Xcode signing and E2E evidence exist.
+
+Version rule:
+
+- Before adding or changing any dependency,
+  GitHub Action,
+  Flutter SDK setup,
+  Android SDK package,
+  Gradle plugin,
+  or release tool,
+  check the current stable version from official sources and record the selected
+  version in `AGENTS.md`.
 
 Exit gate:
 
-- Users can move from the Electron app to the Flutter app through an explicit migration path, and each target platform has a release checklist.
+- Status:
+  complete on 2026-05-10.
+- Android hardened runner passes two consecutive clean emulator runs and
+  validates all required artifacts.
+- Flutter imports the real Electron backup fixture through the versioned JSON
+  path.
+- Flutter Android release APK/AAB and Flutter Linux archive are generated and
+  verified locally.
+- CI contains Flutter release-readiness gates.
+- Tag-triggered release no longer produces Electron artifacts.
+- Migration,
+  release,
+  privacy,
+  signing,
+  and iOS blocked-gate docs are updated.
+- Final local gate evidence:
+  `pnpm test && pnpm typecheck && pnpm build`,
+  Flutter analyze/package tests/widget tests,
+  `flutter build apk --debug`,
+  Android two-run E2E hardening,
+  signed Android release build,
+  Linux release build,
+  combined Android/Linux artifact verification,
+  and `git diff --check` passed.
 
 ## Explicit Non-Goals For The Refactor
 
@@ -936,4 +1013,6 @@ Exit gate:
 - Do not start with a UI-only port.
 - Do not promise identical desktop and mobile interaction models where platform permissions require different UX.
 - Do not add OCR, vector search, face/person recognition, cloud sync, or EXIF writeback during the initial rewrite.
-- Do not remove the Electron reference app until the Flutter parity gates are met.
+- Do not remove the Electron reference app until the Flutter parity and
+  migration gates are met.
+- Do not produce new Electron release assets during Phase 7.

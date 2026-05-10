@@ -1,0 +1,47 @@
+{
+  "schemaVersion": 1,
+  "source": {
+    "sanitizedFromElectronE2E": true
+  },
+  "counts": {
+    "sourceCount": 1,
+    "photoCount": 2,
+    "memoryCount": 1,
+    "memoryPhotoCount": 1,
+    "editHistoryCount": 2,
+    "memoryCandidateCount": 0
+  },
+  "keyFields": {
+    "locale": "zh-CN",
+    "aiOutputLocale": "zh-CN",
+    "mapApiKey": "fixture-amap-key",
+    "favoritePhotoIds": [
+      "electron-photo-city"
+    ],
+    "authoredPhotoId": "electron-photo-city",
+    "authoredCaption": "Backup E2E caption",
+    "authoredLabels": [
+      "backup",
+      "restore"
+    ],
+    "memoryId": "electron-memory-backup-e2e",
+    "memoryName": "Backup E2E",
+    "memoryDescription": "Restored story",
+    "memoryPhotoIds": [
+      "electron-photo-city"
+    ],
+    "photoAiStatusById": {
+      "electron-photo-city": "disabled",
+      "electron-photo-lake": "disabled"
+    },
+    "photoGeneratedLabelsById": {
+      "electron-photo-city": [],
+      "electron-photo-lake": []
+    },
+    "photoDatetimeById": {
+      "electron-photo-city": 1715500001000,
+      "electron-photo-lake": 1715500002000
+    },
+    "directSqliteImportRequiredForPhase7": false
+  }
+}

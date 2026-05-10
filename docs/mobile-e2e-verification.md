@@ -50,10 +50,74 @@ Record exact commands and outputs for every completed scenario.
 ANDROID_DEVICE_ID=emulator-5554 chronopic_flutter/tool/mobile_e2e/android_deep_e2e.sh
 ```
 
-Expected skeleton evidence:
+Default output now goes under a timestamped deterministic run directory:
 
-- `.tmp/mobile-e2e/android/01-first-run.png`
-- `.tmp/mobile-e2e/android/01-first-run.xml`
+```text
+.tmp/mobile-e2e/android/<YYYYMMDDTHHMMSSZ>/
+```
+
+Set `MOBILE_E2E_OUT_DIR` to pin an exact output directory for CI or release
+evidence collection.
+
+Required evidence per run:
+
+- `01-first-run.png`
+- `01-first-run.xml`
+- `02-denied.png`
+- `02-denied.xml`
+- `03-full-access.png`
+- `03-full-access.xml`
+- `04-limited-access.png`
+- `04-limited-access.xml`
+- `04-permissions.txt`
+- `05-restart.png`
+- `05-restart.xml`
+- `06-restore.png`
+- `06-restore.xml`
+- `backup.json`
+- `summary.json`
+
+The runner writes timestamped logs with the target device id, prints scenario
+start/end markers, retries `uiautomator dump` with named attempts, fails on
+missing screenshots/XML/permission/backup artifacts, and runs the artifact
+assertion helper before exiting.
+
+The assertion helper can also be run directly:
+
+```bash
+node chronopic_flutter/tool/mobile_e2e/assert_android_deep_e2e_artifacts.mjs \
+  .tmp/mobile-e2e/android/<run-dir>
+```
+
+For release-readiness hardening, run two clean emulator passes:
+
+```bash
+ANDROID_DEVICE_ID=emulator-5554 \
+  chronopic_flutter/tool/mobile_e2e/run_android_deep_e2e_twice.sh
+```
+
+The wrapper writes:
+
+```text
+.tmp/mobile-e2e/android-repeat/<YYYYMMDDTHHMMSSZ>/run-1/
+.tmp/mobile-e2e/android-repeat/<YYYYMMDDTHHMMSSZ>/run-2/
+.tmp/mobile-e2e/android-repeat/<YYYYMMDDTHHMMSSZ>/combined-summary.json
+```
+
+Each run clears ChronoPic app/media state before execution, re-runs the single
+runner, calls the artifact assertion helper after the run, and fails if either
+run is incomplete.
+
+The same hardened two-run gate is also available as a manually triggered GitHub
+Actions workflow:
+
+- `.github/workflows/android-deep-e2e.yml`
+- Trigger:
+  `workflow_dispatch`
+- Default API level:
+  `36`
+- Output:
+  uploaded `.tmp/mobile-e2e/android-repeat/` artifacts.
 
 2026-05-10 skeleton result:
 
@@ -86,6 +150,41 @@ Expected skeleton evidence:
   `05-restart.xml` contains `Select`.
 - Restore assertion:
   `06-restore.xml` contains `Select` and `2 items`.
+
+2026-05-10 Phase 7 runner hardening result:
+
+- Added:
+  `chronopic_flutter/tool/mobile_e2e/assert_android_deep_e2e_artifacts.mjs`.
+- Added:
+  `chronopic_flutter/tool/mobile_e2e/run_android_deep_e2e_twice.sh`.
+- Hardened:
+  `chronopic_flutter/tool/mobile_e2e/android_deep_e2e.sh`.
+- Static verification passed:
+  `bash -n chronopic_flutter/tool/mobile_e2e/android_deep_e2e.sh`,
+  `bash -n chronopic_flutter/tool/mobile_e2e/run_android_deep_e2e_twice.sh`,
+  and
+  `node --check chronopic_flutter/tool/mobile_e2e/assert_android_deep_e2e_artifacts.mjs`.
+- Artifact helper contract verification passed against a generated temporary
+  complete artifact directory.
+- Fixed two hardening issues exposed by live emulator execution:
+  the runner now waits for `/sdcard/Pictures` to become available before media
+  cleanup because software-emulated boot can briefly return
+  `Transport endpoint is not connected`,
+  and the limited-access transition now retries the
+  `ALLOW LIMITED ACCESS` tap until the system Photo Picker is confirmed.
+- Live two-run emulator verification passed:
+  `ANDROID_DEVICE_ID=emulator-5554 chronopic_flutter/tool/mobile_e2e/run_android_deep_e2e_twice.sh`.
+- Evidence directory:
+  `.tmp/mobile-e2e/android-repeat/20260510T044545Z/`.
+- Result:
+  `combined-summary.json` status is `passed`;
+  both `run-1` and `run-2` status values are `passed`.
+- Post-run artifact assertions passed for both runs:
+  `node chronopic_flutter/tool/mobile_e2e/assert_android_deep_e2e_artifacts.mjs .tmp/mobile-e2e/android-repeat/20260510T044545Z/run-1`
+  and
+  `node chronopic_flutter/tool/mobile_e2e/assert_android_deep_e2e_artifacts.mjs .tmp/mobile-e2e/android-repeat/20260510T044545Z/run-2`.
+- Evidence count:
+  `63` files under `.tmp/mobile-e2e/android-repeat/20260510T044545Z`.
 
 ### Android App-Owned Integration Test
 

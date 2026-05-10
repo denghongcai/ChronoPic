@@ -17,15 +17,20 @@ final class ChronoPicBackup {
   factory ChronoPicBackup.fromJson(JsonMap json) {
     return ChronoPicBackup(
       app: json['app'] as String,
-      schemaVersion: json['schemaVersion'] as int,
-      exportedAt: json['exportedAt'] as int,
-      settings: BackupSettings.fromJson((json['settings'] as Map).cast<String, Object?>()),
+      schemaVersion: _int(json['schemaVersion']),
+      exportedAt: _int(json['exportedAt']),
+      settings: BackupSettings.fromJson(
+        (json['settings'] as Map).cast<String, Object?>(),
+      ),
       librarySources: _list(json['librarySources'], LibrarySource.fromJson),
       photos: _list(json['photos'], PhotoRecord.fromJson),
       memories: _list(json['memories'], Memory.fromJson),
       memoryPhotos: _list(json['memoryPhotos'], MemoryPhoto.fromJson),
       editHistory: _list(json['editHistory'], EditHistory.fromJson),
-      memoryCandidates: _list(json['memoryCandidates'], MemoryCandidate.fromJson),
+      memoryCandidates: _list(
+        json['memoryCandidates'],
+        MemoryCandidate.fromJson,
+      ),
     );
   }
 
@@ -41,17 +46,21 @@ final class ChronoPicBackup {
   final List<MemoryCandidate> memoryCandidates;
 
   JsonMap toJson() => {
-        'app': app,
-        'schemaVersion': schemaVersion,
-        'exportedAt': exportedAt,
-        'settings': settings.toJson(),
-        'librarySources': librarySources.map((source) => source.toJson()).toList(),
-        'photos': photos.map((record) => record.toJson()).toList(),
-        'memories': memories.map((memory) => memory.toJson()).toList(),
-        'memoryPhotos': memoryPhotos.map((membership) => membership.toJson()).toList(),
-        'editHistory': editHistory.map((edit) => edit.toJson()).toList(),
-        'memoryCandidates': memoryCandidates.map((candidate) => candidate.toJson()).toList(),
-      };
+    'app': app,
+    'schemaVersion': schemaVersion,
+    'exportedAt': exportedAt,
+    'settings': settings.toJson(),
+    'librarySources': librarySources.map((source) => source.toJson()).toList(),
+    'photos': photos.map((record) => record.toJson()).toList(),
+    'memories': memories.map((memory) => memory.toJson()).toList(),
+    'memoryPhotos': memoryPhotos
+        .map((membership) => membership.toJson())
+        .toList(),
+    'editHistory': editHistory.map((edit) => edit.toJson()).toList(),
+    'memoryCandidates': memoryCandidates
+        .map((candidate) => candidate.toJson())
+        .toList(),
+  };
 }
 
 final class BackupValidationResult {
@@ -64,7 +73,8 @@ final class BackupValidationResult {
 BackupValidationResult validateChronoPicBackup(ChronoPicBackup backup) {
   final errors = <String>[];
   if (backup.app != 'ChronoPic') errors.add('Unexpected app ${backup.app}');
-  if (backup.schemaVersion != 1) errors.add('Unsupported schemaVersion ${backup.schemaVersion}');
+  if (backup.schemaVersion != 1)
+    errors.add('Unsupported schemaVersion ${backup.schemaVersion}');
 
   final photoIds = backup.photos.map((record) => record.photo.id).toSet();
   for (final record in backup.photos) {
@@ -85,7 +95,8 @@ BackupValidationResult validateChronoPicBackup(ChronoPicBackup backup) {
   }
   for (final candidate in backup.memoryCandidates) {
     for (final photoId in candidate.photoIds) {
-      if (!photoIds.contains(photoId)) errors.add('Missing candidate photo $photoId');
+      if (!photoIds.contains(photoId))
+        errors.add('Missing candidate photo $photoId');
     }
   }
   return BackupValidationResult(valid: errors.isEmpty, errors: errors);
@@ -130,4 +141,10 @@ List<T> _list<T>(Object? value, T Function(JsonMap json) parse) {
   return ((value as List?) ?? const <Object?>[])
       .map((entry) => parse((entry as Map).cast<String, Object?>()))
       .toList();
+}
+
+int _int(Object? value) {
+  if (value is int) return value;
+  if (value is num) return value.toInt();
+  throw FormatException('Expected integer-compatible JSON number, got $value');
 }

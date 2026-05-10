@@ -191,6 +191,50 @@ Implementation note:
   and treats thumbnail decode failures as a missing thumbnail rather than an
   import failure.
 
+## Android Release Readiness
+
+Captured on 2026-05-10 during Phase 7 Task 4.
+
+- Current Android `applicationId`:
+  `com.example.chronopic`.
+  This is a technical-verification id only and is not production-safe.
+  A final package id must be confirmed before Play upload.
+- Release signing now reads local ignored
+  `chronopic_flutter/apps/chronopic/android/key.properties`
+  or CI environment variables:
+  `CHRONOPIC_ANDROID_STORE_FILE`,
+  `CHRONOPIC_ANDROID_STORE_PASSWORD`,
+  `CHRONOPIC_ANDROID_KEY_ALIAS`,
+  and
+  `CHRONOPIC_ANDROID_KEY_PASSWORD`.
+- Release builds no longer use the debug signing config.
+- Missing release signing material fails `assembleRelease` / `bundleRelease`
+  with a clear message,
+  while debug APK builds remain unaffected.
+- Technical local release verification used a temporary upload keystore under
+  `.tmp/release-signing/`.
+  The keystore and signing secrets are not committed.
+- Android release command:
+
+  ```bash
+  chronopic_flutter/tool/release/build_android_release.sh
+  ```
+
+- Artifact verification command:
+
+  ```bash
+  node chronopic_flutter/tool/release/verify_flutter_release_artifacts.mjs
+  ```
+
+- Verified artifacts:
+  `dist/flutter-release/android/chronopic-flutter-android-release.apk`,
+  `dist/flutter-release/android/chronopic-flutter-android-release.apk.sha256`,
+  `dist/flutter-release/android/chronopic-flutter-android-release.aab`,
+  and
+  `dist/flutter-release/android/chronopic-flutter-android-release.aab.sha256`.
+- Photo permission and Play Data safety notes are recorded in
+  `docs/flutter-release-checklist.md`.
+
 ## Phase 6 Closeout Gate
 
 Captured on 2026-05-09.

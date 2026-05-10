@@ -12,6 +12,8 @@ test-results
 **/.pub-cache/
 **/.pub/
 **/build/
+chronopic_flutter/apps/chronopic/android/key.properties
+chronopic_flutter/apps/chronopic/android/*.jks
 apps/desktop/.electron
 apps/desktop/out
 data
