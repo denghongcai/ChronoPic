@@ -48,7 +48,22 @@ prepare_state() {
   data_home="$(mktemp -d)"
   if [[ "$surface" != "empty-home" ]]; then
     mkdir -p "$data_home/chronopic_flutter"
-    cp "$BACKUP_FIXTURE" "$data_home/chronopic_flutter/chronopic-backup.json"
+    if [[ "$surface" == "zh-locale" || "$surface" == "restart-persistence" ]]; then
+      cp "$BACKUP_FIXTURE" "$data_home/chronopic_flutter/chronopic-backup.json"
+    else
+      node - "$BACKUP_FIXTURE" "$data_home/chronopic_flutter/chronopic-backup.json" <<'NODE'
+const fs = require('node:fs');
+
+const input = process.argv[2];
+const output = process.argv[3];
+const backup = JSON.parse(fs.readFileSync(input, 'utf8'));
+backup.settings.locale = {
+  locale: 'en-US',
+  aiOutputLocale: 'follow-ui',
+};
+fs.writeFileSync(output, `${JSON.stringify(backup, null, 2)}\n`);
+NODE
+    fi
   fi
   printf '%s' "$data_home"
 }

@@ -775,8 +775,143 @@ Remaining before Phase 7 cutover:
 
 - Run the iOS macOS/Xcode gate when available before treating iOS as
   release-verified.
-- Run the iOS macOS/Xcode gate when available.
 - Complete release signing, mobile privacy disclosures, and migration packaging.
+
+## Phase 6.6: Flutter Linux Desktop Parity Hardening
+
+Purpose: re-freeze Flutter Linux desktop against the Electron reference after
+Phase 6 and Phase 6.5 mobile work, before Phase 7 release and cutover work
+starts.
+
+Implementation plan:
+
+- [docs/superpowers/plans/2026-05-10-flutter-linux-desktop-parity-hardening.md](superpowers/plans/2026-05-10-flutter-linux-desktop-parity-hardening.md)
+
+Deliverables:
+
+- Refresh all 13 Electron reference screenshots.
+- Refresh all 13 Flutter Linux screenshots.
+- Regenerate all 13 side-by-side compare artifacts.
+- Reinspect `docs/flutter-electron-ui-functional-parity.md` and
+  `docs/flutter-electron-feature-ui-review.md` against fresh evidence.
+- Fix any confirmed Flutter desktop workflow,
+  hierarchy,
+  localization,
+  or responsive gap with focused tests.
+- Record screenshot paths,
+  commands,
+  decisions,
+  skipped scenes,
+  and remaining accepted differences in `AGENTS.md`.
+
+Reference surfaces:
+
+- Empty first-run home.
+- Populated grid/waterfall browse.
+- Map browse / disabled-map state.
+- Timeline browse.
+- Detail inspector and edits.
+- Fullscreen gallery.
+- Favorites filter.
+- Memories list.
+- Memory detail management.
+- Settings.
+- Notifications / AI queue.
+- Chinese locale.
+- Restart persistence.
+
+Exit gate:
+
+- Electron and Flutter Linux capture directories each contain the same 13
+  1440x920 PNGs.
+- Compare directory contains the same 13 side-by-side artifacts.
+- No unexamined `Gap` rows remain in
+  `docs/flutter-electron-ui-functional-parity.md`.
+- Any repaired gap has a focused Flutter widget/parity test or named Electron
+  E2E coverage path.
+- Electron and Flutter desktop verification commands pass after the evidence
+  refresh.
+
+Status:
+
+- Completed locally on 2026-05-10.
+- Findings:
+  no new product UI/function gap was found beyond existing accepted renderer
+  differences.
+  Phase 6.6 closed two evidence-harness gaps:
+  `P66-001`,
+  where normal Flutter parity captures inherited the fixture's persisted zh
+  locale while Electron normal captures used English;
+  and `P66-002`,
+  where Playwright's default `test-results` output cleanup removed parity PNG
+  evidence.
+- Evidence:
+  all 13 Electron screenshots,
+  all 13 Flutter Linux screenshots,
+  all 13 side-by-side compare artifacts,
+  and `contact-sheet-phase-6-6.png` were regenerated under
+  `test-results/flutter-electron-parity/`.
+  The parity evidence remained present after Electron E2E verification because
+  Playwright artifacts now live under `test-results/playwright-artifacts/`.
+- Verification:
+  `pnpm build`,
+  `pnpm run e2e:prepare`,
+  `node scripts/capture-electron-parity.mjs`,
+  `cd chronopic_flutter && bash tool/capture_flutter_parity.sh all`,
+  compare artifact generation with `montage`,
+  `cd chronopic_flutter && dart analyze packages/chronopic_ui apps/chronopic`,
+  `cd chronopic_flutter && flutter test packages/chronopic_ui/test/linux_desktop_parity_test.dart packages/chronopic_ui/test/chronopic_home_test.dart`,
+  `pnpm run e2e:accessibility`,
+  `pnpm run e2e:runtime`,
+  `pnpm run e2e:prepare && pnpm exec playwright test -c tests/e2e/playwright.config.ts i18n.spec.ts`,
+  final evidence count/dimension checks,
+  and `git diff --check` all passed.
+
+## Post 6.6 Candidate Work
+
+- Android deep E2E runner hardening:
+  improve `adb`/`uiautomator` retry logging,
+  assert required screenshot/XML/backup artifacts after every run,
+  and repeat the clean-emulator runner twice before release work starts.
+- Release signing and Android distribution readiness:
+  add secret-safe signing configuration,
+  build release APK/AAB artifacts,
+  record Play Store photo-permission/privacy disclosure text,
+  and document the Android release checklist.
+- Migration and cutover compatibility:
+  verify Flutter backup import against real Electron backup fixtures,
+  document the Electron-to-Flutter migration path,
+  and decide whether direct old SQLite import is still needed after backup
+  import coverage is proven.
+- CI gate promotion:
+  add or extend CI/manual workflows for Flutter analyze,
+  Dart package tests,
+  Flutter UI/parity tests,
+  Android debug build,
+  and optionally a manually triggered Android emulator E2E workflow.
+- iOS live verification:
+  run the recorded macOS/Xcode build/run gate,
+  capture the required permission/import/restart/backup evidence,
+  and only then mark iOS release-verified.
+- Large-library and accessibility sweep:
+  measure Flutter desktop/mobile behavior with larger fixture libraries,
+  re-check keyboard/focus/accessibility behavior,
+  and fix only issues that block release confidence.
+
+Deferred candidate context:
+
+- Flutter Linux desktop parity hardening was selected first because the desktop
+  UI/function match against the Electron reference remains the highest-risk
+  user-visible gate before release packaging.
+- The selected Phase 6.6 evidence scope covers home/library,
+  gallery/detail overlay,
+  memory list/detail,
+  search/filter/sort,
+  settings,
+  notifications,
+  Chinese locale,
+  restart persistence,
+  and metadata editing flows through existing detail/editing tests.
 
 ## Phase 7: Release, Migration, And Cutover
 

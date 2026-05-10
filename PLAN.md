@@ -2442,6 +2442,77 @@ These are intentionally recorded as candidate directions rather than committed p
   mobile privacy disclosures,
   and migration/cutover packaging.
 
+### 6.6 Flutter Linux Desktop Parity Hardening
+
+- Status:
+  completed locally on 2026-05-10 after Phase 6.5.
+- Implementation plan:
+  [docs/superpowers/plans/2026-05-10-flutter-linux-desktop-parity-hardening.md](docs/superpowers/plans/2026-05-10-flutter-linux-desktop-parity-hardening.md)
+- Scope:
+  refresh Electron and Flutter Linux parity evidence after Phase 6/6.5,
+  inspect all 13 side-by-side compare artifacts,
+  preserve or repair desktop parity before Phase 7 release work starts.
+- Method:
+  run Electron and Flutter Linux against the same parity fixtures,
+  capture screenshot evidence for home/library,
+  gallery/detail overlay,
+  memory list/detail,
+  search/filter/sort,
+  settings,
+  notifications,
+  Chinese locale,
+  and restart persistence,
+  then fix only confirmed mismatches until the Flutter desktop app remains
+  functionally and visually aligned with the Electron reference.
+- Exit gate:
+  all 13 Electron screenshots,
+  all 13 Flutter Linux screenshots,
+  and all 13 compare artifacts are refreshed;
+  `docs/flutter-electron-ui-functional-parity.md` and
+  `docs/flutter-electron-feature-ui-review.md` are updated with Phase 6.6
+  findings;
+  any confirmed gap has a focused test or documented coverage path;
+  Electron and Flutter desktop parity verification commands pass.
+- Result:
+  no new product UI/function gap was found beyond existing accepted renderer
+  differences.
+  Two parity-harness gaps were closed:
+  `P66-001` normalized Flutter capture locale for normal English surfaces,
+  and `P66-002` isolated Playwright artifacts so E2E runs no longer delete
+  parity screenshot evidence.
+
+### Post 6.6 Candidate Work
+
+- Android deep E2E runner hardening:
+  improve `adb`/`uiautomator` retry logging,
+  assert required screenshot/XML/backup artifacts after every run,
+  and repeat the clean-emulator runner twice to catch flake before release work
+  starts.
+- Release signing and Android distribution readiness:
+  add signing configuration that keeps keystores and passwords out of git,
+  build debug plus release APK/AAB artifacts,
+  record Play Store photo-permission/privacy disclosure text,
+  and document the Android release checklist.
+- Migration and cutover compatibility:
+  verify Flutter backup import against real Electron backup fixtures,
+  document the Electron-to-Flutter migration path,
+  and decide whether direct old SQLite import is still needed after backup
+  import coverage is proven.
+- CI gate promotion:
+  add or extend CI/manual workflows for Flutter analyze,
+  Dart package tests,
+  Flutter UI/parity tests,
+  Android debug build,
+  and optionally a manually triggered Android emulator E2E workflow.
+- iOS live verification:
+  run the recorded macOS/Xcode build/run gate,
+  capture the required permission/import/restart/backup evidence,
+  and only then mark iOS release-verified.
+- Large-library and accessibility sweep:
+  measure Flutter desktop/mobile behavior with larger fixture libraries,
+  re-check keyboard/focus/accessibility behavior,
+  and fix only issues that block release confidence.
+
 - Person / face grouping:
   add person-like memory grouping only after the app has a real person-recognition or clustering signal.
   Do not pretend to identify people from generic captions or tags.

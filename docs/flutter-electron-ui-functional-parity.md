@@ -72,10 +72,42 @@
   `pnpm run e2e:runtime`,
   and
   `pnpm run e2e:prepare && pnpm exec playwright test -c tests/e2e/playwright.config.ts i18n.spec.ts`.
+- Phase 6.6 desktop hardening refresh:
+  refreshed all 13 Electron screenshots after Phase 6.5 with
+  `node scripts/capture-electron-parity.mjs`;
+  refreshed all 13 Flutter Linux screenshots with
+  `bash tool/capture_flutter_parity.sh all`;
+  regenerated all 13 side-by-side compare artifacts and
+  `test-results/flutter-electron-parity/compare/contact-sheet-phase-6-6.png`.
+- Phase 6.6 evidence counts:
+  Electron `13`,
+  Flutter `13`,
+  compare `13`;
+  all Electron and Flutter PNGs report 1440x920,
+  and all compare PNGs report 2976x920.
+- Phase 6.6 finding `P66-001`:
+  non-zh Flutter parity captures inherited the fixture backup's persisted
+  `zh-CN` locale while Electron reference captures force English for normal
+  surfaces.
+  The Flutter capture harness now writes a temporary `en-US` / `follow-ui`
+  backup copy for normal fixture-backed surfaces,
+  while keeping `zh-locale` and `restart-persistence` in the persisted zh
+  state.
+  Affected Flutter surfaces were recaptured and compare artifacts regenerated.
+- Phase 6.6 finding `P66-002`:
+  Electron E2E verification commands cleaned the root `test-results/`
+  directory through Playwright's default output behavior,
+  removing the freshly generated parity PNG evidence.
+  Playwright artifacts now write to `test-results/playwright-artifacts`,
+  leaving `test-results/flutter-electron-parity/` stable for parity evidence.
+- Phase 6.6 review decision:
+  after the harness fix and refreshed contact-sheet inspection,
+  no new product UI/function gap was found beyond the already documented
+  accepted renderer differences.
 
 ## Remaining Closure Order
 
-No `Gap` rows remain in this matrix as of the local Phase 5.10 verification.
+No `Gap` rows remain in this matrix as of the local Phase 6.6 refresh.
 Future review passes should continue to compare each feature/UI surface against
 the Electron reference before promoting new work into implementation phases.
 

@@ -30,6 +30,75 @@
 
 ## Findings
 
+### P66-001: Flutter parity captures used zh locale for normal English surfaces
+
+- Severity:
+  Medium for desktop parity evidence integrity.
+- Evidence:
+  Phase 6.6 contact-sheet review showed normal Flutter surfaces such as
+  populated browse,
+  map,
+  timeline,
+  detail,
+  gallery,
+  favorites,
+  memories,
+  settings,
+  and notifications rendering app-owned Chinese UI while the Electron reference
+  screenshots for the same surfaces rendered English.
+- Cause:
+  `tests/fixtures/flutter-parity/chronopic-backup-v1.json` intentionally stores
+  `zh-CN` locale settings for locale and restart-persistence coverage.
+  `scripts/capture-electron-parity.mjs` overrides normal fixture restores to
+  English,
+  but `chronopic_flutter/tool/capture_flutter_parity.sh` copied the fixture
+  directly for every non-empty surface.
+- Fix:
+  `chronopic_flutter/tool/capture_flutter_parity.sh` now writes a temporary
+  `en-US` / `follow-ui` backup copy for normal fixture-backed captures,
+  while preserving the fixture's persisted zh settings for `zh-locale` and
+  `restart-persistence`.
+- Closure evidence:
+  the affected Flutter surfaces were recaptured,
+  all 13 compare artifacts were regenerated,
+  and
+  `test-results/flutter-electron-parity/compare/contact-sheet-phase-6-6.png`
+  now shows normal surfaces in English on both sides while zh-specific surfaces
+  remain Chinese.
+- Decision:
+  closed by Phase 6.6 as a capture-harness gap,
+  not a product UI gap.
+
+### P66-002: Playwright E2E output cleanup removed parity evidence
+
+- Severity:
+  Medium for desktop parity evidence retention.
+- Evidence:
+  after the Phase 6.6 Electron E2E verification commands ran,
+  `test-results/flutter-electron-parity/` no longer contained the refreshed
+  parity PNGs,
+  and only Playwright's `.last-run.json` remained under `test-results/`.
+- Cause:
+  `tests/e2e/playwright.config.ts` did not set `outputDir`,
+  so Playwright used its default root `test-results` output directory and
+  cleaned that directory before runs.
+  The parity capture system also writes under `test-results/`,
+  so the two evidence families conflicted.
+- Fix:
+  `tests/e2e/playwright.config.ts` now writes Playwright artifacts under
+  `test-results/playwright-artifacts`,
+  leaving `test-results/flutter-electron-parity/` available for durable
+  Electron-vs-Flutter screenshot evidence.
+- Closure evidence:
+  Phase 6.6 recaptures parity screenshots after this fix,
+  reruns the Electron E2E gates,
+  and rechecks that Electron,
+  Flutter,
+  and compare PNG evidence still exists with the expected counts and
+  dimensions.
+- Decision:
+  closed by Phase 6.6 as a test-harness evidence-retention gap.
+
 ### FUI-001: Flutter zh locale contained app-owned English strings
 
 - Severity:
@@ -106,6 +175,28 @@ for name in 01-empty-home 02-populated-grid 03-map 04-timeline 05-detail 06-gall
 done
 file test-results/flutter-electron-parity/compare/*.png
 ```
+
+## Phase 6.6 Refresh
+
+- Refreshed after Phase 6.5 on 2026-05-10.
+- Electron screenshots:
+  `test-results/flutter-electron-parity/electron/*.png`.
+- Flutter screenshots:
+  `test-results/flutter-electron-parity/flutter/*.png`.
+- Compare screenshots:
+  `test-results/flutter-electron-parity/compare/*-compare.png`.
+- Contact sheet:
+  `test-results/flutter-electron-parity/compare/contact-sheet-phase-6-6.png`.
+- Evidence count:
+  Electron `13`,
+  Flutter `13`,
+  compare `13`.
+- Dimensions:
+  Electron and Flutter captures are 1440x920;
+  compare artifacts are 2976x920.
+- Review decision:
+  no new product UI/function gap was found after closing `P66-001` and
+  `P66-002`.
 
 ## Verification Gate
 

@@ -6134,3 +6134,202 @@ This file is the local execution record for ChronoPic. It complements `PLAN.md` 
 - Remaining:
   iOS live evidence still requires macOS/Xcode before iOS can be called
   release-verified.
+
+### 2026-05-10 Step 229
+
+- Recorded post Phase 6.5 candidate work instead of starting a new phase
+  immediately.
+- Updated `PLAN.md` with `6.6 Post Phase 6.5 Candidate Work`.
+- Updated `docs/flutter-refactor-phases.md` with the same candidate backlog and
+  removed a duplicate iOS gate bullet from the Phase 6.5 remaining-work list.
+- Recommended next candidate:
+  Flutter Linux desktop parity hardening before release packaging,
+  using Electron-vs-Flutter fixture runs and screenshot comparison for
+  home/library,
+  gallery/detail overlay,
+  memory list/detail,
+  search/filter/sort,
+  settings,
+  and metadata editing flows.
+- Other recorded candidate slices:
+  Android E2E runner hardening,
+  Android release signing/distribution readiness,
+  migration and cutover compatibility,
+  CI gate promotion,
+  iOS live verification,
+  and large-library/accessibility sweep.
+- Verification:
+  `git diff --check` passed for the documentation-only change.
+- Next:
+  choose a candidate slice and promote it into a numbered phase or dedicated
+  implementation plan before touching code.
+
+### 2026-05-10 Step 230
+
+- Promoted the selected candidate into
+  `6.6 Flutter Linux Desktop Parity Hardening`.
+- Added the implementation plan:
+  `docs/superpowers/plans/2026-05-10-flutter-linux-desktop-parity-hardening.md`.
+- Updated `PLAN.md` and `docs/flutter-refactor-phases.md` so Phase 6.6 is now
+  the active pre-release desktop hardening phase.
+- Kept the remaining candidate slices under `Post 6.6 Candidate Work`.
+- Phase 6.6 will reuse the existing Electron/Flutter 13-surface parity harness:
+  Electron Playwright capture,
+  Flutter Linux Xvfb/scrot capture,
+  side-by-side compare artifacts,
+  `docs/flutter-electron-ui-functional-parity.md`,
+  and `docs/flutter-electron-feature-ui-review.md`.
+- Next:
+  run documentation formatting verification,
+  then refresh Electron and Flutter Linux screenshot evidence.
+
+### 2026-05-10 Step 231
+
+- Started Phase 6.6 evidence refresh.
+- Verified required local screenshot tools are installed:
+  `montage`,
+  `xvfb-run`,
+  `scrot`,
+  and `file`.
+- Ran Electron preparation and capture:
+  `pnpm build`,
+  `pnpm run e2e:prepare`,
+  `node scripts/capture-electron-parity.mjs`,
+  and
+  `file test-results/flutter-electron-parity/electron/*.png`.
+- Result:
+  all 13 Electron screenshots were refreshed and report 1440x920.
+- Ran Flutter capture:
+  `cd chronopic_flutter && bash tool/capture_flutter_parity.sh all`,
+  then
+  `file ../test-results/flutter-electron-parity/flutter/*.png`.
+- Result:
+  all 13 Flutter screenshots were refreshed and report 1440x920.
+- Regenerated compare artifacts with ImageMagick `montage`.
+- Result:
+  all 13 compare screenshots report 2976x920.
+- Created a temporary contact sheet for review:
+  `test-results/flutter-electron-parity/compare/contact-sheet-phase-6-6.png`.
+- Found a real Phase 6.6 harness gap:
+  non-zh Flutter parity screenshots were using the fixture's persisted
+  `zh-CN` locale while Electron reference capture explicitly forces English
+  for the same surfaces.
+- Fixed the Flutter capture harness so normal fixture-backed surfaces write a
+  temporary `en-US` / `follow-ui` backup copy,
+  while `zh-locale` and `restart-persistence` keep the persisted zh state.
+- Corrected the Phase 6.6 implementation plan to expect the actual
+  2976x920 compare artifact size.
+- Next:
+  recapture affected Flutter English surfaces,
+  regenerate compare artifacts,
+  and inspect the refreshed contact sheet.
+
+### 2026-05-10 Step 232
+
+- Recaptured the Phase 6.6 affected Flutter English surfaces after the harness
+  fix:
+  `populated-grid`,
+  `map`,
+  `timeline`,
+  `detail`,
+  `gallery`,
+  `favorites`,
+  `memories-list`,
+  `memory-detail`,
+  `settings`,
+  and `notifications`.
+- Rechecked Flutter screenshot dimensions with:
+  `file ../test-results/flutter-electron-parity/flutter/*.png`.
+- Regenerated all 13 side-by-side compare artifacts and refreshed:
+  `test-results/flutter-electron-parity/compare/contact-sheet-phase-6-6.png`.
+- Verified evidence counts:
+  Electron `13`,
+  Flutter `13`,
+  compare `13`.
+- Verified dimensions:
+  all Electron and Flutter PNGs report 1440x920,
+  and all compare PNGs report 2976x920.
+- Reinspected the refreshed contact sheet.
+- Result:
+  `P66-001` is closed;
+  normal surfaces now render English on both sides,
+  while `zh-locale` and `restart-persistence` remain in Chinese on both sides.
+- Updated
+  `docs/flutter-electron-ui-functional-parity.md`,
+  `docs/flutter-electron-feature-ui-review.md`,
+  and the Phase 6.6 implementation plan with the finding and evidence.
+- No new product UI/function gap was confirmed beyond the existing accepted
+  renderer differences.
+- Next:
+  run the Phase 6.6 final verification gate.
+
+### 2026-05-10 Step 233
+
+- Phase 6.6 final evidence check exposed a second harness issue:
+  running Electron Playwright gates removed
+  `test-results/flutter-electron-parity/`.
+- Cause:
+  `tests/e2e/playwright.config.ts` used Playwright's default root
+  `test-results` output directory,
+  which conflicts with the parity screenshot evidence directory.
+- Fixed the Playwright config to write artifacts under:
+  `test-results/playwright-artifacts`.
+- Recorded this as `P66-002` in
+  `docs/flutter-electron-feature-ui-review.md` and
+  `docs/flutter-electron-ui-functional-parity.md`.
+- Next:
+  recapture parity evidence after the Playwright output-dir fix,
+  rerun Electron E2E gates,
+  and verify parity screenshots survive the test run.
+
+### 2026-05-10 Step 234
+
+- Completed Phase 6.6 final recapture and verification after the Playwright
+  output-dir fix.
+- Recaptured Electron evidence with:
+  `node scripts/capture-electron-parity.mjs`.
+- Recaptured Flutter Linux evidence with:
+  `cd chronopic_flutter && bash tool/capture_flutter_parity.sh all`.
+- Regenerated all side-by-side compare artifacts with ImageMagick `montage`
+  and refreshed:
+  `test-results/flutter-electron-parity/compare/contact-sheet-phase-6-6.png`.
+- Re-ran Electron E2E gates after the Playwright output-dir fix:
+  `pnpm run e2e:accessibility`,
+  `pnpm run e2e:runtime`,
+  and
+  `pnpm run e2e:prepare && pnpm exec playwright test -c tests/e2e/playwright.config.ts i18n.spec.ts`.
+- Result:
+  all three Electron E2E commands passed.
+- Verified parity evidence survived the Electron E2E run:
+  Electron screenshot count `13`,
+  Flutter screenshot count `13`,
+  compare screenshot count `13`,
+  and total files under `test-results/flutter-electron-parity` `40`.
+- Verified dimensions:
+  all Electron and Flutter PNGs are 1440x920,
+  all compare PNGs are 2976x920.
+- Verified Flutter desktop gate:
+  `cd chronopic_flutter && dart analyze packages/chronopic_ui apps/chronopic`
+  passed with no issues,
+  and
+  `cd chronopic_flutter && flutter test packages/chronopic_ui/test/linux_desktop_parity_test.dart packages/chronopic_ui/test/chronopic_home_test.dart`
+  passed with 13 tests.
+- Verified formatting:
+  `git diff --check` passed.
+- Updated `PLAN.md`,
+  `docs/flutter-refactor-phases.md`,
+  `docs/flutter-electron-ui-functional-parity.md`,
+  `docs/flutter-electron-feature-ui-review.md`,
+  and the Phase 6.6 implementation plan.
+- Result:
+  Phase 6.6 is complete locally.
+  No new product UI/function gap was found beyond existing accepted renderer
+  differences;
+  `P66-001` and `P66-002` are both closed as harness hardening fixes.
+- Next:
+  commit/push when requested,
+  or move to the next Post 6.6 candidate such as Android E2E runner hardening,
+  release signing,
+  migration/cutover compatibility,
+  CI gate promotion,
+  or iOS live verification.
