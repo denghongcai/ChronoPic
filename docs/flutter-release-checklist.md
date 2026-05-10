@@ -236,6 +236,15 @@ Post-publication verification downloaded the GitHub Release assets,
 checked all three sha256 files,
 and confirmed the Linux tarball contains the `chronopic` executable.
 
+`v0.1.6` note:
+the tag-triggered Release workflow again completed as `startup_failure` before
+jobs were scheduled.
+`v0.1.6` was published manually from locally rebuilt and verified Flutter
+Android/Linux artifacts.
+Post-publication verification downloaded the GitHub Release assets,
+checked all three sha256 files,
+and confirmed the Linux tarball contains the `chronopic` executable.
+
 The release workflow does not build or upload Electron Linux,
 macOS,
 or Windows assets.

@@ -7216,3 +7216,38 @@ This file is the local execution record for ChronoPic. It complements `PLAN.md` 
   tag `v0.1.6`,
   publish the GitHub Release,
   and verify downloaded public assets.
+
+### 2026-05-10 Step 255
+
+- Published `v0.1.6`.
+- Committed and pushed the parity fix plus release metadata as:
+  `5c01f57 Fix Flutter selected photo detail parity`.
+- Created and pushed annotated tag `v0.1.6`,
+  pointing at `5c01f57f5fc8555d7eaf2458957b3b2d284b13c2`.
+- Observed the tag-triggered GitHub Actions Release run
+  `25631210324` complete with `startup_failure`,
+  no scheduled jobs,
+  and no retrievable job logs.
+- Since the automated release workflow did not create a release,
+  published `v0.1.6` manually from locally verified Flutter assets under
+  `dist/flutter-release`.
+- Public release URL:
+  `https://github.com/denghongcai/ChronoPic/releases/tag/v0.1.6`.
+- Verified the GitHub Release after publication:
+  `gh release view v0.1.6 --repo denghongcai/ChronoPic`
+  reported `isDraft=false`,
+  `isPrerelease=false`,
+  and the six expected Flutter assets.
+- Downloaded the public release assets into `.tmp/release-verify/v0.1.6` and
+  verified:
+  `sha256sum -c chronopic-flutter-android-release.apk.sha256`,
+  `sha256sum -c chronopic-flutter-android-release.aab.sha256`,
+  `sha256sum -c chronopic-flutter-linux-x64-0.1.6.tar.gz.sha256`,
+  and
+  `tar -tzf chronopic-flutter-linux-x64-0.1.6.tar.gz | rg '(^|/)chronopic$'`.
+- Result:
+  `v0.1.6` is public with locally built and post-download verified Flutter
+  Android APK,
+  Android AAB,
+  Linux x64 tarball,
+  and matching checksum assets.
