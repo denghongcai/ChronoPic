@@ -1,10 +1,13 @@
+import 'dart:typed_data';
+
 import 'media_source.dart';
 import 'photo_library_gateway.dart';
 
 final class MobilePhotoLibraryMediaSource implements MediaSourceAdapter {
-  MobilePhotoLibraryMediaSource(this.gateway);
+  MobilePhotoLibraryMediaSource(this.gateway, {this.scope});
 
   final PhotoLibraryGateway gateway;
+  final PhotoLibraryScope? scope;
   MediaSourcePermissionState _permissionState =
       MediaSourcePermissionState.denied;
 
@@ -21,7 +24,7 @@ final class MobilePhotoLibraryMediaSource implements MediaSourceAdapter {
         permissionState: MediaSourcePermissionState.denied,
       );
     }
-    final assets = await gateway.listAssets();
+    final assets = await gateway.listAssets(scopeId: scope?.id);
     return assets.map(_toMediaAsset).toList()
       ..sort((a, b) => a.path.compareTo(b.path));
   }
@@ -37,6 +40,11 @@ final class MobilePhotoLibraryMediaSource implements MediaSourceAdapter {
   }
 
   @override
+  Future<Uint8List?> readThumbnailBytes(String assetId, {int size = 512}) {
+    return gateway.readThumbnailBytes(assetId, size: size);
+  }
+
+  @override
   Future<MediaAsset?> statAsset(String assetId) async {
     final asset = await gateway.statAsset(assetId);
     return asset == null ? null : _toMediaAsset(asset);
@@ -46,9 +54,9 @@ final class MobilePhotoLibraryMediaSource implements MediaSourceAdapter {
   Future<List<String>> listMissingAssetIds(
     Iterable<String> knownAssetIds,
   ) async {
-    final current = (await gateway.listAssets())
-        .map((asset) => asset.id)
-        .toSet();
+    final current = (await gateway.listAssets(
+      scopeId: scope?.id,
+    )).map((asset) => asset.id).toSet();
     return knownAssetIds.where((id) => !current.contains(id)).toList();
   }
 

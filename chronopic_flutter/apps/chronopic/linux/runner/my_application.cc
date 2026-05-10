@@ -4,6 +4,7 @@
 #ifdef GDK_WINDOWING_X11
 #include <gdk/gdkx.h>
 #endif
+#include <stdlib.h>
 
 #include "flutter/generated_plugin_registrant.h"
 
@@ -17,6 +18,19 @@ G_DEFINE_TYPE(MyApplication, my_application, GTK_TYPE_APPLICATION)
 // Called when first Flutter frame received.
 static void first_frame_cb(MyApplication* self, FlView* view) {
   gtk_widget_show(gtk_widget_get_toplevel(GTK_WIDGET(view)));
+}
+
+static int env_window_size(const char* name, int fallback) {
+  const char* raw = getenv(name);
+  if (raw == nullptr || raw[0] == '\0') {
+    return fallback;
+  }
+  char* end = nullptr;
+  long value = strtol(raw, &end, 10);
+  if (end == raw || value < 320 || value > 8192) {
+    return fallback;
+  }
+  return static_cast<int>(value);
 }
 
 // Implements GApplication::activate.
@@ -52,7 +66,9 @@ static void my_application_activate(GApplication* application) {
     gtk_window_set_title(window, "chronopic");
   }
 
-  gtk_window_set_default_size(window, 1440, 920);
+  gtk_window_set_default_size(window,
+                              env_window_size("CHRONOPIC_WINDOW_WIDTH", 1440),
+                              env_window_size("CHRONOPIC_WINDOW_HEIGHT", 920));
 
   g_autoptr(FlDartProject) project = fl_dart_project_new();
   fl_dart_project_set_dart_entrypoint_arguments(

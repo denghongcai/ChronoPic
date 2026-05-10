@@ -47,6 +47,16 @@ final class DesktopDirectoryMediaSource implements MediaSourceAdapter {
   }
 
   @override
+  Future<Uint8List?> readThumbnailBytes(
+    String assetId, {
+    int size = 512,
+  }) async {
+    final file = File(assetId);
+    if (!file.existsSync()) return null;
+    return Uint8List.fromList(await file.readAsBytes());
+  }
+
+  @override
   Future<MediaAsset?> statAsset(String assetId) async {
     final file = File(assetId);
     if (!file.existsSync() || !isSupportedMediaPath(file.path)) return null;

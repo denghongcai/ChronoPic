@@ -85,12 +85,15 @@ requireFile('02-denied.png');
 requireContains('02-denied.xml', 'Photo library permission denied. Open settings to grant access.');
 
 requireFile('03-full-access.png');
+requireContains('03-scope.xml', 'Choose photo library');
+requireContains('03-scope.xml', 'ChronoPicDeepE2E');
 requireContains(
   '03-full-access.xml',
   `Photo library scan complete: ${expectedPhotoCount} imported, 0 updated, 0 skipped, 0 errors, 0 missing`,
 );
 
 requireFile('04-limited-access.png');
+requireContains('04-scope.xml', 'Choose photo library');
 requireContains(
   '04-limited-access.xml',
   `Limited photo access: ${expectedPhotoCount} imported, 0 updated, 0 skipped, 0 errors, 0 missing`,

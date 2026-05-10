@@ -105,12 +105,7 @@ final class PhotoGrid extends StatelessWidget {
     }
     return LayoutBuilder(
       builder: (context, constraints) {
-        final width = constraints.maxWidth;
-        final columns = width >= 950
-            ? 3
-            : width >= 620
-            ? 2
-            : 1;
+        final columns = _photoGridColumnsForWidth(constraints.maxWidth);
         return GridView.builder(
           key: const Key('photo-grid'),
           shrinkWrap: true,
@@ -137,6 +132,61 @@ final class PhotoGrid extends StatelessWidget {
       },
     );
   }
+}
+
+final class PhotoGridSliver extends StatelessWidget {
+  const PhotoGridSliver({
+    required this.labels,
+    required this.onOpenDetail,
+    required this.onSelectPhoto,
+    required this.photos,
+    required this.selected,
+  });
+
+  final UiStrings labels;
+  final ValueChanged<PhotoRecord> onOpenDetail;
+  final ValueChanged<PhotoRecord> onSelectPhoto;
+  final List<PhotoRecord> photos;
+  final PhotoRecord? selected;
+
+  @override
+  Widget build(BuildContext context) {
+    if (photos.isEmpty) {
+      return SliverToBoxAdapter(child: _EmptyLibrary(labels: labels));
+    }
+    return SliverLayoutBuilder(
+      builder: (context, constraints) {
+        final columns = _photoGridColumnsForWidth(constraints.crossAxisExtent);
+        return SliverGrid(
+          key: const Key('photo-grid'),
+          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: columns,
+            crossAxisSpacing: 14,
+            mainAxisSpacing: 14,
+            childAspectRatio: 0.92,
+          ),
+          delegate: SliverChildBuilderDelegate((context, index) {
+            final record = photos[index];
+            return PhotoCardTile(
+              key: ValueKey<String>('photo-card-state-${record.photo.id}'),
+              labels: labels,
+              onOpenDetail: () => onOpenDetail(record),
+              onSelect: () => onSelectPhoto(record),
+              record: record,
+              selected: selected?.photo.id == record.photo.id,
+            );
+          }, childCount: photos.length),
+        );
+      },
+    );
+  }
+}
+
+int _photoGridColumnsForWidth(double width) {
+  if (width >= 1560) return 4;
+  if (width >= 950) return 3;
+  if (width >= 620) return 2;
+  return 1;
 }
 
 final class PhotoCardTile extends StatefulWidget {

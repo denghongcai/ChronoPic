@@ -38,12 +38,30 @@ final class PhotoLibraryAsset {
   final String? camera;
 }
 
+final class PhotoLibraryScope {
+  const PhotoLibraryScope({
+    required this.id,
+    required this.name,
+    required this.isAll,
+    required this.assetCount,
+  });
+
+  final String id;
+  final String name;
+  final bool isAll;
+  final int assetCount;
+}
+
 abstract interface class PhotoLibraryGateway {
   Future<PhotoLibraryPermissionSnapshot> requestPermission();
 
-  Future<List<PhotoLibraryAsset>> listAssets();
+  Future<List<PhotoLibraryScope>> listScopes();
+
+  Future<List<PhotoLibraryAsset>> listAssets({String? scopeId});
 
   Future<Uint8List?> readAssetBytes(String assetId);
+
+  Future<Uint8List?> readThumbnailBytes(String assetId, {int size = 512});
 
   Future<PhotoLibraryAsset?> statAsset(String assetId);
 

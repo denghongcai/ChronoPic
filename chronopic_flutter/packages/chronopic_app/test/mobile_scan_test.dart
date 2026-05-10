@@ -126,7 +126,11 @@ void main() {
       },
     );
 
-    final first = await service.scanMediaSource('photo-library', firstSource);
+    final first = await service.scanMediaSource(
+      'photo-library',
+      firstSource,
+      aiClient: const FixtureSuccessAiClient(),
+    );
 
     expect(first.imported, 1);
     expect(first.errors, 1);
@@ -144,7 +148,11 @@ void main() {
       },
     );
 
-    final retry = await service.scanMediaSource('photo-library', retrySource);
+    final retry = await service.scanMediaSource(
+      'photo-library',
+      retrySource,
+      aiClient: const FixtureSuccessAiClient(),
+    );
 
     expect(retry.skipped, 1);
     expect(retry.imported, 1);
@@ -181,6 +189,32 @@ void main() {
     expect(stats.errors, 0);
     expect(repository.getPhoto('asset-image')?.photo.thumbnailPath, isNull);
   });
+
+  test(
+    'disabled AI scan uses thumbnail bytes without reading originals',
+    () async {
+      final repository = ChronoPicRepository();
+      final source = CountingThumbnailMediaSource(
+        assets: <MediaAsset>[_asset('asset-image', mime: 'image/jpeg')],
+        thumbnailBytesById: <String, Uint8List>{
+          'asset-image': Uint8List.fromList(<int>[1, 2, 3]),
+        },
+      );
+      final indexer = ChronoPicIndexerService(
+        repository: repository,
+        mediaSource: source,
+        aiClient: const DisabledAiClient(),
+      );
+
+      final stats = await indexer.scanLibrary();
+
+      expect(stats.imported, 1);
+      expect(stats.errors, 0);
+      expect(source.thumbnailReadCount, 1);
+      expect(source.originalReadCount, 0);
+      expect(repository.getPhoto('asset-image'), isNotNull);
+    },
+  );
 }
 
 MediaAsset _asset(
@@ -198,4 +232,50 @@ MediaAsset _asset(
       datetime: updatedAt,
     ),
   );
+}
+
+final class CountingThumbnailMediaSource implements MediaSourceAdapter {
+  CountingThumbnailMediaSource({
+    required List<MediaAsset> assets,
+    required Map<String, Uint8List> thumbnailBytesById,
+  }) : _assets = List<MediaAsset>.of(assets),
+       _thumbnailBytesById = Map<String, Uint8List>.of(thumbnailBytesById);
+
+  final List<MediaAsset> _assets;
+  final Map<String, Uint8List> _thumbnailBytesById;
+  var thumbnailReadCount = 0;
+  var originalReadCount = 0;
+
+  @override
+  MediaSourcePermissionState get permissionState =>
+      MediaSourcePermissionState.granted;
+
+  @override
+  Future<List<MediaAsset>> listAssets() async => _assets;
+
+  @override
+  Future<MediaReadResult> readAsset(String assetId) async {
+    originalReadCount += 1;
+    throw StateError('Original bytes should not be read for disabled AI');
+  }
+
+  @override
+  Future<Uint8List?> readThumbnailBytes(
+    String assetId, {
+    int size = 512,
+  }) async {
+    thumbnailReadCount += 1;
+    return _thumbnailBytesById[assetId];
+  }
+
+  @override
+  Future<MediaAsset?> statAsset(String assetId) async =>
+      _assets.where((asset) => asset.id == assetId).firstOrNull;
+
+  @override
+  Future<List<String>> listMissingAssetIds(
+    Iterable<String> knownAssetIds,
+  ) async {
+    return const <String>[];
+  }
 }

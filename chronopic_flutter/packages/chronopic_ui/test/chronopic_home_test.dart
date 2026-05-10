@@ -422,6 +422,12 @@ void main() {
     final backup = _fixtureBackup();
     final repository = ChronoPicRepository()..restoreBackup(backup);
     final service = ChronoPicAppService(repository);
+    tester.view.physicalSize = const Size(1600, 1200);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
 
     await tester.pumpWidget(ChronoPicHome(service: service));
     expect(find.text('Search and filters'), findsOneWidget);
@@ -453,7 +459,16 @@ void main() {
     expect(find.text('最近记忆'), findsOneWidget);
     expect(find.text('搜索和筛选'), findsOneWidget);
     final filterToggle = find.byKey(const Key('filter-toggle-button'));
-    await tester.ensureVisible(filterToggle);
+    await tester.scrollUntilVisible(
+      filterToggle,
+      200,
+      scrollable: find
+          .descendant(
+            of: find.byKey(const Key('home-page')),
+            matching: find.byType(Scrollable),
+          )
+          .first,
+    );
     await tester.tap(filterToggle);
     await tester.pump();
     expect(find.text('标签'), findsOneWidget);
@@ -643,7 +658,7 @@ void main() {
 }
 
 int _photoGridColumns(WidgetTester tester) {
-  final grid = tester.widget<GridView>(find.byKey(const Key('photo-grid')));
+  final grid = tester.widget<SliverGrid>(find.byKey(const Key('photo-grid')));
   final delegate =
       grid.gridDelegate as SliverGridDelegateWithFixedCrossAxisCount;
   return delegate.crossAxisCount;

@@ -6973,3 +6973,136 @@ This file is the local execution record for ChronoPic. It complements `PLAN.md` 
   Do not treat that old run as automated Android-release evidence.
 - Updated `docs/flutter-release-checklist.md` to record that the secrets are now
   configured for the next tag-triggered Android release job.
+
+### 2026-05-10 Step 248
+
+- Investigated the reported Flutter UI/Android import performance issues from
+  the attached screenshots and Android behavior.
+- Confirmed the UI issue is real:
+  the Flutter shell centers browse pages inside a max-width global scroll frame,
+  which creates poor wide-desktop adaptation.
+- Confirmed the waterfall performance issue is real:
+  `PhotoGrid` uses `GridView.builder`, but it is shrink-wrapped and non-
+  scrollable inside a page-level `SingleChildScrollView`, so the page does not
+  get real viewport-based lazy rendering.
+- Confirmed the Android scope issue is real:
+  `PhotoManagerGateway` uses `onlyAll: true` and scans `paths.first`, so the
+  current Android import silently targets the full photo library rather than a
+  user-chosen album/folder-like scope.
+- Confirmed the Android import latency risk is structural:
+  the gateway fetches up to 100000 entities in one call,
+  reads original asset bytes for imports,
+  and thumbnail generation decodes/resizes/writes synchronously on the scan
+  path.
+- Checked dependency freshness for the package currently used by this path:
+  the pub.dev package API reports `photo_manager` latest stable as `3.9.0`,
+  matching `chronopic_flutter/packages/chronopic_media/pubspec.yaml`.
+- Added Phase 8 to `PLAN.md` and created
+  `docs/superpowers/plans/2026-05-10-flutter-adaptive-import-performance.md`.
+- Next:
+  implement Phase 8 in order:
+  responsive browse viewport,
+  lazy sliver waterfall,
+  Android scoped photo-library selection,
+  scan responsiveness,
+  then screenshot/E2E verification.
+
+### 2026-05-10 Step 249
+
+- Implemented Phase 8 responsive/lazy browse fixes for Flutter.
+- Reworked the Flutter shell so `HomePage` owns its own scroll viewport instead
+  of being wrapped by a centered global `SingleChildScrollView`.
+- Converted the home browse surface to a `CustomScrollView` plus
+  `PhotoGridSliver`,
+  with adaptive grid columns across desktop widths.
+- Changed default visible photo query volume to 20 items,
+  with scroll-near-end and fallback load-more behavior increasing the result
+  limit by 20 each time.
+- Reset the photo page limit when search, filters, sort, favorites, all-photos,
+  or memory scope changes.
+- Updated Linux desktop parity/widget coverage so large fixture libraries assert
+  the initial `20 items` result window and scroll-loading expansion.
+- Added width-controlled Linux runner support through
+  `CHRONOPIC_WINDOW_WIDTH` / `CHRONOPIC_WINDOW_HEIGHT`,
+  then captured adaptive browse/detail screenshots at:
+  `test-results/flutter-adaptive-phase8/1366-populated-grid.png`,
+  `test-results/flutter-adaptive-phase8/1600-populated-grid.png`,
+  `test-results/flutter-adaptive-phase8/2048-populated-grid.png`,
+  `test-results/flutter-adaptive-phase8/1366-detail.png`,
+  `test-results/flutter-adaptive-phase8/1600-detail.png`,
+  and
+  `test-results/flutter-adaptive-phase8/2048-detail.png`.
+
+### 2026-05-10 Step 250
+
+- Implemented Phase 8 Android scoped import and scan responsiveness fixes.
+- Re-checked the official pub.dev API before relying on the existing Android
+  photo library dependency:
+  `photo_manager` latest stable remains `3.9.0`,
+  matching `chronopic_flutter/packages/chronopic_media/pubspec.yaml`.
+- Added `PhotoLibraryScope` to the media gateway contract,
+  exposed photo-library scopes through `PhotoManagerGateway`,
+  and replaced the silent `onlyAll: true` scan path with an explicit bottom
+  sheet where the user chooses `All Photos` or a concrete album/path-like
+  scope before scanning.
+- Changed `PhotoManagerGateway` asset discovery from one 100000-item request to
+  paged discovery batches.
+- Added mobile thumbnail byte reads via `readThumbnailBytes`,
+  so disabled-AI scans avoid reading full original asset bytes.
+- Moved thumbnail decode/resize/write work into `Isolate.run`,
+  keeping CPU-heavy thumbnail generation off the main scan isolate path.
+- Fixed a live Android bug found during E2E:
+  the scope bottom sheet originally used `State.context`,
+  which is above `MaterialApp` in this widget tree and caused
+  `No MaterialLocalizations found`.
+  It now uses `_navigatorKey.currentContext`.
+- Hardened the Android deep E2E runner for scoped import:
+  it waits for the `Choose photo library` sheet,
+  selects `ChronoPicDeepE2E` when available,
+  records `03-scope` and `04-scope` artifacts,
+  and can tap Flutter list rows whose Android `content-desc` includes a
+  second line such as `2 items`.
+- Re-verified Phase 8 with:
+  `cd chronopic_flutter && flutter analyze`,
+  `cd chronopic_flutter && dart test packages/chronopic_domain/test packages/chronopic_database/test packages/chronopic_app/test packages/chronopic_media/test`,
+  `cd chronopic_flutter && flutter test packages/chronopic_ui/test/chronopic_home_test.dart packages/chronopic_ui/test/linux_desktop_parity_test.dart`,
+  `cd chronopic_flutter/apps/chronopic && flutter build linux --debug`,
+  `ANDROID_DEVICE_ID=emulator-5554 MOBILE_E2E_RUN_ID=phase8-final-20260510T122821Z chronopic_flutter/tool/mobile_e2e/android_deep_e2e.sh`,
+  and
+  `node chronopic_flutter/tool/mobile_e2e/assert_android_deep_e2e_artifacts.mjs .tmp/mobile-e2e/android/phase8-final-20260510T122821Z`.
+- Result:
+  all listed commands passed,
+  Android full-access and limited-access paths both showed scoped selection and
+  imported the 2-photo `ChronoPicDeepE2E` fixture,
+  backup restore artifacts were valid,
+  and Phase 8 is recorded complete in `PLAN.md`.
+
+### 2026-05-10 Step 251
+
+- Prepared the `v0.1.5` release after Phase 8.
+- Bumped the repo/package release metadata from `0.1.4` to `0.1.5`,
+  including workspace package manifests,
+  `chronopic_flutter/apps/chronopic/pubspec.yaml` as `0.1.5+5`,
+  README release artifact names,
+  DEVELOPMENT release commands,
+  and the Flutter release checklist's Linux artifact expectation.
+- Re-verified release artifacts locally with:
+  `CHRONOPIC_ANDROID_STORE_FILE="$PWD/.tmp/release-signing/chronopic-upload.jks" CHRONOPIC_ANDROID_STORE_PASSWORD=chronopic-local-pass CHRONOPIC_ANDROID_KEY_ALIAS=chronopic-upload CHRONOPIC_ANDROID_KEY_PASSWORD=chronopic-local-pass chronopic_flutter/tool/release/build_android_release.sh`,
+  `chronopic_flutter/tool/release/build_linux_release.sh`,
+  and
+  `node chronopic_flutter/tool/release/verify_flutter_release_artifacts.mjs android linux`.
+- Result:
+  local signed Android APK/AAB and Linux release tarball verification passed
+  for `0.1.5`;
+  the Linux artifact name is
+  `chronopic-flutter-linux-x64-0.1.5.tar.gz`.
+- Re-ran source validation after the version bump:
+  `cd chronopic_flutter && flutter analyze`,
+  `cd chronopic_flutter && dart test packages/chronopic_domain/test packages/chronopic_database/test packages/chronopic_app/test packages/chronopic_media/test`,
+  and
+  `cd chronopic_flutter && flutter test packages/chronopic_ui/test/chronopic_home_test.dart packages/chronopic_ui/test/linux_desktop_parity_test.dart`.
+- Next:
+  commit and push `main`,
+  tag `v0.1.5`,
+  watch the tag-triggered GitHub Release workflow,
+  and verify the published assets from GitHub.

@@ -63,6 +63,8 @@ abstract interface class MediaSourceAdapter {
 
   Future<MediaReadResult> readAsset(String assetId);
 
+  Future<Uint8List?> readThumbnailBytes(String assetId, {int size = 512});
+
   Future<MediaAsset?> statAsset(String assetId);
 
   Future<List<String>> listMissingAssetIds(Iterable<String> knownAssetIds);

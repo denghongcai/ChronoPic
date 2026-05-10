@@ -88,14 +88,13 @@ final class _DesktopShell extends StatelessWidget {
                     if (_showStatusBanner(labels, status))
                       _StatusBanner(labels: labels, status: status),
                     Expanded(
-                      child: SingleChildScrollView(
-                        padding: const EdgeInsets.all(24),
-                        child: Center(
-                          child: ConstrainedBox(
-                            constraints: const BoxConstraints(maxWidth: 1560),
-                            child: child,
-                          ),
-                        ),
+                      child: _ContentViewport(
+                        child: child,
+                        horizontalPadding: constraints.maxWidth >= 1440
+                            ? 28
+                            : 18,
+                        maxWidth: 1920,
+                        ownsScroll: child is HomePage,
                       ),
                     ),
                   ],
@@ -233,19 +232,60 @@ final class _MobileShell extends StatelessWidget {
             if (_showStatusBanner(labels, status))
               _StatusBanner(labels: labels, status: status),
             Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.fromLTRB(16, 16, 16, 28),
-                child: Center(
-                  child: ConstrainedBox(
-                    constraints: const BoxConstraints(maxWidth: 620),
-                    child: child,
-                  ),
-                ),
+              child: _ContentViewport(
+                child: child,
+                horizontalPadding: 16,
+                maxWidth: 620,
+                ownsScroll: child is HomePage,
+                verticalPadding: 16,
               ),
             ),
           ],
         ),
       ),
+    );
+  }
+}
+
+final class _ContentViewport extends StatelessWidget {
+  const _ContentViewport({
+    required this.child,
+    required this.horizontalPadding,
+    required this.maxWidth,
+    required this.ownsScroll,
+    this.verticalPadding = 24,
+  });
+
+  final Widget child;
+  final double horizontalPadding;
+  final double maxWidth;
+  final bool ownsScroll;
+  final double verticalPadding;
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, _) {
+        final framedChild = Align(
+          alignment: Alignment.topLeft,
+          child: ConstrainedBox(
+            constraints: BoxConstraints(maxWidth: maxWidth),
+            child: SizedBox(width: double.infinity, child: child),
+          ),
+        );
+        final content = ownsScroll
+            ? framedChild
+            : SingleChildScrollView(child: framedChild);
+        return Padding(
+          padding: EdgeInsets.fromLTRB(
+            horizontalPadding,
+            verticalPadding,
+            horizontalPadding,
+            ownsScroll ? 0 : verticalPadding,
+          ),
+          child: content,
+        );
+      },
     );
   }
 }

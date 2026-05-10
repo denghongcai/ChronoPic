@@ -73,8 +73,9 @@ final class BackupValidationResult {
 BackupValidationResult validateChronoPicBackup(ChronoPicBackup backup) {
   final errors = <String>[];
   if (backup.app != 'ChronoPic') errors.add('Unexpected app ${backup.app}');
-  if (backup.schemaVersion != 1)
+  if (backup.schemaVersion != 1) {
     errors.add('Unsupported schemaVersion ${backup.schemaVersion}');
+  }
 
   final photoIds = backup.photos.map((record) => record.photo.id).toSet();
   for (final record in backup.photos) {
@@ -95,8 +96,9 @@ BackupValidationResult validateChronoPicBackup(ChronoPicBackup backup) {
   }
   for (final candidate in backup.memoryCandidates) {
     for (final photoId in candidate.photoIds) {
-      if (!photoIds.contains(photoId))
+      if (!photoIds.contains(photoId)) {
         errors.add('Missing candidate photo $photoId');
+      }
     }
   }
   return BackupValidationResult(valid: errors.isEmpty, errors: errors);

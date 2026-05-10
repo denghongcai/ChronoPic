@@ -2544,7 +2544,7 @@ These are intentionally recorded as candidate directions rather than committed p
      `node chronopic_flutter/tool/release/verify_flutter_release_artifacts.mjs android linux`
      verifies APK/AAB/Linux sha256 files.
   4. Flutter Linux release artifact:
-     build `chronopic-flutter-linux-x64-0.1.4.tar.gz`,
+     build `chronopic-flutter-linux-x64-0.1.5.tar.gz`,
      create `.sha256`,
      and verify the archive contains the Flutter `chronopic` executable.
      Implementation status:
@@ -2597,6 +2597,110 @@ These are intentionally recorded as candidate directions rather than committed p
 - iOS:
   keep the existing macOS/Xcode live verification gate blocked until real
   Apple-toolchain evidence exists.
+
+### 8. Flutter Adaptive Import And Performance Hardening
+
+- Implementation plan:
+  [docs/superpowers/plans/2026-05-10-flutter-adaptive-import-performance.md](docs/superpowers/plans/2026-05-10-flutter-adaptive-import-performance.md)
+- Status:
+  completed locally on 2026-05-10.
+- Scope:
+  repair Flutter desktop adaptive layout,
+  make the waterfall browse surface genuinely lazy,
+  add Android photo-library scope selection before scanning,
+  and reduce blocking mobile scan work.
+- Root causes confirmed on 2026-05-10:
+  1. Desktop/mobile browse pages are wrapped by shell-level
+     `SingleChildScrollView` containers and centered max-width frames.
+     On wide desktop this creates large dead space and prevents the browse page
+     from owning its own viewport.
+  2. The waterfall grid uses `GridView.builder`, but it is configured with
+     `shrinkWrap: true` and `NeverScrollableScrollPhysics()` inside the
+     shell-level scroll view.
+     That means large result sets participate in one page layout instead of
+     being virtualized by the viewport.
+  3. Android scanning is currently hard-coded to the synthetic full-library
+     path:
+     `PhotoManager.getAssetPathList(type: RequestType.common, onlyAll: true)`
+     followed by `paths.first.getAssetListPaged(page: 0, size: 100000)`.
+     The user cannot choose a specific album/folder-like scope.
+  4. Mobile import reads original asset bytes for changed items and thumbnail
+     generation decodes/resizes/writes synchronously on the scan path, which can
+     make Android import slow and visibly stuck on larger libraries.
+- Dependency/version note:
+  `photo_manager` was checked against the pub.dev package API on 2026-05-10;
+  latest stable is `3.9.0`, matching the current workspace dependency.
+- Planned execution order:
+  1. Responsive browse viewport:
+     let the home/browse page own its scroll viewport,
+     align desktop content to the available content area instead of centering
+     a narrow column,
+     and keep non-browse settings/memory pages scroll-safe.
+  2. Lazy waterfall:
+     replace the shrink-wrapped browse grid with a sliver grid,
+     add incremental query limits and scroll-threshold loading,
+     and reset pagination whenever filters, sort, favorites, memory scope, or
+     library scope changes.
+  3. Android scoped import:
+     expose photo-library scopes from `photo_manager`,
+     let the user select a concrete scope before scanning,
+     and keep All Photos as an explicit choice instead of an invisible default.
+  4. Scan responsiveness:
+     page mobile asset discovery,
+     avoid original-byte reads when thumbnail bytes are enough,
+     move CPU-heavy thumbnail work away from synchronous UI-visible scan steps,
+     and preserve progress reporting.
+  5. Verification:
+     run focused Flutter widget tests,
+     Dart package tests,
+     Flutter analyze,
+     Android debug build,
+     Android scoped-import E2E where emulator tooling is available,
+     and desktop screenshot comparisons at 1366/1600/2048 widths.
+- Completion criteria:
+  completed on 2026-05-10 with passing code/tests and recorded screenshot/E2E
+  evidence.
+- Implementation completed on 2026-05-10:
+  1. Browse pages now own their viewport instead of being wrapped by the global
+     shell scroll frame.
+     The home page uses a `CustomScrollView` and sliver grid,
+     while non-browse pages keep local scroll behavior.
+  2. Waterfall query/render volume is incremental:
+     initial result limit is 20 photos,
+     scroll-near-end and the fallback load-more control increase the limit by
+     20,
+     and search/filter/sort/favorites/memory changes reset pagination.
+  3. Android import now exposes `PhotoLibraryScope` choices from
+     `photo_manager`.
+     The user selects `All Photos` or a concrete album/path-like scope before
+     scanning,
+     and the selected scope is persisted in the source path for that scan.
+  4. Mobile asset discovery is paged in `PhotoManagerGateway` instead of
+     requesting 100000 assets in one call.
+     Disabled-AI scans prefer thumbnail bytes and avoid reading original bytes,
+     while thumbnail decode/resize/write runs through `Isolate.run`.
+  5. The Android deep E2E runner now validates the scoped-import sheet in both
+     full-access and limited-access flows,
+     including `03-scope.xml`,
+     `04-scope.xml`,
+     and artifact assertions for the selected `ChronoPicDeepE2E` scope.
+- Verification evidence:
+  `cd chronopic_flutter && flutter analyze`,
+  `cd chronopic_flutter && dart test packages/chronopic_domain/test packages/chronopic_database/test packages/chronopic_app/test packages/chronopic_media/test`,
+  `cd chronopic_flutter && flutter test packages/chronopic_ui/test/chronopic_home_test.dart packages/chronopic_ui/test/linux_desktop_parity_test.dart`,
+  `cd chronopic_flutter/apps/chronopic && flutter build linux --debug`,
+  `ANDROID_DEVICE_ID=emulator-5554 MOBILE_E2E_RUN_ID=phase8-final-20260510T122821Z chronopic_flutter/tool/mobile_e2e/android_deep_e2e.sh`,
+  and
+  `node chronopic_flutter/tool/mobile_e2e/assert_android_deep_e2e_artifacts.mjs .tmp/mobile-e2e/android/phase8-final-20260510T122821Z`
+  all passed.
+- Screenshot evidence:
+  `test-results/flutter-adaptive-phase8/1366-populated-grid.png`,
+  `test-results/flutter-adaptive-phase8/1600-populated-grid.png`,
+  `test-results/flutter-adaptive-phase8/2048-populated-grid.png`,
+  `test-results/flutter-adaptive-phase8/1366-detail.png`,
+  `test-results/flutter-adaptive-phase8/1600-detail.png`,
+  and
+  `test-results/flutter-adaptive-phase8/2048-detail.png`.
 
 - Person / face grouping:
   add person-like memory grouping only after the app has a real person-recognition or clustering signal.

@@ -26,6 +26,15 @@ enum ChronoPicEntryMode { desktopFolder, mobilePhotoLibrary }
 
 typedef MobileMediaSourceFactory = MediaSourceAdapter Function();
 
+const int _photoPageSize = 20;
+
+final class _VisiblePhotoPage {
+  const _VisiblePhotoPage({required this.photos, required this.hasMore});
+
+  final List<PhotoRecord> photos;
+  final bool hasMore;
+}
+
 final class ChronoPicHome extends StatefulWidget {
   const ChronoPicHome({
     super.key,
@@ -69,6 +78,7 @@ final class _ChronoPicHomeState extends State<ChronoPicHome> {
   final TextEditingController _mapApiKeyController = TextEditingController();
   final TextEditingController _mapSecurityJsCodeController =
       TextEditingController();
+  final ScrollController _homeScrollController = ScrollController();
   final GlobalKey<NavigatorState> _navigatorKey = GlobalKey<NavigatorState>();
 
   _DesktopPage _page = _DesktopPage.home;
@@ -94,6 +104,8 @@ final class _ChronoPicHomeState extends State<ChronoPicHome> {
   SortDirection _sortDirection = SortDirection.desc;
   String? _selectedMemoryId;
   String _status = uiStrings[UiLocale.en]!.scanIdle;
+  int _photoResultLimit = _photoPageSize;
+  bool _hasMoreVisiblePhotos = false;
 
   @override
   void initState() {
@@ -121,6 +133,7 @@ final class _ChronoPicHomeState extends State<ChronoPicHome> {
     _aiApiKeyController.dispose();
     _mapApiKeyController.dispose();
     _mapSecurityJsCodeController.dispose();
+    _homeScrollController.dispose();
     super.dispose();
   }
 
@@ -128,7 +141,9 @@ final class _ChronoPicHomeState extends State<ChronoPicHome> {
   Widget build(BuildContext context) {
     _loadPersistedSettingsOnce();
     final labels = _l10n;
-    final photos = _visiblePhotos();
+    final photoPage = _visiblePhotoPage();
+    final photos = photoPage.photos;
+    _hasMoreVisiblePhotos = photoPage.hasMore;
     final memories = _service.listMemories();
     final selectedMemory = _selectedMemoryId == null
         ? null
@@ -171,6 +186,7 @@ final class _ChronoPicHomeState extends State<ChronoPicHome> {
             child: _buildPage(
               labels: labels,
               photos: photos,
+              hasMorePhotos: photoPage.hasMore,
               memories: memories,
               selectedMemory: selectedMemory,
               aiReadiness: aiReadiness,
@@ -196,6 +212,7 @@ final class _ChronoPicHomeState extends State<ChronoPicHome> {
   Widget _buildPage({
     required UiStrings labels,
     required List<PhotoRecord> photos,
+    required bool hasMorePhotos,
     required List<Memory> memories,
     required Memory? selectedMemory,
     required AiReadiness aiReadiness,
@@ -300,22 +317,39 @@ final class _ChronoPicHomeState extends State<ChronoPicHome> {
           onFilterApply: _applyFilters,
           onFilterPanelToggle: () =>
               setState(() => _filterPanelOpen = !_filterPanelOpen),
-          onGpsOnlyChanged: (value) => setState(() => _gpsOnly = value),
-          onAiStatusChanged: (value) => setState(() => _aiStatusFilter = value),
+          onGpsOnlyChanged: (value) => setState(() {
+            _gpsOnly = value;
+            _resetPhotoPagination();
+          }),
+          onAiStatusChanged: (value) => setState(() {
+            _aiStatusFilter = value;
+            _resetPhotoPagination();
+          }),
           onOpenGallery: _openGallery,
           onOpenDetailFor: _openFocusedDetailFor,
           onSaveCaption: _saveCaption,
           onSaveDatetime: _saveDatetime,
           onSaveTags: _saveTags,
           onScanLibrary: _scanLibrary,
-          onSearchChanged: (value) => setState(() => _query = value),
+          onSearchChanged: (value) => setState(() {
+            _query = value;
+            _resetPhotoPagination();
+          }),
           onSelectMemory: _selectMemory,
           onSelectPhoto: _selectPhoto,
-          onSortByChanged: (value) => setState(() => _sortBy = value),
-          onSortDirectionChanged: (value) =>
-              setState(() => _sortDirection = value),
+          onSortByChanged: (value) => setState(() {
+            _sortBy = value;
+            _resetPhotoPagination();
+          }),
+          onSortDirectionChanged: (value) => setState(() {
+            _sortDirection = value;
+            _resetPhotoPagination();
+          }),
           onToggleFavorite: _toggleSelectedFavorite,
           onRollback: _rollbackLatestEdit,
+          hasMorePhotos: hasMorePhotos,
+          onLoadMorePhotos: _loadMorePhotos,
+          onScrollNearEnd: _loadMorePhotos,
           photos: photos,
           query: _query,
           scanning: _scanning,
@@ -326,12 +360,13 @@ final class _ChronoPicHomeState extends State<ChronoPicHome> {
           tagsController: _tagsController,
           timeController: _timeController,
           toDateController: _toDateFilterController,
+          scrollController: _homeScrollController,
         );
     }
   }
 
-  List<PhotoRecord> _visiblePhotos() {
-    return _service.listPhotos(
+  _VisiblePhotoPage _visiblePhotoPage() {
+    final records = _service.listPhotos(
       PhotoFilter(
         query: _query.isEmpty ? null : _query,
         tag: _tagFilter,
@@ -343,9 +378,32 @@ final class _ChronoPicHomeState extends State<ChronoPicHome> {
         toDatetime: _toDatetimeFilter,
         sortBy: _sortBy,
         sortDirection: _sortDirection,
-        limit: 1000,
+        limit: _photoResultLimit + 1,
       ),
     );
+    final hasMore = records.length > _photoResultLimit;
+    return _VisiblePhotoPage(
+      photos: hasMore ? records.sublist(0, _photoResultLimit) : records,
+      hasMore: hasMore,
+    );
+  }
+
+  List<PhotoRecord> _visiblePhotos() {
+    return _visiblePhotoPage().photos;
+  }
+
+  void _loadMorePhotos() {
+    if (!_hasMoreVisiblePhotos) return;
+    setState(() => _photoResultLimit += _photoPageSize);
+  }
+
+  void _resetPhotoPagination() {
+    _photoResultLimit = _photoPageSize;
+    if (!_homeScrollController.hasClients) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || !_homeScrollController.hasClients) return;
+      _homeScrollController.jumpTo(0);
+    });
   }
 
   List<String> _activeFilterLabels() {
@@ -510,6 +568,7 @@ final class _ChronoPicHomeState extends State<ChronoPicHome> {
       _favoriteOnly = false;
       _selectedMemoryId = null;
       _page = _DesktopPage.home;
+      _resetPhotoPagination();
     });
   }
 
@@ -518,6 +577,7 @@ final class _ChronoPicHomeState extends State<ChronoPicHome> {
       _favoriteOnly = true;
       _selectedMemoryId = null;
       _page = _DesktopPage.home;
+      _resetPhotoPagination();
     });
   }
 
@@ -697,12 +757,36 @@ final class _ChronoPicHomeState extends State<ChronoPicHome> {
         '扫描进度：正在请求照片访问权限',
       );
     });
-    final source =
-        widget.mobileMediaSourceFactory?.call() ??
-        MobilePhotoLibraryMediaSource(PhotoManagerGateway());
+    late final MediaSourceAdapter source;
+    var sourcePath = 'photo-library';
     try {
+      final factory = widget.mobileMediaSourceFactory;
+      if (factory != null) {
+        source = factory();
+      } else {
+        final gateway = PhotoManagerGateway();
+        final scope = await _choosePhotoLibraryScope(gateway);
+        if (scope == null) {
+          if (!mounted) return;
+          setState(
+            () =>
+                _status = _tr('Photo library selection cancelled', '已取消照片图库选择'),
+          );
+          return;
+        }
+        source = MobilePhotoLibraryMediaSource(gateway, scope: scope);
+        sourcePath = 'photo-library/${scope.id}';
+        if (mounted) {
+          setState(
+            () => _status = _labelValue(
+              _tr('Scan progress: selected scope', '扫描进度：已选择范围'),
+              '${scope.name} (${scope.assetCount})',
+            ),
+          );
+        }
+      }
       final stats = await _service.scanMediaSource(
-        'photo-library',
+        sourcePath,
         source,
         onProgress: (progress) {
           if (!mounted) return;
@@ -740,6 +824,79 @@ final class _ChronoPicHomeState extends State<ChronoPicHome> {
     } finally {
       if (mounted) setState(() => _scanning = false);
     }
+  }
+
+  Future<PhotoLibraryScope?> _choosePhotoLibraryScope(
+    PhotoLibraryGateway gateway,
+  ) async {
+    final permission = await gateway.requestPermission();
+    if (permission.state == MediaSourcePermissionState.denied) {
+      throw const MediaSourceException(
+        'Photo library permission denied',
+        permissionState: MediaSourcePermissionState.denied,
+      );
+    }
+    final scopes = await gateway.listScopes();
+    if (!mounted || scopes.isEmpty) return null;
+    final sheetContext = _navigatorKey.currentContext;
+    if (sheetContext == null) return null;
+    return showModalBottomSheet<PhotoLibraryScope>(
+      context: sheetContext,
+      showDragHandle: true,
+      builder: (context) => SafeArea(
+        child: ListView.separated(
+          shrinkWrap: true,
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+          itemBuilder: (context, index) {
+            if (index == 0) {
+              return Padding(
+                padding: const EdgeInsets.fromLTRB(4, 0, 4, 8),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      _tr('Choose photo library', '选择照片图库'),
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      _tr(
+                        'Select a folder or All Photos before scanning.',
+                        '扫描前选择一个文件夹或全部照片。',
+                      ),
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
+                  ],
+                ),
+              );
+            }
+            final scope = scopes[index - 1];
+            return ListTile(
+              key: Key('photo-library-scope-${scope.id}'),
+              leading: Icon(
+                scope.isAll
+                    ? Icons.photo_library_outlined
+                    : Icons.folder_outlined,
+              ),
+              title: Text(scope.name),
+              subtitle: Text(
+                _localized(
+                  _l10n,
+                  '${scope.assetCount} items',
+                  '${scope.assetCount} 项',
+                ),
+              ),
+              onTap: () => Navigator.of(context).pop(scope),
+            );
+          },
+          separatorBuilder: (_, index) =>
+              index == 0 ? const SizedBox(height: 8) : const Divider(height: 1),
+          itemCount: scopes.length + 1,
+        ),
+      ),
+    );
   }
 
   String _mobileScanProgressStatus(ScanProgress progress) {
@@ -902,6 +1059,7 @@ final class _ChronoPicHomeState extends State<ChronoPicHome> {
       _fromDatetimeFilter = from.millisecondsSinceEpoch;
       _toDatetimeFilter = to.millisecondsSinceEpoch;
       _selected = null;
+      _resetPhotoPagination();
       _status = _tr('Applied filters', '已应用筛选');
     });
   }
@@ -920,6 +1078,7 @@ final class _ChronoPicHomeState extends State<ChronoPicHome> {
       _sortDirection = SortDirection.desc;
       _selected = null;
       _browseMode = BrowseMode.waterfall;
+      _resetPhotoPagination();
       _status = _tr('Cleared filters', '已清除筛选');
     });
   }
@@ -1068,6 +1227,7 @@ final class _ChronoPicHomeState extends State<ChronoPicHome> {
       _memoryDescriptionController.text = memory?.description ?? '';
       _page = _DesktopPage.memoryDetail;
       _selected = null;
+      _resetPhotoPagination();
     });
   }
 

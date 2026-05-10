@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:developer' as developer;
 import 'dart:io';
+import 'dart:isolate';
 import 'dart:typed_data';
 
 import 'package:chronopic_ai/chronopic_ai.dart';
@@ -126,17 +127,29 @@ final class ChronoPicIndexerService {
       }
       String? message;
       try {
-        final read = await mediaSource.readAsset(asset.id);
-        final ai = await aiClient.analyzePhoto(
-          photoId: asset.id,
-          bytes: read.bytes,
-          mime: asset.metadata.mime ?? mimeFromPath(asset.path),
+        final thumbnailBytes = await _readThumbnailBytes(asset);
+        MediaReadResult? read;
+        final mime = asset.metadata.mime ?? mimeFromPath(asset.path);
+        final PhotoAiResult ai;
+        if (aiClient.isEnabled) {
+          read = await mediaSource.readAsset(asset.id);
+          ai = await aiClient.analyzePhoto(
+            photoId: asset.id,
+            bytes: read.bytes,
+            mime: mime,
+          );
+        } else {
+          ai = const PhotoAiResult(status: AiPipelineStatus.disabled);
+        }
+        final thumbnailPath = await _writeThumbnail(
+          asset,
+          thumbnailBytes ?? read?.bytes,
         );
         repository.upsertPhotoRecord(
           _recordForAsset(
             asset,
             ai,
-            thumbnailPath: _writeThumbnail(asset, read.bytes),
+            thumbnailPath: thumbnailPath,
           ),
         );
         if (previous == null) {
@@ -267,30 +280,46 @@ final class ChronoPicIndexerService {
     );
   }
 
-  String? _writeThumbnail(MediaAsset asset, Uint8List bytes) {
+  Future<String?> _writeThumbnail(MediaAsset asset, Uint8List? bytes) async {
     final directory = thumbnailDirectory;
     final mime = asset.metadata.mime ?? mimeFromPath(asset.path);
-    if (directory == null || !mime.startsWith('image/')) return null;
-    final img.Image? decoded;
+    if (directory == null || bytes == null || !mime.startsWith('image/')) {
+      return null;
+    }
+    final filename =
+        '${base64Url.encode(utf8.encode(asset.id)).replaceAll('=', '')}.jpg';
+    final file = File('${directory.path}/$filename');
     try {
-      decoded = img.decodeImage(bytes);
+      return Isolate.run(
+        () => _writeThumbnailFile(
+          assetId: asset.id,
+          bytes: bytes,
+          path: file.path,
+        ),
+      );
     } on Object catch (error, stackTrace) {
       developer.log(
-        'Failed to decode thumbnail for ${asset.id}',
+        'Failed to write thumbnail for ${asset.id}',
         name: 'chronopic.indexer',
         error: error,
         stackTrace: stackTrace,
       );
       return null;
     }
-    if (decoded == null) return null;
-    directory.createSync(recursive: true);
-    final thumbnail = img.copyResize(decoded, width: 256);
-    final filename =
-        '${base64Url.encode(utf8.encode(asset.id)).replaceAll('=', '')}.jpg';
-    final file = File('${directory.path}/$filename');
-    file.writeAsBytesSync(img.encodeJpg(thumbnail, quality: 82));
-    return file.path;
+  }
+
+  Future<Uint8List?> _readThumbnailBytes(MediaAsset asset) async {
+    try {
+      return await mediaSource.readThumbnailBytes(asset.id, size: 512);
+    } on Object catch (error, stackTrace) {
+      developer.log(
+        'Failed to read thumbnail bytes for ${asset.id}',
+        name: 'chronopic.indexer',
+        error: error,
+        stackTrace: stackTrace,
+      );
+      return null;
+    }
   }
 
   void _report(
@@ -349,4 +378,28 @@ final class _ScanCounters {
   final int skipped;
 
   int get processed => imported + updated + errors;
+}
+
+String? _writeThumbnailFile({
+  required String assetId,
+  required Uint8List bytes,
+  required String path,
+}) {
+  final img.Image? decoded;
+  try {
+    decoded = img.decodeImage(bytes);
+  } on Object catch (error, stackTrace) {
+    developer.log(
+      'Failed to decode thumbnail for $assetId',
+      name: 'chronopic.indexer',
+      error: error,
+      stackTrace: stackTrace,
+    );
+    return null;
+  }
+  if (decoded == null) return null;
+  final thumbnail = img.copyResize(decoded, width: 256);
+  final file = File(path)..parent.createSync(recursive: true);
+  file.writeAsBytesSync(img.encodeJpg(thumbnail, quality: 82));
+  return file.path;
 }

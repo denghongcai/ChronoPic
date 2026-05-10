@@ -50,11 +50,11 @@ const scenarios = [
   },
   {
     name: 'full-photo-library-access',
-    artifacts: ['03-full-access.png', '03-full-access.xml'],
+    artifacts: ['03-scope.png', '03-scope.xml', '03-full-access.png', '03-full-access.xml'],
   },
   {
     name: 'limited-selected-photo-access',
-    artifacts: ['04-limited-access.png', '04-limited-access.xml', '04-permissions.txt'],
+    artifacts: ['04-scope.png', '04-scope.xml', '04-limited-access.png', '04-limited-access.xml', '04-permissions.txt'],
   },
   {
     name: 'restart-persistence',
@@ -157,7 +157,8 @@ const nodes = xml.match(/<node\b[^>]*>/g) ?? [];
 for (const node of nodes) {
   const text = /text="([^"]*)"/.exec(node)?.[1] ?? '';
   const desc = /content-desc="([^"]*)"/.exec(node)?.[1] ?? '';
-  if (text !== needle && desc !== needle) continue;
+  const descFirstLine = desc.split('&#10;')[0];
+  if (text !== needle && desc !== needle && descFirstLine !== needle) continue;
   const bounds = /bounds="\[(\d+),(\d+)\]\[(\d+),(\d+)\]"/.exec(node);
   if (!bounds) continue;
   const [, x1, y1, x2, y2] = bounds.map(Number);
@@ -170,6 +171,19 @@ process.exit(1);
 NODE
   )"
   tap $coords
+}
+
+choose_photo_library_scope() {
+  local name="$1"
+  local preferred="${2:-ChronoPicDeepE2E}"
+  wait_for_ui_contains "$name" "Choose photo library"
+  if grep -F "$preferred" "$OUT_DIR/$name.xml" >/dev/null; then
+    log "selecting scoped photo library: $preferred"
+    tap_ui_value "$name" "$preferred"
+    return
+  fi
+  log "preferred scope '$preferred' not visible; selecting All Photos"
+  tap_ui_value "$name" "All Photos"
 }
 
 dismiss_system_anr_if_present() {
@@ -297,6 +311,7 @@ run_full_access() {
   launch_app
   open_photo_permission_dialog "03-first-run"
   tap_ui_value "03-first-run-permission" "ALLOW ALL"
+  choose_photo_library_scope "03-scope"
   wait_for_ui_contains "03-full-access" "Photo library scan complete: 2 imported, 0 updated, 0 skipped, 0 errors, 0 missing"
 }
 
@@ -312,6 +327,7 @@ run_limited_access() {
   sleep 1
   dump_ui "04-limited-selected"
   tap_ui_value "04-limited-selected" "Allow (2)"
+  choose_photo_library_scope "04-scope"
   wait_for_ui_contains "04-limited-access" "Limited photo access: 2 imported, 0 updated, 0 skipped, 0 errors, 0 missing"
   adb -s "$DEVICE_ID" shell dumpsys package "$PACKAGE_NAME" > "$OUT_DIR/04-permissions.txt"
   grep -F "android.permission.READ_MEDIA_VISUAL_USER_SELECTED: granted=true" "$OUT_DIR/04-permissions.txt"

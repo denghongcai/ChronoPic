@@ -6,14 +6,19 @@ final class FixtureMediaSource implements MediaSourceAdapter {
   FixtureMediaSource({
     required List<MediaAsset> assets,
     required Map<String, Uint8List> bytesById,
+    Map<String, Uint8List>? thumbnailBytesById,
     this.permissionState = MediaSourcePermissionState.granted,
     Set<String> missingAssetIds = const <String>{},
   }) : _assets = List<MediaAsset>.of(assets),
        _bytesById = Map<String, Uint8List>.of(bytesById),
+       _thumbnailBytesById = Map<String, Uint8List>.of(
+         thumbnailBytesById ?? bytesById,
+       ),
        _missingAssetIds = Set<String>.of(missingAssetIds);
 
   final List<MediaAsset> _assets;
   final Map<String, Uint8List> _bytesById;
+  final Map<String, Uint8List> _thumbnailBytesById;
   final Set<String> _missingAssetIds;
 
   @override
@@ -36,6 +41,16 @@ final class FixtureMediaSource implements MediaSourceAdapter {
       throw MediaSourceException('Missing fixture asset $assetId');
     }
     return MediaReadResult(asset: asset, bytes: bytes);
+  }
+
+  @override
+  Future<Uint8List?> readThumbnailBytes(
+    String assetId, {
+    int size = 512,
+  }) async {
+    _throwIfDenied();
+    if (_missingAssetIds.contains(assetId)) return null;
+    return _thumbnailBytesById[assetId];
   }
 
   @override
