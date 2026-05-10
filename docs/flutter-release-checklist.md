@@ -212,6 +212,15 @@ Required Android release secrets:
 - `CHRONOPIC_ANDROID_KEY_ALIAS`
 - `CHRONOPIC_ANDROID_KEY_PASSWORD`
 
+`v0.1.4` note:
+the tag-triggered Linux release job succeeded,
+but the Android release job failed because the four Android signing secrets
+above were not configured in GitHub Actions.
+The Android APK/AAB assets for `v0.1.4` were uploaded manually from the local
+signed release build after local artifact verification.
+Configure the secrets above before relying on a fully automated Android release
+job.
+
 The release workflow does not build or upload Electron Linux,
 macOS,
 or Windows assets.

@@ -6905,3 +6905,50 @@ This file is the local execution record for ChronoPic. It complements `PLAN.md` 
   `dist/flutter-release/android/chronopic-flutter-android-release.aab`,
   `dist/flutter-release/linux/chronopic-flutter-linux-x64-0.1.4.tar.gz`,
   and matching `.sha256` files.
+
+### 2026-05-10 Step 246
+
+- Merged `flutter-refactor-phases` into `main` with a fast-forward merge.
+- Pushed `main` at commit:
+  `63e4e6d`.
+- Verified main CI before tagging:
+  GitHub Actions run `25624645255` completed successfully for both jobs:
+  `verify` and `flutter`.
+- Created and pushed annotated tag:
+  `v0.1.4`.
+- Release workflow run:
+  `25624767040`.
+  `prepare-release` passed and created/updated the public GitHub Release.
+  `flutter-linux` passed and uploaded the Linux tarball assets.
+  `flutter-android` failed because the repo does not currently have the four
+  required Android signing secrets:
+  `CHRONOPIC_ANDROID_KEYSTORE_BASE64`,
+  `CHRONOPIC_ANDROID_STORE_PASSWORD`,
+  `CHRONOPIC_ANDROID_KEY_ALIAS`,
+  and
+  `CHRONOPIC_ANDROID_KEY_PASSWORD`.
+- Completed the `v0.1.4` release by uploading the locally verified Android
+  release assets:
+  `dist/flutter-release/android/chronopic-flutter-android-release.apk`,
+  `dist/flutter-release/android/chronopic-flutter-android-release.apk.sha256`,
+  `dist/flutter-release/android/chronopic-flutter-android-release.aab`,
+  and
+  `dist/flutter-release/android/chronopic-flutter-android-release.aab.sha256`.
+- Verified the published GitHub Release:
+  `gh release view v0.1.4 --repo denghongcai/ChronoPic` reports
+  `isDraft=false`,
+  `isPrerelease=false`,
+  and URL
+  `https://github.com/denghongcai/ChronoPic/releases/tag/v0.1.4`.
+- Downloaded the published release assets into
+  `.tmp/release-verify/v0.1.4`
+  and verified:
+  `sha256sum -c chronopic-flutter-android-release.apk.sha256`,
+  `sha256sum -c chronopic-flutter-android-release.aab.sha256`,
+  `sha256sum -c chronopic-flutter-linux-x64-0.1.4.tar.gz.sha256`,
+  and
+  `tar -tzf chronopic-flutter-linux-x64-0.1.4.tar.gz | rg '(^|/)chronopic$'`.
+- Updated `docs/flutter-release-checklist.md` with the `v0.1.4` automation
+  caveat:
+  configure Android signing secrets before relying on the automated Android
+  release job.
