@@ -7106,3 +7106,41 @@ This file is the local execution record for ChronoPic. It complements `PLAN.md` 
   tag `v0.1.5`,
   watch the tag-triggered GitHub Release workflow,
   and verify the published assets from GitHub.
+
+### 2026-05-10 Step 252
+
+- Published `v0.1.5`.
+- Committed Phase 8 and release metadata as:
+  `6370c1c Complete Flutter adaptive import hardening`.
+- Pushed `main` to `origin/main`.
+- Created and pushed annotated tag `v0.1.5`.
+- Observed GitHub Actions startup failures:
+  Release run `25629990377` for tag `v0.1.5` completed with
+  `startup_failure`,
+  no jobs,
+  and no retrievable logs;
+  the `main` CI run `25629985588` for the same commit had the same startup
+  failure shape.
+- Since the tag-triggered release workflow did not create a release,
+  published `v0.1.5` manually from the locally verified assets under
+  `dist/flutter-release`.
+- Public release URL:
+  `https://github.com/denghongcai/ChronoPic/releases/tag/v0.1.5`.
+- Verified the GitHub Release after publication:
+  `gh release view v0.1.5 --repo denghongcai/ChronoPic`
+  reported `isDraft=false`,
+  `isPrerelease=false`,
+  and the six expected Flutter assets.
+- Downloaded the public release assets into `.tmp/release-verify/v0.1.5` and
+  verified:
+  `sha256sum -c chronopic-flutter-android-release.apk.sha256`,
+  `sha256sum -c chronopic-flutter-android-release.aab.sha256`,
+  `sha256sum -c chronopic-flutter-linux-x64-0.1.5.tar.gz.sha256`,
+  and
+  `tar -tzf chronopic-flutter-linux-x64-0.1.5.tar.gz | rg '(^|/)chronopic$'`.
+- Result:
+  `v0.1.5` is public with locally built and post-download verified Flutter
+  Android APK,
+  Android AAB,
+  Linux x64 tarball,
+  and matching checksum assets.

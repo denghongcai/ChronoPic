@@ -224,6 +224,18 @@ so the next tag release can use the automated Android release job.
 Do not rely on the failed `v0.1.4` Android job itself as automation evidence;
 validate the next tag-triggered Android job end to end.
 
+`v0.1.5` note:
+the tag-triggered Release workflow started as `startup_failure` with no jobs or
+logs,
+and the `main` CI run for the same commit also started as `startup_failure`.
+The workflow files were unchanged from the last successful CI release-prep
+state,
+so `v0.1.5` was published manually from locally verified Flutter Android/Linux
+artifacts.
+Post-publication verification downloaded the GitHub Release assets,
+checked all three sha256 files,
+and confirmed the Linux tarball contains the `chronopic` executable.
+
 The release workflow does not build or upload Electron Linux,
 macOS,
 or Windows assets.
