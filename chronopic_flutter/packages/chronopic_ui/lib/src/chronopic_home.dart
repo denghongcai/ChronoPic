@@ -169,6 +169,7 @@ final class _ChronoPicHomeState extends State<ChronoPicHome> {
           onKeyEvent: (node, event) => _handleShellKey(context, event),
           child: _DesktopShell(
             activePage: _page,
+            browseMode: _browseMode,
             favoriteOnly: _favoriteOnly,
             immersive: immersiveDetail,
             labels: labels,
@@ -178,6 +179,7 @@ final class _ChronoPicHomeState extends State<ChronoPicHome> {
             onFavorites: _showFavorites,
             onMemorySelected: _selectMemory,
             onMemories: () => setState(() => _page = _DesktopPage.memories),
+            onBrowseModeChanged: _showBrowseMode,
             onNotifications: () =>
                 setState(() => _page = _DesktopPage.notifications),
             onSettings: () => setState(() => _page = _DesktopPage.settings),
@@ -307,6 +309,7 @@ final class _ChronoPicHomeState extends State<ChronoPicHome> {
           memories: memories,
           onAddLibrary: _addLibrary,
           onAddToMemory: _openMemoryActionForSelectedPhoto,
+          onAllPhotos: _showAllPhotos,
           onBrowseModeChanged: (mode) => setState(() => _browseMode = mode),
           onChooseLibraryFolder: _chooseLibraryFolder,
           onChoosePhotos: _scanPhotoLibrary,
@@ -327,6 +330,9 @@ final class _ChronoPicHomeState extends State<ChronoPicHome> {
           }),
           onOpenGallery: _openGallery,
           onOpenDetailFor: _openFocusedDetailFor,
+          onOpenMemories: () => setState(() => _page = _DesktopPage.memories),
+          onOpenSettings: () => setState(() => _page = _DesktopPage.settings),
+          onFavorites: _showFavorites,
           onSaveCaption: _saveCaption,
           onSaveDatetime: _saveDatetime,
           onSaveTags: _saveTags,
@@ -579,6 +585,14 @@ final class _ChronoPicHomeState extends State<ChronoPicHome> {
       _selectedMemoryId = null;
       _page = _DesktopPage.home;
       _resetPhotoPagination();
+    });
+  }
+
+  void _showBrowseMode(BrowseMode mode) {
+    setState(() {
+      _browseMode = mode;
+      _page = _DesktopPage.home;
+      _detailCaptureFirst = false;
     });
   }
 

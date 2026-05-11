@@ -189,6 +189,7 @@ final class _FocusedDetailSurface extends StatelessWidget {
         : null;
     Widget actions() {
       return Wrap(
+        key: const Key('mobile-detail-actions'),
         spacing: 8,
         runSpacing: 8,
         crossAxisAlignment: WrapCrossAlignment.center,
@@ -239,6 +240,7 @@ final class _FocusedDetailSurface extends StatelessWidget {
 
     Widget preview() {
       return DecoratedBox(
+        key: const Key('mobile-detail-media'),
         decoration: BoxDecoration(
           color: Colors.black,
           borderRadius: BorderRadius.circular(24),
@@ -329,6 +331,7 @@ final class _FocusedDetailSurface extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Wrap(
+                      key: const Key('mobile-detail-topbar'),
                       spacing: 10,
                       runSpacing: 8,
                       crossAxisAlignment: WrapCrossAlignment.center,
@@ -356,8 +359,6 @@ final class _FocusedDetailSurface extends StatelessWidget {
                       width: double.infinity,
                       child: preview(),
                     ),
-                    const SizedBox(height: 14),
-                    footer(),
                     const SizedBox(height: 12),
                     _FocusedFilmstrip(
                       labels: labels,
@@ -688,11 +689,7 @@ final class _FocusedDetailStatusBanner extends StatelessWidget {
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Icon(
-              Icons.info_outline,
-              size: 18,
-              color: Color(0xff9a5a1f),
-            ),
+            const Icon(Icons.info_outline, size: 18, color: Color(0xff9a5a1f)),
             const SizedBox(width: 8),
             Expanded(
               child: Text(

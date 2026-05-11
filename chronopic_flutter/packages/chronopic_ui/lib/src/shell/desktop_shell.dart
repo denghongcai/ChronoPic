@@ -3,6 +3,7 @@ part of '../chronopic_home.dart';
 final class _DesktopShell extends StatelessWidget {
   const _DesktopShell({
     required this.activePage,
+    required this.browseMode,
     required this.child,
     required this.favoriteOnly,
     required this.immersive,
@@ -10,6 +11,7 @@ final class _DesktopShell extends StatelessWidget {
     required this.memories,
     required this.notificationCount,
     required this.onAllPhotos,
+    required this.onBrowseModeChanged,
     required this.onFavorites,
     required this.onMemories,
     required this.onMemorySelected,
@@ -20,6 +22,7 @@ final class _DesktopShell extends StatelessWidget {
   });
 
   final _DesktopPage activePage;
+  final BrowseMode browseMode;
   final Widget child;
   final bool favoriteOnly;
   final bool immersive;
@@ -27,6 +30,7 @@ final class _DesktopShell extends StatelessWidget {
   final List<Memory> memories;
   final int notificationCount;
   final VoidCallback onAllPhotos;
+  final ValueChanged<BrowseMode> onBrowseModeChanged;
   final VoidCallback onFavorites;
   final VoidCallback onMemories;
   final ValueChanged<String> onMemorySelected;
@@ -52,13 +56,12 @@ final class _DesktopShell extends StatelessWidget {
         if (constraints.maxWidth < 720) {
           return _MobileShell(
             activePage: activePage,
+            browseMode: browseMode,
             child: child,
             favoriteOnly: favoriteOnly,
             labels: labels,
             notificationCount: notificationCount,
-            onAllPhotos: onAllPhotos,
-            onFavorites: onFavorites,
-            onMemories: onMemories,
+            onBrowseModeChanged: onBrowseModeChanged,
             onNotifications: onNotifications,
             onSettings: onSettings,
             status: status,
@@ -111,26 +114,24 @@ final class _DesktopShell extends StatelessWidget {
 final class _MobileShell extends StatelessWidget {
   const _MobileShell({
     required this.activePage,
+    required this.browseMode,
     required this.child,
     required this.favoriteOnly,
     required this.labels,
     required this.notificationCount,
-    required this.onAllPhotos,
-    required this.onFavorites,
-    required this.onMemories,
+    required this.onBrowseModeChanged,
     required this.onNotifications,
     required this.onSettings,
     required this.status,
   });
 
   final _DesktopPage activePage;
+  final BrowseMode browseMode;
   final Widget child;
   final bool favoriteOnly;
   final UiStrings labels;
   final int notificationCount;
-  final VoidCallback onAllPhotos;
-  final VoidCallback onFavorites;
-  final VoidCallback onMemories;
+  final ValueChanged<BrowseMode> onBrowseModeChanged;
   final VoidCallback onNotifications;
   final VoidCallback onSettings;
   final String status;
@@ -138,12 +139,13 @@ final class _MobileShell extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: ChronoPicTheme.mobileBackground,
       body: SafeArea(
-        bottom: true,
+        bottom: false,
         child: Column(
           children: [
             Padding(
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 10),
               child: Row(
                 children: [
                   Container(
@@ -193,62 +195,159 @@ final class _MobileShell extends StatelessWidget {
                 ],
               ),
             ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(12, 0, 12, 10),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: _MobileNavItem(
-                      active: activePage == _DesktopPage.home && !favoriteOnly,
-                      icon: Icons.photo_library_outlined,
-                      keyName: 'all-photos-nav',
-                      label: labels.allPhotos,
-                      onPressed: onAllPhotos,
-                    ),
-                  ),
-                  Expanded(
-                    child: _MobileNavItem(
-                      active: favoriteOnly,
-                      icon: Icons.star_border,
-                      keyName: 'favorites-nav',
-                      label: labels.favorites,
-                      onPressed: onFavorites,
-                    ),
-                  ),
-                  Expanded(
-                    child: _MobileNavItem(
-                      active: activePage == _DesktopPage.memories,
-                      icon: Icons.auto_stories_outlined,
-                      keyName: 'memories-nav',
-                      label: labels.memories,
-                      onPressed: onMemories,
-                    ),
-                  ),
-                  Expanded(
-                    child: _MobileNavItem(
-                      active: activePage == _DesktopPage.settings,
-                      icon: Icons.settings_outlined,
-                      keyName: 'settings-nav',
-                      label: labels.settings,
-                      onPressed: onSettings,
-                    ),
-                  ),
-                ],
-              ),
-            ),
             if (_showStatusBanner(labels, status))
               _StatusBanner(labels: labels, status: status),
             Expanded(
               child: _ContentViewport(
                 child: child,
-                bottomPadding: 64,
-                horizontalPadding: 16,
+                bottomPadding: 18,
+                horizontalPadding: 14,
                 maxWidth: 620,
                 ownsScroll: child is HomePage,
-                verticalPadding: 16,
+                verticalPadding: 8,
               ),
             ),
           ],
+        ),
+      ),
+      bottomNavigationBar: SafeArea(
+        top: false,
+        child: _MobileBottomNavigation(
+          activePage: activePage,
+          browseMode: browseMode,
+          labels: labels,
+          onBrowseModeChanged: onBrowseModeChanged,
+          onSettings: onSettings,
+        ),
+      ),
+    );
+  }
+}
+
+final class _MobileBottomNavigation extends StatelessWidget {
+  const _MobileBottomNavigation({
+    required this.activePage,
+    required this.browseMode,
+    required this.labels,
+    required this.onBrowseModeChanged,
+    required this.onSettings,
+  });
+
+  final _DesktopPage activePage;
+  final BrowseMode browseMode;
+  final UiStrings labels;
+  final ValueChanged<BrowseMode> onBrowseModeChanged;
+  final VoidCallback onSettings;
+
+  @override
+  Widget build(BuildContext context) {
+    final homeActive = activePage == _DesktopPage.home;
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        border: Border(top: BorderSide(color: Colors.grey.shade200)),
+        boxShadow: [
+          BoxShadow(
+            blurRadius: 22,
+            color: Colors.black.withValues(alpha: 0.08),
+            offset: const Offset(0, -10),
+          ),
+        ],
+      ),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(10, 8, 10, 8),
+        child: Row(
+          children: [
+            Expanded(
+              child: _MobileBottomNavItem(
+                active: homeActive && browseMode == BrowseMode.waterfall,
+                icon: Icons.grid_view_outlined,
+                keyName: 'mobile-bottom-waterfall',
+                label: _localized(labels, 'Waterfall', '瀑布流'),
+                onPressed: () => onBrowseModeChanged(BrowseMode.waterfall),
+              ),
+            ),
+            Expanded(
+              child: _MobileBottomNavItem(
+                active: homeActive && browseMode == BrowseMode.map,
+                icon: Icons.map_outlined,
+                keyName: 'mobile-bottom-map',
+                label: labels.map,
+                onPressed: () => onBrowseModeChanged(BrowseMode.map),
+              ),
+            ),
+            Expanded(
+              child: _MobileBottomNavItem(
+                active: homeActive && browseMode == BrowseMode.timeline,
+                icon: Icons.calendar_month_outlined,
+                keyName: 'mobile-bottom-timeline',
+                label: labels.timeline,
+                onPressed: () => onBrowseModeChanged(BrowseMode.timeline),
+              ),
+            ),
+            Expanded(
+              child: _MobileBottomNavItem(
+                active: activePage == _DesktopPage.settings,
+                icon: Icons.settings_outlined,
+                keyName: 'mobile-bottom-settings',
+                label: labels.settings,
+                onPressed: onSettings,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+final class _MobileBottomNavItem extends StatelessWidget {
+  const _MobileBottomNavItem({
+    required this.active,
+    required this.icon,
+    required this.keyName,
+    required this.label,
+    required this.onPressed,
+  });
+
+  final bool active;
+  final IconData icon;
+  final String keyName;
+  final String label;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    final foreground = active ? Colors.black : Colors.grey.shade600;
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 3),
+      child: Material(
+        color: active ? ChronoPicTheme.mobileAccent : Colors.transparent,
+        borderRadius: BorderRadius.circular(18),
+        child: InkWell(
+          key: Key(keyName),
+          borderRadius: BorderRadius.circular(18),
+          onTap: onPressed,
+          child: SizedBox(
+            height: 58,
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(icon, color: foreground, size: 21),
+                const SizedBox(height: 3),
+                Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: foreground,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ],
+            ),
+          ),
         ),
       ),
     );
@@ -296,57 +395,6 @@ final class _ContentViewport extends StatelessWidget {
           child: content,
         );
       },
-    );
-  }
-}
-
-final class _MobileNavItem extends StatelessWidget {
-  const _MobileNavItem({
-    required this.active,
-    required this.icon,
-    required this.keyName,
-    required this.label,
-    required this.onPressed,
-  });
-
-  final bool active;
-  final IconData icon;
-  final String keyName;
-  final String label;
-  final VoidCallback onPressed;
-
-  @override
-  Widget build(BuildContext context) {
-    final foreground = active ? Colors.white : Colors.grey.shade800;
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 3),
-      child: TextButton(
-        key: Key(keyName),
-        onPressed: onPressed,
-        style: TextButton.styleFrom(
-          backgroundColor: active ? Colors.grey.shade900 : Colors.grey.shade100,
-          foregroundColor: foreground,
-          minimumSize: const Size(0, 54),
-          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(18),
-          ),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(icon, size: 18),
-            const SizedBox(height: 3),
-            Text(
-              label,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              textAlign: TextAlign.center,
-              style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700),
-            ),
-          ],
-        ),
-      ),
     );
   }
 }

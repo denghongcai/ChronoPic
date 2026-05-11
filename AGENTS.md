@@ -7451,3 +7451,97 @@ This file is the local execution record for ChronoPic. It complements `PLAN.md` 
   Android AAB,
   Linux x64 tarball,
   and matching checksum assets.
+
+### 2026-05-11 Step 260
+
+- Reviewed the user-provided mobile UI refine proposal and promoted it into a
+  new planned phase rather than treating it as a small Phase 10 patch.
+- Added
+  `docs/superpowers/plans/2026-05-11-flutter-mobile-native-experience-redesign.md`.
+- Updated `PLAN.md` with
+  `11. Flutter Mobile Native Experience Redesign`.
+- Updated `docs/flutter-refactor-phases.md` with the same Phase 11 summary and
+  exit gate.
+- Captured the core product decision:
+  Android mobile may diverge more strongly from desktop visual layout and
+  interaction structure,
+  while keeping the shared local-first data and workflow contracts.
+- The new phase covers mobile design tokens,
+  native shell/home information architecture,
+  bottom navigation,
+  search/filter sheets,
+  media-first Detail/Gallery,
+  grouped Settings,
+  and a guided Create Memory flow.
+- Verification:
+  docs-only planning update;
+  runtime scenes were skipped because no app code changed.
+  `git diff --check` was run after the edit.
+
+### 2026-05-11 Step 261
+
+- Executed Phase 11: Flutter Mobile Native Experience Redesign.
+- Added mobile-native UI structure:
+  mobile theme tokens,
+  phone shell header,
+  bottom navigation for Waterfall / Map / Timeline / Settings,
+  mobile home dashboard with search/shortcuts/status,
+  filter bottom sheet,
+  mobile active filter chips,
+  grouped Settings rows with drill-in sheets,
+  and a guided Create Memory wizard.
+- Updated focused mobile Detail and Gallery:
+  Detail now exposes mobile topbar/media/action surfaces and no longer shows
+  desktop shortcut copy on phone layouts;
+  Gallery now uses compact mobile chrome and icon action at phone widths.
+- Updated mobile tests:
+  `chronopic_flutter/packages/chronopic_ui/test/mobile_productization_test.dart`
+  now covers mobile dashboard shortcuts,
+  bottom navigation,
+  filter sheet,
+  Detail mobile layout,
+  grouped Settings,
+  and the Create Memory wizard.
+- Updated Android deep E2E:
+  `chronopic_flutter/apps/chronopic/integration_test/mobile_deep_e2e_test.dart`
+  now drives the new mobile shell,
+  Create Memory wizard,
+  filter sheet,
+  Settings drill-in,
+  and restart/backup persistence path.
+- Fixed issues found by verification:
+  mobile Gallery chrome horizontal overflow,
+  mobile memory detail date-row overflow,
+  mobile Language settings drill-in overflow,
+  and mobile active-filter chips not showing after filter-sheet apply.
+- Updated durable docs:
+  `PLAN.md`,
+  `docs/flutter-refactor-phases.md`,
+  `docs/flutter-mobile-ui-refine-audit.md`,
+  `docs/mobile-productization.md`,
+  `docs/mobile-e2e-verification.md`,
+  and
+  `docs/superpowers/plans/2026-05-11-flutter-mobile-native-experience-redesign.md`.
+- Verification scenes run from `docs/agent-verification-script.md`:
+  Scene 1 was covered by Flutter app/widget launch tests and Android debug
+  build,
+  Scene 3 by mobile browse/search/filter/sort tests,
+  Scene 4 by focused Detail and Gallery tests,
+  Scene 5 by edit/favorite/datetime assertions in Android deep E2E,
+  Scene 6 by the Create Memory and memory lifecycle E2E path,
+  Scene 7 by backup/restore restart assertions,
+  and Scene 8 by grouped Settings locale persistence.
+- Verification commands passed:
+  `cd chronopic_flutter && flutter analyze`,
+  `cd chronopic_flutter && dart test packages/chronopic_domain/test packages/chronopic_database/test packages/chronopic_app/test packages/chronopic_media/test`,
+  `cd chronopic_flutter && flutter test packages/chronopic_ui/test apps/chronopic/test`,
+  `cd chronopic_flutter && flutter test packages/chronopic_ui/test/mobile_productization_test.dart`,
+  `cd chronopic_flutter && flutter test apps/chronopic/integration_test/mobile_deep_e2e_test.dart`,
+  `cd chronopic_flutter/apps/chronopic && flutter build apk --debug`,
+  and
+  `git diff --check`.
+- Skipped:
+  iOS live scenes remain blocked because this Linux workstation cannot provide
+  macOS/Xcode simulator,
+  signing,
+  or device evidence.

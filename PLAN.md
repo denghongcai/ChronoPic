@@ -2878,6 +2878,100 @@ These are intentionally recorded as candidate directions rather than committed p
   checked the three sha256 files,
   and confirmed the Linux tarball contains the `chronopic` executable.
 
+### 11. Flutter Mobile Native Experience Redesign
+
+- Implementation plan:
+  [docs/superpowers/plans/2026-05-11-flutter-mobile-native-experience-redesign.md](docs/superpowers/plans/2026-05-11-flutter-mobile-native-experience-redesign.md)
+- Status:
+  complete locally on 2026-05-11.
+- Source input:
+  user-provided mobile UI refine proposal reviewed on 2026-05-11.
+- Goal:
+  expand Phase 10 from touch usability into a mobile-native ChronoPic product
+  shape.
+  Mobile should keep the same local-first data model and core workflows as
+  desktop,
+  but it should no longer look like a compressed desktop workspace.
+- Core decision:
+  mobile is allowed to diverge from desktop visual layout and interaction
+  structure.
+  Desktop remains the Linux reference for functional parity,
+  while Android mobile gets its own information architecture,
+  navigation,
+  and page compositions.
+- Planned surfaces:
+  1. Mobile design contract:
+     primary orange action color,
+     neutral cards,
+     48px touch targets,
+     safe-area-aware bottom spacing,
+     icon-first controls,
+     and a smaller mobile type scale.
+  2. Mobile shell and home:
+     brand/notification header,
+     prominent search,
+     shortcut cards for All Photos / Favorites / Memories / Settings,
+     scan progress card,
+     Recent Memories section,
+     and bottom navigation for Waterfall / Map / Timeline / Settings.
+  3. Search and filters:
+     keep search visible near the top,
+     move dense sort/filter controls into a mobile sheet or stacked mobile
+     surface,
+     and preserve filter state across browse modes.
+  4. Detail and Gallery:
+     rebuild mobile Detail as a full-screen media-first route,
+     use top back/index/more controls,
+     move metadata and editing into lower cards or sheets,
+     and remove desktop keyboard shortcut copy from mobile.
+  5. Settings:
+     replace long panel stacks with grouped list rows and drill-in sheets or
+     subpages for AI,
+     map,
+     backup,
+     language,
+     and advanced local paths.
+  6. Create Memory:
+     add a guided mobile flow:
+     select photos,
+     edit title/description/cover,
+     then confirm and open the created memory.
+- Implementation result:
+  mobile now has a dedicated phone shell with header/search/dashboard shortcuts
+  and bottom navigation for Waterfall,
+  Map,
+  Timeline,
+  and Settings.
+  Dense filters open in a mobile bottom sheet,
+  active filter chips remain visible on phone layouts,
+  focused Detail and Gallery use mobile-specific chrome without desktop
+  keyboard shortcut copy,
+  Settings is grouped into mobile rows with drill-in sheets,
+  and Create Memory uses a guided mobile wizard before opening the editable
+  memory detail lifecycle.
+- Explicit non-goals:
+  do not redesign Flutter Linux desktop in this phase;
+  do not change the release artifact model;
+  do not add OCR,
+  vector search,
+  person recognition,
+  cloud sync,
+  or EXIF writeback;
+  do not claim iOS live verification from this Linux workstation.
+- Exit gate:
+  passed locally with
+  `cd chronopic_flutter && flutter analyze`,
+  `cd chronopic_flutter && dart test packages/chronopic_domain/test packages/chronopic_database/test packages/chronopic_app/test packages/chronopic_media/test`,
+  `cd chronopic_flutter && flutter test packages/chronopic_ui/test apps/chronopic/test`,
+  `cd chronopic_flutter && flutter test packages/chronopic_ui/test/mobile_productization_test.dart`,
+  `cd chronopic_flutter && flutter test apps/chronopic/integration_test/mobile_deep_e2e_test.dart`,
+  `cd chronopic_flutter/apps/chronopic && flutter build apk --debug`,
+  and
+  `git diff --check`.
+  The deep E2E run caught and the phase fixed phone-width overflow in Gallery
+  chrome and the mobile Language settings drill-in sheet.
+  iOS live verification remains blocked on this Linux workstation.
+
 - Person / face grouping:
   add person-like memory grouping only after the app has a real person-recognition or clustering signal.
   Do not pretend to identify people from generic captions or tags.

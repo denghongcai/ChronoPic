@@ -25,26 +25,27 @@ final class MemoryListPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final mobileLayout = MediaQuery.sizeOf(context).width < 720;
+    final candidatePanel = _MemoryCandidatePanel(
+      candidates: candidates,
+      labels: labels,
+      onAcceptCandidate: onAcceptCandidate,
+      onGenerateCandidates: onGenerateCandidates,
+      onRejectCandidate: onRejectCandidate,
+    );
+    final collectionPanel = _MemoryCollectionPanel(
+      labels: labels,
+      memories: memories,
+      memoryNameController: memoryNameController,
+      onCreateMemory: onCreateMemory,
+      onSelectMemory: onSelectMemory,
+    );
     return Column(
       key: const Key('memories-page'),
       crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        _MemoryCandidatePanel(
-          candidates: candidates,
-          labels: labels,
-          onAcceptCandidate: onAcceptCandidate,
-          onGenerateCandidates: onGenerateCandidates,
-          onRejectCandidate: onRejectCandidate,
-        ),
-        const SizedBox(height: 18),
-        _MemoryCollectionPanel(
-          labels: labels,
-          memories: memories,
-          memoryNameController: memoryNameController,
-          onCreateMemory: onCreateMemory,
-          onSelectMemory: onSelectMemory,
-        ),
-      ],
+      children: mobileLayout
+          ? [collectionPanel, const SizedBox(height: 18), candidatePanel]
+          : [candidatePanel, const SizedBox(height: 18), collectionPanel],
     );
   }
 }
@@ -342,6 +343,7 @@ final class _MemoryCollectionPanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final mobileLayout = MediaQuery.sizeOf(context).width < 720;
     return _Panel(
       padding: EdgeInsets.zero,
       child: Column(
@@ -387,7 +389,9 @@ final class _MemoryCollectionPanel extends StatelessWidget {
                   key: const ValueKey<String>('mobile-create-memory'),
                   child: FilledButton.icon(
                     key: const Key('create-memory-button'),
-                    onPressed: onCreateMemory,
+                    onPressed: mobileLayout
+                        ? () => _showMobileMemoryWizard(context)
+                        : onCreateMemory,
                     icon: const Icon(Icons.add),
                     label: Text(labels.createMemory),
                   ),
@@ -421,6 +425,138 @@ final class _MemoryCollectionPanel extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+
+  void _showMobileMemoryWizard(BuildContext context) {
+    var step = 0;
+    showDialog<void>(
+      context: context,
+      builder: (dialogContext) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            final isLastStep = step == 2;
+            return AlertDialog(
+              key: const Key('mobile-memory-wizard'),
+              title: Text(labels.createMemory),
+              content: SizedBox(
+                width: 360,
+                child: AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 160),
+                  child: switch (step) {
+                    0 => _MobileMemoryWizardStep(
+                      key: const Key('mobile-memory-step-select'),
+                      icon: Icons.photo_library_outlined,
+                      title: _localized(labels, 'Select photos', '选择照片'),
+                      description: _localized(
+                        labels,
+                        'Start from the current selection or add photos from detail after the memory is created.',
+                        '从当前选择开始，或在创建记忆后从详情页添加照片。',
+                      ),
+                    ),
+                    1 => Column(
+                      key: const Key('mobile-memory-step-edit'),
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _MobileMemoryWizardStep(
+                          icon: Icons.edit_outlined,
+                          title: labels.memoryName,
+                          description: _localized(
+                            labels,
+                            'Give this memory a short name that can appear on cards and mobile navigation.',
+                            '给这段记忆一个会显示在卡片和移动导航里的短名称。',
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        TextField(
+                          key: const Key('mobile-memory-name-field'),
+                          controller: memoryNameController,
+                          decoration: InputDecoration(
+                            labelText: labels.memoryName,
+                          ),
+                        ),
+                      ],
+                    ),
+                    _ => _MobileMemoryWizardStep(
+                      key: const Key('mobile-memory-step-confirm'),
+                      icon: Icons.check_circle_outline,
+                      title: _localized(labels, 'Create memory', '创建记忆'),
+                      description: _localized(
+                        labels,
+                        'ChronoPic will create an editable story surface. You can add photos, choose a cover, and edit details next.',
+                        'ChronoPic 将创建一个可编辑的故事页面。接下来可添加照片、选择封面并编辑详情。',
+                      ),
+                    ),
+                  },
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(dialogContext).pop(),
+                  child: Text(_localized(labels, 'Cancel', '取消')),
+                ),
+                FilledButton(
+                  key: const Key('mobile-memory-next'),
+                  onPressed: () {
+                    if (isLastStep) {
+                      if (memoryNameController.text.trim().isEmpty) {
+                        memoryNameController.text = _localized(
+                          labels,
+                          'Mobile Memory',
+                          '移动记忆',
+                        );
+                      }
+                      onCreateMemory();
+                      Navigator.of(dialogContext).pop();
+                      return;
+                    }
+                    setDialogState(() => step += 1);
+                  },
+                  child: Text(
+                    isLastStep
+                        ? labels.createMemory
+                        : _localized(labels, 'Next', '下一步'),
+                  ),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+}
+
+final class _MobileMemoryWizardStep extends StatelessWidget {
+  const _MobileMemoryWizardStep({
+    required this.description,
+    required this.icon,
+    required this.title,
+    super.key,
+  });
+
+  final String description;
+  final IconData icon;
+  final String title;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Icon(icon, size: 34, color: Colors.orange.shade800),
+        const SizedBox(height: 12),
+        Text(
+          title,
+          style: Theme.of(
+            context,
+          ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w900),
+        ),
+        const SizedBox(height: 8),
+        Text(description, style: TextStyle(color: Colors.grey.shade700)),
+      ],
     );
   }
 }
@@ -669,9 +805,13 @@ final class _MemoryDetailHero extends StatelessWidget {
                     color: Colors.grey.shade600,
                   ),
                   const SizedBox(width: 8),
-                  Text(
-                    'Updated ${_formatLongDateTime(updatedAt)}',
-                    style: TextStyle(color: Colors.grey.shade700),
+                  Expanded(
+                    child: Text(
+                      'Updated ${_formatLongDateTime(updatedAt)}',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(color: Colors.grey.shade700),
+                    ),
                   ),
                 ],
               ),

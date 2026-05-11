@@ -8,6 +8,48 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
+  testWidgets(
+    'mobile native shell exposes dashboard shortcuts and bottom browse navigation',
+    (tester) async {
+      tester.view.physicalSize = const Size(390, 844);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(() {
+        tester.view.resetPhysicalSize();
+        tester.view.resetDevicePixelRatio();
+      });
+
+      await tester.pumpWidget(
+        ChronoPicHome(
+          service: ChronoPicAppService(ChronoPicRepository()),
+          entryModeOverride: ChronoPicEntryMode.mobilePhotoLibrary,
+          mobileMediaSourceFactory: () => _mobileSource(),
+        ),
+      );
+
+      expect(find.byKey(const Key('mobile-home-dashboard')), findsOneWidget);
+      expect(find.byKey(const Key('mobile-dashboard-search')), findsOneWidget);
+      expect(
+        find.byKey(const Key('mobile-scan-progress-card')),
+        findsOneWidget,
+      );
+      expect(find.byKey(const Key('mobile-shortcut-all')), findsOneWidget);
+      expect(
+        find.byKey(const Key('mobile-shortcut-favorites')),
+        findsOneWidget,
+      );
+      expect(find.byKey(const Key('mobile-shortcut-memories')), findsOneWidget);
+      expect(find.byKey(const Key('mobile-shortcut-settings')), findsOneWidget);
+      expect(find.byKey(const Key('mobile-bottom-waterfall')), findsOneWidget);
+      expect(find.byKey(const Key('mobile-bottom-map')), findsOneWidget);
+      expect(find.byKey(const Key('mobile-bottom-timeline')), findsOneWidget);
+      expect(find.byKey(const Key('mobile-bottom-settings')), findsOneWidget);
+      expect(find.byKey(const Key('all-photos-nav')), findsNothing);
+      expect(find.byKey(const Key('favorites-nav')), findsNothing);
+      expect(find.byKey(const Key('memories-nav')), findsNothing);
+      expect(find.byKey(const Key('settings-nav')), findsNothing);
+    },
+  );
+
   testWidgets('mobile first run uses photo library as the primary entry', (
     tester,
   ) async {
@@ -94,13 +136,33 @@ void main() {
 
     expect(find.byKey(const Key('focused-detail-view')), findsOneWidget);
     expect(find.byKey(const Key('focused-detail-inspector')), findsOneWidget);
+    expect(find.byKey(const Key('mobile-detail-topbar')), findsOneWidget);
+    expect(find.byKey(const Key('mobile-detail-media')), findsOneWidget);
+    expect(find.byKey(const Key('mobile-detail-actions')), findsOneWidget);
     expect(find.byKey(const Key('mobile-open-gallery')), findsWidgets);
+    expect(find.textContaining('Esc close'), findsNothing);
+    expect(find.textContaining('Left/Right'), findsNothing);
 
     await tester.sendKeyEvent(LogicalKeyboardKey.escape);
     await tester.pumpAndSettle();
     expect(find.byKey(const Key('focused-detail-view')), findsNothing);
 
-    await tester.tap(find.byKey(const Key('memories-nav')));
+    final scrollable = tester.state<ScrollableState>(
+      find
+          .descendant(
+            of: find.byKey(const Key('home-page')),
+            matching: find.byType(Scrollable),
+          )
+          .first,
+    );
+    scrollable.position.jumpTo(0);
+    await tester.pump();
+
+    await tester.ensureVisible(
+      find.byKey(const Key('mobile-shortcut-memories')),
+    );
+    await tester.pump();
+    await tester.tap(find.byKey(const Key('mobile-shortcut-memories')));
     await tester.pumpAndSettle();
 
     expect(find.byKey(const Key('memories-page')), findsOneWidget);
@@ -144,6 +206,17 @@ void main() {
     expect(find.byKey(const Key('mobile-select-mode')), findsOneWidget);
     expect(find.text('20 items'), findsOneWidget);
 
+    await tester.ensureVisible(find.byKey(const Key('filter-toggle-button')));
+    await tester.pump();
+    await tester.tap(find.byKey(const Key('filter-toggle-button')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('mobile-filter-sheet')), findsOneWidget);
+    expect(find.byKey(const Key('tag-filter-field')), findsOneWidget);
+    expect(find.byKey(const Key('gps-filter-chip')), findsOneWidget);
+    expect(find.byKey(const Key('apply-filter-button')), findsOneWidget);
+    await tester.tap(find.byKey(const Key('apply-filter-button')));
+    await tester.pumpAndSettle();
+
     await tester.fling(
       find.byType(CustomScrollView),
       const Offset(0, -5000),
@@ -152,10 +225,12 @@ void main() {
     await tester.pumpAndSettle();
 
     final scrollable = tester.state<ScrollableState>(
-      find.descendant(
-        of: find.byKey(const Key('home-page')),
-        matching: find.byType(Scrollable),
-      ),
+      find
+          .descendant(
+            of: find.byKey(const Key('home-page')),
+            matching: find.byType(Scrollable),
+          )
+          .first,
     );
     scrollable.position.jumpTo(0);
     await tester.pump();
@@ -187,6 +262,13 @@ void main() {
   });
 
   testWidgets('settings state metadata-only backup wording', (tester) async {
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+
     await tester.pumpWidget(
       ChronoPicHome(
         service: ChronoPicAppService(ChronoPicRepository()),
@@ -195,15 +277,63 @@ void main() {
       ),
     );
 
-    await tester.tap(find.byKey(const Key('settings-nav')));
-    await tester.pump();
+    await tester.tap(find.byKey(const Key('mobile-bottom-settings')));
+    await tester.pumpAndSettle();
 
+    expect(find.byKey(const Key('mobile-settings-list')), findsOneWidget);
+    expect(find.byKey(const Key('mobile-settings-library')), findsOneWidget);
+    expect(find.byKey(const Key('mobile-settings-language')), findsOneWidget);
+    expect(find.byKey(const Key('mobile-settings-backup')), findsOneWidget);
+    expect(
+      find.byKey(const Key('mobile-settings-ai-language')),
+      findsOneWidget,
+    );
+    expect(find.byKey(const Key('mobile-settings-map')), findsOneWidget);
+    expect(find.byKey(const Key('mobile-settings-advanced')), findsOneWidget);
     expect(
       find.textContaining(
         'Original media files are referenced by path, not copied',
       ),
       findsOneWidget,
     );
+  });
+
+  testWidgets('mobile memory creation opens a guided wizard', (tester) async {
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+
+    await tester.pumpWidget(
+      ChronoPicHome(
+        service: ChronoPicAppService(ChronoPicRepository()),
+        entryModeOverride: ChronoPicEntryMode.mobilePhotoLibrary,
+        mobileMediaSourceFactory: () => _mobileSource(),
+      ),
+    );
+
+    await tester.ensureVisible(
+      find.byKey(const Key('mobile-shortcut-memories')),
+    );
+    await tester.pump();
+    await tester.tap(find.byKey(const Key('mobile-shortcut-memories')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('mobile-create-memory')));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('mobile-memory-wizard')), findsOneWidget);
+    expect(find.byKey(const Key('mobile-memory-step-select')), findsOneWidget);
+    expect(find.byKey(const Key('mobile-memory-next')), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('mobile-memory-next')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('mobile-memory-step-edit')), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('mobile-memory-next')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('mobile-memory-step-confirm')), findsOneWidget);
   });
 }
 

@@ -5,6 +5,11 @@ final class ChronoPicTheme {
 
   static const sidebarWidth = 264.0;
   static const panelRadius = 24.0;
+  static const mobileCardRadius = 18.0;
+  static const mobileTouchTarget = 48.0;
+  static const mobileAccent = Color(0xffffc46b);
+  static const mobileBackground = Color(0xfff6f4f1);
+  static const mobileSurface = Color(0xffffffff);
 
   static ThemeData light() {
     final scheme = ColorScheme.fromSeed(

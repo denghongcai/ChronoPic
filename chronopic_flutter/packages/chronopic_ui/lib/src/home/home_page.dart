@@ -19,6 +19,7 @@ final class HomePage extends StatelessWidget {
     required this.memories,
     required this.onAddLibrary,
     required this.onAddToMemory,
+    required this.onAllPhotos,
     required this.onAiStatusChanged,
     required this.onBrowseModeChanged,
     required this.onChooseLibraryFolder,
@@ -32,6 +33,9 @@ final class HomePage extends StatelessWidget {
     required this.onLoadMorePhotos,
     required this.onOpenGallery,
     required this.onOpenDetailFor,
+    required this.onOpenMemories,
+    required this.onOpenSettings,
+    required this.onFavorites,
     required this.onRollback,
     required this.onSaveCaption,
     required this.onSaveDatetime,
@@ -75,6 +79,7 @@ final class HomePage extends StatelessWidget {
   final List<Memory> memories;
   final VoidCallback onAddLibrary;
   final VoidCallback onAddToMemory;
+  final VoidCallback onAllPhotos;
   final ValueChanged<AiPipelineStatus?> onAiStatusChanged;
   final ValueChanged<BrowseMode> onBrowseModeChanged;
   final VoidCallback onChooseLibraryFolder;
@@ -88,6 +93,9 @@ final class HomePage extends StatelessWidget {
   final VoidCallback onLoadMorePhotos;
   final ValueChanged<BuildContext> onOpenGallery;
   final ValueChanged<PhotoRecord> onOpenDetailFor;
+  final VoidCallback onOpenMemories;
+  final VoidCallback onOpenSettings;
+  final VoidCallback onFavorites;
   final VoidCallback onRollback;
   final VoidCallback onSaveCaption;
   final VoidCallback onSaveDatetime;
@@ -115,6 +123,7 @@ final class HomePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final mobileLayout = MediaQuery.sizeOf(context).width < 720;
     final hasPhotos = photos.isNotEmpty;
     final hasExpandedFilterState =
         query.trim().isNotEmpty ||
@@ -129,6 +138,62 @@ final class HomePage extends StatelessWidget {
         hasExpandedFilterState || favoriteOnly || activeFilterLabels.isNotEmpty;
     final showFirstRun = !hasPhotos && !hasBrowseContext;
     final showFilterControls = hasPhotos || hasExpandedFilterState;
+    void openMobileFilterSheet() {
+      showModalBottomSheet<void>(
+        context: context,
+        isScrollControlled: true,
+        showDragHandle: true,
+        builder: (sheetContext) {
+          return SafeArea(
+            child: Padding(
+              key: const Key('mobile-filter-sheet'),
+              padding: EdgeInsets.fromLTRB(
+                16,
+                4,
+                16,
+                16 + MediaQuery.viewInsetsOf(sheetContext).bottom,
+              ),
+              child: SingleChildScrollView(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      labels.searchAndFilters,
+                      style: Theme.of(context).textTheme.titleLarge,
+                    ),
+                    const SizedBox(height: 12),
+                    FilterToolbar(
+                      aiStatus: aiStatus,
+                      fromDateController: fromDateController,
+                      gpsOnly: gpsOnly,
+                      labels: labels,
+                      onAiStatusChanged: onAiStatusChanged,
+                      onApply: () {
+                        onFilterApply();
+                        Navigator.of(sheetContext).pop();
+                      },
+                      onClear: () {
+                        onClearFilters();
+                        Navigator.of(sheetContext).pop();
+                      },
+                      onGpsOnlyChanged: onGpsOnlyChanged,
+                      onSortByChanged: onSortByChanged,
+                      onSortDirectionChanged: onSortDirectionChanged,
+                      sortBy: sortBy,
+                      sortDirection: sortDirection,
+                      tagController: tagController,
+                      toDateController: toDateController,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          );
+        },
+      );
+    }
+
     if (detailFirst && selected != null) {
       return SizedBox(
         key: const Key('home-page'),
@@ -171,6 +236,22 @@ final class HomePage extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                if (mobileLayout && !showFirstRun) ...[
+                  _MobileHomeDashboard(
+                    favoriteOnly: favoriteOnly,
+                    labels: labels,
+                    memories: memories,
+                    onAllPhotos: onAllPhotos,
+                    onFavorites: onFavorites,
+                    onOpenMemories: onOpenMemories,
+                    onOpenSettings: onOpenSettings,
+                    onSearchChanged: onSearchChanged,
+                    photos: photos,
+                    query: query,
+                    scanning: scanning,
+                  ),
+                  const SizedBox(height: 14),
+                ],
                 if (showFirstRun) ...[
                   FirstRunPanel(
                     entryMode: entryMode,
@@ -180,11 +261,28 @@ final class HomePage extends StatelessWidget {
                   ),
                   const SizedBox(height: 18),
                 ],
-                MemoryHighlightsPanel(
-                  labels: labels,
-                  memories: memories,
-                  onCreateFirstMemory: onCreateFirstMemory,
-                ),
+                if (mobileLayout && showFirstRun) ...[
+                  _MobileHomeDashboard(
+                    favoriteOnly: favoriteOnly,
+                    labels: labels,
+                    memories: memories,
+                    onAllPhotos: onAllPhotos,
+                    onFavorites: onFavorites,
+                    onOpenMemories: onOpenMemories,
+                    onOpenSettings: onOpenSettings,
+                    onSearchChanged: onSearchChanged,
+                    photos: photos,
+                    query: query,
+                    scanning: scanning,
+                  ),
+                  const SizedBox(height: 18),
+                ],
+                if (!mobileLayout)
+                  MemoryHighlightsPanel(
+                    labels: labels,
+                    memories: memories,
+                    onCreateFirstMemory: onCreateFirstMemory,
+                  ),
                 if (hasPhotos && memories.isEmpty)
                   GuidedNextStepPanel(labels: labels),
                 const SizedBox(height: 18),
@@ -198,11 +296,19 @@ final class HomePage extends StatelessWidget {
                   filterPanelOpen: filterPanelOpen,
                   labels: labels,
                   onBrowseModeChanged: onBrowseModeChanged,
-                  onFilterPanelToggle: onFilterPanelToggle,
+                  onFilterPanelToggle: mobileLayout
+                      ? openMobileFilterSheet
+                      : onFilterPanelToggle,
                   onSearchChanged: onSearchChanged,
                   resultCount: photos.length,
                   searchQuery: query,
+                  compactMobile: mobileLayout,
                 ),
+                if (mobileLayout && hasExpandedFilterState)
+                  ActiveFilterSummary(
+                    filterLabels: activeFilterLabels,
+                    labels: labels,
+                  ),
                 if (hasPhotos) ...[
                   const SizedBox(height: 10),
                   _DiscoveryLensChips(
@@ -215,6 +321,7 @@ final class HomePage extends StatelessWidget {
                 ],
                 const SizedBox(height: 10),
                 if (showFilterControls &&
+                    !mobileLayout &&
                     (filterPanelOpen || hasExpandedFilterState)) ...[
                   FilterToolbar(
                     aiStatus: aiStatus,
@@ -363,6 +470,226 @@ final class _BrowseSelectedPhotoBanner extends StatelessWidget {
             style: TextStyle(color: Colors.lightBlue.shade900),
           ),
         ],
+      ),
+    );
+  }
+}
+
+final class _MobileHomeDashboard extends StatelessWidget {
+  const _MobileHomeDashboard({
+    required this.favoriteOnly,
+    required this.labels,
+    required this.memories,
+    required this.onAllPhotos,
+    required this.onFavorites,
+    required this.onOpenMemories,
+    required this.onOpenSettings,
+    required this.onSearchChanged,
+    required this.photos,
+    required this.query,
+    required this.scanning,
+  });
+
+  final bool favoriteOnly;
+  final UiStrings labels;
+  final List<Memory> memories;
+  final VoidCallback onAllPhotos;
+  final VoidCallback onFavorites;
+  final VoidCallback onOpenMemories;
+  final VoidCallback onOpenSettings;
+  final ValueChanged<String> onSearchChanged;
+  final List<PhotoRecord> photos;
+  final String query;
+  final bool scanning;
+
+  @override
+  Widget build(BuildContext context) {
+    final latestMemory = memories.isEmpty ? null : memories.first;
+    return Column(
+      key: const Key('mobile-home-dashboard'),
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        TextFormField(
+          key: const Key('mobile-dashboard-search'),
+          initialValue: query,
+          decoration: InputDecoration(
+            hintText: labels.searchAndFilters,
+            prefixIcon: const Icon(Icons.search),
+          ),
+          textInputAction: TextInputAction.search,
+          onChanged: onSearchChanged,
+        ),
+        const SizedBox(height: 14),
+        SizedBox(
+          height: 92,
+          child: SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              children: [
+                _MobileDashboardShortcut(
+                  active: !favoriteOnly,
+                  icon: Icons.photo_library_outlined,
+                  keyName: 'mobile-shortcut-all',
+                  label: labels.allPhotos,
+                  onPressed: onAllPhotos,
+                  value: _localized(
+                    labels,
+                    '${photos.length} indexed',
+                    '${photos.length} 个已索引',
+                  ),
+                ),
+                const SizedBox(width: 10),
+                _MobileDashboardShortcut(
+                  active: favoriteOnly,
+                  icon: Icons.star_border,
+                  keyName: 'mobile-shortcut-favorites',
+                  label: labels.favorites,
+                  onPressed: onFavorites,
+                  value: _localized(labels, 'Saved picks', '收藏精选'),
+                ),
+                const SizedBox(width: 10),
+                _MobileDashboardShortcut(
+                  active: false,
+                  icon: Icons.auto_stories_outlined,
+                  keyName: 'mobile-shortcut-memories',
+                  label: labels.memories,
+                  onPressed: onOpenMemories,
+                  value:
+                      latestMemory?.name ??
+                      _localized(labels, 'Create story', '创建故事'),
+                ),
+                const SizedBox(width: 10),
+                _MobileDashboardShortcut(
+                  active: false,
+                  icon: Icons.tune_outlined,
+                  keyName: 'mobile-shortcut-settings',
+                  label: labels.settings,
+                  onPressed: onOpenSettings,
+                  value: _localized(labels, 'Library tools', '资料库工具'),
+                ),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(height: 12),
+        DecoratedBox(
+          key: const Key('mobile-scan-progress-card'),
+          decoration: BoxDecoration(
+            color: ChronoPicTheme.mobileSurface,
+            borderRadius: BorderRadius.circular(
+              ChronoPicTheme.mobileCardRadius,
+            ),
+            border: Border.all(color: Colors.grey.shade200),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(14),
+            child: Row(
+              children: [
+                Container(
+                  width: 42,
+                  height: 42,
+                  decoration: BoxDecoration(
+                    color: scanning
+                        ? Colors.orange.shade100
+                        : Colors.green.shade50,
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    scanning ? Icons.sync : Icons.check_circle_outline,
+                    color: scanning
+                        ? Colors.orange.shade800
+                        : Colors.green.shade700,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        scanning
+                            ? _localized(labels, 'Scanning library', '正在扫描图库')
+                            : _localized(labels, 'Library ready', '图库就绪'),
+                        style: const TextStyle(fontWeight: FontWeight.w900),
+                      ),
+                      const SizedBox(height: 3),
+                      Text(
+                        _localized(
+                          labels,
+                          '${photos.length} indexed locally',
+                          '${photos.length} 个本地索引',
+                        ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          color: Colors.grey.shade600,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+final class _MobileDashboardShortcut extends StatelessWidget {
+  const _MobileDashboardShortcut({
+    required this.active,
+    required this.icon,
+    required this.keyName,
+    required this.label,
+    required this.onPressed,
+    required this.value,
+  });
+
+  final bool active;
+  final IconData icon;
+  final String keyName;
+  final String label;
+  final VoidCallback onPressed;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: active ? ChronoPicTheme.mobileAccent : Colors.white,
+      borderRadius: BorderRadius.circular(ChronoPicTheme.mobileCardRadius),
+      child: InkWell(
+        key: Key(keyName),
+        borderRadius: BorderRadius.circular(ChronoPicTheme.mobileCardRadius),
+        onTap: onPressed,
+        child: SizedBox(
+          width: 132,
+          child: Padding(
+            padding: const EdgeInsets.all(12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Icon(icon, size: 22, color: Colors.grey.shade900),
+                const Spacer(),
+                Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(fontWeight: FontWeight.w900),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  value,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
+                ),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -895,6 +1222,7 @@ final class LibraryToolbar extends StatelessWidget {
 final class _BrowseToolbar extends StatelessWidget {
   const _BrowseToolbar({
     required this.browseMode,
+    required this.compactMobile,
     required this.filterPanelOpen,
     required this.labels,
     required this.onBrowseModeChanged,
@@ -905,6 +1233,7 @@ final class _BrowseToolbar extends StatelessWidget {
   });
 
   final BrowseMode browseMode;
+  final bool compactMobile;
   final bool filterPanelOpen;
   final UiStrings labels;
   final ValueChanged<BrowseMode> onBrowseModeChanged;
@@ -926,11 +1255,12 @@ final class _BrowseToolbar extends StatelessWidget {
           runSpacing: 10,
           crossAxisAlignment: WrapCrossAlignment.center,
           children: [
-            BrowseModeSelector(
-              labels: labels,
-              mode: browseMode,
-              onChanged: onBrowseModeChanged,
-            ),
+            if (!compactMobile)
+              BrowseModeSelector(
+                labels: labels,
+                mode: browseMode,
+                onChanged: onBrowseModeChanged,
+              ),
             Chip(
               label: Text(
                 searchQuery.isEmpty
@@ -938,15 +1268,18 @@ final class _BrowseToolbar extends StatelessWidget {
                     : '$resultCount ${labels.matchesUnit}',
               ),
             ),
-            SizedBox(
-              width: searchWidth,
-              child: TextFormField(
-                key: const Key('search-field'),
-                initialValue: searchQuery,
-                decoration: InputDecoration(labelText: labels.searchAndFilters),
-                onChanged: onSearchChanged,
+            if (!compactMobile)
+              SizedBox(
+                width: searchWidth,
+                child: TextFormField(
+                  key: const Key('search-field'),
+                  initialValue: searchQuery,
+                  decoration: InputDecoration(
+                    labelText: labels.searchAndFilters,
+                  ),
+                  onChanged: onSearchChanged,
+                ),
               ),
-            ),
             KeyedSubtree(
               key: const ValueKey<String>('mobile-select-mode'),
               child: OutlinedButton.icon(

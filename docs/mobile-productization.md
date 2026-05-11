@@ -218,6 +218,53 @@ Captured on 2026-05-10 during Phase 7 Task 4.
   chronopic_flutter/tool/release/build_android_release.sh
   ```
 
+## Phase 11 Mobile-Native UI Contract
+
+Captured on 2026-05-11 during Phase 11.
+
+- Android mobile may diverge from the Linux desktop visual layout and
+  interaction structure while preserving the same local-first data,
+  backup,
+  media scan,
+  memory,
+  AI readiness,
+  and persistence contracts.
+- Mobile uses a phone-specific shell:
+  compact brand/notification header,
+  prominent home search,
+  horizontal shortcut cards,
+  scan/catalog status,
+  and bottom navigation for Waterfall,
+  Map,
+  Timeline,
+  and Settings.
+- Dense browse controls use a bottom sheet on mobile rather than a squeezed
+  desktop toolbar.
+- Mobile Detail and Gallery should avoid desktop keyboard shortcut copy.
+- Settings uses grouped rows and drill-in sheets for complex controls.
+- Create Memory starts with a guided mobile wizard and then opens the existing
+  memory detail lifecycle for description,
+  cover,
+  add/remove photo,
+  rename,
+  and persistence.
+
+Local Phase 11 gate:
+
+```bash
+cd chronopic_flutter && flutter analyze
+cd chronopic_flutter && dart test packages/chronopic_domain/test packages/chronopic_database/test packages/chronopic_app/test packages/chronopic_media/test
+cd chronopic_flutter && flutter test packages/chronopic_ui/test apps/chronopic/test
+cd chronopic_flutter && flutter test packages/chronopic_ui/test/mobile_productization_test.dart
+cd chronopic_flutter && flutter test apps/chronopic/integration_test/mobile_deep_e2e_test.dart
+cd chronopic_flutter/apps/chronopic && flutter build apk --debug
+git diff --check
+```
+
+Result:
+all commands passed locally.
+iOS live verification remains blocked until macOS/Xcode evidence exists.
+
 ## Phase 10 Mobile UI Refine Evidence
 
 Captured on 2026-05-10 after the Android package id moved to

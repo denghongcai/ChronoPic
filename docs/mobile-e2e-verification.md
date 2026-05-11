@@ -219,6 +219,33 @@ Actions workflow:
 - Screenshot size check:
   all PNG evidence in the run is 1080x2400.
 
+2026-05-11 Phase 11 mobile-native UI result:
+
+- Command:
+  `cd chronopic_flutter && flutter test apps/chronopic/integration_test/mobile_deep_e2e_test.dart`.
+- Result:
+  passed locally.
+- Covered workflow:
+  restored mobile browse,
+  photo open into focused Detail,
+  Gallery open/close,
+  favorite toggle,
+  caption/tags/datetime edit,
+  guided Create Memory wizard,
+  add photo to memory,
+  set cover,
+  rename/description edit,
+  remove photo,
+  mobile search/filter/sort sheet,
+  grouped Settings language drill-in,
+  locale persistence,
+  backup restore,
+  and restart-state persistence.
+- Regression fixed during this gate:
+  mobile Gallery chrome no longer overflows at phone width,
+  and the mobile Language settings drill-in sheet uses stacked controls instead
+  of a desktop row.
+
 ### Android App-Owned Integration Test
 
 ```bash

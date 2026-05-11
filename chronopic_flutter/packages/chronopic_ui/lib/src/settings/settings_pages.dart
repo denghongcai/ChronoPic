@@ -94,74 +94,311 @@ final class SettingsPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final libraryPanel = SettingsLibraryPanel(
+      labels: labels,
+      onChooseLibraryFolder: onChooseLibraryFolder,
+      onScanLibrary: onScanLibrary,
+      scanning: scanning,
+    );
+    final localePanel = LocaleSettingsPanel(
+      aiOutputLocale: aiOutputLocale,
+      labels: labels,
+      locale: locale,
+      onAiOutputLocaleChanged: onAiOutputLocaleChanged,
+      onLocaleChanged: onLocaleChanged,
+      onSaveLocaleSettings: onSaveLocaleSettings,
+    );
+    final backupPanel = BackupPanel(
+      labels: labels,
+      onExportBackup: onExportBackup,
+      onPreviewRestore: onPreviewRestore,
+      onRestoreBackup: onRestoreBackup,
+      restorePreview: restorePreview,
+    );
+    final aiPanel = AiSettingsPanel(
+      aiReadiness: aiReadiness,
+      aiStatusCounts: aiStatusCounts,
+      apiKeyController: apiKeyController,
+      baseUrlController: baseUrlController,
+      labels: labels,
+      modelController: modelController,
+      onSaveSettings: onSaveAiSettings,
+      providerController: providerController,
+    );
+    final backupPathPanel = BackupPathPanel(
+      backupPathController: backupPathController,
+      labels: labels,
+      onChooseBackupExportPath: onChooseBackupExportPath,
+      onChooseBackupRestorePath: onChooseBackupRestorePath,
+    );
+    final mapPanel = MapSettingsPanel(
+      apiKeyController: mapApiKeyController,
+      labels: labels,
+      onSaveSettings: onSaveMapSettings,
+      securityJsCodeController: mapSecurityJsCodeController,
+    );
+    final manualPathPanel = ManualLibraryPathPanel(
+      labels: labels,
+      libraryPathController: libraryPathController,
+      onAddLibrary: onAddLibrary,
+    );
+    final sourcesPanel = SourcesPanel(labels: labels, sources: sources);
+    final statsGrid = _StatsGrid(
+      labels: labels,
+      photos: photos,
+      memories: memories,
+      sources: sources,
+    );
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        if (constraints.maxWidth < 720) {
+          return _MobileSettingsList(
+            groups: [
+              _MobileSettingsGroup(
+                child: libraryPanel,
+                icon: Icons.photo_library_outlined,
+                keyName: 'mobile-settings-library',
+                subtitle: _localized(
+                  labels,
+                  'Choose photos, rescan, and manage the mobile catalog.',
+                  '选择照片、重新扫描并管理移动端目录。',
+                ),
+                title: _localized(labels, 'Library', '图库'),
+              ),
+              _MobileSettingsGroup(
+                child: localePanel,
+                icon: Icons.translate_outlined,
+                keyName: 'mobile-settings-language',
+                subtitle: labels.languageDescription,
+                title: labels.language,
+              ),
+              _MobileSettingsGroup(
+                child: localePanel,
+                icon: Icons.record_voice_over_outlined,
+                keyName: 'mobile-settings-ai-language',
+                subtitle: labels.followInterfaceLanguage,
+                title: labels.aiOutputLanguage,
+              ),
+              _MobileSettingsGroup(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    backupPanel,
+                    const SizedBox(height: 14),
+                    backupPathPanel,
+                  ],
+                ),
+                icon: Icons.backup_outlined,
+                keyName: 'mobile-settings-backup',
+                subtitle: _localized(
+                  labels,
+                  'Original media files are referenced by path, not copied.',
+                  '原始媒体文件按路径引用，不会复制。',
+                ),
+                title: _localized(labels, 'Backup', '备份'),
+              ),
+              _MobileSettingsGroup(
+                child: aiPanel,
+                icon: Icons.auto_awesome_outlined,
+                keyName: 'mobile-settings-ai',
+                subtitle: _localized(
+                  labels,
+                  'Secret-safe readiness and enrichment settings.',
+                  '密钥安全的就绪状态和增强设置。',
+                ),
+                title: _localized(labels, 'AI Enrichment', 'AI 增强'),
+              ),
+              _MobileSettingsGroup(
+                child: mapPanel,
+                icon: Icons.map_outlined,
+                keyName: 'mobile-settings-map',
+                subtitle: _localized(
+                  labels,
+                  'Configure map rendering for mobile discovery.',
+                  '配置移动端发现视图的地图渲染。',
+                ),
+                title: labels.map,
+              ),
+              _MobileSettingsGroup(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    manualPathPanel,
+                    const SizedBox(height: 14),
+                    sourcesPanel,
+                    const SizedBox(height: 14),
+                    statsGrid,
+                  ],
+                ),
+                icon: Icons.settings_applications_outlined,
+                keyName: 'mobile-settings-advanced',
+                subtitle: _localized(
+                  labels,
+                  'Manual paths, source list, and local statistics.',
+                  '手动路径、来源列表和本地统计。',
+                ),
+                title: _localized(labels, 'Advanced', '高级'),
+              ),
+            ],
+            labels: labels,
+          );
+        }
+
+        return Column(
+          key: const Key('settings-page'),
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            libraryPanel,
+            const SizedBox(height: 18),
+            localePanel,
+            const SizedBox(height: 18),
+            backupPanel,
+            const SizedBox(height: 18),
+            aiPanel,
+            const SizedBox(height: 18),
+            backupPathPanel,
+            const SizedBox(height: 18),
+            mapPanel,
+            const SizedBox(height: 18),
+            manualPathPanel,
+            const SizedBox(height: 18),
+            sourcesPanel,
+            const SizedBox(height: 18),
+            statsGrid,
+          ],
+        );
+      },
+    );
+  }
+}
+
+final class _MobileSettingsGroup {
+  const _MobileSettingsGroup({
+    required this.child,
+    required this.icon,
+    required this.keyName,
+    required this.subtitle,
+    required this.title,
+  });
+
+  final Widget child;
+  final IconData icon;
+  final String keyName;
+  final String subtitle;
+  final String title;
+}
+
+final class _MobileSettingsList extends StatelessWidget {
+  const _MobileSettingsList({required this.groups, required this.labels});
+
+  final List<_MobileSettingsGroup> groups;
+  final UiStrings labels;
+
+  @override
+  Widget build(BuildContext context) {
     return Column(
       key: const Key('settings-page'),
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        SettingsLibraryPanel(
-          labels: labels,
-          onChooseLibraryFolder: onChooseLibraryFolder,
-          onScanLibrary: onScanLibrary,
-          scanning: scanning,
+        Text(
+          labels.settings,
+          style: Theme.of(
+            context,
+          ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w900),
         ),
-        const SizedBox(height: 18),
-        LocaleSettingsPanel(
-          aiOutputLocale: aiOutputLocale,
-          labels: labels,
-          locale: locale,
-          onAiOutputLocaleChanged: onAiOutputLocaleChanged,
-          onLocaleChanged: onLocaleChanged,
-          onSaveLocaleSettings: onSaveLocaleSettings,
-        ),
-        const SizedBox(height: 18),
-        BackupPanel(
-          labels: labels,
-          onExportBackup: onExportBackup,
-          onPreviewRestore: onPreviewRestore,
-          onRestoreBackup: onRestoreBackup,
-          restorePreview: restorePreview,
-        ),
-        const SizedBox(height: 18),
-        AiSettingsPanel(
-          aiReadiness: aiReadiness,
-          aiStatusCounts: aiStatusCounts,
-          apiKeyController: apiKeyController,
-          baseUrlController: baseUrlController,
-          labels: labels,
-          modelController: modelController,
-          onSaveSettings: onSaveAiSettings,
-          providerController: providerController,
-        ),
-        const SizedBox(height: 18),
-        BackupPathPanel(
-          backupPathController: backupPathController,
-          labels: labels,
-          onChooseBackupExportPath: onChooseBackupExportPath,
-          onChooseBackupRestorePath: onChooseBackupRestorePath,
-        ),
-        const SizedBox(height: 18),
-        MapSettingsPanel(
-          apiKeyController: mapApiKeyController,
-          labels: labels,
-          onSaveSettings: onSaveMapSettings,
-          securityJsCodeController: mapSecurityJsCodeController,
-        ),
-        const SizedBox(height: 18),
-        ManualLibraryPathPanel(
-          labels: labels,
-          libraryPathController: libraryPathController,
-          onAddLibrary: onAddLibrary,
-        ),
-        const SizedBox(height: 18),
-        SourcesPanel(labels: labels, sources: sources),
-        const SizedBox(height: 18),
-        _StatsGrid(
-          labels: labels,
-          photos: photos,
-          memories: memories,
-          sources: sources,
+        const SizedBox(height: 10),
+        ListView.separated(
+          key: const Key('mobile-settings-list'),
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          itemCount: groups.length,
+          separatorBuilder: (_, _) => const SizedBox(height: 10),
+          itemBuilder: (context, index) {
+            final group = groups[index];
+            return _MobileSettingsRow(group: group);
+          },
         ),
       ],
+    );
+  }
+}
+
+final class _MobileSettingsRow extends StatelessWidget {
+  const _MobileSettingsRow({required this.group});
+
+  final _MobileSettingsGroup group;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(ChronoPicTheme.mobileCardRadius),
+      child: InkWell(
+        key: Key(group.keyName),
+        borderRadius: BorderRadius.circular(ChronoPicTheme.mobileCardRadius),
+        onTap: () => _openGroup(context),
+        child: Padding(
+          padding: const EdgeInsets.all(14),
+          child: Row(
+            children: [
+              Container(
+                width: 42,
+                height: 42,
+                decoration: BoxDecoration(
+                  color: Colors.orange.shade50,
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: Icon(group.icon, color: Colors.orange.shade900),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      group.title,
+                      style: const TextStyle(fontWeight: FontWeight.w900),
+                    ),
+                    const SizedBox(height: 3),
+                    Text(
+                      group.subtitle,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: Colors.grey.shade600,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const Icon(Icons.chevron_right),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _openGroup(BuildContext context) {
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
+      builder: (sheetContext) {
+        return SafeArea(
+          child: Padding(
+            padding: EdgeInsets.fromLTRB(
+              14,
+              0,
+              14,
+              14 + MediaQuery.viewInsetsOf(sheetContext).bottom,
+            ),
+            child: SingleChildScrollView(child: group.child),
+          ),
+        );
+      },
     );
   }
 }
@@ -302,76 +539,84 @@ final class LocaleSettingsPanel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return _Panel(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _SectionHeader(
-            title: labels.language,
-            description: labels.languageDescription,
-          ),
-          const SizedBox(height: 18),
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Expanded(
-                child: DropdownButtonFormField<UiLocale>(
-                  key: const Key('interface-locale-control'),
-                  decoration: InputDecoration(
-                    labelText: labels.interfaceLanguage,
-                  ),
-                  isExpanded: true,
-                  initialValue: locale,
-                  items: const [
-                    DropdownMenuItem(
-                      value: UiLocale.en,
-                      child: Text('English'),
-                    ),
-                    DropdownMenuItem(value: UiLocale.zh, child: Text('中文')),
-                  ],
-                  onChanged: (value) {
-                    if (value != null) onLocaleChanged(value);
-                  },
-                ),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final interfaceControl = DropdownButtonFormField<UiLocale>(
+            key: const Key('interface-locale-control'),
+            decoration: InputDecoration(labelText: labels.interfaceLanguage),
+            isExpanded: true,
+            initialValue: locale,
+            items: const [
+              DropdownMenuItem(value: UiLocale.en, child: Text('English')),
+              DropdownMenuItem(value: UiLocale.zh, child: Text('中文')),
+            ],
+            onChanged: (value) {
+              if (value != null) onLocaleChanged(value);
+            },
+          );
+          final aiControl = DropdownButtonFormField<AiOutputLocale>(
+            key: const Key('ai-output-locale-control'),
+            decoration: InputDecoration(labelText: labels.aiOutputLanguage),
+            isExpanded: true,
+            initialValue: aiOutputLocale,
+            items: [
+              DropdownMenuItem(
+                value: AiOutputLocale.followUi,
+                child: Text(labels.followInterfaceLanguage),
               ),
-              const SizedBox(width: 14),
-              Expanded(
-                child: DropdownButtonFormField<AiOutputLocale>(
-                  key: const Key('ai-output-locale-control'),
-                  decoration: InputDecoration(
-                    labelText: labels.aiOutputLanguage,
-                  ),
-                  isExpanded: true,
-                  initialValue: aiOutputLocale,
-                  items: [
-                    DropdownMenuItem(
-                      value: AiOutputLocale.followUi,
-                      child: Text(labels.followInterfaceLanguage),
-                    ),
-                    const DropdownMenuItem(
-                      value: AiOutputLocale.enUS,
-                      child: Text('English'),
-                    ),
-                    const DropdownMenuItem(
-                      value: AiOutputLocale.zhCN,
-                      child: Text('中文'),
-                    ),
-                  ],
-                  onChanged: (value) {
-                    if (value != null) onAiOutputLocaleChanged(value);
-                  },
-                ),
+              const DropdownMenuItem(
+                value: AiOutputLocale.enUS,
+                child: Text('English'),
               ),
-              const SizedBox(width: 14),
-              OutlinedButton.icon(
-                key: const Key('save-locale-settings-button'),
-                onPressed: onSaveLocaleSettings,
-                style: _secondaryActionStyle(),
-                icon: const Icon(Icons.save_outlined),
-                label: Text(labels.saveLanguageSettings),
+              const DropdownMenuItem(
+                value: AiOutputLocale.zhCN,
+                child: Text('中文'),
               ),
             ],
-          ),
-        ],
+            onChanged: (value) {
+              if (value != null) onAiOutputLocaleChanged(value);
+            },
+          );
+          final saveButton = OutlinedButton.icon(
+            key: const Key('save-locale-settings-button'),
+            onPressed: onSaveLocaleSettings,
+            style: _secondaryActionStyle(),
+            icon: const Icon(Icons.save_outlined),
+            label: Text(labels.saveLanguageSettings),
+          );
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _SectionHeader(
+                title: labels.language,
+                description: labels.languageDescription,
+              ),
+              const SizedBox(height: 18),
+              if (constraints.maxWidth < 620)
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    interfaceControl,
+                    const SizedBox(height: 12),
+                    aiControl,
+                    const SizedBox(height: 12),
+                    Align(alignment: Alignment.centerLeft, child: saveButton),
+                  ],
+                )
+              else
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Expanded(child: interfaceControl),
+                    const SizedBox(width: 14),
+                    Expanded(child: aiControl),
+                    const SizedBox(width: 14),
+                    saveButton,
+                  ],
+                ),
+            ],
+          );
+        },
       ),
     );
   }

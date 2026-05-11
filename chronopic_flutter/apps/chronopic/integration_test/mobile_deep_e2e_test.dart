@@ -55,13 +55,9 @@ void main() {
         .id;
 
     await _selectPhoto(tester, firstId);
-    expect(
-      find.byKey(const Key('browse-selected-photo-banner')),
-      findsOneWidget,
-    );
-
-    await _openAndCloseFocusedDetail(tester, firstId);
+    expect(find.byKey(const Key('focused-detail-view')), findsOneWidget);
     await _openAndCloseGallery(tester);
+    await _selectPhoto(tester, firstId);
 
     await _tapVisible(tester, find.byKey(const Key('detail-favorite-button')));
     expect(service.getPhoto(firstId)!.photo.favorite, isTrue);
@@ -119,33 +115,10 @@ ChronoPicAppService _restoredService(ChronoPicBackup backup) {
 
 Future<void> _selectPhoto(WidgetTester tester, String photoId) async {
   final card = find.byKey(Key('photo-card-$photoId'));
-  await _tapVisible(tester, card);
-  await tester.pump(const Duration(milliseconds: 360));
-}
-
-Future<void> _openAndCloseFocusedDetail(
-  WidgetTester tester,
-  String photoId,
-) async {
-  final card = find.byKey(Key('photo-card-$photoId'));
-  expect(card, findsOneWidget);
-  final cardGesture = find.descendant(
-    of: card,
-    matching: find.byKey(const Key('mobile-open-detail')),
-  );
-  await tester.ensureVisible(cardGesture);
-  await tester.pump();
-  await tester.tap(cardGesture);
-  await tester.pump(const Duration(milliseconds: 80));
-  await tester.tap(cardGesture);
+  await _scrollHomeUntilVisible(tester, card);
+  await tester.tap(card);
   await tester.pumpAndSettle();
-
-  expect(find.byKey(const Key('focused-detail-view')), findsOneWidget);
-  await _tapVisible(
-    tester,
-    find.byKey(const Key('focused-detail-close-button')),
-  );
-  expect(find.byKey(const Key('focused-detail-view')), findsNothing);
+  await tester.pump(const Duration(milliseconds: 360));
 }
 
 Future<void> _openAndCloseGallery(WidgetTester tester) async {
@@ -195,13 +168,20 @@ Future<void> _exerciseMemoryLifecycle(
   ChronoPicAppService service,
   String photoId,
 ) async {
-  await _tapVisible(tester, find.byKey(const Key('memories-nav')));
+  await _tapVisible(
+    tester,
+    find.byKey(const Key('focused-detail-close-button')),
+  );
+  await _tapVisible(tester, find.byKey(const Key('mobile-shortcut-memories')));
+  await _tapVisible(tester, find.byKey(const Key('mobile-create-memory')));
+  await _tapVisible(tester, find.byKey(const Key('mobile-memory-next')));
   await _enterVisibleText(
     tester,
-    find.byKey(const Key('memory-name-field')),
+    find.byKey(const Key('mobile-memory-name-field')),
     'Mobile E2E Memory',
   );
-  await _tapVisible(tester, find.byKey(const Key('mobile-create-memory')));
+  await _tapVisible(tester, find.byKey(const Key('mobile-memory-next')));
+  await _tapVisible(tester, find.byKey(const Key('mobile-memory-next')));
 
   final memory = service.listMemories().single;
   expect(find.byKey(const Key('memory-detail-panel')), findsOneWidget);
@@ -238,10 +218,11 @@ Future<void> _exerciseSearchFilterAndSort(
   String firstId,
   String secondId,
 ) async {
-  await _tapVisible(tester, find.byKey(const Key('all-photos-nav')));
+  await _tapVisible(tester, find.byKey(const Key('mobile-bottom-waterfall')));
+  await _tapVisible(tester, find.byKey(const Key('mobile-shortcut-all')));
   await _enterVisibleText(
     tester,
-    find.byKey(const Key('search-field')),
+    find.byKey(const Key('mobile-dashboard-search')),
     'Mobile E2E Caption',
   );
   await tester.pumpAndSettle();
@@ -257,16 +238,22 @@ Future<void> _exerciseSearchFilterAndSort(
   await _tapVisible(tester, find.byKey(const Key('apply-filter-button')));
   expect(find.byKey(Key('active-filter-Tag: e2e')), findsOneWidget);
 
+  await _tapVisible(tester, find.byKey(const Key('filter-toggle-button')));
   await _tapVisible(tester, find.byKey(const Key('sort-direction-control')));
   await _tapVisible(tester, find.text('Asc').last);
-  expect(find.text('Asc'), findsWidgets);
+  await _tapVisible(tester, find.byKey(const Key('apply-filter-button')));
+  expect(
+    find.byKey(const Key('active-filter-Sort: datetime Asc')),
+    findsOneWidget,
+  );
 }
 
 Future<void> _changeLocale(
   WidgetTester tester,
   ChronoPicAppService service,
 ) async {
-  await _tapVisible(tester, find.byKey(const Key('settings-nav')));
+  await _tapVisible(tester, find.byKey(const Key('mobile-bottom-settings')));
+  await _tapVisible(tester, find.byKey(const Key('mobile-settings-language')));
   await _tapVisible(tester, find.byKey(const Key('interface-locale-control')));
   await _tapVisible(tester, find.text('中文').last);
   await _tapVisible(
@@ -281,6 +268,25 @@ Future<void> _tapVisible(WidgetTester tester, Finder finder) async {
   await tester.pump();
   await tester.tap(finder);
   await tester.pumpAndSettle();
+}
+
+Future<void> _scrollHomeUntilVisible(WidgetTester tester, Finder finder) async {
+  if (finder.evaluate().isEmpty) {
+    await tester.scrollUntilVisible(
+      finder,
+      520,
+      scrollable: find
+          .descendant(
+            of: find.byKey(const Key('home-page')),
+            matching: find.byType(Scrollable),
+          )
+          .first,
+      maxScrolls: 12,
+    );
+  } else {
+    await tester.ensureVisible(finder);
+  }
+  await tester.pump();
 }
 
 Future<void> _enterVisibleText(

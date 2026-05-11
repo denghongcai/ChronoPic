@@ -1148,3 +1148,117 @@ Closeout evidence:
 Blocked boundary:
 
 - iOS live verification remains blocked until macOS/Xcode evidence exists.
+
+## Phase 11: Flutter Mobile Native Experience Redesign
+
+Status:
+complete locally on 2026-05-11.
+
+Purpose:
+expand the mobile UI refine work from touch polish into a mobile-native
+ChronoPic experience.
+Mobile keeps the same local-first data model and core workflows as desktop,
+but it should no longer look or behave like a compressed desktop workspace.
+
+Plan:
+
+- [docs/superpowers/plans/2026-05-11-flutter-mobile-native-experience-redesign.md](superpowers/plans/2026-05-11-flutter-mobile-native-experience-redesign.md)
+
+Source input:
+
+- User-provided mobile UI refine proposal reviewed on 2026-05-11.
+
+Core decision:
+
+- Mobile may diverge from desktop visual layout and interaction structure.
+- Desktop remains the Linux functional parity reference.
+- Android mobile gets its own information architecture,
+  navigation,
+  and page compositions.
+- iOS remains static-prepared only until macOS/Xcode evidence exists.
+
+Planned surfaces:
+
+- Mobile design contract:
+  orange action color,
+  neutral cards,
+  safe-area-aware spacing,
+  48px touch targets,
+  mobile type hierarchy,
+  and icon-first controls.
+- Mobile shell and home:
+  brand/notification header,
+  prominent search,
+  shortcut cards for All Photos,
+  Favorites,
+  Memories,
+  and Settings,
+  scan progress card,
+  Recent Memories,
+  and bottom navigation for Waterfall,
+  Map,
+  Timeline,
+  and Settings.
+- Search and filters:
+  primary search field,
+  mobile filter sheet,
+  visible active filter chips,
+  and browse-mode state preservation.
+- Detail and Gallery:
+  media-first full-screen mobile Detail,
+  top back/index/more controls,
+  floating favorite/add-to-memory actions,
+  lower metadata/edit cards or sheets,
+  and no desktop keyboard shortcut copy.
+- Settings:
+  grouped mobile list rows with drill-in sheets or subpages for Library,
+  Language,
+  AI output language,
+  Backup / restore,
+  Map,
+  and advanced local paths.
+- Create Memory:
+  guided flow for selecting photos,
+  editing title/description/cover,
+  confirming,
+  and opening the created memory.
+
+Implementation result:
+
+- Mobile shell now uses a phone-specific header and bottom navigation for
+  Waterfall,
+  Map,
+  Timeline,
+  and Settings instead of compressed desktop tabs.
+- Mobile home now exposes primary search,
+  horizontal shortcut cards,
+  and a scan/catalog status card.
+- Dense filters now open from a mobile bottom sheet,
+  with active filter chips visible after apply.
+- Focused Detail and Gallery now use mobile chrome and no desktop shortcut copy
+  on phone layouts.
+- Settings now opens as grouped mobile rows with drill-in sheets for complex
+  panels.
+- Create Memory now has a guided mobile wizard and opens into the existing
+  editable memory detail lifecycle for description,
+  cover,
+  add/remove,
+  rename,
+  and persistence.
+
+Exit gate:
+
+- Passed locally:
+  `cd chronopic_flutter && flutter analyze`,
+  `cd chronopic_flutter && dart test packages/chronopic_domain/test packages/chronopic_database/test packages/chronopic_app/test packages/chronopic_media/test`,
+  `cd chronopic_flutter && flutter test packages/chronopic_ui/test apps/chronopic/test`,
+  `cd chronopic_flutter && flutter test packages/chronopic_ui/test/mobile_productization_test.dart`,
+  `cd chronopic_flutter && flutter test apps/chronopic/integration_test/mobile_deep_e2e_test.dart`,
+  `cd chronopic_flutter/apps/chronopic && flutter build apk --debug`,
+  and
+  `git diff --check`.
+- Phone-width overflow risks found by verification were fixed in Gallery chrome
+  and mobile Language settings.
+- Mobile Detail and Settings no longer expose desktop-specific layout/copy on
+  phone layouts.
+- iOS live verification remains blocked until macOS/Xcode evidence exists.

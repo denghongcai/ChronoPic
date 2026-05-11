@@ -24,6 +24,59 @@ Production Android package id decision: ai.chronopic.app
 | Restart persistence | `.tmp/mobile-e2e/android/phase10-final-browse-state/05-restart.png`, `.xml` | Fixed | Runner now asserts restored browse state via `2 items`, not a scroll-dependent `Select` button |
 | Restore backup | `.tmp/mobile-e2e/android/phase10-final-browse-state/06-restore.png`, `.xml`, `backup.json` | Fixed | Restore returns to browse with `2 items` and backup contains 2 photos |
 
+## Phase 11 Mobile-Native Closeout
+
+Date: 2026-05-11
+
+Phase 11 expands this audit from Phase 10 touch polish into a mobile-native
+information architecture.
+
+Implemented:
+
+- mobile-specific theme tokens for phone card radius,
+  accent color,
+  background/surface colors,
+  and 48px touch target guidance;
+- mobile shell without the old top All Photos / Favorites / Memories /
+  Settings tab row;
+- bottom navigation for Waterfall,
+  Map,
+  Timeline,
+  and Settings;
+- mobile home dashboard with primary search,
+  shortcut cards,
+  and scan/catalog status;
+- filter bottom sheet with tag,
+  GPS,
+  AI status,
+  date,
+  sort,
+  clear,
+  and apply controls;
+- mobile active filter chips after applying search/filter/sort state;
+- mobile Detail keys for topbar,
+  media,
+  and action surfaces,
+  with desktop shortcut copy removed;
+- compact mobile Gallery chrome;
+- grouped mobile Settings rows with drill-in sheets;
+- guided mobile Create Memory wizard.
+
+Local evidence:
+
+- `cd chronopic_flutter && flutter analyze`
+- `cd chronopic_flutter && dart test packages/chronopic_domain/test packages/chronopic_database/test packages/chronopic_app/test packages/chronopic_media/test`
+- `cd chronopic_flutter && flutter test packages/chronopic_ui/test apps/chronopic/test`
+- `cd chronopic_flutter && flutter test packages/chronopic_ui/test/mobile_productization_test.dart`
+- `cd chronopic_flutter && flutter test apps/chronopic/integration_test/mobile_deep_e2e_test.dart`
+- `cd chronopic_flutter/apps/chronopic && flutter build apk --debug`
+- `git diff --check`
+
+Result:
+all commands passed locally.
+The Android deep E2E widget runner caught and the phase fixed phone-width
+horizontal overflow in Gallery chrome and the mobile Language settings sheet.
+
 ## iOS Boundary
 
 iOS UI refine cannot be called live-verified from this Linux workstation.
