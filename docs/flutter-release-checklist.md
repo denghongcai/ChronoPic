@@ -99,10 +99,10 @@ chronopic_flutter/tool/release/build_linux_release.sh
 node chronopic_flutter/tool/release/verify_flutter_release_artifacts.mjs linux
 ```
 
-Expected artifacts for version `0.1.7`:
+Expected artifacts for version `0.1.8`:
 
-- `dist/flutter-release/linux/chronopic-flutter-linux-x64-0.1.7.tar.gz`
-- `dist/flutter-release/linux/chronopic-flutter-linux-x64-0.1.7.tar.gz.sha256`
+- `dist/flutter-release/linux/chronopic-flutter-linux-x64-0.1.8.tar.gz`
+- `dist/flutter-release/linux/chronopic-flutter-linux-x64-0.1.8.tar.gz.sha256`
 
 The verifier checks the archive checksum and confirms that the archive contains
 the `chronopic` executable.
