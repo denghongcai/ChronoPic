@@ -204,7 +204,9 @@ void main() {
     expect(find.byKey(const Key('mobile-browse-surface')), findsOneWidget);
     expect(find.byKey(const Key('filter-toggle-button')), findsOneWidget);
     expect(find.byKey(const Key('mobile-select-mode')), findsOneWidget);
-    expect(find.text('20 items'), findsOneWidget);
+    expect(find.text('25 indexed'), findsOneWidget);
+    expect(find.text('25 indexed locally'), findsOneWidget);
+    expect(find.text('20 loaded / 25 total'), findsOneWidget);
 
     await tester.ensureVisible(find.byKey(const Key('filter-toggle-button')));
     await tester.pump();
@@ -236,6 +238,42 @@ void main() {
     await tester.pump();
 
     expect(find.text('25 items'), findsOneWidget);
+  });
+
+  testWidgets('mobile large catalog total is not capped at the first page', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+
+    final service = ChronoPicAppService(ChronoPicRepository());
+    await tester.pumpWidget(
+      ChronoPicHome(
+        service: service,
+        entryModeOverride: ChronoPicEntryMode.mobilePhotoLibrary,
+        mobileMediaSourceFactory: () => _mobileSource(count: 225),
+      ),
+    );
+
+    await tester.tap(find.byKey(const Key('choose-photo-library-button')));
+    await tester.pump();
+    await tester.runAsync(() async {
+      for (var attempt = 0; attempt < 120; attempt += 1) {
+        if (service.countPhotos() == 225) return;
+        await Future<void>.delayed(const Duration(milliseconds: 25));
+      }
+    });
+    await tester.pumpAndSettle();
+
+    expect(service.countPhotos(), 225);
+    expect(find.text('225 indexed'), findsOneWidget);
+    expect(find.text('225 indexed locally'), findsOneWidget);
+    expect(find.text('20 loaded / 225 total'), findsOneWidget);
+    expect(find.text('20 indexed'), findsNothing);
   });
 
   testWidgets('mobile denied permission shows recoverable status', (
@@ -345,6 +383,7 @@ FixtureMediaSource _mobileSource({
   final ids = List<String>.generate(count, (index) => 'asset-${index + 1}');
   return FixtureMediaSource(
     permissionState: permissionState,
+    supportsLazyThumbnails: true,
     assets: <MediaAsset>[
       for (final (index, id) in ids.indexed)
         _asset(id, updatedAt: (index + 1) * 1000),

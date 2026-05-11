@@ -161,6 +161,37 @@ void main() {
     expect(service.listPhotos(const PhotoFilter(limit: 10)), hasLength(2));
   });
 
+  test('rescan progress counts skipped assets as processed', () async {
+    final service = ChronoPicAppService(ChronoPicRepository());
+    final source = FixtureMediaSource(
+      assets: <MediaAsset>[
+        _asset('asset-1', updatedAt: 1000),
+        _asset('asset-2', updatedAt: 2000),
+        _asset('asset-3', updatedAt: 3000),
+      ],
+      bytesById: <String, Uint8List>{
+        'asset-1': Uint8List.fromList(<int>[1]),
+        'asset-2': Uint8List.fromList(<int>[2]),
+        'asset-3': Uint8List.fromList(<int>[3]),
+      },
+    );
+
+    await service.scanMediaSource('photo-library', source);
+
+    final progress = <ScanProgress>[];
+    final rescan = await service.scanMediaSource(
+      'photo-library',
+      source,
+      onProgress: progress.add,
+    );
+
+    expect(rescan.skipped, 3);
+    expect(progress.last.state, ScanRunState.completed);
+    expect(progress.last.discovered, 3);
+    expect(progress.last.skipped, 3);
+    expect(progress.last.processed, 3);
+  });
+
   test('imports image assets even when thumbnail decoding fails', () async {
     final repository = ChronoPicRepository();
     final thumbnailDirectory = Directory.systemTemp.createTempSync(
@@ -191,7 +222,7 @@ void main() {
   });
 
   test(
-    'disabled AI scan uses thumbnail bytes without reading originals',
+    'lazy mobile scan skips thumbnail reads while indexing metadata',
     () async {
       final repository = ChronoPicRepository();
       final source = CountingThumbnailMediaSource(
@@ -210,11 +241,39 @@ void main() {
 
       expect(stats.imported, 1);
       expect(stats.errors, 0);
-      expect(source.thumbnailReadCount, 1);
+      expect(source.thumbnailReadCount, 0);
       expect(source.originalReadCount, 0);
       expect(repository.getPhoto('asset-image'), isNotNull);
+      expect(repository.getPhoto('asset-image')?.photo.thumbnailPath, isNull);
     },
   );
+
+  test('large scans throttle progress callbacks', () async {
+    final service = ChronoPicAppService(ChronoPicRepository());
+    final assets = <MediaAsset>[
+      for (var index = 0; index < 100; index += 1)
+        _asset('asset-$index', updatedAt: index + 1),
+    ];
+    final source = FixtureMediaSource(
+      assets: assets,
+      bytesById: <String, Uint8List>{
+        for (final asset in assets) asset.id: Uint8List.fromList(<int>[1]),
+      },
+    );
+    final progress = <ScanProgress>[];
+
+    final stats = await service.scanMediaSource(
+      'photo-library',
+      source,
+      onProgress: progress.add,
+    );
+
+    expect(stats.imported, 100);
+    expect(progress.first.processed, 0);
+    expect(progress.last.state, ScanRunState.completed);
+    expect(progress.last.processed, 100);
+    expect(progress.length, lessThanOrEqualTo(15));
+  });
 }
 
 MediaAsset _asset(
@@ -249,6 +308,9 @@ final class CountingThumbnailMediaSource implements MediaSourceAdapter {
   @override
   MediaSourcePermissionState get permissionState =>
       MediaSourcePermissionState.granted;
+
+  @override
+  bool get supportsLazyThumbnails => true;
 
   @override
   Future<List<MediaAsset>> listAssets() async => _assets;

@@ -1189,6 +1189,14 @@ final class MediaPreview extends StatelessWidget {
     final previewPath = thumbnailPath != null && thumbnailPath.isNotEmpty
         ? thumbnailPath
         : record.photo.path;
+    final thumbnailLoader = _PhotoThumbnailLoaderScope.maybeOf(context);
+    if (thumbnailLoader != null && previewPath.startsWith('asset://')) {
+      return _LazyAssetPreview(
+        fit: fit,
+        loader: thumbnailLoader,
+        record: record,
+      );
+    }
     final file = File(previewPath);
     if (!file.existsSync()) {
       return _MediaFallbackSurface(
@@ -1204,6 +1212,59 @@ final class MediaPreview extends StatelessWidget {
       height: double.infinity,
       errorBuilder: (context, error, stackTrace) =>
           _MediaFallbackSurface(label: record.photo.path),
+    );
+  }
+}
+
+final class _LazyAssetPreview extends StatefulWidget {
+  const _LazyAssetPreview({
+    required this.fit,
+    required this.loader,
+    required this.record,
+  });
+
+  final BoxFit fit;
+  final PhotoThumbnailLoader loader;
+  final PhotoRecord record;
+
+  @override
+  State<_LazyAssetPreview> createState() => _LazyAssetPreviewState();
+}
+
+final class _LazyAssetPreviewState extends State<_LazyAssetPreview> {
+  late Future<Uint8List?> _thumbnail = widget.loader(widget.record);
+
+  @override
+  void didUpdateWidget(_LazyAssetPreview oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.record.photo.id != widget.record.photo.id ||
+        oldWidget.loader != widget.loader) {
+      _thumbnail = widget.loader(widget.record);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<Uint8List?>(
+      future: _thumbnail,
+      builder: (context, snapshot) {
+        final bytes = snapshot.data;
+        if (bytes == null || bytes.isEmpty) {
+          return _MediaFallbackSurface(
+            key: Key('lazy-preview-${widget.record.photo.id}'),
+            label: widget.record.photo.path,
+          );
+        }
+        return Image.memory(
+          bytes,
+          key: Key('media-preview-${widget.record.photo.id}'),
+          fit: widget.fit,
+          width: double.infinity,
+          height: double.infinity,
+          errorBuilder: (context, error, stackTrace) =>
+              _MediaFallbackSurface(label: widget.record.photo.path),
+        );
+      },
     );
   }
 }

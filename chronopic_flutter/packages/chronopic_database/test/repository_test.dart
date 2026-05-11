@@ -35,6 +35,9 @@ void main() {
       );
       final repository = ChronoPicRepository()..restoreBackup(backup);
 
+      expect(repository.countPhotos(), 2);
+      expect(repository.countPhotos(const PhotoFilter(limit: 1)), 2);
+      expect(repository.countPhotos(const PhotoFilter(favorite: true)), 1);
       expect(
         repository
             .listPhotos(const PhotoFilter(favorite: true))

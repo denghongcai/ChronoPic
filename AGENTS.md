@@ -7609,3 +7609,100 @@ This file is the local execution record for ChronoPic. It complements `PLAN.md` 
   Android AAB,
   Linux x64 tarball,
   and matching checksum assets.
+
+### 2026-05-11 Step 263
+
+- Reviewed the real Android mobile import screenshot:
+  the scan status showed `406/5405` processed/imported while dashboard and
+  browse count surfaces still showed `20`.
+- Traced the count issue to mobile UI using the paged visible browse list
+  (`_photoPageSize = 20`) as if it were the catalog total.
+- Traced the remaining import-speed issue to mobile scans still performing
+  per-asset thumbnail reads plus decode/resize/JPEG encode/cache writes during
+  the scan,
+  with progress reported to UI on every asset.
+- Added a new planned phase:
+  `12. Flutter Mobile Import Count And Lazy Thumbnail Pipeline`.
+- Created the implementation handoff plan:
+  `docs/superpowers/plans/2026-05-11-flutter-mobile-import-count-and-lazy-thumbnails.md`.
+- Updated `PLAN.md` and `docs/flutter-refactor-phases.md` with the same phase
+  scope,
+  root causes,
+  non-goals,
+  and exit gate.
+- Verification:
+  docs-only planning update;
+  runtime scenes were skipped because no app code changed.
+  `git diff --check` was run after the edit.
+
+### 2026-05-11 Step 264
+
+- Executed Phase 12:
+  `Flutter Mobile Import Count And Lazy Thumbnail Pipeline`.
+- Added repository/app-service photo counting:
+  `ChronoPicRepository.countPhotos()` uses the same filter predicate as
+  `listPhotos()` while ignoring pagination,
+  and `ChronoPicAppService.countPhotos()` exposes it to UI surfaces.
+- Fixed mobile count copy:
+  `ChronoPicHome` now separates catalog count,
+  filtered result count,
+  and visible page length;
+  mobile dashboard/scan cards use catalog totals,
+  while browse copy says `loaded / total` when only the first page is visible.
+- Fixed scan progress semantics:
+  skipped unchanged assets now count toward `ScanProgress.processed`,
+  while imported,
+  updated,
+  skipped,
+  errors,
+  and missing remain distinct final buckets.
+- Removed eager mobile JPEG thumbnail generation from lazy-capable sources:
+  `MediaSourceAdapter.supportsLazyThumbnails` marks mobile photo-library
+  sources as lazy,
+  mobile scans upsert metadata with `thumbnailPath: null`,
+  and visible `asset://` previews request thumbnail bytes lazily through the
+  active mobile media source or platform gateway.
+- Added deterministic progress throttling:
+  progress reports are emitted at scan start,
+  completion,
+  errors,
+  every 10 processed assets,
+  or after 250 ms,
+  instead of one UI callback per asset.
+- Updated tests:
+  `mobile_scan_test.dart` covers skipped progress,
+  no scan-time thumbnail reads for lazy mobile sources,
+  and 100-asset throttled progress;
+  `mobile_productization_test.dart` covers 25-photo pagination and a 225-photo
+  large mobile catalog total;
+  `mobile_deep_e2e_test.dart` rejects `20 indexed` when a 25-photo mobile
+  fixture is restored.
+- Updated durable docs:
+  `PLAN.md`,
+  `docs/flutter-refactor-phases.md`,
+  `docs/mobile-productization.md`,
+  `docs/mobile-e2e-verification.md`,
+  and
+  `docs/superpowers/plans/2026-05-11-flutter-mobile-import-count-and-lazy-thumbnails.md`.
+- Verification scenes from `docs/agent-verification-script.md`:
+  Scene 1 covered by Flutter widget/app launch tests and Android debug build,
+  Scene 3 covered by mobile scan/browse/count tests,
+  Scene 4 covered by the existing mobile detail/gallery E2E path,
+  Scene 5 covered by edit/favorite/datetime assertions in Android deep E2E,
+  Scene 6 covered by the memory lifecycle E2E path,
+  Scene 7 covered by backup/restore restart assertions,
+  and Scene 8 covered by grouped settings locale persistence.
+- Verification commands passed:
+  `cd chronopic_flutter && flutter analyze`,
+  `cd chronopic_flutter && dart test packages/chronopic_domain/test packages/chronopic_database/test packages/chronopic_app/test packages/chronopic_media/test`,
+  `cd chronopic_flutter && flutter test packages/chronopic_ui/test apps/chronopic/test`,
+  `cd chronopic_flutter && flutter test packages/chronopic_ui/test/mobile_productization_test.dart`,
+  `cd chronopic_flutter && flutter test apps/chronopic/integration_test/mobile_deep_e2e_test.dart`,
+  `cd chronopic_flutter/apps/chronopic && flutter build apk --debug`,
+  and
+  `git diff --check`.
+- Skipped:
+  iOS live scenes remain blocked because this Linux workstation cannot provide
+  macOS/Xcode simulator,
+  signing,
+  or device evidence.

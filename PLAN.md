@@ -2984,6 +2984,104 @@ These are intentionally recorded as candidate directions rather than committed p
   checked the three sha256 files,
   and confirmed the Linux tarball contains the `chronopic` executable.
 
+### 12. Flutter Mobile Import Count And Lazy Thumbnail Pipeline
+
+- Implementation plan:
+  [docs/superpowers/plans/2026-05-11-flutter-mobile-import-count-and-lazy-thumbnails.md](docs/superpowers/plans/2026-05-11-flutter-mobile-import-count-and-lazy-thumbnails.md)
+- Status:
+  completed on 2026-05-11.
+- Source input:
+  real Android screenshot reviewed on 2026-05-11 showing
+  `扫描进度：已处理 406/5405，已导入 406 个`
+  while mobile dashboard and browse chips still displayed `20`.
+- Goal:
+  make Android mobile import counts truthful and make photo-library import fast
+  by separating catalog totals,
+  filtered result totals,
+  visible page counts,
+  scan progress,
+  and thumbnail materialization.
+- Root causes confirmed:
+  1. Mobile dashboard and scan/catalog cards use `photos.length`,
+     but `photos` is the current paged browse list capped by
+     `_photoPageSize = 20`.
+     That makes UI copy like `20 个已索引` read as a catalog total even while
+     the scan has already imported hundreds of assets.
+  2. `ScanProgress.processed` currently counts imported,
+     updated,
+     and errored assets,
+     but not skipped unchanged assets.
+     Rescans can therefore look stuck or under-counted.
+  3. Mobile import still reads a platform thumbnail for every changed asset,
+     decodes/resizes it,
+     encodes a second JPEG,
+     and writes it to ChronoPic's thumbnail cache during the scan.
+     On large phone libraries this spends CPU,
+     I/O,
+     storage,
+     and progress time before the user sees value.
+  4. Scan progress is reported through UI `setState` for every asset,
+     which adds avoidable rebuild pressure during large imports.
+- Implementation completed:
+  1. Count model:
+     added a repository/app-service count API that uses the same filters as
+     `listPhotos` but ignores pagination.
+     `ChronoPicHome` now passes `catalogPhotoCount`,
+     `filteredPhotoCount`,
+     and visible page length separately into mobile surfaces.
+  2. UI copy:
+     mobile dashboard cards use full catalog totals where labels imply totals.
+     Browse copy uses visible page counts only where it explicitly says
+     loaded or visible.
+  3. Progress semantics:
+     skipped assets now count as processed while imported,
+     updated,
+     skipped,
+     errors,
+     and missing remain separate final buckets.
+  4. Lazy mobile thumbnails:
+     lazy-capable mobile sources no longer eagerly convert every platform
+     thumbnail into a ChronoPic
+     JPEG during import.
+     Mobile scans index metadata first and render thumbnails lazily for
+     visible cells/detail/gallery surfaces through the platform thumbnail API or
+     a bounded lazy cache.
+     Desktop directory scans keep the existing generated thumbnail cache.
+  5. Progress throttling:
+     scan progress is reported at start,
+     completion,
+     errors,
+     periodic item-count thresholds,
+     or a short time interval,
+     instead of rebuilding UI once per asset.
+  6. Verification:
+     added Dart/app-service tests for skipped progress and no scan-time thumbnail
+     reads on lazy-capable mobile sources,
+     Flutter widget tests for full-count versus first-page count including a
+     225-photo fixture,
+     and Android deep E2E assertions rejecting first-page count being labeled
+     as a catalog total.
+- Explicit non-goals:
+  do not change desktop directory thumbnail cache semantics;
+  do not remove desktop `Image.file` preview behavior;
+  do not add OCR,
+  vector search,
+  person recognition,
+  cloud sync,
+  AI thumbnail analysis,
+  or EXIF writeback;
+  do not claim iOS live verification from this Linux workstation.
+- Exit gate:
+  complete.
+  Local verification passed with Flutter analyze,
+  Dart package tests,
+  Flutter UI/app tests,
+  focused mobile productization tests,
+  Android deep E2E,
+  Android debug APK build,
+  and `git diff --check`.
+  iOS live verification remains blocked until macOS/Xcode evidence exists.
+
 - Person / face grouping:
   add person-like memory grouping only after the app has a real person-recognition or clustering signal.
   Do not pretend to identify people from generic captions or tags.

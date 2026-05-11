@@ -814,7 +814,7 @@ void main() {
     expect(service.listPhotos(const PhotoFilter(limit: 100)).length, 25);
     expect(find.byKey(const Key('photo-grid')), findsOneWidget);
     expect(_photoGridColumns(tester), 3);
-    expect(find.text('20 items'), findsOneWidget);
+    expect(find.text('25 items'), findsOneWidget);
 
     await tester.fling(
       find.byType(CustomScrollView),

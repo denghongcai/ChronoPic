@@ -1,5 +1,4 @@
 import 'dart:io';
-
 import 'package:chronopic_app/chronopic_app.dart';
 import 'package:chronopic_domain/chronopic_domain.dart';
 import 'package:chronopic_media/chronopic_media.dart';
@@ -25,6 +24,7 @@ enum _DesktopPage { home, memories, memoryDetail, settings, notifications }
 enum ChronoPicEntryMode { desktopFolder, mobilePhotoLibrary }
 
 typedef MobileMediaSourceFactory = MediaSourceAdapter Function();
+typedef PhotoThumbnailLoader = Future<Uint8List?> Function(PhotoRecord record);
 
 const int _photoPageSize = 20;
 
@@ -33,6 +33,25 @@ final class _VisiblePhotoPage {
 
   final List<PhotoRecord> photos;
   final bool hasMore;
+}
+
+final class _PhotoThumbnailLoaderScope extends InheritedWidget {
+  const _PhotoThumbnailLoaderScope({
+    required this.loader,
+    required super.child,
+  });
+
+  final PhotoThumbnailLoader? loader;
+
+  static PhotoThumbnailLoader? maybeOf(BuildContext context) {
+    return context
+        .dependOnInheritedWidgetOfExactType<_PhotoThumbnailLoaderScope>()
+        ?.loader;
+  }
+
+  @override
+  bool updateShouldNotify(_PhotoThumbnailLoaderScope oldWidget) =>
+      loader != oldWidget.loader;
 }
 
 final class ChronoPicHome extends StatefulWidget {
@@ -80,6 +99,9 @@ final class _ChronoPicHomeState extends State<ChronoPicHome> {
       TextEditingController();
   final ScrollController _homeScrollController = ScrollController();
   final GlobalKey<NavigatorState> _navigatorKey = GlobalKey<NavigatorState>();
+  final PhotoManagerGateway _photoManagerGateway = PhotoManagerGateway();
+  final Map<String, Future<Uint8List?>> _thumbnailFutures =
+      <String, Future<Uint8List?>>{};
 
   _DesktopPage _page = _DesktopPage.home;
   BrowseMode _browseMode = BrowseMode.waterfall;
@@ -106,6 +128,7 @@ final class _ChronoPicHomeState extends State<ChronoPicHome> {
   String _status = uiStrings[UiLocale.en]!.scanIdle;
   int _photoResultLimit = _photoPageSize;
   bool _hasMoreVisiblePhotos = false;
+  MediaSourceAdapter? _activeMobileMediaSource;
 
   @override
   void initState() {
@@ -144,6 +167,8 @@ final class _ChronoPicHomeState extends State<ChronoPicHome> {
     final photoPage = _visiblePhotoPage();
     final photos = photoPage.photos;
     _hasMoreVisiblePhotos = photoPage.hasMore;
+    final catalogPhotoCount = _service.countPhotos();
+    final filteredPhotoCount = _service.countPhotos(_currentPhotoFilter());
     final memories = _service.listMemories();
     final selectedMemory = _selectedMemoryId == null
         ? null
@@ -188,6 +213,8 @@ final class _ChronoPicHomeState extends State<ChronoPicHome> {
             child: _buildPage(
               labels: labels,
               photos: photos,
+              catalogPhotoCount: catalogPhotoCount,
+              filteredPhotoCount: filteredPhotoCount,
               hasMorePhotos: photoPage.hasMore,
               memories: memories,
               selectedMemory: selectedMemory,
@@ -214,6 +241,8 @@ final class _ChronoPicHomeState extends State<ChronoPicHome> {
   Widget _buildPage({
     required UiStrings labels,
     required List<PhotoRecord> photos,
+    required int catalogPhotoCount,
+    required int filteredPhotoCount,
     required bool hasMorePhotos,
     required List<Memory> memories,
     required Memory? selectedMemory,
@@ -296,10 +325,12 @@ final class _ChronoPicHomeState extends State<ChronoPicHome> {
           activeFilterLabels: _activeFilterLabels(),
           aiStatus: _aiStatusFilter,
           browseMode: _browseMode,
+          catalogPhotoCount: catalogPhotoCount,
           captionController: _captionController,
           dateController: _dateController,
           favoriteOnly: _favoriteOnly,
           filterPanelOpen: _filterPanelOpen,
+          filteredPhotoCount: filteredPhotoCount,
           fromDateController: _fromDateFilterController,
           gpsOnly: _gpsOnly,
           labels: labels,
@@ -368,25 +399,14 @@ final class _ChronoPicHomeState extends State<ChronoPicHome> {
           timeController: _timeController,
           toDateController: _toDateFilterController,
           scrollController: _homeScrollController,
+          thumbnailLoader: _loadThumbnailBytes,
         );
     }
   }
 
   _VisiblePhotoPage _visiblePhotoPage() {
     final records = _service.listPhotos(
-      PhotoFilter(
-        query: _query.isEmpty ? null : _query,
-        tag: _tagFilter,
-        aiStatus: _aiStatusFilter,
-        favorite: _favoriteOnly ? true : null,
-        memoryId: _selectedMemoryId,
-        hasGps: _gpsOnly ? true : null,
-        fromDatetime: _fromDatetimeFilter,
-        toDatetime: _toDatetimeFilter,
-        sortBy: _sortBy,
-        sortDirection: _sortDirection,
-        limit: _photoResultLimit + 1,
-      ),
+      _currentPhotoFilter(limit: _photoResultLimit + 1),
     );
     final hasMore = records.length > _photoResultLimit;
     return _VisiblePhotoPage(
@@ -395,8 +415,50 @@ final class _ChronoPicHomeState extends State<ChronoPicHome> {
     );
   }
 
+  PhotoFilter _currentPhotoFilter({int? limit}) {
+    return PhotoFilter(
+      query: _query.isEmpty ? null : _query,
+      tag: _tagFilter,
+      aiStatus: _aiStatusFilter,
+      favorite: _favoriteOnly ? true : null,
+      memoryId: _selectedMemoryId,
+      hasGps: _gpsOnly ? true : null,
+      fromDatetime: _fromDatetimeFilter,
+      toDatetime: _toDatetimeFilter,
+      sortBy: _sortBy,
+      sortDirection: _sortDirection,
+      limit: limit ?? 1000000000,
+    );
+  }
+
   List<PhotoRecord> _visiblePhotos() {
     return _visiblePhotoPage().photos;
+  }
+
+  Future<Uint8List?> _loadThumbnailBytes(PhotoRecord record) {
+    if (!record.photo.path.startsWith('asset://')) {
+      return Future<Uint8List?>.value();
+    }
+    return _thumbnailFutures.putIfAbsent(record.photo.id, () async {
+      final source = _activeMobileMediaSource;
+      if (source != null) {
+        try {
+          final bytes = await source.readThumbnailBytes(record.photo.id);
+          if (bytes != null && bytes.isNotEmpty) return bytes;
+        } on Object {
+          // Fall through to the platform gateway; UI previews should degrade.
+        }
+      }
+      try {
+        final bytes = await _photoManagerGateway.readThumbnailBytes(
+          record.photo.id,
+        );
+        if (bytes != null && bytes.isNotEmpty) return bytes;
+      } on Object {
+        return null;
+      }
+      return null;
+    });
   }
 
   void _loadMorePhotos() {
@@ -800,6 +862,8 @@ final class _ChronoPicHomeState extends State<ChronoPicHome> {
           );
         }
       }
+      _activeMobileMediaSource = source;
+      _thumbnailFutures.clear();
       final stats = await _service.scanMediaSource(
         sourcePath,
         source,
@@ -1192,10 +1256,13 @@ final class _ChronoPicHomeState extends State<ChronoPicHome> {
     final result = await showDialog<GalleryDialogResult>(
       context: dialogContext,
       barrierColor: Colors.black.withValues(alpha: 0.9),
-      builder: (context) => GalleryDialog(
-        initialPhotoId: record.photo.id,
-        labels: _l10n,
-        photos: _visiblePhotos(),
+      builder: (context) => _PhotoThumbnailLoaderScope(
+        loader: _loadThumbnailBytes,
+        child: GalleryDialog(
+          initialPhotoId: record.photo.id,
+          labels: _l10n,
+          photos: _visiblePhotos(),
+        ),
       ),
     );
     if (result != null) {

@@ -15,6 +15,9 @@ final class MobilePhotoLibraryMediaSource implements MediaSourceAdapter {
   MediaSourcePermissionState get permissionState => _permissionState;
 
   @override
+  bool get supportsLazyThumbnails => true;
+
+  @override
   Future<List<MediaAsset>> listAssets() async {
     final permission = await gateway.requestPermission();
     _permissionState = permission.state;

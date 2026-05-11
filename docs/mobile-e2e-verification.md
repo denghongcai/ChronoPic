@@ -246,6 +246,34 @@ Actions workflow:
   and the mobile Language settings drill-in sheet uses stacked controls instead
   of a desktop row.
 
+2026-05-11 Phase 12 large-library count and lazy-thumbnail result:
+
+- Command:
+  `cd chronopic_flutter && flutter test apps/chronopic/integration_test/mobile_deep_e2e_test.dart`.
+- Result:
+  passed locally.
+- Added regression coverage:
+  Android deep E2E seeds a 25-photo mobile fixture and asserts the mobile shell
+  reports `25 indexed`,
+  `25 indexed locally`,
+  and `20 loaded / 25 total`,
+  while rejecting `20 indexed`.
+- Large-library fixture evidence:
+  `cd chronopic_flutter && flutter test packages/chronopic_ui/test/mobile_productization_test.dart`
+  includes a 225-photo mobile fixture and asserts `225 indexed`,
+  `225 indexed locally`,
+  and `20 loaded / 225 total`.
+- Scan performance evidence:
+  `cd chronopic_flutter && dart test packages/chronopic_app/test/mobile_scan_test.dart`
+  verifies skipped assets count as processed,
+  lazy-capable mobile imports do not read thumbnails during scan,
+  and 100-asset progress callbacks are throttled.
+- Runtime artifact evidence:
+  `cd chronopic_flutter/apps/chronopic && flutter build apk --debug`
+  built `build/app/outputs/flutter-apk/app-debug.apk`.
+- Skipped:
+  no iOS live evidence is claimed from this Linux workstation.
+
 ### Android App-Owned Integration Test
 
 ```bash

@@ -1262,3 +1262,73 @@ Exit gate:
 - Mobile Detail and Settings no longer expose desktop-specific layout/copy on
   phone layouts.
 - iOS live verification remains blocked until macOS/Xcode evidence exists.
+
+## Phase 12: Flutter Mobile Import Count And Lazy Thumbnail Pipeline
+
+Status:
+completed on 2026-05-11.
+
+Purpose:
+fix the remaining Android large-library import issues surfaced by a real phone
+screenshot.
+Mobile must distinguish photo-library discovery count,
+catalog/indexed count,
+filtered result count,
+and currently visible page count.
+Mobile import should index metadata quickly and defer thumbnail materialization
+to visible UI surfaces instead of eagerly converting every asset into a second
+JPEG during scan.
+
+Plan:
+
+- [docs/superpowers/plans/2026-05-11-flutter-mobile-import-count-and-lazy-thumbnails.md](superpowers/plans/2026-05-11-flutter-mobile-import-count-and-lazy-thumbnails.md)
+
+Source input:
+
+- Android screenshot reviewed on 2026-05-11:
+  the status bar showed `406/5405` processed and imported,
+  while mobile dashboard and browse controls still showed `20`.
+
+Root causes:
+
+- Mobile dashboard count uses the paged visible browse list rather than the
+  full catalog or filtered result count.
+- Scan progress does not count skipped unchanged assets as processed.
+- Mobile scan still reads,
+  decodes,
+  resizes,
+  JPEG-encodes,
+  and writes thumbnail files for changed image assets during import.
+- Progress updates trigger UI state changes once per asset.
+
+Completed work:
+
+- Added a repository/app-service count API using the same filters as photo
+  listing while ignoring pagination.
+- Passed catalog,
+  filtered,
+  and visible counts through `ChronoPicHome` into mobile dashboard,
+  browse,
+  map,
+  and timeline copy.
+- Updated scan progress semantics so skipped assets count toward processed
+  progress while final stats remain separated.
+- Added a lazy-thumbnail capability for mobile media sources.
+  Mobile import records metadata and asset IDs first;
+  visible browse/detail/gallery surfaces request platform thumbnails lazily.
+- Throttled progress callbacks so large scans do not rebuild the UI once per
+  asset.
+- Kept desktop directory import and desktop generated thumbnail cache behavior
+  intact.
+
+Exit gate:
+
+- Flutter analyze passed.
+- Dart package tests passed,
+  including mobile scan progress and lazy-thumbnail coverage.
+- Flutter UI tests passed,
+  including full-count versus first-page-count regression coverage.
+- Android deep E2E rejects first-page count being labeled as catalog total.
+- Android debug build passed.
+- `git diff --check` passed.
+- iOS live verification remains blocked until macOS/Xcode evidence exists.

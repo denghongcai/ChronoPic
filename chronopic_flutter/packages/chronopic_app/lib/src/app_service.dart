@@ -114,6 +114,9 @@ final class ChronoPicAppService {
   List<PhotoRecord> listPhotos([PhotoFilter filter = const PhotoFilter()]) =>
       repository.listPhotos(filter);
 
+  int countPhotos([PhotoFilter filter = const PhotoFilter()]) =>
+      repository.countPhotos(filter);
+
   PhotoRecord? getPhoto(String photoId) => repository.getPhoto(photoId);
 
   AiReadiness getAiSetupReadiness() =>

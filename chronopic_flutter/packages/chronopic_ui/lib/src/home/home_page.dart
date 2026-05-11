@@ -5,11 +5,13 @@ final class HomePage extends StatelessWidget {
     required this.activeFilterLabels,
     required this.aiStatus,
     required this.browseMode,
+    required this.catalogPhotoCount,
     required this.captionController,
     required this.dateController,
     required this.detailFirst,
     required this.favoriteOnly,
     required this.filterPanelOpen,
+    required this.filteredPhotoCount,
     required this.fromDateController,
     required this.gpsOnly,
     required this.hasMorePhotos,
@@ -58,6 +60,7 @@ final class HomePage extends StatelessWidget {
     required this.status,
     required this.tagController,
     required this.tagsController,
+    required this.thumbnailLoader,
     required this.timeController,
     required this.toDateController,
   });
@@ -65,11 +68,13 @@ final class HomePage extends StatelessWidget {
   final List<String> activeFilterLabels;
   final AiPipelineStatus? aiStatus;
   final BrowseMode browseMode;
+  final int catalogPhotoCount;
   final TextEditingController captionController;
   final TextEditingController dateController;
   final bool detailFirst;
   final bool favoriteOnly;
   final bool filterPanelOpen;
+  final int filteredPhotoCount;
   final TextEditingController fromDateController;
   final bool gpsOnly;
   final bool hasMorePhotos;
@@ -118,6 +123,7 @@ final class HomePage extends StatelessWidget {
   final String status;
   final TextEditingController tagController;
   final TextEditingController tagsController;
+  final PhotoThumbnailLoader? thumbnailLoader;
   final TextEditingController timeController;
   final TextEditingController toDateController;
 
@@ -194,224 +200,236 @@ final class HomePage extends StatelessWidget {
       );
     }
 
+    Widget withThumbnailLoader(Widget child) {
+      return _PhotoThumbnailLoaderScope(loader: thumbnailLoader, child: child);
+    }
+
     if (detailFirst && selected != null) {
-      return SizedBox(
-        key: const Key('home-page'),
-        width: double.infinity,
-        child: DetailSurface(
-          captionController: captionController,
-          dateController: dateController,
-          focusedMode: true,
-          labels: labels,
-          onAddToMemory: onAddToMemory,
-          onCloseFocused: onCloseFocusedDetail,
-          onOpenGallery: onOpenGallery,
-          onRollback: onRollback,
-          onSaveCaption: onSaveCaption,
-          onSaveDatetime: onSaveDatetime,
-          onSaveTags: onSaveTags,
-          onSelectPhoto: onSelectPhoto,
-          onToggleFavorite: onToggleFavorite,
-          photos: photos,
-          record: selected,
-          status: status,
-          tagsController: tagsController,
-          timeController: timeController,
+      return withThumbnailLoader(
+        SizedBox(
+          key: const Key('home-page'),
+          width: double.infinity,
+          child: DetailSurface(
+            captionController: captionController,
+            dateController: dateController,
+            focusedMode: true,
+            labels: labels,
+            onAddToMemory: onAddToMemory,
+            onCloseFocused: onCloseFocusedDetail,
+            onOpenGallery: onOpenGallery,
+            onRollback: onRollback,
+            onSaveCaption: onSaveCaption,
+            onSaveDatetime: onSaveDatetime,
+            onSaveTags: onSaveTags,
+            onSelectPhoto: onSelectPhoto,
+            onToggleFavorite: onToggleFavorite,
+            photos: photos,
+            record: selected,
+            status: status,
+            tagsController: tagsController,
+            timeController: timeController,
+          ),
         ),
       );
     }
-    return NotificationListener<ScrollNotification>(
-      onNotification: (notification) {
-        if (notification.metrics.pixels > 0 &&
-            notification.metrics.extentAfter < 5000) {
-          onScrollNearEnd();
-        }
-        return false;
-      },
-      child: CustomScrollView(
-        key: const Key('home-page'),
-        controller: scrollController,
-        slivers: [
-          SliverToBoxAdapter(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                if (mobileLayout && !showFirstRun) ...[
-                  _MobileHomeDashboard(
-                    favoriteOnly: favoriteOnly,
-                    labels: labels,
-                    memories: memories,
-                    onAllPhotos: onAllPhotos,
-                    onFavorites: onFavorites,
-                    onOpenMemories: onOpenMemories,
-                    onOpenSettings: onOpenSettings,
-                    onSearchChanged: onSearchChanged,
-                    photos: photos,
-                    query: query,
-                    scanning: scanning,
-                  ),
-                  const SizedBox(height: 14),
-                ],
-                if (showFirstRun) ...[
-                  FirstRunPanel(
-                    entryMode: entryMode,
-                    labels: labels,
-                    onAddFolder: onChooseLibraryFolder,
-                    onChoosePhotos: onChoosePhotos,
-                  ),
-                  const SizedBox(height: 18),
-                ],
-                if (mobileLayout && showFirstRun) ...[
-                  _MobileHomeDashboard(
-                    favoriteOnly: favoriteOnly,
-                    labels: labels,
-                    memories: memories,
-                    onAllPhotos: onAllPhotos,
-                    onFavorites: onFavorites,
-                    onOpenMemories: onOpenMemories,
-                    onOpenSettings: onOpenSettings,
-                    onSearchChanged: onSearchChanged,
-                    photos: photos,
-                    query: query,
-                    scanning: scanning,
-                  ),
-                  const SizedBox(height: 18),
-                ],
-                if (!mobileLayout)
-                  MemoryHighlightsPanel(
-                    labels: labels,
-                    memories: memories,
-                    onCreateFirstMemory: onCreateFirstMemory,
-                  ),
-                if (hasPhotos && memories.isEmpty)
-                  GuidedNextStepPanel(labels: labels),
-                const SizedBox(height: 18),
-                if (hasPhotos && browseMode == BrowseMode.waterfall)
-                  const SizedBox(
-                    key: ValueKey<String>('mobile-browse-surface'),
-                    height: 0,
-                  ),
-                _BrowseToolbar(
-                  browseMode: browseMode,
-                  filterPanelOpen: filterPanelOpen,
-                  labels: labels,
-                  onBrowseModeChanged: onBrowseModeChanged,
-                  onFilterPanelToggle: mobileLayout
-                      ? openMobileFilterSheet
-                      : onFilterPanelToggle,
-                  onSearchChanged: onSearchChanged,
-                  resultCount: photos.length,
-                  searchQuery: query,
-                  compactMobile: mobileLayout,
-                ),
-                if (mobileLayout && hasExpandedFilterState)
-                  ActiveFilterSummary(
-                    filterLabels: activeFilterLabels,
-                    labels: labels,
-                  ),
-                if (hasPhotos) ...[
-                  const SizedBox(height: 10),
-                  _DiscoveryLensChips(
-                    labels: labels,
-                    memories: memories,
-                    onBrowseModeChanged: onBrowseModeChanged,
-                    onSelectMemory: onSelectMemory,
-                    photos: photos,
-                  ),
-                ],
-                const SizedBox(height: 10),
-                if (showFilterControls &&
-                    !mobileLayout &&
-                    (filterPanelOpen || hasExpandedFilterState)) ...[
-                  FilterToolbar(
-                    aiStatus: aiStatus,
-                    fromDateController: fromDateController,
-                    gpsOnly: gpsOnly,
-                    labels: labels,
-                    onAiStatusChanged: onAiStatusChanged,
-                    onApply: onFilterApply,
-                    onClear: onClearFilters,
-                    onGpsOnlyChanged: onGpsOnlyChanged,
-                    onSortByChanged: onSortByChanged,
-                    onSortDirectionChanged: onSortDirectionChanged,
-                    sortBy: sortBy,
-                    sortDirection: sortDirection,
-                    tagController: tagController,
-                    toDateController: toDateController,
-                  ),
-                  ActiveFilterSummary(
-                    filterLabels: hasExpandedFilterState
-                        ? activeFilterLabels
-                        : const [],
-                    labels: labels,
-                  ),
-                ],
-                if (detailFirst && selected != null) ...[
-                  const SizedBox(height: 14),
-                  DetailSurface(
-                    captionController: captionController,
-                    dateController: dateController,
-                    labels: labels,
-                    onAddToMemory: onAddToMemory,
-                    onCloseFocused: onCloseFocusedDetail,
-                    onOpenGallery: onOpenGallery,
-                    onRollback: onRollback,
-                    onSaveCaption: onSaveCaption,
-                    onSaveDatetime: onSaveDatetime,
-                    onSaveTags: onSaveTags,
-                    onSelectPhoto: onSelectPhoto,
-                    onToggleFavorite: onToggleFavorite,
-                    photos: photos,
-                    record: selected,
-                    tagsController: tagsController,
-                    timeController: timeController,
-                  ),
-                ],
-                if (!detailFirst &&
-                    selected != null &&
-                    browseMode == BrowseMode.waterfall) ...[
-                  const SizedBox(height: 14),
-                  _BrowseSelectedPhotoBanner(labels: labels, record: selected!),
-                ],
-                const SizedBox(height: 14),
-              ],
-            ),
-          ),
-          if (browseMode == BrowseMode.waterfall)
-            PhotoGridSliver(
-              labels: labels,
-              onOpenDetail: onOpenDetailFor,
-              onSelectPhoto: onSelectPhoto,
-              photos: photos,
-              selected: selected,
-            )
-          else
+    return withThumbnailLoader(
+      NotificationListener<ScrollNotification>(
+        onNotification: (notification) {
+          if (notification.metrics.pixels > 0 &&
+              notification.metrics.extentAfter < 5000) {
+            onScrollNearEnd();
+          }
+          return false;
+        },
+        child: CustomScrollView(
+          key: const Key('home-page'),
+          controller: scrollController,
+          slivers: [
             SliverToBoxAdapter(
-              child: BrowseSurface(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  if (mobileLayout && !showFirstRun) ...[
+                    _MobileHomeDashboard(
+                      catalogPhotoCount: catalogPhotoCount,
+                      favoriteOnly: favoriteOnly,
+                      labels: labels,
+                      memories: memories,
+                      onAllPhotos: onAllPhotos,
+                      onFavorites: onFavorites,
+                      onOpenMemories: onOpenMemories,
+                      onOpenSettings: onOpenSettings,
+                      onSearchChanged: onSearchChanged,
+                      query: query,
+                      scanning: scanning,
+                    ),
+                    const SizedBox(height: 14),
+                  ],
+                  if (showFirstRun) ...[
+                    FirstRunPanel(
+                      entryMode: entryMode,
+                      labels: labels,
+                      onAddFolder: onChooseLibraryFolder,
+                      onChoosePhotos: onChoosePhotos,
+                    ),
+                    const SizedBox(height: 18),
+                  ],
+                  if (mobileLayout && showFirstRun) ...[
+                    _MobileHomeDashboard(
+                      catalogPhotoCount: catalogPhotoCount,
+                      favoriteOnly: favoriteOnly,
+                      labels: labels,
+                      memories: memories,
+                      onAllPhotos: onAllPhotos,
+                      onFavorites: onFavorites,
+                      onOpenMemories: onOpenMemories,
+                      onOpenSettings: onOpenSettings,
+                      onSearchChanged: onSearchChanged,
+                      query: query,
+                      scanning: scanning,
+                    ),
+                    const SizedBox(height: 18),
+                  ],
+                  if (!mobileLayout)
+                    MemoryHighlightsPanel(
+                      labels: labels,
+                      memories: memories,
+                      onCreateFirstMemory: onCreateFirstMemory,
+                    ),
+                  if (hasPhotos && memories.isEmpty)
+                    GuidedNextStepPanel(labels: labels),
+                  const SizedBox(height: 18),
+                  if (hasPhotos && browseMode == BrowseMode.waterfall)
+                    const SizedBox(
+                      key: ValueKey<String>('mobile-browse-surface'),
+                      height: 0,
+                    ),
+                  _BrowseToolbar(
+                    browseMode: browseMode,
+                    filterPanelOpen: filterPanelOpen,
+                    labels: labels,
+                    onBrowseModeChanged: onBrowseModeChanged,
+                    onFilterPanelToggle: mobileLayout
+                        ? openMobileFilterSheet
+                        : onFilterPanelToggle,
+                    onSearchChanged: onSearchChanged,
+                    resultCount: filteredPhotoCount,
+                    searchQuery: query,
+                    visibleCount: photos.length,
+                    compactMobile: mobileLayout,
+                  ),
+                  if (mobileLayout && hasExpandedFilterState)
+                    ActiveFilterSummary(
+                      filterLabels: activeFilterLabels,
+                      labels: labels,
+                    ),
+                  if (hasPhotos) ...[
+                    const SizedBox(height: 10),
+                    _DiscoveryLensChips(
+                      labels: labels,
+                      memories: memories,
+                      onBrowseModeChanged: onBrowseModeChanged,
+                      onSelectMemory: onSelectMemory,
+                      photos: photos,
+                    ),
+                  ],
+                  const SizedBox(height: 10),
+                  if (showFilterControls &&
+                      !mobileLayout &&
+                      (filterPanelOpen || hasExpandedFilterState)) ...[
+                    FilterToolbar(
+                      aiStatus: aiStatus,
+                      fromDateController: fromDateController,
+                      gpsOnly: gpsOnly,
+                      labels: labels,
+                      onAiStatusChanged: onAiStatusChanged,
+                      onApply: onFilterApply,
+                      onClear: onClearFilters,
+                      onGpsOnlyChanged: onGpsOnlyChanged,
+                      onSortByChanged: onSortByChanged,
+                      onSortDirectionChanged: onSortDirectionChanged,
+                      sortBy: sortBy,
+                      sortDirection: sortDirection,
+                      tagController: tagController,
+                      toDateController: toDateController,
+                    ),
+                    ActiveFilterSummary(
+                      filterLabels: hasExpandedFilterState
+                          ? activeFilterLabels
+                          : const [],
+                      labels: labels,
+                    ),
+                  ],
+                  if (detailFirst && selected != null) ...[
+                    const SizedBox(height: 14),
+                    DetailSurface(
+                      captionController: captionController,
+                      dateController: dateController,
+                      labels: labels,
+                      onAddToMemory: onAddToMemory,
+                      onCloseFocused: onCloseFocusedDetail,
+                      onOpenGallery: onOpenGallery,
+                      onRollback: onRollback,
+                      onSaveCaption: onSaveCaption,
+                      onSaveDatetime: onSaveDatetime,
+                      onSaveTags: onSaveTags,
+                      onSelectPhoto: onSelectPhoto,
+                      onToggleFavorite: onToggleFavorite,
+                      photos: photos,
+                      record: selected,
+                      tagsController: tagsController,
+                      timeController: timeController,
+                    ),
+                  ],
+                  if (!detailFirst &&
+                      selected != null &&
+                      browseMode == BrowseMode.waterfall) ...[
+                    const SizedBox(height: 14),
+                    _BrowseSelectedPhotoBanner(
+                      labels: labels,
+                      record: selected!,
+                    ),
+                  ],
+                  const SizedBox(height: 14),
+                ],
+              ),
+            ),
+            if (browseMode == BrowseMode.waterfall)
+              PhotoGridSliver(
                 labels: labels,
-                mode: browseMode,
                 onOpenDetail: onOpenDetailFor,
                 onSelectPhoto: onSelectPhoto,
                 photos: photos,
                 selected: selected,
+              )
+            else
+              SliverToBoxAdapter(
+                child: BrowseSurface(
+                  labels: labels,
+                  mode: browseMode,
+                  onOpenDetail: onOpenDetailFor,
+                  onSelectPhoto: onSelectPhoto,
+                  photos: photos,
+                  selected: selected,
+                ),
               ),
-            ),
-          if (hasMorePhotos && browseMode == BrowseMode.waterfall)
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(vertical: 18),
-                child: Center(
-                  child: OutlinedButton.icon(
-                    key: const Key('load-more-photos-button'),
-                    onPressed: onLoadMorePhotos,
-                    icon: const Icon(Icons.expand_more),
-                    label: Text(_localized(labels, 'Load more', '加载更多')),
+            if (hasMorePhotos && browseMode == BrowseMode.waterfall)
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 18),
+                  child: Center(
+                    child: OutlinedButton.icon(
+                      key: const Key('load-more-photos-button'),
+                      onPressed: onLoadMorePhotos,
+                      icon: const Icon(Icons.expand_more),
+                      label: Text(_localized(labels, 'Load more', '加载更多')),
+                    ),
                   ),
                 ),
               ),
-            ),
-          const SliverPadding(padding: EdgeInsets.only(bottom: 28)),
-        ],
+            const SliverPadding(padding: EdgeInsets.only(bottom: 28)),
+          ],
+        ),
       ),
     );
   }
@@ -477,6 +495,7 @@ final class _BrowseSelectedPhotoBanner extends StatelessWidget {
 
 final class _MobileHomeDashboard extends StatelessWidget {
   const _MobileHomeDashboard({
+    required this.catalogPhotoCount,
     required this.favoriteOnly,
     required this.labels,
     required this.memories,
@@ -485,11 +504,11 @@ final class _MobileHomeDashboard extends StatelessWidget {
     required this.onOpenMemories,
     required this.onOpenSettings,
     required this.onSearchChanged,
-    required this.photos,
     required this.query,
     required this.scanning,
   });
 
+  final int catalogPhotoCount;
   final bool favoriteOnly;
   final UiStrings labels;
   final List<Memory> memories;
@@ -498,7 +517,6 @@ final class _MobileHomeDashboard extends StatelessWidget {
   final VoidCallback onOpenMemories;
   final VoidCallback onOpenSettings;
   final ValueChanged<String> onSearchChanged;
-  final List<PhotoRecord> photos;
   final String query;
   final bool scanning;
 
@@ -534,8 +552,8 @@ final class _MobileHomeDashboard extends StatelessWidget {
                   onPressed: onAllPhotos,
                   value: _localized(
                     labels,
-                    '${photos.length} indexed',
-                    '${photos.length} 个已索引',
+                    '$catalogPhotoCount indexed',
+                    '$catalogPhotoCount 个已索引',
                   ),
                 ),
                 const SizedBox(width: 10),
@@ -616,8 +634,8 @@ final class _MobileHomeDashboard extends StatelessWidget {
                       Text(
                         _localized(
                           labels,
-                          '${photos.length} indexed locally',
-                          '${photos.length} 个本地索引',
+                          '$catalogPhotoCount indexed locally',
+                          '$catalogPhotoCount 个本地索引',
                         ),
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
@@ -1230,6 +1248,7 @@ final class _BrowseToolbar extends StatelessWidget {
     required this.onSearchChanged,
     required this.resultCount,
     required this.searchQuery,
+    required this.visibleCount,
   });
 
   final BrowseMode browseMode;
@@ -1241,6 +1260,7 @@ final class _BrowseToolbar extends StatelessWidget {
   final ValueChanged<String> onSearchChanged;
   final int resultCount;
   final String searchQuery;
+  final int visibleCount;
 
   @override
   Widget build(BuildContext context) {
@@ -1263,7 +1283,13 @@ final class _BrowseToolbar extends StatelessWidget {
               ),
             Chip(
               label: Text(
-                searchQuery.isEmpty
+                compactMobile && visibleCount < resultCount
+                    ? _localized(
+                        labels,
+                        '$visibleCount loaded / $resultCount total',
+                        '已加载 $visibleCount / 共 $resultCount',
+                      )
+                    : searchQuery.isEmpty
                     ? '$resultCount ${labels.itemsUnit}'
                     : '$resultCount ${labels.matchesUnit}',
               ),

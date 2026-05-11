@@ -179,65 +179,9 @@ final class ChronoPicRepository {
   }
 
   List<PhotoRecord> listPhotos([PhotoFilter filter = const PhotoFilter()]) {
-    final records = _photos.values.where((record) {
-      if (filter.favorite != null && record.photo.favorite != filter.favorite) {
-        return false;
-      }
-      if (filter.memoryId != null &&
-          !_memoryPhotos.any(
-            (membership) =>
-                membership.memoryId == filter.memoryId &&
-                membership.photoId == record.photo.id,
-          )) {
-        return false;
-      }
-      if (filter.mimePrefix != null &&
-          !record.photo.mime.startsWith(filter.mimePrefix!)) {
-        return false;
-      }
-      if (filter.aiStatus != null &&
-          record.semantic.aiStatus != filter.aiStatus) {
-        return false;
-      }
-      if (filter.indexed != null &&
-          record.indexState.indexed != filter.indexed) {
-        return false;
-      }
-      if (filter.hasError != null &&
-          (record.indexState.error != null ||
-                  record.semantic.aiError != null) !=
-              filter.hasError) {
-        return false;
-      }
-      if (filter.hasGps == true &&
-          (record.metadata.lat == null || record.metadata.lng == null)) {
-        return false;
-      }
-      if (filter.hasGps == false &&
-          record.metadata.lat != null &&
-          record.metadata.lng != null) {
-        return false;
-      }
-      if (filter.tag != null && !record.semantic.labels.contains(filter.tag)) {
-        return false;
-      }
-      if (filter.fromDatetime != null &&
-          (record.metadata.datetime == null ||
-              record.metadata.datetime! < filter.fromDatetime!)) {
-        return false;
-      }
-      if (filter.toDatetime != null &&
-          (record.metadata.datetime == null ||
-              record.metadata.datetime! > filter.toDatetime!)) {
-        return false;
-      }
-      if (filter.query != null &&
-          !record.photo.path.contains(filter.query!) &&
-          !(record.semantic.caption?.contains(filter.query!) ?? false)) {
-        return false;
-      }
-      return true;
-    }).toList();
+    final records = _photos.values
+        .where((record) => _matchesPhotoFilter(record, filter))
+        .toList();
 
     records.sort((a, b) {
       final direction = filter.sortDirection == SortDirection.asc ? 1 : -1;
@@ -253,6 +197,68 @@ final class ChronoPicRepository {
     final start = filter.offset.clamp(0, records.length);
     final end = (start + filter.limit).clamp(start, records.length);
     return records.sublist(start, end);
+  }
+
+  int countPhotos([PhotoFilter filter = const PhotoFilter()]) => _photos.values
+      .where((record) => _matchesPhotoFilter(record, filter))
+      .length;
+
+  bool _matchesPhotoFilter(PhotoRecord record, PhotoFilter filter) {
+    if (filter.favorite != null && record.photo.favorite != filter.favorite) {
+      return false;
+    }
+    if (filter.memoryId != null &&
+        !_memoryPhotos.any(
+          (membership) =>
+              membership.memoryId == filter.memoryId &&
+              membership.photoId == record.photo.id,
+        )) {
+      return false;
+    }
+    if (filter.mimePrefix != null &&
+        !record.photo.mime.startsWith(filter.mimePrefix!)) {
+      return false;
+    }
+    if (filter.aiStatus != null &&
+        record.semantic.aiStatus != filter.aiStatus) {
+      return false;
+    }
+    if (filter.indexed != null && record.indexState.indexed != filter.indexed) {
+      return false;
+    }
+    if (filter.hasError != null &&
+        (record.indexState.error != null || record.semantic.aiError != null) !=
+            filter.hasError) {
+      return false;
+    }
+    if (filter.hasGps == true &&
+        (record.metadata.lat == null || record.metadata.lng == null)) {
+      return false;
+    }
+    if (filter.hasGps == false &&
+        record.metadata.lat != null &&
+        record.metadata.lng != null) {
+      return false;
+    }
+    if (filter.tag != null && !record.semantic.labels.contains(filter.tag)) {
+      return false;
+    }
+    if (filter.fromDatetime != null &&
+        (record.metadata.datetime == null ||
+            record.metadata.datetime! < filter.fromDatetime!)) {
+      return false;
+    }
+    if (filter.toDatetime != null &&
+        (record.metadata.datetime == null ||
+            record.metadata.datetime! > filter.toDatetime!)) {
+      return false;
+    }
+    if (filter.query != null &&
+        !record.photo.path.contains(filter.query!) &&
+        !(record.semantic.caption?.contains(filter.query!) ?? false)) {
+      return false;
+    }
+    return true;
   }
 
   PhotoRecord? getPhoto(String photoId) => _photos[photoId];

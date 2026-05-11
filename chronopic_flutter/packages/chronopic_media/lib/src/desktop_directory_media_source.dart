@@ -15,6 +15,9 @@ final class DesktopDirectoryMediaSource implements MediaSourceAdapter {
       MediaSourcePermissionState.granted;
 
   @override
+  bool get supportsLazyThumbnails => false;
+
+  @override
   Future<List<MediaAsset>> listAssets() async {
     if (!rootDirectory.existsSync()) {
       throw MediaSourceException(

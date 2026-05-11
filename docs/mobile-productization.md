@@ -265,6 +265,48 @@ Result:
 all commands passed locally.
 iOS live verification remains blocked until macOS/Xcode evidence exists.
 
+## Phase 12 Large-Library Count And Thumbnail Contract
+
+Captured on 2026-05-11 during Phase 12.
+
+- Mobile catalog totals must not be derived from the current visible page.
+  Dashboard copy such as `indexed` and `indexed locally` uses the full catalog
+  count.
+- Browse copy may show the currently loaded page count only when the text says
+  it is loaded/visible, for example `20 loaded / 225 total`.
+- Search/filter summaries use the full filtered result count, not the first
+  page size.
+- Mobile scan progress counts skipped unchanged assets as processed so rescans
+  still reach the discovered total.
+- Lazy-capable mobile media sources index metadata first.
+  They do not eagerly read every platform thumbnail,
+  decode/resize,
+  JPEG-encode,
+  and write a second thumbnail file during import.
+- Visible browse/detail/gallery media previews request platform thumbnails
+  lazily through the existing media-source thumbnail API.
+  Desktop directory import keeps its generated JPEG thumbnail cache.
+- Large-scan progress callbacks are throttled while final imported/updated/
+  skipped/error/missing buckets remain exact.
+
+Local Phase 12 gate:
+
+```bash
+cd chronopic_flutter && flutter analyze
+cd chronopic_flutter && dart test packages/chronopic_domain/test packages/chronopic_database/test packages/chronopic_app/test packages/chronopic_media/test
+cd chronopic_flutter && flutter test packages/chronopic_ui/test apps/chronopic/test
+cd chronopic_flutter && flutter test packages/chronopic_ui/test/mobile_productization_test.dart
+cd chronopic_flutter && flutter test apps/chronopic/integration_test/mobile_deep_e2e_test.dart
+cd chronopic_flutter/apps/chronopic && flutter build apk --debug
+git diff --check
+```
+
+Result:
+all commands passed locally.
+The largest automated mobile count regression uses a 225-photo fixture and
+asserts `225 indexed` plus `20 loaded / 225 total`.
+iOS live verification remains blocked until macOS/Xcode evidence exists.
+
 ## Phase 10 Mobile UI Refine Evidence
 
 Captured on 2026-05-10 after the Android package id moved to

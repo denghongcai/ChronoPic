@@ -59,6 +59,8 @@ final class MediaSourceException implements Exception {
 abstract interface class MediaSourceAdapter {
   MediaSourcePermissionState get permissionState;
 
+  bool get supportsLazyThumbnails;
+
   Future<List<MediaAsset>> listAssets();
 
   Future<MediaReadResult> readAsset(String assetId);

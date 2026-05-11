@@ -8,6 +8,7 @@ final class FixtureMediaSource implements MediaSourceAdapter {
     required Map<String, Uint8List> bytesById,
     Map<String, Uint8List>? thumbnailBytesById,
     this.permissionState = MediaSourcePermissionState.granted,
+    this.supportsLazyThumbnails = false,
     Set<String> missingAssetIds = const <String>{},
   }) : _assets = List<MediaAsset>.of(assets),
        _bytesById = Map<String, Uint8List>.of(bytesById),
@@ -23,6 +24,9 @@ final class FixtureMediaSource implements MediaSourceAdapter {
 
   @override
   final MediaSourcePermissionState permissionState;
+
+  @override
+  final bool supportsLazyThumbnails;
 
   @override
   Future<List<MediaAsset>> listAssets() async {

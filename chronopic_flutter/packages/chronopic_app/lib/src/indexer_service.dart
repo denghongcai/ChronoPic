@@ -97,11 +97,44 @@ final class ChronoPicIndexerService {
     var errors = 0;
     String? lastError;
     final seen = <String>{};
-    _report(
+    var lastReportedProcessed = -1;
+    var lastReportedAt = DateTime.fromMillisecondsSinceEpoch(0);
+    void report(
+      ScanRunState state,
+      _ScanCounters counters, {
+      required int discovered,
+      required int missing,
+      String? message,
+      bool force = false,
+    }) {
+      final now = DateTime.now();
+      final processedDelta = counters.processed - lastReportedProcessed;
+      final elapsed = now.difference(lastReportedAt);
+      final shouldReport =
+          force ||
+          state != ScanRunState.running ||
+          message != null ||
+          lastReportedProcessed < 0 ||
+          processedDelta >= 10 ||
+          elapsed >= const Duration(milliseconds: 250);
+      if (!shouldReport) return;
+      lastReportedProcessed = counters.processed;
+      lastReportedAt = now;
+      _report(
+        state,
+        counters,
+        discovered: discovered,
+        missing: missing,
+        message: message,
+      );
+    }
+
+    report(
       ScanRunState.running,
       const _ScanCounters(),
       discovered: assets.length,
       missing: 0,
+      force: true,
     );
 
     for (final asset in assets) {
@@ -112,24 +145,45 @@ final class ChronoPicIndexerService {
           previous?.indexState.missingAt == null;
       if (unchanged) {
         skipped += 1;
-        _report(
+        final counters = _ScanCounters(
+          imported: imported,
+          updated: updated,
+          errors: errors,
+          skipped: skipped,
+        );
+        report(
           ScanRunState.running,
-          _ScanCounters(
-            imported: imported,
-            updated: updated,
-            errors: errors,
-            skipped: skipped,
-          ),
+          counters,
           discovered: assets.length,
           missing: 0,
         );
+        if (await shouldPause?.call() == true) {
+          report(
+            ScanRunState.paused,
+            counters,
+            discovered: assets.length,
+            missing: 0,
+            message: lastError,
+            force: true,
+          );
+          return _stats(
+            counters,
+            discovered: assets.length,
+            missing: 0,
+            lastError: lastError,
+          );
+        }
         continue;
       }
       String? message;
       try {
-        final thumbnailBytes = await _readThumbnailBytes(asset);
-        MediaReadResult? read;
         final mime = asset.metadata.mime ?? mimeFromPath(asset.path);
+        final eagerThumbnail =
+            !mediaSource.supportsLazyThumbnails && mime.startsWith('image/');
+        final thumbnailBytes = eagerThumbnail
+            ? await _readThumbnailBytes(asset)
+            : null;
+        MediaReadResult? read;
         final PhotoAiResult ai;
         if (aiClient.isEnabled) {
           read = await mediaSource.readAsset(asset.id);
@@ -141,16 +195,11 @@ final class ChronoPicIndexerService {
         } else {
           ai = const PhotoAiResult(status: AiPipelineStatus.disabled);
         }
-        final thumbnailPath = await _writeThumbnail(
-          asset,
-          thumbnailBytes ?? read?.bytes,
-        );
+        final thumbnailPath = eagerThumbnail
+            ? await _writeThumbnail(asset, thumbnailBytes ?? read?.bytes)
+            : null;
         repository.upsertPhotoRecord(
-          _recordForAsset(
-            asset,
-            ai,
-            thumbnailPath: thumbnailPath,
-          ),
+          _recordForAsset(asset, ai, thumbnailPath: thumbnailPath),
         );
         if (previous == null) {
           imported += 1;
@@ -174,7 +223,7 @@ final class ChronoPicIndexerService {
         errors: errors,
         skipped: skipped,
       );
-      _report(
+      report(
         ScanRunState.running,
         counters,
         discovered: assets.length,
@@ -182,12 +231,13 @@ final class ChronoPicIndexerService {
         message: message,
       );
       if (await shouldPause?.call() == true) {
-        _report(
+        report(
           ScanRunState.paused,
           counters,
           discovered: assets.length,
           missing: 0,
           message: lastError,
+          force: true,
         );
         return _stats(
           counters,
@@ -212,11 +262,12 @@ final class ChronoPicIndexerService {
       errors: errors,
       skipped: skipped,
     );
-    _report(
+    report(
       ScanRunState.completed,
       counters,
       discovered: assets.length,
       missing: missing.length,
+      force: true,
     );
     return _stats(
       counters,
@@ -377,7 +428,7 @@ final class _ScanCounters {
   final int errors;
   final int skipped;
 
-  int get processed => imported + updated + errors;
+  int get processed => imported + updated + errors + skipped;
 }
 
 String? _writeThumbnailFile({

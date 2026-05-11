@@ -29,28 +29,20 @@ void main() {
     final service = _restoredService(seeded.createBackup());
     await _pumpMobileApp(tester, service);
 
+    expect(service.countPhotos(), 25);
     expect(find.byKey(const Key('mobile-browse-surface')), findsOneWidget);
-    expect(find.text('2 items'), findsOneWidget);
+    expect(find.text('25 indexed'), findsOneWidget);
+    expect(find.text('25 indexed locally'), findsOneWidget);
+    expect(find.text('20 loaded / 25 total'), findsOneWidget);
+    expect(find.text('20 indexed'), findsNothing);
 
     final firstId = service
-        .listPhotos(
-          const PhotoFilter(
-            sortBy: PhotoSortBy.path,
-            sortDirection: SortDirection.asc,
-            limit: 10,
-          ),
-        )
+        .listPhotos(const PhotoFilter(limit: 10))
         .first
         .photo
         .id;
     final secondId = service
-        .listPhotos(
-          const PhotoFilter(
-            sortBy: PhotoSortBy.path,
-            sortDirection: SortDirection.asc,
-            limit: 10,
-          ),
-        )[1]
+        .listPhotos(const PhotoFilter(limit: 10))[1]
         .photo
         .id;
 
@@ -300,15 +292,17 @@ Future<void> _enterVisibleText(
   await tester.pumpAndSettle();
 }
 
-FixtureMediaSource _mobileSource() {
+FixtureMediaSource _mobileSource({int count = 25}) {
+  final ids = List<String>.generate(count, (index) => 'asset-${index + 1}');
   return FixtureMediaSource(
+    supportsLazyThumbnails: true,
     assets: <MediaAsset>[
-      _asset('asset-1', updatedAt: 1000),
-      _asset('asset-2', updatedAt: 2000),
+      for (final (index, id) in ids.indexed)
+        _asset(id, updatedAt: (index + 1) * 1000),
     ],
     bytesById: <String, Uint8List>{
-      'asset-1': Uint8List.fromList(<int>[1, 2, 3]),
-      'asset-2': Uint8List.fromList(<int>[4, 5, 6]),
+      for (final (index, id) in ids.indexed)
+        id: Uint8List.fromList(<int>[index + 1, index + 2, index + 3]),
     },
   );
 }
