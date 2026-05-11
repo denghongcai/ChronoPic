@@ -7360,3 +7360,45 @@ This file is the local execution record for ChronoPic. It complements `PLAN.md` 
   returned `package:ai.chronopic.app`.
 - Skipped iOS live verification because this Linux workstation still cannot run
   macOS/Xcode simulator or signing checks.
+
+### 2026-05-11 Step 258
+
+- Prepared the `v0.1.7` Flutter release after the desktop/mobile refinement
+  phases.
+- Bumped release metadata from `0.1.6` to `0.1.7`, including:
+  root `package.json`,
+  `chronopic_flutter/apps/chronopic/pubspec.yaml` as `0.1.7+7`,
+  README current release artifact names,
+  DEVELOPMENT release examples,
+  `docs/flutter-release-checklist.md`,
+  and the Flutter release artifact expectation in `PLAN.md`.
+- Re-verified source gates with:
+  `pnpm test`,
+  `pnpm typecheck`,
+  `pnpm build`,
+  `cd chronopic_flutter && flutter analyze`,
+  `cd chronopic_flutter && dart test packages/chronopic_domain/test packages/chronopic_database/test packages/chronopic_app/test packages/chronopic_media/test`,
+  and
+  `cd chronopic_flutter && flutter test packages/chronopic_ui/test/chronopic_home_test.dart packages/chronopic_ui/test/linux_desktop_parity_test.dart packages/chronopic_ui/test/mobile_productization_test.dart`.
+- Rebuilt and verified release artifacts with:
+  `CHRONOPIC_ANDROID_STORE_FILE="$PWD/.tmp/release-signing/chronopic-upload.jks" CHRONOPIC_ANDROID_STORE_PASSWORD=chronopic-local-pass CHRONOPIC_ANDROID_KEY_ALIAS=chronopic-upload CHRONOPIC_ANDROID_KEY_PASSWORD=chronopic-local-pass chronopic_flutter/tool/release/build_android_release.sh`,
+  `chronopic_flutter/tool/release/build_linux_release.sh`,
+  and
+  `node chronopic_flutter/tool/release/verify_flutter_release_artifacts.mjs android linux`.
+- Result:
+  source checks passed,
+  Android APK/AAB were rebuilt,
+  Linux release tarball
+  `chronopic-flutter-linux-x64-0.1.7.tar.gz` was rebuilt,
+  and the release verifier found all six expected Flutter assets.
+- Selected verification scenes:
+  release artifact verification covers the Phase 7 release path;
+  desktop browse/detail and mobile first-run/detail scenes were covered by the
+  focused Flutter UI tests from this gate.
+- Skipped full iOS live verification because this Linux workstation still
+  cannot run macOS/Xcode simulator or signing checks.
+- Next:
+  commit and push `main`,
+  tag `v0.1.7`,
+  publish the GitHub Release,
+  and verify downloaded public assets.

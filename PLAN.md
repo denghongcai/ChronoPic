@@ -2543,7 +2543,7 @@ These are intentionally recorded as candidate directions rather than committed p
      `node chronopic_flutter/tool/release/verify_flutter_release_artifacts.mjs android linux`
      verifies APK/AAB/Linux sha256 files.
   4. Flutter Linux release artifact:
-     build `chronopic-flutter-linux-x64-0.1.6.tar.gz`,
+     build `chronopic-flutter-linux-x64-0.1.7.tar.gz`,
      create `.sha256`,
      and verify the archive contains the Flutter `chronopic` executable.
      Implementation status:
