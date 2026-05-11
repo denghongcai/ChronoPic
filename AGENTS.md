@@ -7545,3 +7545,67 @@ This file is the local execution record for ChronoPic. It complements `PLAN.md` 
   macOS/Xcode simulator,
   signing,
   or device evidence.
+
+### 2026-05-11 Step 262
+
+- Published `v0.1.8`.
+- Pushed `main` with:
+  `5e72edc Execute Flutter mobile native redesign`,
+  and
+  `f4aa0be Prepare v0.1.8 release`.
+- Local pre-release verification passed:
+  `pnpm test`,
+  `pnpm typecheck`,
+  `pnpm build`,
+  `cd chronopic_flutter && flutter analyze`,
+  `cd chronopic_flutter && dart test packages/chronopic_domain/test packages/chronopic_database/test packages/chronopic_app/test packages/chronopic_media/test`,
+  `cd chronopic_flutter && flutter test packages/chronopic_ui/test apps/chronopic/test`,
+  `cd chronopic_flutter && flutter test packages/chronopic_ui/test/mobile_productization_test.dart`,
+  `cd chronopic_flutter && flutter test apps/chronopic/integration_test/mobile_deep_e2e_test.dart`,
+  `cd chronopic_flutter/apps/chronopic && flutter build apk --debug`,
+  `chronopic_flutter/tool/release/build_android_release.sh`,
+  `chronopic_flutter/tool/release/build_linux_release.sh`,
+  `node chronopic_flutter/tool/release/verify_flutter_release_artifacts.mjs android linux`,
+  and
+  `git diff --check`.
+- Main CI run `25655887335` passed before tagging:
+  `verify` completed in 1m59s with unit tests,
+  typecheck,
+  build,
+  Runtime E2E,
+  Accessibility E2E,
+  AI Productization E2E,
+  and Backup E2E;
+  `flutter` completed in 5m13s with Flutter doctor,
+  dependency install,
+  Dart analyze,
+  Dart package tests,
+  Flutter UI/parity tests,
+  and Android debug build.
+- Created and pushed annotated tag `v0.1.8`,
+  pointing at `f4aa0be4394640249de3d7870648d8c08bcdcb36`.
+- Observed the tag-triggered GitHub Actions Release run
+  `25656116153` complete successfully:
+  `prepare-release` created/updated the release,
+  `flutter-linux` uploaded the Linux x64 tarball and checksum,
+  and `flutter-android` uploaded the signed Android APK/AAB and checksums.
+- Public release URL:
+  `https://github.com/denghongcai/ChronoPic/releases/tag/v0.1.8`.
+- Verified the GitHub Release after publication:
+  `gh release view v0.1.8 --repo denghongcai/ChronoPic`
+  reported `isDraft=false`,
+  `isPrerelease=false`,
+  and the six expected Flutter assets.
+- Downloaded the public release assets into `.tmp/release-verify/v0.1.8` and
+  verified:
+  `sha256sum -c chronopic-flutter-android-release.apk.sha256`,
+  `sha256sum -c chronopic-flutter-android-release.aab.sha256`,
+  `sha256sum -c chronopic-flutter-linux-x64-0.1.8.tar.gz.sha256`,
+  and
+  `tar -tzf chronopic-flutter-linux-x64-0.1.8.tar.gz | rg '(^|/)chronopic$'`.
+- Result:
+  `v0.1.8` is public with GitHub Actions-built and post-download verified
+  Flutter Android APK,
+  Android AAB,
+  Linux x64 tarball,
+  and matching checksum assets.

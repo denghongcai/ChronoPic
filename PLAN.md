@@ -2971,6 +2971,18 @@ These are intentionally recorded as candidate directions rather than committed p
   The deep E2E run caught and the phase fixed phone-width overflow in Gallery
   chrome and the mobile Language settings drill-in sheet.
   iOS live verification remains blocked on this Linux workstation.
+- Release:
+  `v0.1.8` was published on 2026-05-11 from tag
+  `f4aa0be4394640249de3d7870648d8c08bcdcb36`.
+  Main CI run `25655887335` passed before tagging.
+  Release workflow run `25656116153` passed and uploaded Flutter Android APK,
+  Android AAB,
+  Linux x64 tarball,
+  and all matching checksum assets.
+  Post-publication verification downloaded the public release assets into
+  `.tmp/release-verify/v0.1.8`,
+  checked the three sha256 files,
+  and confirmed the Linux tarball contains the `chronopic` executable.
 
 - Person / face grouping:
   add person-like memory grouping only after the app has a real person-recognition or clustering signal.
