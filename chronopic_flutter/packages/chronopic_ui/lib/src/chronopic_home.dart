@@ -169,6 +169,7 @@ final class _ChronoPicHomeState extends State<ChronoPicHome> {
     _hasMoreVisiblePhotos = photoPage.hasMore;
     final catalogPhotoCount = _service.countPhotos();
     final filteredPhotoCount = _service.countPhotos(_currentPhotoFilter());
+    final viewerPhotos = _currentResultPhotos(filteredPhotoCount);
     final memories = _service.listMemories();
     final selectedMemory = _selectedMemoryId == null
         ? null
@@ -213,6 +214,7 @@ final class _ChronoPicHomeState extends State<ChronoPicHome> {
             child: _buildPage(
               labels: labels,
               photos: photos,
+              viewerPhotos: viewerPhotos,
               catalogPhotoCount: catalogPhotoCount,
               filteredPhotoCount: filteredPhotoCount,
               hasMorePhotos: photoPage.hasMore,
@@ -241,6 +243,7 @@ final class _ChronoPicHomeState extends State<ChronoPicHome> {
   Widget _buildPage({
     required UiStrings labels,
     required List<PhotoRecord> photos,
+    required List<PhotoRecord> viewerPhotos,
     required int catalogPhotoCount,
     required int filteredPhotoCount,
     required bool hasMorePhotos,
@@ -304,7 +307,10 @@ final class _ChronoPicHomeState extends State<ChronoPicHome> {
           onSaveLocaleSettings: _saveCurrentLocaleSettings,
           onSaveMapSettings: _saveMapSettings,
           onScanLibrary: _scanLibrary,
-          photos: _service.listPhotos(const PhotoFilter(limit: 1000000)),
+          favoritePhotoCount: _service.countPhotos(
+            const PhotoFilter(favorite: true),
+          ),
+          photoCount: catalogPhotoCount,
           providerController: _aiProviderController,
           restorePreview: _restorePreview,
           scanning: _scanning,
@@ -388,6 +394,7 @@ final class _ChronoPicHomeState extends State<ChronoPicHome> {
           onLoadMorePhotos: _loadMorePhotos,
           onScrollNearEnd: _loadMorePhotos,
           photos: photos,
+          viewerPhotos: viewerPhotos,
           query: _query,
           scanning: _scanning,
           selected: _selected,
@@ -431,8 +438,9 @@ final class _ChronoPicHomeState extends State<ChronoPicHome> {
     );
   }
 
-  List<PhotoRecord> _visiblePhotos() {
-    return _visiblePhotoPage().photos;
+  List<PhotoRecord> _currentResultPhotos(int total) {
+    if (total <= 0) return const [];
+    return _service.listPhotos(_currentPhotoFilter(limit: total));
   }
 
   Future<Uint8List?> _loadThumbnailBytes(PhotoRecord record) {
@@ -1261,7 +1269,9 @@ final class _ChronoPicHomeState extends State<ChronoPicHome> {
         child: GalleryDialog(
           initialPhotoId: record.photo.id,
           labels: _l10n,
-          photos: _visiblePhotos(),
+          photos: _currentResultPhotos(
+            _service.countPhotos(_currentPhotoFilter()),
+          ),
         ),
       ),
     );

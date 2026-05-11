@@ -53,7 +53,8 @@ final class SettingsPage extends StatelessWidget {
     required this.onSaveLocaleSettings,
     required this.onSaveMapSettings,
     required this.onScanLibrary,
-    required this.photos,
+    required this.favoritePhotoCount,
+    required this.photoCount,
     required this.providerController,
     required this.restorePreview,
     required this.scanning,
@@ -86,7 +87,8 @@ final class SettingsPage extends StatelessWidget {
   final VoidCallback onSaveLocaleSettings;
   final VoidCallback onSaveMapSettings;
   final VoidCallback onScanLibrary;
-  final List<PhotoRecord> photos;
+  final int favoritePhotoCount;
+  final int photoCount;
   final TextEditingController providerController;
   final BackupRestorePreview? restorePreview;
   final bool scanning;
@@ -144,8 +146,9 @@ final class SettingsPage extends StatelessWidget {
     );
     final sourcesPanel = SourcesPanel(labels: labels, sources: sources);
     final statsGrid = _StatsGrid(
+      favoritePhotoCount: favoritePhotoCount,
       labels: labels,
-      photos: photos,
+      photoCount: photoCount,
       memories: memories,
       sources: sources,
     );
@@ -1461,15 +1464,17 @@ final class _TintedChip extends StatelessWidget {
 
 final class _StatsGrid extends StatelessWidget {
   const _StatsGrid({
+    required this.favoritePhotoCount,
     required this.labels,
     required this.memories,
-    required this.photos,
+    required this.photoCount,
     required this.sources,
   });
 
+  final int favoritePhotoCount;
   final UiStrings labels;
   final List<Memory> memories;
-  final List<PhotoRecord> photos;
+  final int photoCount;
   final List<LibrarySource> sources;
 
   @override
@@ -1477,7 +1482,7 @@ final class _StatsGrid extends StatelessWidget {
     final stats = [
       (
         _localized(labels, 'Photos', '照片'),
-        photos.length,
+        photoCount,
         Icons.photo_library_outlined,
       ),
       (
@@ -1492,7 +1497,7 @@ final class _StatsGrid extends StatelessWidget {
       ),
       (
         _localized(labels, 'Favorites', '收藏'),
-        photos.where((record) => record.photo.favorite).length,
+        favoritePhotoCount,
         Icons.star_border,
       ),
     ];

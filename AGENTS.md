@@ -7765,3 +7765,60 @@ This file is the local execution record for ChronoPic. It complements `PLAN.md` 
   Android AAB,
   Linux x64 tarball,
   and matching checksum assets.
+
+### 2026-05-12 Step 266
+
+- Reviewed the real Android screenshot from 2026-05-12 showing focused Detail
+  with a top counter of `1 / 20` while the user expected the total to represent
+  the full mobile photo result scope.
+- Confirmed the counter issue was still downstream of pagination:
+  the waterfall page correctly renders 20 visible items,
+  but focused Detail and Gallery were receiving that same first-page list instead
+  of the full filtered result set.
+- Confirmed the scroll-to-open issue came from `PhotoCardTile` using raw
+  `onPointerDown` handling;
+  on mobile this opened focused Detail before Flutter could resolve whether the
+  gesture was a tap or a scroll/drag.
+- Added failing regression coverage first:
+  dragging a mobile waterfall card must not open focused Detail,
+  and opening focused Detail from a 25-photo mobile catalog must display
+  `1 / 25` rather than `1 / 20`.
+- Fixed focused viewer data flow:
+  `ChronoPicHome` now keeps paged waterfall photos separate from full
+  `viewerPhotos`,
+  and focused Detail/Gallery use the full current filtered result set for
+  position/count and adjacent navigation.
+- Fixed waterfall card gestures:
+  `PhotoCardTile` now uses resolved `GestureDetector` tap/double-tap callbacks
+  instead of pointer-down activation,
+  so scroll/drag gestures remain scroll gestures.
+- Fixed settings statistics to use repository/app-service catalog and favorite
+  counts instead of a capped full-photo list.
+- Updated durable phase docs:
+  `PLAN.md`
+  and
+  `docs/flutter-refactor-phases.md`.
+- Verification so far:
+  the targeted red-green command
+  `cd chronopic_flutter && flutter test packages/chronopic_ui/test/mobile_productization_test.dart`
+  now passes after failing on the two new regressions before the implementation.
+- Verification scenes from `docs/agent-verification-script.md`:
+  Scene 3 covered by mobile scan/browse/count regression tests,
+  Scene 4 covered by focused Detail/Gallery result-scope tests,
+  Scene 7 covered by the existing mobile deep E2E backup/restart path,
+  and Scene 8 covered by the settings statistics path in the UI tests.
+  Electron Playwright launch scenes were skipped because this slice changes the
+  Flutter mobile UI/runtime path rather than the Electron app runtime.
+- Verification commands passed:
+  `cd chronopic_flutter && flutter analyze`,
+  `cd chronopic_flutter && flutter test packages/chronopic_ui/test/mobile_productization_test.dart`,
+  `cd chronopic_flutter && flutter test packages/chronopic_ui/test apps/chronopic/test`,
+  `cd chronopic_flutter && flutter test apps/chronopic/integration_test/mobile_deep_e2e_test.dart`,
+  `cd chronopic_flutter/apps/chronopic && flutter build apk --debug`,
+  and
+  `git diff --check`.
+- Skipped:
+  iOS live scenes remain blocked because this Linux workstation cannot provide
+  macOS/Xcode simulator,
+  signing,
+  or device evidence.

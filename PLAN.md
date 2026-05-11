@@ -3054,13 +3054,40 @@ These are intentionally recorded as candidate directions rather than committed p
      periodic item-count thresholds,
      or a short time interval,
      instead of rebuilding UI once per asset.
-  6. Verification:
-     added Dart/app-service tests for skipped progress and no scan-time thumbnail
-     reads on lazy-capable mobile sources,
-     Flutter widget tests for full-count versus first-page count including a
-     225-photo fixture,
-     and Android deep E2E assertions rejecting first-page count being labeled
-     as a catalog total.
+	  6. Verification:
+	     added Dart/app-service tests for skipped progress and no scan-time thumbnail
+	     reads on lazy-capable mobile sources,
+	     Flutter widget tests for full-count versus first-page count including a
+	     225-photo fixture,
+	     and Android deep E2E assertions rejecting first-page count being labeled
+	     as a catalog total.
+- Follow-up completed on 2026-05-12:
+  1. Focused detail/gallery totals:
+     mobile focused Detail and Gallery surfaces now receive the full current
+     filtered result set instead of the first visible waterfall page,
+     so counters such as `1 / N` reflect the full result scope while the
+     waterfall renderer still lazy-loads visible pages.
+  2. Waterfall gesture handling:
+     photo cards no longer open detail on raw pointer down.
+     Mobile opens on resolved tap,
+     desktop selection remains single tap,
+     and desktop open remains double tap,
+     so drag/scroll gestures are not treated as card activation.
+  3. Settings totals:
+     mobile/desktop settings statistics use repository/app-service counts for
+     catalog and favorite totals instead of deriving totals from a capped photo
+     list.
+  4. Regression coverage:
+     `mobile_productization_test.dart` now asserts dragging a waterfall card does
+     not open focused Detail,
+     and a 25-photo mobile catalog opened from the first page displays
+     `1 / 25` rather than `1 / 20`.
+  5. Verification:
+     `flutter analyze`,
+     `flutter test packages/chronopic_ui/test apps/chronopic/test`,
+     `flutter test apps/chronopic/integration_test/mobile_deep_e2e_test.dart`,
+     `flutter build apk --debug`,
+     and `git diff --check` pass.
 - Explicit non-goals:
   do not change desktop directory thumbnail cache semantics;
   do not remove desktop `Image.file` preview behavior;

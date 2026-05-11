@@ -1321,6 +1321,25 @@ Completed work:
 - Kept desktop directory import and desktop generated thumbnail cache behavior
   intact.
 
+Follow-up completed on 2026-05-12:
+
+- Focused Detail and Gallery now use the full current filtered result set for
+  viewer position/count and adjacent navigation,
+  while the waterfall browse renderer remains paged.
+- Waterfall photo cards now open on resolved tap/double-tap gestures instead of
+  raw pointer down,
+  so scroll/drag gestures do not accidentally open focused Detail.
+- Settings statistics now use catalog/favorite count APIs rather than a capped
+  photo list.
+- Added mobile regression coverage for drag-not-open behavior and viewer totals
+  beyond the first visible page.
+- Verification passed:
+  `flutter analyze`,
+  `flutter test packages/chronopic_ui/test apps/chronopic/test`,
+  `flutter test apps/chronopic/integration_test/mobile_deep_e2e_test.dart`,
+  `flutter build apk --debug`,
+  and `git diff --check`.
+
 Exit gate:
 
 - Flutter analyze passed.

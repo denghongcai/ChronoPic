@@ -189,7 +189,7 @@ int _photoGridColumnsForWidth(double width) {
   return 1;
 }
 
-final class PhotoCardTile extends StatefulWidget {
+final class PhotoCardTile extends StatelessWidget {
   const PhotoCardTile({
     super.key,
     required this.labels,
@@ -206,46 +206,24 @@ final class PhotoCardTile extends StatefulWidget {
   final bool selected;
 
   @override
-  State<PhotoCardTile> createState() => _PhotoCardTileState();
-}
-
-final class _PhotoCardTileState extends State<PhotoCardTile> {
-  Duration? _lastPointerDownAt;
-
-  void _handlePointerDown(
-    PointerDownEvent event, {
-    required bool openOnSingleTap,
-  }) {
-    final now = event.timeStamp;
-    final isDoubleTap =
-        _lastPointerDownAt != null &&
-        now - _lastPointerDownAt! <= const Duration(milliseconds: 320);
-    _lastPointerDownAt = isDoubleTap ? null : now;
-    widget.onSelect();
-    if (openOnSingleTap || isDoubleTap) widget.onOpenDetail();
-  }
-
-  @override
   Widget build(BuildContext context) {
     final openOnSingleTap = MediaQuery.sizeOf(context).width < 720;
-    return Listener(
-      key: Key('photo-card-${widget.record.photo.id}'),
+    final onResolvedTap = openOnSingleTap || selected ? onOpenDetail : onSelect;
+    return GestureDetector(
+      key: Key('photo-card-${record.photo.id}'),
       behavior: HitTestBehavior.opaque,
-      onPointerDown: (event) =>
-          _handlePointerDown(event, openOnSingleTap: openOnSingleTap),
+      onTap: onResolvedTap,
       child: Semantics(
         button: true,
-        onTap: openOnSingleTap ? widget.onOpenDetail : widget.onSelect,
+        onTap: onResolvedTap,
         child: Card(
           clipBehavior: Clip.antiAlias,
           color: Colors.black,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(20),
             side: BorderSide(
-              color: widget.selected
-                  ? Colors.amber.shade700
-                  : Colors.grey.shade200,
-              width: widget.selected ? 2 : 1,
+              color: selected ? Colors.amber.shade700 : Colors.grey.shade200,
+              width: selected ? 2 : 1,
             ),
           ),
           child: KeyedSubtree(
@@ -253,7 +231,7 @@ final class _PhotoCardTileState extends State<PhotoCardTile> {
             child: Stack(
               fit: StackFit.expand,
               children: [
-                MediaPreview(record: widget.record, fit: BoxFit.cover),
+                MediaPreview(record: record, fit: BoxFit.cover),
                 const DecoratedBox(
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
@@ -277,8 +255,7 @@ final class _PhotoCardTileState extends State<PhotoCardTile> {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Text(
-                        widget.record.semantic.caption ??
-                            _basename(widget.record.photo.path),
+                        record.semantic.caption ?? _basename(record.photo.path),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: const TextStyle(
@@ -291,10 +268,10 @@ final class _PhotoCardTileState extends State<PhotoCardTile> {
                       Row(
                         children: [
                           Icon(
-                            widget.record.photo.favorite
+                            record.photo.favorite
                                 ? Icons.star
                                 : Icons.star_border,
-                            color: widget.record.photo.favorite
+                            color: record.photo.favorite
                                 ? Colors.amber.shade700
                                 : Colors.white70,
                             size: 16,
@@ -302,11 +279,11 @@ final class _PhotoCardTileState extends State<PhotoCardTile> {
                           const SizedBox(width: 6),
                           Expanded(
                             child: Text(
-                              widget.record.metadata.datetime == null
-                                  ? _localized(widget.labels, 'No date', '无日期')
+                              record.metadata.datetime == null
+                                  ? _localized(labels, 'No date', '无日期')
                                   : _formatDate(
                                       DateTime.fromMillisecondsSinceEpoch(
-                                        widget.record.metadata.datetime!,
+                                        record.metadata.datetime!,
                                       ).toLocal(),
                                     ),
                               overflow: TextOverflow.ellipsis,

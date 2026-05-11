@@ -63,6 +63,7 @@ final class HomePage extends StatelessWidget {
     required this.thumbnailLoader,
     required this.timeController,
     required this.toDateController,
+    required this.viewerPhotos,
   });
 
   final List<String> activeFilterLabels;
@@ -126,6 +127,7 @@ final class HomePage extends StatelessWidget {
   final PhotoThumbnailLoader? thumbnailLoader;
   final TextEditingController timeController;
   final TextEditingController toDateController;
+  final List<PhotoRecord> viewerPhotos;
 
   @override
   Widget build(BuildContext context) {
@@ -223,7 +225,7 @@ final class HomePage extends StatelessWidget {
             onSaveTags: onSaveTags,
             onSelectPhoto: onSelectPhoto,
             onToggleFavorite: onToggleFavorite,
-            photos: photos,
+            photos: viewerPhotos,
             record: selected,
             status: status,
             tagsController: tagsController,
@@ -375,7 +377,7 @@ final class HomePage extends StatelessWidget {
                       onSaveTags: onSaveTags,
                       onSelectPhoto: onSelectPhoto,
                       onToggleFavorite: onToggleFavorite,
-                      photos: photos,
+                      photos: viewerPhotos,
                       record: selected,
                       tagsController: tagsController,
                       timeController: timeController,

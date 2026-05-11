@@ -131,6 +131,17 @@ void main() {
       find.byKey(const Key('mobile-open-detail')).first,
     );
     await tester.pump();
+    await tester.drag(
+      find.byKey(const Key('mobile-open-detail')).first,
+      const Offset(0, -260),
+    );
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('focused-detail-view')), findsNothing);
+
+    await tester.ensureVisible(
+      find.byKey(const Key('mobile-open-detail')).first,
+    );
+    await tester.pump();
     await tester.tap(find.byKey(const Key('mobile-open-detail')).first);
     await tester.pumpAndSettle();
 
@@ -275,6 +286,61 @@ void main() {
     expect(find.text('20 loaded / 225 total'), findsOneWidget);
     expect(find.text('20 indexed'), findsNothing);
   });
+
+  testWidgets(
+    'mobile focused detail uses full result count beyond first page',
+    (tester) async {
+      tester.view.physicalSize = const Size(390, 844);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(() {
+        tester.view.resetPhysicalSize();
+        tester.view.resetDevicePixelRatio();
+      });
+
+      final service = ChronoPicAppService(ChronoPicRepository());
+      await tester.pumpWidget(
+        ChronoPicHome(
+          service: service,
+          entryModeOverride: ChronoPicEntryMode.mobilePhotoLibrary,
+          mobileMediaSourceFactory: () => _mobileSource(count: 25),
+        ),
+      );
+
+      await tester.tap(find.byKey(const Key('choose-photo-library-button')));
+      await tester.pump();
+      await tester.runAsync(() async {
+        for (var attempt = 0; attempt < 80; attempt += 1) {
+          if (service.countPhotos() == 25) return;
+          await Future<void>.delayed(const Duration(milliseconds: 25));
+        }
+      });
+      await tester.pumpAndSettle();
+
+      expect(find.text('20 loaded / 25 total'), findsOneWidget);
+
+      final scrollable = tester.state<ScrollableState>(
+        find
+            .descendant(
+              of: find.byKey(const Key('home-page')),
+              matching: find.byType(Scrollable),
+            )
+            .first,
+      );
+      scrollable.position.jumpTo(900);
+      await tester.pump();
+
+      await tester.ensureVisible(
+        find.byKey(const Key('mobile-open-detail')).first,
+      );
+      await tester.pump();
+      await tester.tap(find.byKey(const Key('mobile-open-detail')).first);
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(const Key('focused-detail-view')), findsOneWidget);
+      expect(find.text('1 / 25'), findsOneWidget);
+      expect(find.text('1 / 20'), findsNothing);
+    },
+  );
 
   testWidgets('mobile denied permission shows recoverable status', (
     tester,
