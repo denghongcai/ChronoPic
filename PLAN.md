@@ -2865,6 +2865,18 @@ These are intentionally recorded as candidate directions rather than committed p
   and
   `MOBILE_E2E_RUN_ID=phase10-final-browse-state bash chronopic_flutter/tool/mobile_e2e/android_deep_e2e.sh`
   passed locally.
+- Release:
+  `v0.1.7` was published on 2026-05-11 from tag
+  `cfd5d9f1f0197852886b83acb76543b3fcd2d160`.
+  Main CI run `25646589595` passed before tagging.
+  Release workflow run `25646732907` passed and uploaded Flutter Android APK,
+  Android AAB,
+  Linux x64 tarball,
+  and all matching checksum assets.
+  Post-publication verification downloaded the public release assets into
+  `.tmp/release-verify/v0.1.7`,
+  checked the three sha256 files,
+  and confirmed the Linux tarball contains the `chronopic` executable.
 
 - Person / face grouping:
   add person-like memory grouping only after the app has a real person-recognition or clustering signal.

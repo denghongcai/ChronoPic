@@ -7402,3 +7402,52 @@ This file is the local execution record for ChronoPic. It complements `PLAN.md` 
   tag `v0.1.7`,
   publish the GitHub Release,
   and verify downloaded public assets.
+
+### 2026-05-11 Step 259
+
+- Published `v0.1.7`.
+- Pushed `main` with:
+  `cfe582f Execute Flutter desktop and mobile refinement phases`,
+  and
+  `cfd5d9f Prepare v0.1.7 release`.
+- Main CI run `25646589595` passed before tagging:
+  `verify` completed in 1m47s with unit tests,
+  typecheck,
+  build,
+  Runtime E2E,
+  Accessibility E2E,
+  AI Productization E2E,
+  and Backup E2E;
+  `flutter` completed in 5m11s with Flutter doctor,
+  dependency install,
+  Dart analyze,
+  Dart package tests,
+  Flutter UI/parity tests,
+  and Android debug build.
+- Created and pushed annotated tag `v0.1.7`,
+  pointing at `cfd5d9f1f0197852886b83acb76543b3fcd2d160`.
+- Observed the tag-triggered GitHub Actions Release run
+  `25646732907` complete successfully:
+  `prepare-release` created/updated the release,
+  `flutter-linux` uploaded the Linux x64 tarball and checksum,
+  and `flutter-android` uploaded the signed Android APK/AAB and checksums.
+- Public release URL:
+  `https://github.com/denghongcai/ChronoPic/releases/tag/v0.1.7`.
+- Verified the GitHub Release after publication:
+  `gh release view v0.1.7 --repo denghongcai/ChronoPic`
+  reported `isDraft=false`,
+  `isPrerelease=false`,
+  and the six expected Flutter assets.
+- Downloaded the public release assets into `.tmp/release-verify/v0.1.7` and
+  verified:
+  `sha256sum -c chronopic-flutter-android-release.apk.sha256`,
+  `sha256sum -c chronopic-flutter-android-release.aab.sha256`,
+  `sha256sum -c chronopic-flutter-linux-x64-0.1.7.tar.gz.sha256`,
+  and
+  `tar -tzf chronopic-flutter-linux-x64-0.1.7.tar.gz | rg '(^|/)chronopic$'`.
+- Result:
+  `v0.1.7` is public with GitHub Actions-built and post-download verified
+  Flutter Android APK,
+  Android AAB,
+  Linux x64 tarball,
+  and matching checksum assets.
