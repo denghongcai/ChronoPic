@@ -7822,3 +7822,66 @@ This file is the local execution record for ChronoPic. It complements `PLAN.md` 
   macOS/Xcode simulator,
   signing,
   or device evidence.
+
+### 2026-05-12 Step 267
+
+- Published `v0.1.10`.
+- Pushed the implementation and release-prep commits on `main`:
+  `69b2135 Fix mobile viewer counts and scroll gestures`
+  and
+  `613a4f9 Prepare v0.1.10 release`.
+- Local pre-release verification passed:
+  `pnpm test`,
+  `pnpm typecheck`,
+  `pnpm build`,
+  `xvfb-run -a pnpm run e2e:runtime`,
+  `xvfb-run -a pnpm run e2e:accessibility`,
+  `xvfb-run -a pnpm run e2e:ai`,
+  `xvfb-run -a pnpm run e2e:backup`,
+  `cd chronopic_flutter && flutter analyze`,
+  `cd chronopic_flutter && dart test packages/chronopic_domain/test packages/chronopic_database/test packages/chronopic_app/test packages/chronopic_media/test`,
+  `cd chronopic_flutter && flutter test packages/chronopic_ui/test apps/chronopic/test`,
+  `cd chronopic_flutter && flutter test apps/chronopic/integration_test/mobile_deep_e2e_test.dart`,
+  `cd chronopic_flutter/apps/chronopic && flutter build apk --debug`,
+  local Android/Linux release artifact builds,
+  `node chronopic_flutter/tool/release/verify_flutter_release_artifacts.mjs android linux`,
+  and
+  `git diff --check`.
+- Main CI run `25685549756` passed for commit `613a4f9`:
+  `verify` completed in `1m50s`
+  and
+  `flutter` completed in `5m38s`.
+- Created and pushed annotated tag `v0.1.10`
+  at
+  `613a4f970921986a211774b37832c97b368273f7`.
+- Observed the tag-triggered GitHub Actions Release run
+  `25685916285` complete successfully:
+  `prepare-release` completed in `4s`,
+  `flutter-linux` completed in `1m51s`,
+  and
+  `flutter-android` completed in `6m8s`.
+- Public release URL:
+  `https://github.com/denghongcai/ChronoPic/releases/tag/v0.1.10`.
+- Verified the GitHub Release after publication:
+  `gh release view v0.1.10 --repo denghongcai/ChronoPic`
+  reported `isDraft=false`,
+  `isPrerelease=false`,
+  and the six expected Flutter assets.
+- Downloaded the public release assets into `.tmp/release-verify/v0.1.10` and
+  verified:
+  `sha256sum -c chronopic-flutter-android-release.apk.sha256`,
+  `sha256sum -c chronopic-flutter-android-release.aab.sha256`,
+  `sha256sum -c chronopic-flutter-linux-x64-0.1.10.tar.gz.sha256`,
+  and
+  `tar -tzf chronopic-flutter-linux-x64-0.1.10.tar.gz | rg '(^|/)chronopic$'`.
+- Result:
+  `v0.1.10` is public with GitHub Actions-built and post-download verified
+  Flutter Android APK,
+  Android AAB,
+  Linux x64 tarball,
+  and matching checksum assets.
+- Skipped:
+  iOS live scenes remain blocked because this Linux workstation cannot provide
+  macOS/Xcode simulator,
+  signing,
+  or device evidence.

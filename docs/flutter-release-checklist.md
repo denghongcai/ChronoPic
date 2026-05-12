@@ -284,6 +284,21 @@ Post-publication verification downloaded the GitHub Release assets into
 checked all three sha256 files,
 and confirmed the Linux tarball contains the `chronopic` executable.
 
+`v0.1.10` note:
+the tag-triggered Release workflow completed successfully as run `25685916285`
+for all three jobs:
+`prepare-release`,
+`flutter-android`,
+and `flutter-linux`.
+The workflow published the Android APK,
+Android AAB,
+Linux x64 tarball,
+and all matching checksum assets.
+Post-publication verification downloaded the GitHub Release assets into
+`.tmp/release-verify/v0.1.10`,
+checked all three sha256 files,
+and confirmed the Linux tarball contains the `chronopic` executable.
+
 The release workflow does not build or upload Electron Linux,
 macOS,
 or Windows assets.
