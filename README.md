@@ -8,7 +8,7 @@ ChronoPic uses AI to turn a local photo library into searchable semantics, story
 
 ## Download
 
-Latest verified release: `v0.1.10`
+Latest verified release: `v0.1.11`
 
 Download ChronoPic from the GitHub Releases page:
 
@@ -18,7 +18,7 @@ Current Flutter release artifacts:
 
 - Android APK: `chronopic-flutter-android-release.apk`
 - Android App Bundle: `chronopic-flutter-android-release.aab`
-- Linux desktop: `chronopic-flutter-linux-x64-0.1.10.tar.gz`
+- Linux desktop: `chronopic-flutter-linux-x64-0.1.11.tar.gz`
 
 Each artifact has a matching `.sha256` checksum file.
 Electron desktop archives are historical artifacts only;
