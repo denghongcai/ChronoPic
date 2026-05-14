@@ -274,6 +274,32 @@ Actions workflow:
 - Skipped:
   no iOS live evidence is claimed from this Linux workstation.
 
+2026-05-14 Phase 13 mobile real-screenshot UX refinement result:
+
+- Command:
+  `cd chronopic_flutter && flutter test apps/chronopic/integration_test/mobile_deep_e2e_test.dart`.
+- Result:
+  passed locally with the known `integration_test` plugin warning.
+- Updated regression coverage:
+  the app-owned mobile integration test still seeds a 25-photo fixture and
+  asserts `25 indexed`,
+  `20 loaded / 25 total`,
+  and rejection of `20 indexed`,
+  but now also rejects the repeated `25 indexed locally` scan-card copy.
+- Focused widget coverage:
+  `cd chronopic_flutter && flutter test packages/chronopic_ui/test/mobile_productization_test.dart`
+  verifies the primary catalog count key,
+  mobile bottom navigation and bottom spacer,
+  lighter focused Detail mobile actions,
+  mobile Gallery action row,
+  25-photo fixture count semantics,
+  and 225-photo fixture total count semantics.
+- Runtime artifact evidence:
+  `cd chronopic_flutter/apps/chronopic && flutter build apk --debug`
+  built `build/app/outputs/flutter-apk/app-debug.apk`.
+- Skipped:
+  no iOS live evidence is claimed from this Linux workstation.
+
 ### Android App-Owned Integration Test
 
 ```bash

@@ -429,7 +429,12 @@ final class HomePage extends StatelessWidget {
                   ),
                 ),
               ),
-            const SliverPadding(padding: EdgeInsets.only(bottom: 28)),
+            SliverPadding(
+              key: mobileLayout
+                  ? const Key('mobile-browse-bottom-spacer')
+                  : const Key('desktop-browse-bottom-spacer'),
+              padding: EdgeInsets.only(bottom: mobileLayout ? 110 : 28),
+            ),
           ],
         ),
       ),
@@ -557,6 +562,7 @@ final class _MobileHomeDashboard extends StatelessWidget {
                     '$catalogPhotoCount indexed',
                     '$catalogPhotoCount 个已索引',
                   ),
+                  valueKey: const Key('mobile-dashboard-primary-count'),
                 ),
                 const SizedBox(width: 10),
                 _MobileDashboardShortcut(
@@ -636,8 +642,10 @@ final class _MobileHomeDashboard extends StatelessWidget {
                       Text(
                         _localized(
                           labels,
-                          '$catalogPhotoCount indexed locally',
-                          '$catalogPhotoCount 个本地索引',
+                          scanning
+                              ? 'Indexing without blocking browsing'
+                              : 'Ready for local browsing',
+                          scanning ? '索引中，可继续浏览' : '可本地浏览',
                         ),
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
@@ -666,6 +674,7 @@ final class _MobileDashboardShortcut extends StatelessWidget {
     required this.label,
     required this.onPressed,
     required this.value,
+    this.valueKey,
   });
 
   final bool active;
@@ -674,6 +683,7 @@ final class _MobileDashboardShortcut extends StatelessWidget {
   final String label;
   final VoidCallback onPressed;
   final String value;
+  final Key? valueKey;
 
   @override
   Widget build(BuildContext context) {
@@ -701,6 +711,7 @@ final class _MobileDashboardShortcut extends StatelessWidget {
                 ),
                 const SizedBox(height: 2),
                 Text(
+                  key: valueKey,
                   value,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,

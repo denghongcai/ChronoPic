@@ -7885,3 +7885,85 @@ This file is the local execution record for ChronoPic. It complements `PLAN.md` 
   macOS/Xcode simulator,
   signing,
   or device evidence.
+
+### 2026-05-13 Step 268
+
+- Promoted the candidate `Phase 13b - Mobile UX Refinement From Real Screenshots`
+  into the formal next numbered phase:
+  `13. Flutter Mobile UX Refinement From Real Screenshots`.
+- Added the implementation plan:
+  `docs/superpowers/plans/2026-05-13-flutter-mobile-ux-refinement-real-screenshots.md`.
+- Updated `PLAN.md` with Phase 13 source inputs,
+  goal,
+  planned mobile surfaces,
+  explicit non-goals,
+  and exit gate.
+- Updated `docs/flutter-refactor-phases.md` with the same Phase 13 scope so the
+  Flutter phase tracker continues from Phase 12 without a `13b` numbering gap.
+- Updated `docs/mobile-productization.md` with the Phase 13 mobile
+  real-screenshot UX contract and planned local gate.
+- No implementation code was changed in this step.
+- Verification:
+  `git diff --check` passed for the tracked documentation changes,
+  and the new Phase 13 implementation plan file was checked for trailing
+  whitespace.
+
+### 2026-05-14 Step 269
+
+- Executed Phase 13:
+  `Flutter Mobile UX Refinement From Real Screenshots`.
+- Added the real-screenshot audit document:
+  `docs/flutter-mobile-real-screenshot-ux-audit.md`.
+- Updated mobile home hierarchy so the All Photos shortcut owns the primary
+  indexed count,
+  while the scan card reports readiness or indexing activity instead of
+  repeating `indexed locally` count copy.
+- Added explicit mobile bottom spacing below waterfall browse content and keyed
+  the persistent bottom navigation for regression coverage.
+- Rebalanced focused mobile Detail around a light topbar,
+  media-first preview,
+  primary touch-action row,
+  filmstrip,
+  and Details/inspector entry before the edit metadata area.
+- Simplified mobile Gallery with a compact action row for previous,
+  next,
+  and Details/inspector entry while preserving full-result counters.
+- Updated the app-owned mobile integration test so it rejects repeated
+  `25 indexed locally` copy while still asserting `25 indexed`,
+  `20 loaded / 25 total`,
+  and rejection of `20 indexed`.
+- Updated durable docs:
+  `PLAN.md`,
+  `docs/flutter-refactor-phases.md`,
+  `docs/mobile-productization.md`,
+  `docs/mobile-e2e-verification.md`,
+  and the Phase 13 implementation plan.
+- Verification scenes from `docs/agent-verification-script.md`:
+  Scene 3 covered by mobile scan/browse/count regression tests,
+  Scene 4 covered by focused Detail and Gallery mobile widget/integration tests,
+  Scene 7 covered by the app-owned mobile backup/restart integration path,
+  and Scene 8 remains covered by mobile settings/locale persistence in the same
+  integration path.
+  Electron Playwright Scene 1 was skipped because this phase changes Flutter
+  mobile presentation and Android app verification,
+  not the Electron runtime surface.
+- Verification commands passed:
+  `cd chronopic_flutter && flutter analyze`,
+  `cd chronopic_flutter && flutter test packages/chronopic_ui/test/mobile_productization_test.dart`,
+  `cd chronopic_flutter && flutter test packages/chronopic_ui/test apps/chronopic/test`,
+  `cd chronopic_flutter && flutter test apps/chronopic/integration_test/mobile_deep_e2e_test.dart`,
+  `cd chronopic_flutter/apps/chronopic && flutter build apk --debug`,
+  and
+  `git diff --check`.
+- Known verification note:
+  the integration test command still prints Flutter's known
+  `integration_test` plugin warning,
+  but the command exited 0 with `All tests passed`.
+- Skipped:
+  iOS live scenes remain blocked because this Linux workstation cannot provide
+  macOS/Xcode simulator,
+  signing,
+  or device evidence.
+- Next:
+  prepare an add/commit/release pass if requested,
+  or choose the next numbered Flutter phase from the updated plan.

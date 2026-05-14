@@ -1351,3 +1351,119 @@ Exit gate:
 - Android debug build passed.
 - `git diff --check` passed.
 - iOS live verification remains blocked until macOS/Xcode evidence exists.
+
+## Phase 13: Flutter Mobile UX Refinement From Real Screenshots
+
+Status:
+complete on 2026-05-14.
+
+Purpose:
+use the real Android screenshots from 2026-05-11 and 2026-05-12 to refine
+mobile information hierarchy,
+bottom navigation spacing,
+focused Detail,
+and Gallery controls.
+Phase 11 made the app mobile-native,
+and Phase 12 fixed count,
+lazy-thumbnail,
+and scroll-gesture correctness.
+Phase 13 should improve the phone product feel without changing the data model,
+scan pipeline,
+or release artifact model.
+
+Plan:
+
+- [docs/superpowers/plans/2026-05-13-flutter-mobile-ux-refinement-real-screenshots.md](superpowers/plans/2026-05-13-flutter-mobile-ux-refinement-real-screenshots.md)
+
+Source input:
+
+- `.tmp/diagnostics/mobile-import-screenshot.jpg`:
+  Android home/import screenshot where scan progress,
+  shortcut counts,
+  scan card,
+  browse chips,
+  and bottom navigation compete in the first viewport.
+- `.tmp/screenshots/mobile-count-scroll-2026-05-12.jpg`:
+  Android focused Detail screenshot where counter correctness and scroll
+  activation were fixed,
+  but the mobile Detail control cluster remains visually heavy.
+- `.tmp/user-input/mobile-ui-refine.png`:
+  mobile UI refine proposal that set the direction for cleaner mobile hierarchy,
+  lighter Detail,
+  grouped Settings,
+  and guided memory creation.
+
+Planned work:
+
+- Add a real-screenshot UX audit document that captures confirmed issues,
+  decisions,
+  and non-goals.
+- Refine the mobile home dashboard so correct Phase 12 totals remain visible but
+  repeated first-viewport count copy is reduced.
+- Tighten browse bottom spacing around the persistent bottom navigation.
+- Rebalance focused Detail toward media-first phone layout with a light topbar
+  and secondary inspector/editing entry.
+- Simplify mobile Gallery action placement while preserving full-result
+  counters,
+  lazy thumbnails,
+  and filmstrip navigation.
+- Extend mobile widget/integration tests for the refined hierarchy and controls.
+
+Result:
+
+- Added the real-screenshot UX audit document:
+  [flutter-mobile-real-screenshot-ux-audit.md](flutter-mobile-real-screenshot-ux-audit.md).
+- Kept Phase 12 full-count semantics while reducing repeated first-viewport
+  count copy:
+  the All Photos shortcut remains the primary catalog total,
+  and the scan card now reports readiness/activity.
+- Added explicit mobile bottom spacing below waterfall content and keyed the
+  persistent bottom navigation for regression coverage.
+- Rebalanced mobile focused Detail into a light topbar,
+  media area,
+  primary touch-action row,
+  filmstrip,
+  and secondary inspector/details entry.
+- Added a compact mobile Gallery action row for previous,
+  next,
+  and Detail/inspector entry while preserving the full-result counter.
+- Updated mobile widget and app-owned integration coverage so the old
+  `25 indexed locally` repeated-count copy is rejected.
+
+Explicit non-goals:
+
+- No repository/domain schema changes.
+- No Android import pipeline changes.
+- No lazy-thumbnail pipeline changes.
+- No Flutter Linux desktop redesign.
+- No Play Store submission work.
+- No OCR,
+  vector search,
+  person recognition,
+  cloud sync,
+  AI thumbnail analysis,
+  or EXIF writeback.
+- No iOS live verification claim from this Linux workstation.
+
+Exit gate:
+
+- Flutter analyze passes.
+- Focused mobile productization tests pass.
+- Flutter UI/app tests pass.
+- Android app-owned mobile integration test passes.
+- Android debug build passes.
+- `git diff --check` passes.
+- iOS live verification remains blocked until macOS/Xcode evidence exists.
+
+Phase 13 verification result:
+
+- `cd chronopic_flutter && flutter analyze` passed.
+- `cd chronopic_flutter && flutter test packages/chronopic_ui/test/mobile_productization_test.dart`
+  passed with 9 focused mobile widget tests.
+- `cd chronopic_flutter && flutter test packages/chronopic_ui/test apps/chronopic/test`
+  passed with 23 Flutter UI/app tests.
+- `cd chronopic_flutter && flutter test apps/chronopic/integration_test/mobile_deep_e2e_test.dart`
+  passed with the known `integration_test` plugin warning.
+- `cd chronopic_flutter/apps/chronopic && flutter build apk --debug` built
+  `build/app/outputs/flutter-apk/app-debug.apk`.
+- `git diff --check` passed.

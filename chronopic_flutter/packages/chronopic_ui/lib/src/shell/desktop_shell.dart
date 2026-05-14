@@ -243,6 +243,7 @@ final class _MobileBottomNavigation extends StatelessWidget {
   Widget build(BuildContext context) {
     final homeActive = activePage == _DesktopPage.home;
     return DecoratedBox(
+      key: const Key('mobile-bottom-navigation'),
       decoration: BoxDecoration(
         color: Colors.white,
         border: Border(top: BorderSide(color: Colors.grey.shade200)),

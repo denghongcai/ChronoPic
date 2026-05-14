@@ -187,6 +187,17 @@ final class _FocusedDetailSurface extends StatelessWidget {
     final next = index >= 0 && index < photos.length - 1
         ? photos[index + 1]
         : null;
+    final inspectorAnchorKey = GlobalKey();
+    void scrollToInspector() {
+      final inspectorContext = inspectorAnchorKey.currentContext;
+      if (inspectorContext == null) return;
+      Scrollable.ensureVisible(
+        inspectorContext,
+        alignment: 0.08,
+        duration: const Duration(milliseconds: 240),
+      );
+    }
+
     Widget actions() {
       return Wrap(
         key: const Key('mobile-detail-actions'),
@@ -235,6 +246,81 @@ final class _FocusedDetailSurface extends StatelessWidget {
             ),
           ),
         ],
+      );
+    }
+
+    Widget mobileActions() {
+      return Padding(
+        key: const Key('mobile-detail-actions'),
+        padding: const EdgeInsets.symmetric(vertical: 2),
+        child: Wrap(
+          key: const Key('mobile-detail-primary-actions'),
+          spacing: 8,
+          runSpacing: 8,
+          crossAxisAlignment: WrapCrossAlignment.center,
+          children: [
+            _FocusedViewerButton(
+              key: const Key('focused-detail-previous-button'),
+              onPressed: previous == null
+                  ? null
+                  : () => onSelectPhoto(previous),
+              icon: const Icon(Icons.arrow_back),
+            ),
+            _FocusedViewerButton(
+              key: const Key('focused-detail-next-button'),
+              onPressed: next == null ? null : () => onSelectPhoto(next),
+              icon: const Icon(Icons.arrow_forward),
+            ),
+            _FocusedViewerButton(
+              key: const Key('mobile-detail-favorite-button'),
+              onPressed: onToggleFavorite,
+              highlighted: record.photo.favorite,
+              icon: Icon(
+                record.photo.favorite ? Icons.star : Icons.star_border,
+              ),
+            ),
+            KeyedSubtree(
+              key: const ValueKey<String>('mobile-add-to-memory'),
+              child: _FocusedViewerButton(
+                key: const Key('focused-detail-add-button'),
+                onPressed: onAddToMemory,
+                highlighted: true,
+                icon: const Icon(Icons.add),
+              ),
+            ),
+            KeyedSubtree(
+              key: const ValueKey<String>('mobile-open-gallery'),
+              child: FilledButton.icon(
+                key: const Key('focused-detail-gallery-button'),
+                onPressed: () => onOpenGallery(context),
+                style: FilledButton.styleFrom(
+                  backgroundColor: Colors.white,
+                  foregroundColor: Colors.black,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 12,
+                  ),
+                ),
+                icon: const Icon(Icons.fullscreen),
+                label: Text(_localized(labels, 'Gallery', '图库')),
+              ),
+            ),
+            OutlinedButton.icon(
+              key: const Key('mobile-detail-inspector-sheet-entry'),
+              onPressed: scrollToInspector,
+              style: OutlinedButton.styleFrom(
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 12,
+                ),
+                side: const BorderSide(color: Colors.white24),
+              ),
+              icon: const Icon(Icons.info_outline),
+              label: Text(_localized(labels, 'Details', '详情')),
+            ),
+          ],
+        ),
       );
     }
 
@@ -330,27 +416,37 @@ final class _FocusedDetailSurface extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Wrap(
+                    Row(
                       key: const Key('mobile-detail-topbar'),
-                      spacing: 10,
-                      runSpacing: 8,
-                      crossAxisAlignment: WrapCrossAlignment.center,
                       children: [
-                        Chip(
-                          label: Text(
-                            _localized(labels, 'Detail View', '详情视图'),
+                        Expanded(
+                          child: Wrap(
+                            spacing: 10,
+                            runSpacing: 8,
+                            crossAxisAlignment: WrapCrossAlignment.center,
+                            children: [
+                              Chip(
+                                label: Text(
+                                  _localized(labels, 'Detail View', '详情视图'),
+                                ),
+                                side: const BorderSide(color: Colors.white24),
+                              ),
+                              Text(
+                                '$displayIndex / ${photos.length}',
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.w800,
+                                ),
+                              ),
+                            ],
                           ),
-                          side: const BorderSide(color: Colors.white24),
                         ),
-                        Text(
-                          '$displayIndex / ${photos.length}',
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 18,
-                            fontWeight: FontWeight.w800,
-                          ),
+                        _FocusedViewerButton(
+                          key: const Key('focused-detail-close-button'),
+                          onPressed: onCloseFocused,
+                          icon: const Icon(Icons.close),
                         ),
-                        actions(),
                       ],
                     ),
                     const SizedBox(height: 14),
@@ -360,13 +456,18 @@ final class _FocusedDetailSurface extends StatelessWidget {
                       child: preview(),
                     ),
                     const SizedBox(height: 12),
+                    mobileActions(),
+                    const SizedBox(height: 12),
                     _FocusedFilmstrip(
                       labels: labels,
                       photos: photos,
                       selected: record,
                     ),
                     const SizedBox(height: 14),
-                    inspector(borderRadius: BorderRadius.circular(24)),
+                    KeyedSubtree(
+                      key: inspectorAnchorKey,
+                      child: inspector(borderRadius: BorderRadius.circular(24)),
+                    ),
                   ],
                 ),
               ),

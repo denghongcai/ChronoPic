@@ -3109,6 +3109,90 @@ These are intentionally recorded as candidate directions rather than committed p
   and `git diff --check`.
   iOS live verification remains blocked until macOS/Xcode evidence exists.
 
+### 13. Flutter Mobile UX Refinement From Real Screenshots
+
+- Implementation plan:
+  [docs/superpowers/plans/2026-05-13-flutter-mobile-ux-refinement-real-screenshots.md](docs/superpowers/plans/2026-05-13-flutter-mobile-ux-refinement-real-screenshots.md)
+- Status:
+  complete on 2026-05-14.
+- Source input:
+  real Android screenshots and user-provided mobile UI refine proposal:
+  `.tmp/diagnostics/mobile-import-screenshot.jpg`,
+  `.tmp/screenshots/mobile-count-scroll-2026-05-12.jpg`,
+  and `.tmp/user-input/mobile-ui-refine.png`.
+- Goal:
+  refine the Android mobile UI from real phone evidence now that Phase 11
+  established the mobile-native structure and Phase 12 fixed the count,
+  lazy-thumbnail,
+  and scroll-gesture correctness issues.
+  This phase should make the mobile app easier to scan and operate without
+  changing the local-first data model or scan pipeline.
+- Core decision:
+  this is the formal Phase 13.
+  The earlier `13b` wording was only a candidate label;
+  the durable plan sequence should continue from Phase 12 directly to Phase 13.
+- Planned surfaces:
+  1. Real-screenshot UX audit:
+     record the confirmed issues from the Android import/home screenshot,
+     focused Detail screenshot,
+     and the earlier mobile UI refine proposal.
+  2. Mobile home hierarchy:
+     keep Phase 12 count semantics correct,
+     but reduce repeated first-viewport count copy and make scan/catalog status
+     easier to parse.
+  3. Browse and bottom navigation spacing:
+     keep filter/search/browse controls reachable while ensuring content does not
+     feel clipped by the persistent bottom navigation.
+  4. Focused mobile Detail:
+     prioritize media and a light phone topbar,
+     move inspector/editing affordances into a clearer secondary action,
+     and avoid desktop-like shortcut or command density.
+  5. Mobile Gallery:
+     keep full-result counters,
+     lazy thumbnails,
+     and filmstrip navigation while simplifying mobile action placement.
+  6. Documentation and verification:
+     update the mobile productization contract,
+     mobile E2E evidence notes,
+     and AGENTS execution record after implementation.
+- Implemented result:
+  mobile home now keeps the full indexed count in the All Photos shortcut while
+  the scan/status card communicates readiness or activity instead of repeating
+  the same total.
+  Waterfall browse has explicit mobile bottom spacing around the persistent
+  navigation.
+  Focused Detail now uses a lighter mobile topbar,
+  a separate primary touch-action row,
+  and an inspector/details entry before the edit metadata area.
+  Mobile Gallery now keeps the full-result counter and adds a compact action row
+  for previous,
+  next,
+  and Detail/inspector entry.
+  The app-owned mobile integration test now rejects the old
+  `25 indexed locally` repeated-count copy.
+- Explicit non-goals:
+  do not change repository/domain schemas;
+  do not change Android import count semantics;
+  do not change the lazy-thumbnail pipeline;
+  do not redesign Flutter Linux desktop;
+  do not start Play Store submission work;
+  do not add OCR,
+  vector search,
+  person recognition,
+  cloud sync,
+  AI thumbnail analysis,
+  or EXIF writeback;
+  do not claim iOS live verification from this Linux workstation.
+- Exit gate:
+  complete.
+  Local verification passed with Flutter analyze,
+  focused mobile productization tests,
+  Flutter UI/app tests,
+  app-owned mobile integration test,
+  Android debug APK build,
+  and `git diff --check`.
+  iOS live verification remains blocked until macOS/Xcode evidence exists.
+
 - Person / face grouping:
   add person-like memory grouping only after the app has a real person-recognition or clustering signal.
   Do not pretend to identify people from generic captions or tags.

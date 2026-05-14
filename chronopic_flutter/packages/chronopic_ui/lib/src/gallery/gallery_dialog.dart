@@ -124,6 +124,19 @@ final class _GalleryDialogState extends State<GalleryDialog> {
                   child: _GalleryPreview(record: record, onMove: _move),
                 ),
                 const SizedBox(height: 8),
+                if (mobileLayout) ...[
+                  _MobileGalleryActions(
+                    labels: widget.labels,
+                    onOpenInspector: () => Navigator.of(
+                      context,
+                    ).pop(GalleryDialogResult.detail(record)),
+                    onPrevious: _index <= 0 ? null : () => _move(-1),
+                    onNext: _index >= widget.photos.length - 1
+                        ? null
+                        : () => _move(1),
+                  ),
+                  const SizedBox(height: 8),
+                ],
                 if (mobileLayout)
                   _GalleryMetadataText(
                     captured: captured,
@@ -202,6 +215,79 @@ final class _GalleryDialogState extends State<GalleryDialog> {
     final nextIndex = (_index + delta).clamp(0, widget.photos.length - 1);
     if (nextIndex == _index) return;
     setState(() => _index = nextIndex);
+  }
+}
+
+final class _MobileGalleryActions extends StatelessWidget {
+  const _MobileGalleryActions({
+    required this.labels,
+    required this.onOpenInspector,
+    required this.onPrevious,
+    required this.onNext,
+  });
+
+  final UiStrings labels;
+  final VoidCallback onOpenInspector;
+  final VoidCallback? onPrevious;
+  final VoidCallback? onNext;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      key: const Key('mobile-gallery-actions'),
+      children: [
+        _MobileGalleryActionButton(
+          key: const Key('mobile-gallery-previous-button'),
+          onPressed: onPrevious,
+          icon: const Icon(Icons.chevron_left),
+        ),
+        const SizedBox(width: 8),
+        _MobileGalleryActionButton(
+          key: const Key('mobile-gallery-next-button'),
+          onPressed: onNext,
+          icon: const Icon(Icons.chevron_right),
+        ),
+        const Spacer(),
+        OutlinedButton.icon(
+          key: const Key('mobile-gallery-detail-button'),
+          onPressed: onOpenInspector,
+          style: OutlinedButton.styleFrom(
+            foregroundColor: Colors.white,
+            side: const BorderSide(color: Colors.white24),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+          ),
+          icon: const Icon(Icons.info_outline),
+          label: Text(_localized(labels, 'Details', '详情')),
+        ),
+      ],
+    );
+  }
+}
+
+final class _MobileGalleryActionButton extends StatelessWidget {
+  const _MobileGalleryActionButton({
+    required this.icon,
+    required this.onPressed,
+    super.key,
+  });
+
+  final Widget icon;
+  final VoidCallback? onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return IconButton(
+      onPressed: onPressed,
+      icon: icon,
+      style: IconButton.styleFrom(
+        backgroundColor: Colors.grey.shade900,
+        disabledBackgroundColor: Colors.black,
+        disabledForegroundColor: Colors.grey.shade800,
+        foregroundColor: Colors.white,
+        fixedSize: const Size.square(44),
+        side: const BorderSide(color: Colors.white24),
+      ),
+    );
   }
 }
 

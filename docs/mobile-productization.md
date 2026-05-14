@@ -307,6 +307,73 @@ The largest automated mobile count regression uses a 225-photo fixture and
 asserts `225 indexed` plus `20 loaded / 225 total`.
 iOS live verification remains blocked until macOS/Xcode evidence exists.
 
+## Phase 13 Mobile Real-Screenshot UX Contract
+
+Captured on 2026-05-13 for Phase 13.
+
+- Phase 13 is the formal next phase after Phase 12.
+  The earlier `13b` label was a candidate name and should not be used in durable
+  phase numbering.
+- Source evidence:
+  `.tmp/diagnostics/mobile-import-screenshot.jpg`,
+  `.tmp/screenshots/mobile-count-scroll-2026-05-12.jpg`,
+  and `.tmp/user-input/mobile-ui-refine.png`.
+- Mobile home keeps the correct Phase 12 count semantics but reduces
+  first-viewport repetition.
+  Catalog totals remain visible where labels imply total indexed assets;
+  scan/status cards should communicate readiness or activity rather than repeat
+  the same count.
+- Browse controls stay reachable without visually colliding with the persistent
+  bottom navigation.
+  Waterfall content needs explicit bottom-safe spacing on phone layouts.
+- Focused Detail prioritizes media and a light phone topbar before
+  inspector/editing controls.
+  Desktop shortcut copy remains hidden on mobile.
+- Gallery keeps full-result counters and lazy thumbnails while simplifying
+  mobile action placement around navigation and inspector/detail entry.
+- Settings remains grouped and drill-in based.
+  This phase may polish labels or spacing but does not redesign settings
+  architecture.
+- Android is the live verification target.
+  iOS remains blocked until macOS/Xcode evidence exists.
+
+Local Phase 13 planned gate:
+
+```bash
+cd chronopic_flutter && flutter analyze
+cd chronopic_flutter && flutter test packages/chronopic_ui/test/mobile_productization_test.dart
+cd chronopic_flutter && flutter test packages/chronopic_ui/test apps/chronopic/test
+cd chronopic_flutter && flutter test apps/chronopic/integration_test/mobile_deep_e2e_test.dart
+cd chronopic_flutter/apps/chronopic && flutter build apk --debug
+git diff --check
+```
+
+Phase 13 result captured on 2026-05-14:
+
+- Mobile home still reports the full indexed catalog count in the primary
+  All Photos shortcut,
+  but the scan card now reports readiness/activity instead of repeating the same
+  count as `indexed locally`.
+- The 25-photo and 225-photo mobile fixtures now reject repeated
+  `indexed locally` copy while preserving `25 indexed`,
+  `225 indexed`,
+  and `20 loaded / total` semantics.
+- Waterfall browse adds explicit mobile bottom spacing so the persistent bottom
+  navigation does not visually clip the final content.
+- Focused Detail uses a lighter mobile topbar,
+  a primary touch-action row,
+  and a Details/inspector entry before the edit metadata area.
+- Mobile Gallery keeps the full-result counter and adds compact previous,
+  next,
+  and Details controls.
+- Verification passed with Flutter analyze,
+  focused mobile widget tests,
+  Flutter UI/app tests,
+  app-owned mobile integration test,
+  Android debug APK build,
+  and `git diff --check`.
+- iOS live verification remains blocked until macOS/Xcode evidence exists.
+
 ## Phase 10 Mobile UI Refine Evidence
 
 Captured on 2026-05-10 after the Android package id moved to

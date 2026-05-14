@@ -31,8 +31,14 @@ void main() {
 
     expect(service.countPhotos(), 25);
     expect(find.byKey(const Key('mobile-browse-surface')), findsOneWidget);
+    expect(find.byKey(const Key('mobile-scan-progress-card')), findsOneWidget);
+    expect(
+      find.byKey(const Key('mobile-dashboard-primary-count')),
+      findsOneWidget,
+    );
     expect(find.text('25 indexed'), findsOneWidget);
-    expect(find.text('25 indexed locally'), findsOneWidget);
+    expect(find.text('25 indexed locally'), findsNothing);
+    expect(find.text('Ready for local browsing'), findsOneWidget);
     expect(find.text('20 loaded / 25 total'), findsOneWidget);
     expect(find.text('20 indexed'), findsNothing);
 

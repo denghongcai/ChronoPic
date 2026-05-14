@@ -39,6 +39,7 @@ void main() {
       );
       expect(find.byKey(const Key('mobile-shortcut-memories')), findsOneWidget);
       expect(find.byKey(const Key('mobile-shortcut-settings')), findsOneWidget);
+      expect(find.byKey(const Key('mobile-bottom-navigation')), findsOneWidget);
       expect(find.byKey(const Key('mobile-bottom-waterfall')), findsOneWidget);
       expect(find.byKey(const Key('mobile-bottom-map')), findsOneWidget);
       expect(find.byKey(const Key('mobile-bottom-timeline')), findsOneWidget);
@@ -150,6 +151,14 @@ void main() {
     expect(find.byKey(const Key('mobile-detail-topbar')), findsOneWidget);
     expect(find.byKey(const Key('mobile-detail-media')), findsOneWidget);
     expect(find.byKey(const Key('mobile-detail-actions')), findsOneWidget);
+    expect(
+      find.byKey(const Key('mobile-detail-primary-actions')),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(const Key('mobile-detail-inspector-sheet-entry')),
+      findsOneWidget,
+    );
     expect(find.byKey(const Key('mobile-open-gallery')), findsWidgets);
     expect(find.textContaining('Esc close'), findsNothing);
     expect(find.textContaining('Left/Right'), findsNothing);
@@ -215,8 +224,12 @@ void main() {
     expect(find.byKey(const Key('mobile-browse-surface')), findsOneWidget);
     expect(find.byKey(const Key('filter-toggle-button')), findsOneWidget);
     expect(find.byKey(const Key('mobile-select-mode')), findsOneWidget);
+    expect(
+      find.byKey(const Key('mobile-dashboard-primary-count')),
+      findsOneWidget,
+    );
     expect(find.text('25 indexed'), findsOneWidget);
-    expect(find.text('25 indexed locally'), findsOneWidget);
+    expect(find.text('25 indexed locally'), findsNothing);
     expect(find.text('20 loaded / 25 total'), findsOneWidget);
 
     await tester.ensureVisible(find.byKey(const Key('filter-toggle-button')));
@@ -236,6 +249,10 @@ void main() {
       10000,
     );
     await tester.pumpAndSettle();
+    expect(
+      find.byKey(const Key('mobile-browse-bottom-spacer')),
+      findsOneWidget,
+    );
 
     final scrollable = tester.state<ScrollableState>(
       find
@@ -282,7 +299,7 @@ void main() {
 
     expect(service.countPhotos(), 225);
     expect(find.text('225 indexed'), findsOneWidget);
-    expect(find.text('225 indexed locally'), findsOneWidget);
+    expect(find.text('225 indexed locally'), findsNothing);
     expect(find.text('20 loaded / 225 total'), findsOneWidget);
     expect(find.text('20 indexed'), findsNothing);
   });
@@ -339,6 +356,14 @@ void main() {
       expect(find.byKey(const Key('focused-detail-view')), findsOneWidget);
       expect(find.text('1 / 25'), findsOneWidget);
       expect(find.text('1 / 20'), findsNothing);
+
+      await tester.tap(find.byKey(const Key('focused-detail-gallery-button')));
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(const Key('gallery-counter')), findsOneWidget);
+      expect(find.byKey(const Key('mobile-gallery-actions')), findsOneWidget);
+      expect(find.byKey(const Key('open-inspector-button')), findsOneWidget);
+      expect(find.text('1 / 25'), findsOneWidget);
     },
   );
 
