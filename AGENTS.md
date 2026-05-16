@@ -7546,6 +7546,89 @@ This file is the local execution record for ChronoPic. It complements `PLAN.md` 
   signing,
   or device evidence.
 
+### 2026-05-15 Step 272
+
+- Executed Phase 14:
+  `Flutter Mobile Memory Creation Completion`.
+- Replaced the previous prompt-only mobile Create Memory path with an app-owned
+  mobile creation sheet that supports:
+  photo selection,
+  visible selected count,
+  required selection before details,
+  title editing,
+  optional description editing,
+  cover choice,
+  confirmation,
+  and post-confirm navigation to the created memory detail page.
+- Wired the completed flow through the Memories page Create Memory action,
+  the home first-memory CTA,
+  and the selected-photo Detail/Add-to-Memory fallback when no target memory is
+  selected.
+- Kept the implementation on existing local-first memory semantics:
+  `ChronoPicAppService.createMemory`,
+  `addPhotoToMemory`,
+  `setMemoryCover`,
+  and the existing editable memory detail surface.
+- Preserved Phase 12/13 mobile browse behavior by adding regression coverage
+  that dragging inside the mobile creation selector does not open focused
+  Detail.
+- Updated durable docs:
+  `PLAN.md`,
+  `docs/flutter-refactor-phases.md`,
+  `docs/mobile-productization.md`,
+  `docs/mobile-e2e-verification.md`,
+  and the Phase 14 implementation plan.
+- Verification scenes from `docs/agent-verification-script.md`:
+  Scene 3 is covered by mobile scan/browse/count widget tests,
+  Scene 4 is covered by the new mobile creation sheet and memory detail tests,
+  Scene 7 remains covered by the app-owned mobile backup/restart integration
+  path,
+  and Scene 8 remains covered by settings/locale persistence in the same
+  integration path.
+  Electron Playwright Scene 1 was skipped because this phase changes Flutter
+  mobile memory UX,
+  not the Electron runtime surface.
+- Verification commands passed:
+  `cd chronopic_flutter && flutter analyze`,
+  `cd chronopic_flutter && flutter test packages/chronopic_ui/test/mobile_productization_test.dart`,
+  `cd chronopic_flutter && flutter test packages/chronopic_ui/test apps/chronopic/test`,
+  `cd chronopic_flutter && flutter test apps/chronopic/integration_test/mobile_deep_e2e_test.dart`,
+  `cd chronopic_flutter/apps/chronopic && flutter build apk --debug`,
+  and
+  `git diff --check`.
+- Known verification note:
+  the integration test command still prints Flutter's known
+  `integration_test` plugin warning,
+  but the command exited 0 with `All tests passed`.
+- Skipped:
+  iOS live scenes remain blocked because this Linux workstation cannot provide
+  macOS/Xcode simulator,
+  signing,
+  or device evidence.
+
+### 2026-05-15 Step 271
+
+- Planned the next numbered Flutter phase:
+  `14. Flutter Mobile Memory Creation Completion`.
+- Added the implementation plan:
+  `docs/superpowers/plans/2026-05-15-flutter-mobile-memory-creation-completion.md`.
+- Updated `PLAN.md` with Phase 14 source input,
+  goal,
+  current gap,
+  planned mobile surfaces,
+  explicit non-goals,
+  and exit gate.
+- Updated `docs/flutter-refactor-phases.md` so Phase 14 follows Phase 13 in the
+  durable Flutter tracker.
+- Updated `docs/mobile-productization.md` with the Phase 14 mobile memory
+  creation contract and planned local gate.
+- Updated `docs/mobile-e2e-verification.md` with the planned Phase 14 widget and
+  app-owned integration evidence.
+- No implementation code was changed in this step.
+- Verification:
+  placeholder scan for the new plan found no unresolved markers,
+  and `git diff --check` passed.
+
 ### 2026-05-11 Step 262
 
 - Published `v0.1.8`.

@@ -374,6 +374,73 @@ Phase 13 result captured on 2026-05-14:
   and `git diff --check`.
 - iOS live verification remains blocked until macOS/Xcode evidence exists.
 
+## Phase 14 Mobile Memory Creation Completion Contract
+
+Captured on 2026-05-15 and completed locally during Phase 14.
+
+- Mobile Create Memory should complete the actual creation lifecycle rather than
+  only guiding the user with static wizard copy.
+- Entry points:
+  Memories page Create Memory,
+  home first-memory CTA when photos exist and no memories exist,
+  and selected-photo Detail/Add-to-Memory fallback when no target memory exists.
+- Photo selection:
+  at least one selected photo is required before moving to details;
+  the selected count is visible;
+  the flow uses selectable mobile photo affordances;
+  and Phase 12/13 scroll/tap correctness remains intact.
+- Details:
+  title is required with a safe default;
+  description is optional;
+  cover is selected from the chosen photos;
+  and confirmation summarizes title,
+  photo count,
+  description,
+  and cover before commit.
+- Commit semantics:
+  accepted drafts create a normal editable `Memory`,
+  attach selected photos through existing memory-photo membership,
+  set the selected cover,
+  clear draft state,
+  and open the created memory detail page.
+- Desktop Create Memory behavior remains unchanged.
+- Android is the live verification target.
+  iOS remains blocked until macOS/Xcode evidence exists.
+
+Phase 14 implementation result:
+
+- The Memories page Create Memory action opens a mobile creation sheet.
+- The home first-memory CTA opens the same flow after photos exist.
+- The selected-photo Detail/Add-to-Memory fallback can seed the draft with the
+  focused photo when no target memory exists.
+- The sheet requires at least one selected photo before details,
+  shows the selected count,
+  captures title,
+  optional description,
+  and cover selection,
+  then confirms before commit.
+- Accepted drafts create a normal editable `Memory`,
+  attach selected photos through existing memory-photo membership,
+  set the selected cover,
+  clear draft state,
+  and open the created memory detail page.
+- Desktop Create Memory behavior remains unchanged.
+
+Local Phase 14 verification:
+
+```bash
+cd chronopic_flutter && flutter analyze
+cd chronopic_flutter && flutter test packages/chronopic_ui/test/mobile_productization_test.dart
+cd chronopic_flutter && flutter test packages/chronopic_ui/test apps/chronopic/test
+cd chronopic_flutter && flutter test apps/chronopic/integration_test/mobile_deep_e2e_test.dart
+cd chronopic_flutter/apps/chronopic && flutter build apk --debug
+git diff --check
+```
+
+The app-owned integration command still prints Flutter's known
+`integration_test` plugin warning,
+but exited 0 with `All tests passed`.
+
 ## Phase 10 Mobile UI Refine Evidence
 
 Captured on 2026-05-10 after the Android package id moved to

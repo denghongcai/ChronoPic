@@ -300,6 +300,37 @@ Actions workflow:
 - Skipped:
   no iOS live evidence is claimed from this Linux workstation.
 
+2026-05-15 Phase 14 mobile memory creation completion evidence:
+
+- App-owned mobile integration verifies that the Memories shortcut exposes the
+  creation flow after import,
+  creates a memory through the sheet,
+  edits title/description,
+  removes the linked photo,
+  and survives the backup/restart path.
+- Focused widget coverage verifies:
+  photo selection,
+  selected count,
+  disabled progression with no selected photos,
+  title editing,
+  optional description editing,
+  cover choice,
+  confirmation,
+  and navigation to the created memory detail page.
+- Regression coverage preserves Phase 12/13 scroll/tap behavior:
+  dragging inside the mobile creation selector does not open focused Detail.
+- Runtime artifact evidence remains:
+  `cd chronopic_flutter/apps/chronopic && flutter build apk --debug`.
+- Commands passed:
+  `cd chronopic_flutter && flutter analyze`;
+  `cd chronopic_flutter && flutter test packages/chronopic_ui/test/mobile_productization_test.dart`;
+  `cd chronopic_flutter && flutter test packages/chronopic_ui/test apps/chronopic/test`;
+  `cd chronopic_flutter && flutter test apps/chronopic/integration_test/mobile_deep_e2e_test.dart`;
+  `cd chronopic_flutter/apps/chronopic && flutter build apk --debug`;
+  and `git diff --check`.
+- Skipped:
+  no iOS live evidence is claimed from this Linux workstation.
+
 ### Android App-Owned Integration Test
 
 ```bash

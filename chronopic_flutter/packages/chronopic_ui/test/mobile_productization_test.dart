@@ -427,43 +427,154 @@ void main() {
     );
   });
 
-  testWidgets('mobile memory creation opens a guided wizard', (tester) async {
-    tester.view.physicalSize = const Size(390, 844);
-    tester.view.devicePixelRatio = 1;
-    addTearDown(() {
-      tester.view.resetPhysicalSize();
-      tester.view.resetDevicePixelRatio();
-    });
+  testWidgets(
+    'mobile memory creation selects photos and opens created detail',
+    (tester) async {
+      tester.view.physicalSize = const Size(390, 844);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(() {
+        tester.view.resetPhysicalSize();
+        tester.view.resetDevicePixelRatio();
+      });
 
-    await tester.pumpWidget(
-      ChronoPicHome(
-        service: ChronoPicAppService(ChronoPicRepository()),
-        entryModeOverride: ChronoPicEntryMode.mobilePhotoLibrary,
-        mobileMediaSourceFactory: () => _mobileSource(),
-      ),
-    );
+      final service = ChronoPicAppService(ChronoPicRepository());
+      await tester.pumpWidget(
+        ChronoPicHome(
+          service: service,
+          entryModeOverride: ChronoPicEntryMode.mobilePhotoLibrary,
+          mobileMediaSourceFactory: () => _mobileSource(count: 3),
+        ),
+      );
 
-    await tester.ensureVisible(
-      find.byKey(const Key('mobile-shortcut-memories')),
-    );
-    await tester.pump();
-    await tester.tap(find.byKey(const Key('mobile-shortcut-memories')));
-    await tester.pumpAndSettle();
-    await tester.tap(find.byKey(const Key('mobile-create-memory')));
-    await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('choose-photo-library-button')));
+      await tester.pump();
+      await tester.runAsync(() async {
+        for (var attempt = 0; attempt < 80; attempt += 1) {
+          if (service.countPhotos() == 3) return;
+          await Future<void>.delayed(const Duration(milliseconds: 25));
+        }
+      });
+      await tester.pumpAndSettle();
 
-    expect(find.byKey(const Key('mobile-memory-wizard')), findsOneWidget);
-    expect(find.byKey(const Key('mobile-memory-step-select')), findsOneWidget);
-    expect(find.byKey(const Key('mobile-memory-next')), findsOneWidget);
+      await tester.ensureVisible(
+        find.byKey(const Key('mobile-shortcut-memories')),
+      );
+      await tester.pump();
+      await tester.tap(find.byKey(const Key('mobile-shortcut-memories')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('mobile-create-memory')));
+      await tester.pumpAndSettle();
 
-    await tester.tap(find.byKey(const Key('mobile-memory-next')));
-    await tester.pumpAndSettle();
-    expect(find.byKey(const Key('mobile-memory-step-edit')), findsOneWidget);
+      expect(
+        find.byKey(const Key('mobile-memory-creation-sheet')),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const Key('mobile-memory-step-select')),
+        findsOneWidget,
+      );
+      expect(find.byKey(const Key('mobile-memory-next')), findsOneWidget);
 
-    await tester.tap(find.byKey(const Key('mobile-memory-next')));
-    await tester.pumpAndSettle();
-    expect(find.byKey(const Key('mobile-memory-step-confirm')), findsOneWidget);
-  });
+      await tester.drag(
+        find.byKey(const Key('mobile-memory-select-asset-1')),
+        const Offset(0, -160),
+      );
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('focused-detail-view')), findsNothing);
+      expect(
+        find.byKey(const Key('mobile-memory-creation-sheet')),
+        findsOneWidget,
+      );
+
+      await tester.tap(find.byKey(const Key('mobile-memory-select-asset-1')));
+      await tester.tap(find.byKey(const Key('mobile-memory-select-asset-2')));
+      await tester.pumpAndSettle();
+      expect(find.text('2 selected'), findsOneWidget);
+
+      await tester.tap(find.byKey(const Key('mobile-memory-next')));
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('mobile-memory-step-edit')), findsOneWidget);
+      await tester.enterText(
+        find.byKey(const Key('mobile-memory-title-field')),
+        'Weekend Walk',
+      );
+      await tester.enterText(
+        find.byKey(const Key('mobile-memory-description-field')),
+        'Two favorite moments from the phone library.',
+      );
+      await tester.tap(find.byKey(const Key('mobile-memory-cover-asset-2')));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byKey(const Key('mobile-memory-next')));
+      await tester.pumpAndSettle();
+      expect(
+        find.byKey(const Key('mobile-memory-step-confirm')),
+        findsOneWidget,
+      );
+      expect(find.text('Weekend Walk'), findsWidgets);
+      expect(find.text('2 photos'), findsOneWidget);
+
+      await tester.tap(find.byKey(const Key('mobile-memory-create-confirm')));
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(const Key('memory-detail-panel')), findsOneWidget);
+      expect(find.text('Weekend Walk'), findsWidgets);
+      expect(service.listMemories(), hasLength(1));
+      expect(
+        service.listPhotos(
+          PhotoFilter(memoryId: service.listMemories().single.id, limit: 10),
+        ),
+        hasLength(2),
+      );
+    },
+  );
+
+  testWidgets(
+    'mobile memory creation requires selected photos before details',
+    (tester) async {
+      tester.view.physicalSize = const Size(390, 844);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(() {
+        tester.view.resetPhysicalSize();
+        tester.view.resetDevicePixelRatio();
+      });
+
+      final service = ChronoPicAppService(ChronoPicRepository());
+      await tester.pumpWidget(
+        ChronoPicHome(
+          service: service,
+          entryModeOverride: ChronoPicEntryMode.mobilePhotoLibrary,
+          mobileMediaSourceFactory: () => _mobileSource(count: 2),
+        ),
+      );
+
+      await tester.tap(find.byKey(const Key('choose-photo-library-button')));
+      await tester.pump();
+      await tester.runAsync(() async {
+        for (var attempt = 0; attempt < 80; attempt += 1) {
+          if (service.countPhotos() == 2) return;
+          await Future<void>.delayed(const Duration(milliseconds: 25));
+        }
+      });
+      await tester.pumpAndSettle();
+
+      await tester.ensureVisible(
+        find.byKey(const Key('mobile-create-first-memory')),
+      );
+      await tester.pump();
+      await tester.tap(find.byKey(const Key('mobile-create-first-memory')));
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(const Key('mobile-memory-next')), findsOneWidget);
+      expect(
+        tester
+            .widget<FilledButton>(find.byKey(const Key('mobile-memory-next')))
+            .onPressed,
+        isNull,
+      );
+      expect(find.text('Select at least one photo'), findsOneWidget);
+    },
+  );
 }
 
 FixtureMediaSource _mobileSource({

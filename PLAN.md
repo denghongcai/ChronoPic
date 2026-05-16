@@ -3193,6 +3193,86 @@ These are intentionally recorded as candidate directions rather than committed p
   and `git diff --check`.
   iOS live verification remains blocked until macOS/Xcode evidence exists.
 
+### 14. Flutter Mobile Memory Creation Completion
+
+- Implementation plan:
+  [docs/superpowers/plans/2026-05-15-flutter-mobile-memory-creation-completion.md](docs/superpowers/plans/2026-05-15-flutter-mobile-memory-creation-completion.md)
+- Status:
+  completed locally on 2026-05-15.
+- Source input:
+  user selected `Mobile Memory Creation Completion` as the next phase after
+  Phase 13 and `v0.1.11`.
+- Goal:
+  complete the phone-native memory creation flow so Android users can select
+  photos,
+  edit title and description,
+  choose a cover,
+  confirm creation,
+  and land on the editable memory detail page.
+- Closed gap:
+  Phase 11 added a guided mobile Create Memory wizard,
+  but the mobile flow was still mostly a prompt sequence.
+  Phase 14 replaces that prompt-only path with a real local creation lifecycle
+  from selected photos through cover choice and post-confirm navigation.
+- Core decision:
+  Phase 14 should use existing local-first memory semantics.
+  Creating a mobile memory must create a normal editable `Memory`,
+  link photos through the existing memory-photo relationship,
+  and use existing cover and detail editing behavior after confirmation.
+- Implemented surfaces:
+  1. Mobile entry points:
+     Memories page Create Memory,
+     home first-memory CTA,
+     and selected-photo Detail/Add-to-Memory fallback.
+  2. Photo selection:
+     selectable mobile photo tiles,
+     visible selected count,
+     no progression to details until at least one photo is selected,
+     and preserved Phase 12/13 scroll/tap semantics.
+  3. Details and cover:
+     title field,
+     optional description field,
+     selected-photo cover strip,
+     and a confirm summary before commit.
+  4. Commit and navigation:
+     create the memory through `ChronoPicAppService.createMemory`,
+     attach selected photos through `addPhotoToMemory`,
+     set the selected cover,
+     clear draft state,
+     and open the created memory detail page.
+  5. Verification:
+     focused mobile widget tests,
+     app-owned mobile integration coverage,
+     Flutter analyze,
+     Android debug APK build,
+     docs update,
+     and `git diff --check`.
+- Explicit non-goals:
+  do not change repository/domain schemas;
+  do not change Android import count semantics;
+  do not change the lazy-thumbnail pipeline;
+  do not redesign Flutter Linux desktop;
+  do not start Play Store submission work;
+  do not add OCR,
+  vector search,
+  person recognition,
+  cloud sync,
+  AI thumbnail analysis,
+  or EXIF writeback;
+  do not claim iOS live verification from this Linux workstation.
+- Exit gate:
+  completed locally.
+  Verification evidence:
+  `cd chronopic_flutter && flutter analyze`;
+  `cd chronopic_flutter && flutter test packages/chronopic_ui/test/mobile_productization_test.dart`;
+  `cd chronopic_flutter && flutter test packages/chronopic_ui/test apps/chronopic/test`;
+  `cd chronopic_flutter && flutter test apps/chronopic/integration_test/mobile_deep_e2e_test.dart`;
+  `cd chronopic_flutter/apps/chronopic && flutter build apk --debug`;
+  and `git diff --check`.
+  The integration test still prints Flutter's known `integration_test` plugin
+  warning,
+  but exited 0 with `All tests passed`.
+
 - Person / face grouping:
   add person-like memory grouping only after the app has a real person-recognition or clustering signal.
   Do not pretend to identify people from generic captions or tags.

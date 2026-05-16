@@ -15,6 +15,7 @@ part 'gallery/gallery_dialog.dart';
 part 'home/home_page.dart';
 part 'l10n/ui_strings.dart';
 part 'memories/memory_pages.dart';
+part 'memories/mobile_memory_creation.dart';
 part 'settings/settings_pages.dart';
 part 'shell/desktop_shell.dart';
 part 'theme/chronopic_theme.dart';
@@ -90,6 +91,10 @@ final class _ChronoPicHomeState extends State<ChronoPicHome> {
   final TextEditingController _memoryTitleController = TextEditingController();
   final TextEditingController _memoryDescriptionController =
       TextEditingController();
+  final TextEditingController _mobileMemoryTitleController =
+      TextEditingController();
+  final TextEditingController _mobileMemoryDescriptionController =
+      TextEditingController();
   final TextEditingController _aiProviderController = TextEditingController();
   final TextEditingController _aiBaseUrlController = TextEditingController();
   final TextEditingController _aiModelController = TextEditingController();
@@ -126,6 +131,8 @@ final class _ChronoPicHomeState extends State<ChronoPicHome> {
   SortDirection _sortDirection = SortDirection.desc;
   String? _selectedMemoryId;
   String _status = uiStrings[UiLocale.en]!.scanIdle;
+  final Set<String> _mobileMemoryDraftPhotoIds = <String>{};
+  String? _mobileMemoryCoverPhotoId;
   int _photoResultLimit = _photoPageSize;
   bool _hasMoreVisiblePhotos = false;
   MediaSourceAdapter? _activeMobileMediaSource;
@@ -150,6 +157,8 @@ final class _ChronoPicHomeState extends State<ChronoPicHome> {
     _memoryNameController.dispose();
     _memoryTitleController.dispose();
     _memoryDescriptionController.dispose();
+    _mobileMemoryTitleController.dispose();
+    _mobileMemoryDescriptionController.dispose();
     _aiProviderController.dispose();
     _aiBaseUrlController.dispose();
     _aiModelController.dispose();
@@ -262,6 +271,7 @@ final class _ChronoPicHomeState extends State<ChronoPicHome> {
           memoryNameController: _memoryNameController,
           onAcceptCandidate: _acceptMemoryCandidate,
           onCreateMemory: _createMemory,
+          onCreateMobileMemory: _openMobileMemoryCreationFlow,
           onGenerateCandidates: _refreshMemoryCandidates,
           onRejectCandidate: _rejectMemoryCandidate,
           onSelectMemory: _selectMemory,
@@ -352,8 +362,7 @@ final class _ChronoPicHomeState extends State<ChronoPicHome> {
           onChoosePhotos: _scanPhotoLibrary,
           onCloseFocusedDetail: _closeFocusedDetail,
           onClearFilters: _clearFilters,
-          onCreateFirstMemory: () =>
-              setState(() => _page = _DesktopPage.memories),
+          onCreateFirstMemory: _createFirstMemoryFromHome,
           onFilterApply: _applyFilters,
           onFilterPanelToggle: () =>
               setState(() => _filterPanelOpen = !_filterPanelOpen),
@@ -689,6 +698,13 @@ final class _ChronoPicHomeState extends State<ChronoPicHome> {
     if (_selectedMemoryId != null) {
       _addSelectedToMemory();
       return;
+    }
+    if (_entryMode == ChronoPicEntryMode.mobilePhotoLibrary) {
+      final context = _navigatorKey.currentContext;
+      if (context != null) {
+        _openMobileMemoryCreationFlow(context, seedPhoto: _selected);
+        return;
+      }
     }
     setState(() {
       _detailCaptureFirst = false;
@@ -1297,6 +1313,144 @@ final class _ChronoPicHomeState extends State<ChronoPicHome> {
       _page = _DesktopPage.memoryDetail;
       _status = _labelValue(_tr('Created memory', '已创建记忆'), memory.name);
     });
+  }
+
+  void _createFirstMemoryFromHome() {
+    if (_entryMode == ChronoPicEntryMode.mobilePhotoLibrary) {
+      final context = _navigatorKey.currentContext;
+      if (context != null) {
+        _openMobileMemoryCreationFlow(context);
+        return;
+      }
+    }
+    setState(() => _page = _DesktopPage.memories);
+  }
+
+  Future<void> _openMobileMemoryCreationFlow(
+    BuildContext context, {
+    PhotoRecord? seedPhoto,
+  }) async {
+    _resetMobileMemoryDraft(seedPhoto: seedPhoto);
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
+      builder: (sheetContext) {
+        return StatefulBuilder(
+          builder: (context, setSheetState) {
+            void refreshSheet(VoidCallback mutation) {
+              setState(mutation);
+              setSheetState(() {});
+            }
+
+            return _PhotoThumbnailLoaderScope(
+              loader: _loadThumbnailBytes,
+              child: MobileMemoryCreationSheet(
+                coverPhotoId: _mobileMemoryCoverPhotoId,
+                descriptionController: _mobileMemoryDescriptionController,
+                hasMorePhotos: _visiblePhotoPage().hasMore,
+                labels: _l10n,
+                onCommit: () => _commitMobileMemoryDraft(sheetContext),
+                onLoadMorePhotos: () {
+                  refreshSheet(() => _photoResultLimit += _photoPageSize);
+                },
+                onSetCover: (photoId) {
+                  refreshSheet(() => _setMobileMemoryDraftCover(photoId));
+                },
+                onTogglePhoto: (photoId) {
+                  refreshSheet(() => _toggleMobileMemoryDraftPhoto(photoId));
+                },
+                photos: _visiblePhotoPage().photos,
+                selectedPhotoIds: _mobileMemoryDraftPhotoIds,
+                titleController: _mobileMemoryTitleController,
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  void _resetMobileMemoryDraft({PhotoRecord? seedPhoto}) {
+    _mobileMemoryDraftPhotoIds.clear();
+    _mobileMemoryTitleController.text = _localized(_l10n, 'New Memory', '新记忆');
+    _mobileMemoryDescriptionController.clear();
+    _mobileMemoryCoverPhotoId = null;
+    if (seedPhoto != null) {
+      _mobileMemoryDraftPhotoIds.add(seedPhoto.photo.id);
+      _mobileMemoryCoverPhotoId = seedPhoto.photo.id;
+    }
+  }
+
+  void _toggleMobileMemoryDraftPhoto(String photoId) {
+    if (_mobileMemoryDraftPhotoIds.contains(photoId)) {
+      _mobileMemoryDraftPhotoIds.remove(photoId);
+      if (_mobileMemoryCoverPhotoId == photoId) {
+        _mobileMemoryCoverPhotoId = _mobileMemoryDraftPhotoIds.isEmpty
+            ? null
+            : _mobileMemoryDraftPhotoIds.first;
+      }
+      return;
+    }
+    _mobileMemoryDraftPhotoIds.add(photoId);
+    _mobileMemoryCoverPhotoId ??= photoId;
+  }
+
+  void _setMobileMemoryDraftCover(String photoId) {
+    if (!_mobileMemoryDraftPhotoIds.contains(photoId)) return;
+    _mobileMemoryCoverPhotoId = photoId;
+  }
+
+  void _commitMobileMemoryDraft(BuildContext context) {
+    final selectedIds = _mobileMemoryDraftPhotoIds.toList(growable: false);
+    if (selectedIds.isEmpty) {
+      setState(
+        () => _status = _localized(
+          _l10n,
+          'Select at least one photo',
+          '请至少选择一张照片',
+        ),
+      );
+      return;
+    }
+
+    final title = _mobileMemoryTitleController.text.trim().isEmpty
+        ? _localized(_l10n, 'New Memory', '新记忆')
+        : _mobileMemoryTitleController.text.trim();
+    final description = _mobileMemoryDescriptionController.text.trim();
+    final memory = _service.createMemory(
+      title,
+      description: description.isEmpty ? null : description,
+    );
+    for (final photoId in selectedIds) {
+      _service.addPhotoToMemory(memory.id, photoId);
+    }
+    _service.setMemoryCover(
+      memory.id,
+      _mobileMemoryCoverPhotoId ?? selectedIds.first,
+    );
+    final memoryPhotos = _service.listPhotos(
+      PhotoFilter(memoryId: memory.id, limit: 1),
+    );
+
+    setState(() {
+      _selectedMemoryId = memory.id;
+      _memoryTitleController.text = title;
+      _memoryDescriptionController.text = description;
+      _page = _DesktopPage.memoryDetail;
+      _detailCaptureFirst = false;
+      _selected = memoryPhotos.isEmpty ? null : memoryPhotos.first;
+      if (_selected != null) {
+        _setSelectedPhoto(_selected!);
+      }
+      _status = _labelValue(
+        _localized(_l10n, 'Created memory', '已创建记忆'),
+        title,
+      );
+      _mobileMemoryDraftPhotoIds.clear();
+      _mobileMemoryCoverPhotoId = null;
+    });
+    Navigator.of(context).pop();
   }
 
   void _refreshMemoryCandidates() {

@@ -172,22 +172,31 @@ Future<void> _exerciseMemoryLifecycle(
   );
   await _tapVisible(tester, find.byKey(const Key('mobile-shortcut-memories')));
   await _tapVisible(tester, find.byKey(const Key('mobile-create-memory')));
+  expect(find.byKey(const Key('mobile-memory-creation-sheet')), findsOneWidget);
+  expect(find.byKey(const Key('mobile-memory-step-select')), findsOneWidget);
+  await _tapVisible(tester, find.byKey(Key('mobile-memory-select-$photoId')));
   await _tapVisible(tester, find.byKey(const Key('mobile-memory-next')));
   await _enterVisibleText(
     tester,
-    find.byKey(const Key('mobile-memory-name-field')),
+    find.byKey(const Key('mobile-memory-title-field')),
     'Mobile E2E Memory',
   );
+  await _enterVisibleText(
+    tester,
+    find.byKey(const Key('mobile-memory-description-field')),
+    'Mobile workflow verified.',
+  );
+  await _tapVisible(tester, find.byKey(Key('mobile-memory-cover-$photoId')));
   await _tapVisible(tester, find.byKey(const Key('mobile-memory-next')));
-  await _tapVisible(tester, find.byKey(const Key('mobile-memory-next')));
+  expect(find.byKey(const Key('mobile-memory-step-confirm')), findsOneWidget);
+  await _tapVisible(
+    tester,
+    find.byKey(const Key('mobile-memory-create-confirm')),
+  );
 
   final memory = service.listMemories().single;
   expect(find.byKey(const Key('memory-detail-panel')), findsOneWidget);
-
-  await _tapVisible(tester, find.byKey(const Key('add-to-memory-button')));
   expect(service.createBackup().memoryPhotos.single.photoId, photoId);
-
-  await _tapVisible(tester, find.byKey(const Key('set-memory-cover-button')));
   expect(service.getMemory(memory.id)!.coverPhotoId, photoId);
 
   await _enterVisibleText(

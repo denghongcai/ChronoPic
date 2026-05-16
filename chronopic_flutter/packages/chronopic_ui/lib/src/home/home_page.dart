@@ -299,7 +299,10 @@ final class HomePage extends StatelessWidget {
                       onCreateFirstMemory: onCreateFirstMemory,
                     ),
                   if (hasPhotos && memories.isEmpty)
-                    GuidedNextStepPanel(labels: labels),
+                    GuidedNextStepPanel(
+                      labels: labels,
+                      onCreateFirstMemory: onCreateFirstMemory,
+                    ),
                   const SizedBox(height: 18),
                   if (hasPhotos && browseMode == BrowseMode.waterfall)
                     const SizedBox(
@@ -1148,32 +1151,55 @@ final class _SmallBadge extends StatelessWidget {
 }
 
 final class GuidedNextStepPanel extends StatelessWidget {
-  const GuidedNextStepPanel({required this.labels});
+  const GuidedNextStepPanel({
+    required this.labels,
+    required this.onCreateFirstMemory,
+  });
 
   final UiStrings labels;
+  final VoidCallback onCreateFirstMemory;
 
   @override
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 18),
       child: _Panel(
-        child: Row(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Icon(Icons.auto_awesome, color: Colors.amber.shade700),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Text(
-                _localized(
-                  labels,
-                  'Create a memory from selected photos, or use filters to shape a story before saving it.',
-                  '从选中的照片创建记忆，或先用筛选塑造故事再保存。',
+            Row(
+              children: [
+                Icon(Icons.auto_awesome, color: Colors.amber.shade700),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    _localized(
+                      labels,
+                      'Create a memory from selected photos, or use filters to shape a story before saving it.',
+                      '从选中的照片创建记忆，或先用筛选塑造故事再保存。',
+                    ),
+                    style: TextStyle(color: Colors.grey.shade700),
+                  ),
                 ),
-                style: TextStyle(color: Colors.grey.shade700),
-              ),
+              ],
             ),
-            Text(
-              labels.memories,
-              style: Theme.of(context).textTheme.labelMedium,
+            const SizedBox(height: 12),
+            Wrap(
+              spacing: 10,
+              runSpacing: 8,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              children: [
+                Text(
+                  labels.memories,
+                  style: Theme.of(context).textTheme.labelMedium,
+                ),
+                FilledButton.icon(
+                  key: const Key('mobile-create-first-memory'),
+                  onPressed: onCreateFirstMemory,
+                  icon: const Icon(Icons.auto_stories_outlined, size: 18),
+                  label: Text(labels.createMemory),
+                ),
+              ],
             ),
           ],
         ),

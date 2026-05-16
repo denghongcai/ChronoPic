@@ -1467,3 +1467,76 @@ Phase 13 verification result:
 - `cd chronopic_flutter/apps/chronopic && flutter build apk --debug` built
   `build/app/outputs/flutter-apk/app-debug.apk`.
 - `git diff --check` passed.
+
+## Phase 14: Flutter Mobile Memory Creation Completion
+
+Status:
+completed locally on 2026-05-15.
+
+Purpose:
+complete the mobile-native Create Memory workflow after Phase 13.
+Phase 11 introduced a guided phone wizard,
+but the previous flow still did not complete the full product loop:
+select photos,
+edit memory title and description,
+choose a cover,
+confirm,
+and open the created editable memory detail page.
+
+Plan:
+
+- [docs/superpowers/plans/2026-05-15-flutter-mobile-memory-creation-completion.md](superpowers/plans/2026-05-15-flutter-mobile-memory-creation-completion.md)
+
+Completed work:
+
+- Move mobile Create Memory orchestration into the app-owned Flutter UI state so
+  it can access visible photos,
+  selected photo IDs,
+  title/description draft fields,
+  cover choice,
+  and post-confirm navigation.
+- Replace the prompt-only mobile wizard with a phone sheet that has three
+  concrete stages:
+  photo selection,
+  details/cover editing,
+  and final confirmation.
+- Keep desktop Create Memory behavior unchanged.
+- Commit accepted mobile drafts through existing service calls:
+  `createMemory`,
+  `addPhotoToMemory`,
+  and `setMemoryCover`.
+- Preserve Phase 12 and Phase 13 mobile browse semantics:
+  drag/scroll does not open Detail,
+  normal mobile tap behavior outside selection remains unchanged,
+  and full-result counters/lazy thumbnails are not reworked.
+- Extend mobile widget and app-owned integration coverage so the flow is tested
+  as behavior rather than only wizard presence.
+
+Explicit non-goals:
+
+- No repository/domain schema changes.
+- No Android import pipeline changes.
+- No lazy-thumbnail pipeline changes.
+- No Flutter Linux desktop redesign.
+- No Play Store submission work.
+- No OCR,
+  vector search,
+  person recognition,
+  cloud sync,
+  AI thumbnail analysis,
+  or EXIF writeback.
+- No iOS live verification claim from this Linux workstation.
+
+Exit gate:
+
+- `cd chronopic_flutter && flutter analyze` passed.
+- `cd chronopic_flutter && flutter test packages/chronopic_ui/test/mobile_productization_test.dart`
+  passed with 10 focused mobile productization tests.
+- `cd chronopic_flutter && flutter test packages/chronopic_ui/test apps/chronopic/test`
+  passed with 24 Flutter UI/app tests.
+- `cd chronopic_flutter && flutter test apps/chronopic/integration_test/mobile_deep_e2e_test.dart`
+  passed with the known `integration_test` plugin warning.
+- `cd chronopic_flutter/apps/chronopic && flutter build apk --debug` built
+  `build/app/outputs/flutter-apk/app-debug.apk`.
+- `git diff --check` passes.
+- iOS live verification remains blocked until macOS/Xcode evidence exists.
