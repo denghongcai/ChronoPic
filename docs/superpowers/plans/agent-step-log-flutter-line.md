@@ -6418,9 +6418,13 @@ Follow `AGENTS.md` Working Rules for where new steps are appended.
     shell call site (the dialog takes the handler directly).
   - Added the `memory-ai-not-configured-chip` stable key to the memory
     dialog's not-configured chip, matching the photo-side twin.
-  - `_enrichMemoryAi` now surfaces a localized "enrichment already running"
-    status when the in-flight guard fires instead of silently returning the
-    un-enriched memory as fake success.
+  - `_enrichMemoryAi` guard now throws a localized "enrichment already running"
+    `StateError` when the in-flight guard fires instead of returning the
+    un-enriched memory as fake success. (An earlier pass only set the shell
+    status banner; that banner sits behind the modal suggestions dialog, so the
+    user never saw it and the dialog still adopted the stale memory as fresh
+    output. The dialog's `_generate()` now renders the thrown message in its own
+    inline `_error` area. Pinned by an in-flight widget test.)
   - Batch refresh: verified already satisfied structurally — browse data is
     re-derived in `build()` and every `_enrichPendingSemantics` completion
     path calls `setState`, so no extra refresh line was needed.
@@ -6448,3 +6452,38 @@ Follow `AGENTS.md` Working Rules for where new steps are appended.
 - Next: choose the next phase from `PLAN.md` Active Direction — sidecar
   metadata export/import, AI/map config live validation (a test-connection
   path is still absent), or iOS live verification (blocked on macOS/Xcode).
+
+### 2026-10-12 Step 278
+
+Final-review polish on the AI phase:
+
+- Fixed the memory AI-suggestions dialog's stale-success bug. `_enrichMemoryAi`'s
+  in-flight guard now throws a localized `StateError` ("enrichment already
+  running") instead of returning the un-enriched memory. The dialog is modal and
+  the shell status banner sits behind it, so the previous banner-only fix was
+  invisible to the user and `_MemoryAiSuggestionsDialog._generate()` adopted the
+  stale memory as fresh output. The thrown error now renders in the dialog's
+  inline `memory-ai-dialog-error` area (`memory_pages.dart` `_generate()` already
+  catches `Object` and sets `_error`).
+- Verified the two sibling guard branches need no change:
+  - `_generateSelectedPhotoAi`: the inspector's `generate-photo-ai-button` is
+    disabled while `aiBusy` (`detail_surface.dart:1091`) and shows a spinner, so
+    the guard is unreachable from the UI; early return is harmless.
+  - `_enrichPendingSemantics`: the notifications page's `enrich-pending-button` /
+    `retry-ai-queue-button` are disabled while `aiBusy`
+    (`settings_pages.dart:1307-1314`), and that page is non-modal so the shell
+    banner is visible anyway.
+- Corrected the Step 277 wording so it no longer claims a banner-only change
+  fixed the memory dialog (it did not — the banner was behind the modal).
+- Verification (all from `chronopic_flutter/`):
+  - `flutter test packages/chronopic_ui/test/ai_surfaces_test.dart` — 9 tests
+    passed. New widget test
+    "memory suggestions dialog shows the in-flight guard as an inline error
+    instead of stale success" holds a blocking queue run in flight, opens the
+    memory suggestions dialog, and asserts the error renders inside the dialog;
+    verified red before the fix.
+  - `flutter test packages/chronopic_ui/test apps/chronopic/test` — 33 tests
+    passed.
+  - `flutter analyze` — no issues.
+  - repo root `git diff --check` — clean.
+- Next: unchanged from Step 277.

@@ -1769,15 +1769,16 @@ final class _ChronoPicHomeState extends State<ChronoPicHome> {
       throw StateError('Memory not found: $memoryId');
     }
     if (_aiEnrichmentRunning) {
-      // Surface the in-flight guard instead of silently returning the
+      // The suggestions dialog is modal and sits in front of the shell status
+      // banner, so a banner-only message would be invisible. Throw instead so
+      // the dialog's own error area renders it; never adopt the stale
       // un-enriched memory as if generation had succeeded.
-      setState(
-        () => _status = _tr(
+      throw StateError(
+        _tr(
           'AI enrichment is already running. Try again when it finishes.',
           'AI 增强正在进行中，请稍后再试。',
         ),
       );
-      return current;
     }
     setState(() => _aiEnrichmentRunning = true);
     try {

@@ -177,6 +177,72 @@ void main() {
     },
   );
 
+  testWidgets(
+    'memory suggestions dialog shows the in-flight guard as an inline error instead of stale success',
+    (tester) async {
+      final repository = ChronoPicRepository()..restoreBackup(_backup());
+      final blocking = _BlockingAiClient();
+      await pumpDesktop(
+        tester,
+        ChronoPicHome(
+          service: ChronoPicAppService(repository),
+          aiClient: blocking,
+        ),
+      );
+
+      // Occupy the shared AI enrichment gate with a queue run that never
+      // completes, so the memory dialog's generate hits the in-flight guard.
+      await tester.tap(find.byKey(const Key('notifications-nav')));
+      await tester.pumpAndSettle();
+      final enrich = find.byKey(const Key('enrich-pending-button'));
+      await tester.ensureVisible(enrich);
+      await tester.tap(enrich);
+      await flushRealAsync(tester);
+      await tester.pump();
+      expect(blocking.callCount, 1);
+
+      await tester.tap(find.byKey(const Key('memories-nav')));
+      await tester.pumpAndSettle();
+      await tester.ensureVisible(
+        find.byKey(const Key('memory-card-memory-weekend')),
+      );
+      await tester.tap(find.byKey(const Key('memory-card-memory-weekend')));
+      await tester.pumpAndSettle();
+
+      final suggest = find.byKey(const Key('memory-ai-suggest-button'));
+      await tester.ensureVisible(suggest);
+      await tester.tap(suggest);
+      await tester.pumpAndSettle();
+      expect(
+        find.byKey(const Key('memory-ai-suggestions-dialog')),
+        findsOneWidget,
+      );
+      expect(find.byKey(const Key('memory-ai-dialog-error')), findsNothing);
+
+      // Tapping generate must surface the guard inside the (modal) dialog. The
+      // shell status banner sits behind the dialog, so a silent stale-success
+      // adoption would leave the user with no feedback at all.
+      final generate = find.byKey(const Key('memory-ai-generate-button'));
+      await tester.ensureVisible(generate);
+      await tester.tap(generate);
+      await tester.pumpAndSettle();
+
+      expect(
+        find.byKey(const Key('memory-ai-suggestions-dialog')),
+        findsOneWidget,
+      );
+      expect(find.byKey(const Key('memory-ai-dialog-error')), findsOneWidget);
+      expect(find.textContaining('already running'), findsOneWidget);
+      // The blocked queue run is the only AI call; the guard short-circuits
+      // before any memory analysis is attempted.
+      expect(blocking.callCount, 1);
+
+      blocking.completer.complete();
+      await flushRealAsync(tester);
+      await tester.pumpAndSettle();
+    },
+  );
+
   testWidgets('enrich-pending-button processes the queue and surfaces counts', (
     tester,
   ) async {
