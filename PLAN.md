@@ -11,19 +11,15 @@ backup JSON migration; it is no longer released.
 
 ## Active Direction
 
-No numbered phase is currently in progress. The Flutter real AI provider phase
-(Step 277) landed photo/memory enrichment, the pending/failed/disabled queue,
-and the AI UI surfaces; the remaining AI-related work is smaller follow-up, not
-a provider gap. The next phase should be promoted from the strongest open
-candidates:
+No numbered phase is currently in progress. Flutter Phase 16 added portable
+JSON photo metadata sidecars; the full backup format remains the option for
+Memories, settings, generated fields, and edit history. EXIF writeback remains
+out of scope. The next phase should be promoted from the remaining candidates:
 
-1. **Metadata portability** — sidecar metadata export/import. JSON sidecars
-   first; EXIF writeback stays out of scope until backup/rollback guarantees
-   are stronger.
-2. **AI / Map configuration live validation** — real AI enrichment is landed,
+1. **AI / Map configuration live validation** — real AI enrichment is landed,
    but Settings still has no live health probe or test-connection path for
    saved AI and map credentials; a smaller candidate than a full phase.
-3. **iOS live verification** — metadata and runners are scaffolded, but the
+2. **iOS live verification** — metadata and runners are scaffolded, but the
    required permission/import/restart/restore evidence is blocked on
    macOS/Xcode tooling.
 
@@ -53,11 +49,15 @@ archive files except to correct factual errors.
   with execution history in
   [docs/superpowers/plans/agent-step-log-electron-line.md](docs/superpowers/plans/agent-step-log-electron-line.md)
   (Steps 0 – 122).
-- **Flutter line** (Phases 4.27 – 4.38 and Phases 6 – 14):
+- **Flutter line** (Phases 4.27 – 4.38 and Phases 6 – 16):
   [docs/superpowers/plans/flutter-development-plan-archive.md](docs/superpowers/plans/flutter-development-plan-archive.md)
   with execution history in
   [docs/superpowers/plans/agent-step-log-flutter-line.md](docs/superpowers/plans/agent-step-log-flutter-line.md)
-  (Steps 101 onward).
+  (Steps 101 – 279) and
+  [docs/superpowers/plans/agent-step-log-flutter-2026-10-12.md](docs/superpowers/plans/agent-step-log-flutter-2026-10-12.md)
+  (Steps 280 onward).
+- **Phase 16 — Photo Metadata Sidecars**:
+  [docs/superpowers/plans/2026-10-12-flutter-photo-metadata-sidecars.md](docs/superpowers/plans/2026-10-12-flutter-photo-metadata-sidecars.md).
 - Durable Flutter phase tracker:
   [docs/flutter-refactor-phases.md](docs/flutter-refactor-phases.md).
 

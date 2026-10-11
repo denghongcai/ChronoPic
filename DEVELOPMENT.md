@@ -1,223 +1,118 @@
 # ChronoPic Development
 
-This document is for contributors and code agents working on ChronoPic. The user-facing product overview lives in [README.md](README.md).
+This document describes the active Flutter release line. The Electron
+implementation remains in the repository as a migration/reference line and is
+no longer built or released as the product.
 
 ## Repository Status
 
-- Current package version: `0.1.8`
-- Latest verified release: `v0.1.8`
-- Package manager: `pnpm@10.0.0`
-- Runtime baseline: Node.js 24
+- Latest verified release: `v0.1.13`
+- Flutter workspace: [`chronopic_flutter/`](chronopic_flutter/)
+- Runtime/tooling: Flutter stable, Dart 3.13+
 - Planning source: [PLAN.md](PLAN.md)
-- Execution log: [docs/superpowers/plans/agent-step-log-flutter-line.md](docs/superpowers/plans/agent-step-log-flutter-line.md) (active line; Electron-era history in [docs/superpowers/plans/agent-step-log-electron-line.md](docs/superpowers/plans/agent-step-log-electron-line.md))
-- Manual verification script: [docs/agent-verification-script.md](docs/agent-verification-script.md)
+- Active execution log: [docs/superpowers/plans/agent-step-log-flutter-2026-10-12.md](docs/superpowers/plans/agent-step-log-flutter-2026-10-12.md)
+- Product verification guidance: [docs/agent-verification-script.md](docs/agent-verification-script.md)
+
+The root `pnpm` workspace still contains the Electron reference app and its
+historical tests. Use the Flutter commands below for current product work.
 
 ## Setup
 
-Install dependencies:
-
 ```sh
-pnpm install
+cd chronopic_flutter
+flutter pub get
 ```
 
-If Electron or native modules are partially installed, the desktop launch scripts run repair guards automatically. They can also be run directly:
+## Run And Build
+
+Run the Flutter app for the current host:
 
 ```sh
-pnpm --filter @chronopic/desktop run ensure:electron
-pnpm --filter @chronopic/desktop run ensure:native
+cd chronopic_flutter/apps/chronopic
+flutter run -d linux
 ```
 
-Native modules matter in this repo because `better-sqlite3` and `sharp` need the correct ABI for the current launch target. Root scripts switch between Node and Electron rebuilds where needed.
-
-## Run From Source
-
-Development mode:
+Build desktop or Android debug artifacts:
 
 ```sh
-pnpm desktop:dev
+cd chronopic_flutter/apps/chronopic
+flutter build linux --debug
+flutter build apk --debug
 ```
 
-Production-style local launch:
-
-```sh
-pnpm desktop:start
-```
-
-Use `CHRONOPIC_USER_DATA_DIR` to isolate the database, thumbnails, settings, and debug log:
-
-```sh
-CHRONOPIC_USER_DATA_DIR=/tmp/chronopic-dev pnpm desktop:start
-```
+Android and iOS photo-library access requires the corresponding native
+permissions. iOS builds, signing, and live-device verification require
+macOS/Xcode.
 
 ## Verification
 
-Core checks:
+Run from `chronopic_flutter/`:
 
 ```sh
-pnpm test
-pnpm typecheck
-pnpm build
+dart analyze packages/chronopic_domain packages/chronopic_database packages/chronopic_app packages/chronopic_ui apps/chronopic
+dart test packages/chronopic_domain/test packages/chronopic_database/test packages/chronopic_app/test
+flutter test packages/chronopic_ui/test apps/chronopic/test
 ```
 
-Runtime E2E checks:
+The CI gate additionally builds an Android debug APK. After a product phase or
+meaningful implementation slice, follow
+[docs/agent-verification-script.md](docs/agent-verification-script.md) and
+record relevant scenes, checks, and any platform-blocked verification in the
+active Flutter step log.
 
-```sh
-pnpm run e2e:runtime
-pnpm run e2e:accessibility
-pnpm run e2e:ai
-pnpm run e2e:backup
-```
+## Backup And Photo Sidecars
 
-Packaged smoke:
+Library Settings offers two local JSON portability options:
 
-```sh
-pnpm run e2e:packaged
-```
+- **Backup** contains the ChronoPic catalog projection, Memories, settings,
+  generated fields, and history. It references original photos by path and does
+  not copy media.
+- **Photo sidecars** are separate `*.chronopic.json` files for individual
+  photos. They contain captions, tags, favorites, and photo metadata, but omit
+  settings, Memories, edit history, and AI-generated content. Each sidecar
+  identifies its source with the media file's SHA-256 digest and byte size.
 
-In headless Linux environments:
-
-```sh
-xvfb-run -a pnpm run e2e:packaged
-```
-
-What the main E2E suites cover:
-
-- `e2e:runtime`: launches the built Electron app, indexes fixture media, writes edits/memories/settings, restarts, and verifies persistence through the preload bridge.
-- `e2e:accessibility`: checks the keyboard/focus loop for first-run setup, create-memory dialog focus return, photo-card activation, viewer Escape close, and batch-select accessible labels.
-- `e2e:ai`: checks AI setup readiness, safe required-field visibility, disabled queue recovery, and the Notifications-to-Settings path without requiring real provider secrets.
-- `e2e:backup`: exports a JSON backup, previews conflicts, restores into a clean data directory, and verifies authored metadata, favorites, memories, memberships, locale, and map settings.
-- `e2e:packaged`: launches the packaged executable or app bundle directly rather than [apps/desktop/dist/main/main.js](apps/desktop/dist/main/main.js).
-
-For broader product validation after a phase or meaningful implementation slice, follow [docs/agent-verification-script.md](docs/agent-verification-script.md) and record evidence in the active step log under `docs/superpowers/plans/` and update the Current State section in [AGENTS.md](AGENTS.md).
-
-## Local Packaging
-
-Build an unpacked desktop artifact on the matching OS:
-
-```sh
-pnpm run package:linux
-pnpm run package:macos
-pnpm run package:windows
-```
-
-Artifacts are emitted under:
-
-```text
-dist/release/chronopic-<target>-<arch>
-```
-
-Verify package layout, metadata, native modules, and excluded local artifacts:
-
-```sh
-pnpm run package:verify -- linux
-pnpm run package:verify -- macos
-pnpm run package:verify -- windows
-```
-
-Release archive creation is handled by:
-
-```sh
-node scripts/archive-release-artifact.mjs <target> <tag>
-```
-
-Release artifacts use this naming pattern:
-
-```text
-chronopic-<target>-<arch>-<tag>.tar.gz
-chronopic-<target>-<arch>-<tag>.tar.gz.sha256
-```
+Sidecar export writes JSON files into a chosen folder and never modifies
+original photos. Import checks SHA-256 before applying metadata; missing and
+ambiguous matches and malformed files are reported and skipped. No EXIF
+writeback is performed. Import replaces the corresponding catalog metadata on
+matched photos.
 
 ## Releases
 
-Pushing a version tag that starts with `v` runs [.github/workflows/release.yml](.github/workflows/release.yml):
+The tag-triggered workflow in
+[.github/workflows/release.yml](.github/workflows/release.yml) creates the
+GitHub Release and builds Android signed APK/AAB and a Linux x64 tarball. The
+workflow uploads SHA-256 checksum files for all artifacts. macOS/iOS and
+Windows product artifacts are not currently released.
 
-```sh
-git tag v0.1.8
-git push origin v0.1.8
-```
-
-The release workflow:
-
-- creates or updates the GitHub Release for the tag
-- builds Linux on `ubuntu-latest`
-- builds macOS on `macos-latest`
-- builds Windows on `windows-latest`
-- verifies each packaged artifact
-- runs packaged E2E on each platform
-- creates `tar.gz` archives
-- uploads archives and `.sha256` checksum files
-
-Current release limitations:
-
-- artifacts are portable, unpacked desktop bundles rather than installers
-- macOS artifacts are not notarized
-- Windows artifacts are not signed
-- auto-update is not implemented
+Release version values are kept aligned in the root `package.json` (used for
+Linux archive naming) and `chronopic_flutter/apps/chronopic/pubspec.yaml`.
+After version updates and verification, publish a `v*` tag to run the release
+workflow. Confirm its `flutter-android` and `flutter-linux` jobs and verify the
+uploaded assets before describing the release as complete.
 
 ## Architecture
 
-ChronoPic keeps the Electron process boundary strict:
+The Flutter workspace keeps the following boundaries:
 
-- renderer owns UI and interaction state
-- preload exposes the typed desktop bridge
-- main process owns IPC, local filesystem access, protocol handling, and runtime creation
-- application package owns use cases
-- infra packages own persistence, filesystem, image, and config concerns
-- services packages own indexing and AI pipeline orchestration
-- UI package owns shared React presentation components
-
-Workspace packages compile only their own `src` directory and expose deliberate `dist` exports. The desktop app consumes workspace packages through package interfaces rather than source aliases.
-
-## Project Layout
-
-```text
-apps/desktop/
-  main/                 Electron main process
-  preload/              preload bridge
-  renderer/             React renderer
-
-packages/
-  application/          app-level use cases
-  domain/               shared domain types and defaults
-  i18n/                 typed locale dictionaries and helpers
-  infra-config/         local settings persistence
-  infra-db/             SQLite schema, migrations, and repositories
-  infra-fs/             filesystem scanning and media metadata extraction
-  infra-image/          image/native integration
-  services-ai-pipeline/ optional AI provider and normalization pipeline
-  services-indexer/     indexing orchestration
-  shared-utils/         shared helpers
-  ui-components/        shared React UI components
-
-scripts/                build, native-module, packaging, and release helpers
-tests/                  unit and E2E tests
-.github/workflows/     CI and tag release workflows
-```
-
-## Main Commands
-
-```sh
-pnpm desktop:dev          # run the Electron app in development mode
-pnpm desktop:start        # build and run the production-style desktop app
-pnpm test                 # Node/unit tests
-pnpm typecheck            # package and desktop TypeScript checks
-pnpm build                # clean build for packages and desktop app
-pnpm run e2e:runtime      # Electron runtime persistence smoke
-pnpm run e2e:accessibility
-pnpm run e2e:ai
-pnpm run e2e:backup
-pnpm run e2e:packaged
-pnpm run package:linux
-pnpm run package:macos
-pnpm run package:windows
-pnpm run package:verify -- <target>
-```
+- `chronopic_domain`: shared models and portable JSON contracts
+- `chronopic_database`: catalog repositories and persistence
+- `chronopic_media`: desktop/mobile media-source adapters
+- `chronopic_ai`: optional AI provider and normalization
+- `chronopic_app`: indexing and application orchestration
+- `chronopic_ui`: Flutter surfaces and interactions
+- `apps/chronopic`: platform app entry point and native runners
 
 ## Planning And Agent Workflow
 
-- `PRD.md` records the original product and architecture direction.
 - [PLAN.md](PLAN.md) is the stable implementation plan and roadmap.
-- [AGENTS.md](AGENTS.md) is the agent working-instruction surface (working rules + current state); full step entries go to the active step log under `docs/superpowers/plans/`.
-- [docs/agent-verification-script.md](docs/agent-verification-script.md) is the director script for manual product verification after completing plan items.
+- [AGENTS.md](AGENTS.md) is the current agent instruction and state surface.
+- Completed phase plans and full execution history live under
+  `docs/superpowers/plans/`.
+- [docs/agent-verification-script.md](docs/agent-verification-script.md)
+  directs product-level verification after plan items are completed.
 
-When implementation work changes a planned phase or checklist item, update [PLAN.md](PLAN.md), the active step log under `docs/superpowers/plans/`, and the Current State section of [AGENTS.md](AGENTS.md) before considering the work complete.
+When implementation changes a planned phase, update `PLAN.md`, the active step
+log, and the Current State section of `AGENTS.md` before considering the work
+complete.

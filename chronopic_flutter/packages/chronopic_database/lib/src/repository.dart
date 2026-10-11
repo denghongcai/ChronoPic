@@ -350,6 +350,33 @@ final class ChronoPicRepository {
     return updated;
   }
 
+  PhotoRecord updatePhotoMetadataFields(
+    String photoId, {
+    required double? lat,
+    required double? lng,
+    required String? camera,
+    required double confidence,
+    required String? originalDatetimeText,
+  }) {
+    final record = _requirePhoto(photoId);
+    final updated = PhotoRecord(
+      photo: record.photo,
+      metadata: Metadata(
+        photoId: record.metadata.photoId,
+        datetime: record.metadata.datetime,
+        lat: lat,
+        lng: lng,
+        camera: camera,
+        confidence: confidence,
+        originalDatetimeText: originalDatetimeText,
+      ),
+      semantic: record.semantic,
+      indexState: record.indexState,
+    );
+    _photos[photoId] = updated;
+    return updated;
+  }
+
   PhotoRecord updatePhotoFavorite(String photoId, bool favorite) {
     final record = _requirePhoto(photoId);
     final updated = _replaceRecord(
@@ -414,17 +441,13 @@ final class ChronoPicRepository {
         generatedCaption: generatedCaption == _unchanged
             ? semantic.generatedCaption
             : generatedCaption as String?,
-        summary: summary == _unchanged
-            ? semantic.summary
-            : summary as String?,
+        summary: summary == _unchanged ? semantic.summary : summary as String?,
         embeddingRef: semantic.embeddingRef,
         aiStatus: aiStatus,
         aiProvider: aiProvider == _unchanged
             ? semantic.aiProvider
             : aiProvider as String?,
-        aiModel: aiModel == _unchanged
-            ? semantic.aiModel
-            : aiModel as String?,
+        aiModel: aiModel == _unchanged ? semantic.aiModel : aiModel as String?,
         aiProcessedAt: aiProcessedAt == _unchanged
             ? semantic.aiProcessedAt
             : aiProcessedAt as int?,

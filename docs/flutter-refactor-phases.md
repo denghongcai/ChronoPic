@@ -1623,3 +1623,47 @@ Exit gate:
 - Live-provider smoke remains unverified until the user's local endpoint is
   reachable again; AI/map configuration live validation (test-connection
   path) is still absent and remains a `PLAN.md` candidate.
+
+## Phase 16: Photo Metadata Sidecars
+
+Status:
+implemented and locally verified on 2026-10-12; release publication is tracked
+separately in the active step log.
+
+Purpose:
+provide portable per-photo JSON metadata without modifying original media or
+bundling the full ChronoPic catalog backup.
+
+Plan:
+
+- [docs/superpowers/plans/2026-10-12-flutter-photo-metadata-sidecars.md](superpowers/plans/2026-10-12-flutter-photo-metadata-sidecars.md)
+
+Completed work:
+
+- Added the versioned `chronopic-photo-metadata` JSON contract with media
+  SHA-256, size, and a path fingerprint used only to disambiguate identical
+  media when the original location is unchanged.
+- Added batch export to a selected folder and recursive import from a selected
+  folder through Library Settings.
+- Sidecars include caption, tags, favorite state, datetime, GPS, camera,
+  confidence, and original datetime text; AI-generated fields, settings,
+  Memories, edit history, original media, and absolute file paths are excluded.
+- Import verifies content SHA-256 and size, refuses ambiguous matches, reports
+  malformed/unmatched/duplicate sidecars, and preserves generated fields.
+- Metadata changes are recorded through existing edit-history operations and
+  persist across app restart.
+- Export uses a temporary file before replacing the sidecar; neither export nor
+  import writes to original media. EXIF writeback remains out of scope.
+- Export/import actions are localized in Library Settings and guarded against
+  concurrent transfers.
+
+Exit evidence:
+
+- `dart analyze packages/chronopic_domain packages/chronopic_database packages/chronopic_app packages/chronopic_ui apps/chronopic` — clean.
+- `dart test packages/chronopic_ai/test packages/chronopic_app/test packages/chronopic_media/test packages/chronopic_domain/test` — 92 tests passed.
+- `dart test packages/chronopic_database/test` — 12 tests passed.
+- `flutter test packages/chronopic_ui/test apps/chronopic/test` — 33 tests passed.
+- `flutter build linux --debug` and `flutter build apk --debug` — built.
+- Flutter Linux app launched in an isolated X server and remained responsive for 15 seconds.
+- Electron-specific Playwright scenes were skipped because Electron is reference-only and unchanged; Flutter widget, service persistence, build, and desktop launch checks covered the active release line.
+- `git diff --check` — clean.

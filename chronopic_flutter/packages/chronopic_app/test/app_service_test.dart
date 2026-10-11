@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:chronopic_app/chronopic_app.dart';
@@ -7,6 +8,97 @@ import 'package:chronopic_testkit/chronopic_testkit.dart';
 import 'package:test/test.dart';
 
 void main() {
+  test('exports and imports portable photo metadata sidecars', () async {
+    final fixture = ChronoPicBackup.fromJson(
+      FlutterParityFixtures.readBackupJson(),
+    );
+    final directory = Directory.systemTemp.createTempSync(
+      'chronopic-photo-sidecars-',
+    );
+    addTearDown(() => directory.deleteSync(recursive: true));
+    final sourceDirectory = Directory('${directory.path}/source')..createSync();
+    final targetDirectory = Directory('${directory.path}/target')..createSync();
+    final sidecarDirectory = Directory('${directory.path}/sidecars')
+      ..createSync();
+
+    final source = ChronoPicAppService(ChronoPicRepository())
+      ..restoreBackup(fixture);
+    _relocateFixturePhotos(source, sourceDirectory);
+    source.updatePhotoCaption('photo-city', 'Sidecar caption');
+    source.updatePhotoTags('photo-city', ['sidecar', 'travel']);
+    source.updatePhotoDatetime('photo-city', 1712345678000);
+    source.updatePhotoFavorite('photo-city', true);
+    source.repository.updatePhotoMetadataFields(
+      'photo-city',
+      lat: 37.5,
+      lng: -122.25,
+      camera: 'Sidecar Camera',
+      confidence: 0.9,
+      originalDatetimeText: '2024:04:05 06:07:08',
+    );
+
+    final export = await source.exportPhotoSidecars(sidecarDirectory.path);
+    expect(export.processed, 2);
+    expect(export.errors, isEmpty);
+    final exportedSidecar = sidecarDirectory
+        .listSync()
+        .whereType<File>()
+        .firstWhere((file) => file.path.endsWith('.chronopic.json'));
+    final exportedJson =
+        jsonDecode(exportedSidecar.readAsStringSync()) as Map<String, Object?>;
+    expect(exportedJson, isNot(contains('generatedCaption')));
+    expect(exportedJson, isNot(contains('apiKey')));
+
+    final targetDataFile = File('${directory.path}/target-catalog.json');
+    final target = ChronoPicAppService(
+      ChronoPicRepository(),
+      persistencePath: targetDataFile.path,
+    )..restoreBackup(fixture);
+    _relocateFixturePhotos(target, targetDirectory);
+    final lakeFile = File('${targetDirectory.path}/photo-lake.jpg');
+    lakeFile.writeAsBytesSync(List<int>.filled(lakeFile.lengthSync(), 0x41));
+    final lakeBytesBeforeImport = lakeFile.readAsBytesSync();
+    final generatedCaptionBefore = target
+        .getPhoto('photo-city')!
+        .semantic
+        .generatedCaption;
+    final malformed = File('${sidecarDirectory.path}/bad.chronopic.json')
+      ..writeAsStringSync('{invalid json');
+
+    final imported = await target.importPhotoSidecars(sidecarDirectory.path);
+    expect(imported.processed, 1);
+    expect(imported.errors, hasLength(2));
+    expect(imported.errors.join('\n'), contains(malformed.path));
+    expect(imported.errors.join('\n'), contains('No library photo matches'));
+
+    final city = target.getPhoto('photo-city')!;
+    expect(city.semantic.caption, 'Sidecar caption');
+    expect(city.semantic.labels, ['sidecar', 'travel']);
+    expect(city.semantic.generatedCaption, generatedCaptionBefore);
+    expect(city.photo.favorite, isTrue);
+    expect(city.metadata.datetime, 1712345678000);
+    expect(city.metadata.lat, 37.5);
+    expect(city.metadata.lng, -122.25);
+    expect(city.metadata.camera, 'Sidecar Camera');
+    expect(city.metadata.confidence, 0.9);
+    expect(city.metadata.originalDatetimeText, '2024:04:05 06:07:08');
+    expect(
+      target.getPhoto('photo-lake')!.semantic.caption,
+      'Manual lake caption',
+    );
+    expect(lakeFile.readAsBytesSync(), lakeBytesBeforeImport);
+
+    final restarted = ChronoPicAppService(
+      ChronoPicRepository(),
+      persistencePath: targetDataFile.path,
+    );
+    expect(
+      restarted.getPhoto('photo-city')?.semantic.caption,
+      'Sidecar caption',
+    );
+    expect(restarted.getPhoto('photo-city')?.photo.favorite, isTrue);
+  });
+
   test(
     'orchestrates backup restore and photo actions through repository boundary',
     () {
@@ -194,4 +286,33 @@ void main() {
       'photo-city',
     );
   });
+}
+
+void _relocateFixturePhotos(
+  ChronoPicAppService service,
+  Directory destination,
+) {
+  for (final record in service.listPhotos(const PhotoFilter(limit: 1000000))) {
+    final bytes = utf8.encode('media bytes for ${record.photo.id}');
+    final file = File('${destination.path}/${record.photo.id}.jpg')
+      ..writeAsBytesSync(bytes);
+    service.repository.upsertPhotoRecord(
+      PhotoRecord(
+        photo: Photo(
+          id: record.photo.id,
+          path: file.path,
+          hash: file.path,
+          size: bytes.length,
+          mime: record.photo.mime,
+          thumbnailPath: record.photo.thumbnailPath,
+          favorite: record.photo.favorite,
+          createdAt: record.photo.createdAt,
+          updatedAt: record.photo.updatedAt,
+        ),
+        metadata: record.metadata,
+        semantic: record.semantic,
+        indexState: record.indexState,
+      ),
+    );
+  }
 }

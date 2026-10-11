@@ -1,12 +1,24 @@
 import 'dart:convert';
+import 'dart:developer' as developer;
 import 'dart:io';
 
 import 'package:chronopic_ai/chronopic_ai.dart';
 import 'package:chronopic_database/chronopic_database.dart';
 import 'package:chronopic_domain/chronopic_domain.dart';
 import 'package:chronopic_media/chronopic_media.dart';
+import 'package:crypto/crypto.dart';
 
 import 'indexer_service.dart';
+
+final class PhotoSidecarBatchResult {
+  const PhotoSidecarBatchResult({
+    required this.processed,
+    required this.errors,
+  });
+
+  final int processed;
+  final List<String> errors;
+}
 
 final class ChronoPicAppService {
   ChronoPicAppService(this.repository, {this.persistencePath}) {
@@ -47,6 +59,197 @@ final class ChronoPicAppService {
   }
 
   ChronoPicBackup createBackup() => repository.createBackup();
+
+  Future<PhotoSidecarBatchResult> exportPhotoSidecars(
+    String directoryPath,
+  ) async {
+    final directory = Directory(directoryPath);
+    await directory.create(recursive: true);
+    final records = listPhotos(const PhotoFilter(limit: 1000000));
+    final errors = <String>[];
+    var exported = 0;
+
+    for (final record in records) {
+      try {
+        final mediaFile = File(record.photo.path);
+        final stat = await mediaFile.stat();
+        if (stat.type != FileSystemEntityType.file) {
+          throw const FileSystemException('Photo path is not a regular file');
+        }
+        final digest = await sha256.bind(mediaFile.openRead()).first;
+        final pathFingerprint = sha256
+            .convert(utf8.encode(record.photo.path))
+            .toString();
+        final sidecar = PhotoMetadataSidecar(
+          app: PhotoMetadataSidecar.expectedApp,
+          format: PhotoMetadataSidecar.expectedFormat,
+          schemaVersion: PhotoMetadataSidecar.currentSchemaVersion,
+          sha256: digest.toString(),
+          pathFingerprint: pathFingerprint,
+          size: stat.size,
+          datetime: record.metadata.datetime,
+          lat: record.metadata.lat,
+          lng: record.metadata.lng,
+          camera: record.metadata.camera,
+          confidence: record.metadata.confidence,
+          originalDatetimeText: record.metadata.originalDatetimeText,
+          caption: record.semantic.caption,
+          tags: record.semantic.labels,
+          favorite: record.photo.favorite,
+        );
+        final validation = validatePhotoMetadataSidecar(sidecar);
+        if (!validation.valid) {
+          throw FormatException(validation.errors.join(', '));
+        }
+        final output = File(
+          '${directory.path}${Platform.pathSeparator}'
+          '${digest.toString()}-$pathFingerprint'
+          '.chronopic.json',
+        );
+        final temporary = File(
+          '${output.path}.$pid.${DateTime.now().microsecondsSinceEpoch}.tmp',
+        );
+        try {
+          await temporary.writeAsString(
+            const JsonEncoder.withIndent('  ').convert(sidecar.toJson()),
+            flush: true,
+          );
+          await temporary.rename(output.path);
+        } finally {
+          if (await temporary.exists()) await temporary.delete();
+        }
+        exported += 1;
+      } on Object catch (error, stackTrace) {
+        final message = 'Could not export ${record.photo.path}: $error';
+        errors.add(message);
+        developer.log(
+          message,
+          name: 'chronopic.sidecar',
+          error: error,
+          stackTrace: stackTrace,
+        );
+      }
+    }
+    return PhotoSidecarBatchResult(processed: exported, errors: errors);
+  }
+
+  Future<PhotoSidecarBatchResult> importPhotoSidecars(
+    String directoryPath,
+  ) async {
+    final directory = Directory(directoryPath);
+    if (!await directory.exists()) {
+      throw FileSystemException(
+        'Sidecar directory does not exist',
+        directoryPath,
+      );
+    }
+    final sidecarFiles = <File>[];
+    await for (final entity in directory.list(
+      recursive: true,
+      followLinks: false,
+    )) {
+      if (entity is File && entity.path.endsWith('.chronopic.json')) {
+        sidecarFiles.add(entity);
+      }
+    }
+    sidecarFiles.sort((a, b) => a.path.compareTo(b.path));
+
+    final records = listPhotos(const PhotoFilter(limit: 1000000));
+    final hashCache = <String, String>{};
+    final errors = <String>[];
+    final importedPhotoIds = <String>{};
+    var imported = 0;
+
+    for (final file in sidecarFiles) {
+      try {
+        final decoded = jsonDecode(await file.readAsString());
+        if (decoded is! Map) {
+          throw const FormatException('Sidecar root must be a JSON object');
+        }
+        final sidecar = PhotoMetadataSidecar.fromJson(
+          decoded.cast<String, Object?>(),
+        );
+        final validation = validatePhotoMetadataSidecar(sidecar);
+        if (!validation.valid) {
+          throw FormatException(validation.errors.join(', '));
+        }
+
+        final matches = <PhotoRecord>[];
+        for (final record in records) {
+          if (record.photo.size != sidecar.size) continue;
+          final path = record.photo.path;
+          var digest = hashCache[path];
+          if (digest == null) {
+            final mediaFile = File(path);
+            if (!await mediaFile.exists() ||
+                await mediaFile.length() != sidecar.size) {
+              continue;
+            }
+            digest = (await sha256.bind(mediaFile.openRead()).first).toString();
+            hashCache[path] = digest;
+          }
+          if (digest == sidecar.sha256) matches.add(record);
+        }
+
+        if (matches.isEmpty) {
+          throw StateError(
+            'No library photo matches SHA-256 ${sidecar.sha256}',
+          );
+        }
+        if (matches.length > 1) {
+          final exactPathMatches = matches.where((record) {
+            return sha256.convert(utf8.encode(record.photo.path)).toString() ==
+                sidecar.pathFingerprint;
+          }).toList();
+          if (exactPathMatches.length == 1) {
+            matches
+              ..clear()
+              ..add(exactPathMatches.single);
+          }
+        }
+        if (matches.length != 1) {
+          throw StateError(
+            'SHA-256 ${sidecar.sha256} matches ${matches.length} photos; '
+            'metadata was not imported because the match is ambiguous',
+          );
+        }
+        final record = matches.single;
+        if (!importedPhotoIds.add(record.photo.id)) {
+          throw StateError(
+            'More than one sidecar targets photo ${record.photo.id}',
+          );
+        }
+        _applyPhotoSidecar(record.photo.id, sidecar);
+        imported += 1;
+      } on Object catch (error, stackTrace) {
+        final message = 'Could not import ${file.path}: $error';
+        errors.add(message);
+        developer.log(
+          message,
+          name: 'chronopic.sidecar',
+          error: error,
+          stackTrace: stackTrace,
+        );
+      }
+    }
+    if (imported > 0) _persistIfConfigured();
+    return PhotoSidecarBatchResult(processed: imported, errors: errors);
+  }
+
+  void _applyPhotoSidecar(String photoId, PhotoMetadataSidecar sidecar) {
+    repository.updatePhotoCaption(photoId, sidecar.caption);
+    repository.updatePhotoTags(photoId, sidecar.tags);
+    repository.updatePhotoDatetime(photoId, sidecar.datetime);
+    repository.updatePhotoFavorite(photoId, sidecar.favorite);
+    repository.updatePhotoMetadataFields(
+      photoId,
+      lat: sidecar.lat,
+      lng: sidecar.lng,
+      camera: sidecar.camera,
+      confidence: sidecar.confidence,
+      originalDatetimeText: sidecar.originalDatetimeText,
+    );
+  }
 
   File exportBackupToFile(String path) {
     final file = File(path);

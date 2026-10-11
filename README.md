@@ -56,6 +56,7 @@ new releases use the Flutter line.
 - Set AI output language separately from UI language
 - Configure Gaode/AMap for optional map browsing
 - Export local JSON backups
+- Export and import per-photo JSON sidecars for captions, tags, favorites, and metadata
 - Preview restore conflicts
 - Restore backups into the local database
 
@@ -107,6 +108,17 @@ Backups include:
 - AI, map, and language settings
 
 Backups do not include original photo files. After restore, photo paths still point to their original local file locations.
+
+## Photo Metadata Sidecars
+
+Library Settings can export one `*.chronopic.json` sidecar per photo to a chosen
+folder and import those sidecars into another catalog. Sidecars match the
+original media by SHA-256 and byte size, so the media can move while metadata
+remains portable. Captions, tags, favorites, and photo metadata are included;
+AI-generated fields, Memories, settings, and original photo data are not.
+Unmatched, ambiguous, or invalid sidecars are reported and skipped. Sidecar
+operations replace these catalog values when a media match is found, but do
+not modify photo files or write EXIF.
 
 ## For Developers
 

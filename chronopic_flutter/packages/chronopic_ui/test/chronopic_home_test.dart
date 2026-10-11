@@ -99,6 +99,8 @@ void main() {
     expect(find.text('Export Backup File'), findsOneWidget);
     expect(find.text('Preview Backup File'), findsOneWidget);
     expect(find.text('Restore Backup File'), findsOneWidget);
+    expect(find.byKey(const Key('export-photo-sidecars')), findsOneWidget);
+    expect(find.byKey(const Key('import-photo-sidecars')), findsOneWidget);
     await tester.tap(find.byKey(const Key('all-photos-nav')));
     await tester.pump();
     await tester.tap(find.text('Waterfall'));

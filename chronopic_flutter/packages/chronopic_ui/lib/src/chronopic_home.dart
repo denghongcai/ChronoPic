@@ -144,6 +144,7 @@ final class _ChronoPicHomeState extends State<ChronoPicHome> {
   bool _hasMoreVisiblePhotos = false;
   MediaSourceAdapter? _activeMobileMediaSource;
   bool _aiEnrichmentRunning = false;
+  bool _sidecarTransferRunning = false;
 
   @override
   void initState() {
@@ -321,6 +322,8 @@ final class _ChronoPicHomeState extends State<ChronoPicHome> {
           onAddLibrary: _addLibrary,
           onChooseBackupExportPath: _chooseBackupExportPath,
           onChooseBackupRestorePath: _chooseBackupRestorePath,
+          onExportPhotoSidecars: _exportPhotoSidecars,
+          onImportPhotoSidecars: _importPhotoSidecars,
           onChooseLibraryFolder: _chooseLibraryFolder,
           onExportBackup: _exportBackup,
           onAiOutputLocaleChanged: _saveAiOutputLocale,
@@ -330,6 +333,7 @@ final class _ChronoPicHomeState extends State<ChronoPicHome> {
           onSaveAiSettings: _saveAiSettings,
           onSaveLocaleSettings: _saveCurrentLocaleSettings,
           onSaveMapSettings: _saveMapSettings,
+          sidecarTransferRunning: _sidecarTransferRunning,
           onScanLibrary: _scanLibrary,
           favoritePhotoCount: _service.countPhotos(
             const PhotoFilter(favorite: true),
@@ -1624,6 +1628,90 @@ final class _ChronoPicHomeState extends State<ChronoPicHome> {
         ),
       );
     }
+  }
+
+  Future<void> _exportPhotoSidecars() async {
+    if (_sidecarTransferRunning) return;
+    setState(() => _sidecarTransferRunning = true);
+    try {
+      final directory = await getDirectoryPath(
+        confirmButtonText: _tr('Export here', '导出到此处'),
+      );
+      if (directory == null) return;
+      final result = await _service.exportPhotoSidecars(directory);
+      if (!mounted) return;
+      final errors = result.errors;
+      final summary = _localized(
+        _l10n,
+        'Exported ${result.processed} sidecars',
+        '已导出 ${result.processed} 个 sidecar',
+      );
+      setState(() {
+        _status = errors.isEmpty
+            ? _labelValue(summary, directory)
+            : _sidecarResultWithErrors(summary, errors);
+      });
+    } on Object catch (error) {
+      if (mounted) {
+        setState(
+          () => _status = _labelValue(
+            _tr('Sidecar export failed', 'Sidecar 导出失败'),
+            '$error',
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _sidecarTransferRunning = false);
+    }
+  }
+
+  Future<void> _importPhotoSidecars() async {
+    if (_sidecarTransferRunning) return;
+    setState(() => _sidecarTransferRunning = true);
+    try {
+      final directory = await getDirectoryPath(
+        confirmButtonText: _tr('Import from here', '从此处导入'),
+      );
+      if (directory == null) return;
+      final result = await _service.importPhotoSidecars(directory);
+      if (!mounted) return;
+      final errors = result.errors;
+      final summary = _localized(
+        _l10n,
+        'Imported ${result.processed} sidecars',
+        '已导入 ${result.processed} 个 sidecar',
+      );
+      final selectedId = _selected?.photo.id;
+      setState(() {
+        _status = errors.isEmpty
+            ? _labelValue(summary, directory)
+            : _sidecarResultWithErrors(summary, errors);
+        _selected = selectedId == null ? null : _service.getPhoto(selectedId);
+      });
+    } on Object catch (error) {
+      if (mounted) {
+        setState(
+          () => _status = _labelValue(
+            _tr('Sidecar import failed', 'Sidecar 导入失败'),
+            '$error',
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _sidecarTransferRunning = false);
+    }
+  }
+
+  String _sidecarResultWithErrors(String summary, List<String> errors) {
+    final details = errors.take(2).join(' | ');
+    final remaining = errors.length - 2;
+    final suffix = remaining > 0 ? ' (+$remaining more)' : '';
+    final errorLabel = _localized(
+      _l10n,
+      '${errors.length} errors',
+      '${errors.length} 个错误',
+    );
+    return '$summary — $errorLabel: $details$suffix';
   }
 
   void _saveAiSettings() {

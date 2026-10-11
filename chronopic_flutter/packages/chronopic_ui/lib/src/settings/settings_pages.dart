@@ -43,6 +43,8 @@ final class SettingsPage extends StatelessWidget {
     required this.onAddLibrary,
     required this.onChooseBackupExportPath,
     required this.onChooseBackupRestorePath,
+    required this.onExportPhotoSidecars,
+    required this.onImportPhotoSidecars,
     required this.onChooseLibraryFolder,
     required this.onExportBackup,
     required this.onAiOutputLocaleChanged,
@@ -58,6 +60,7 @@ final class SettingsPage extends StatelessWidget {
     required this.providerController,
     required this.restorePreview,
     required this.scanning,
+    required this.sidecarTransferRunning,
     required this.sources,
   });
 
@@ -77,6 +80,8 @@ final class SettingsPage extends StatelessWidget {
   final VoidCallback onAddLibrary;
   final VoidCallback onChooseBackupExportPath;
   final VoidCallback onChooseBackupRestorePath;
+  final VoidCallback onExportPhotoSidecars;
+  final VoidCallback onImportPhotoSidecars;
   final VoidCallback onChooseLibraryFolder;
   final VoidCallback onExportBackup;
   final ValueChanged<AiOutputLocale> onAiOutputLocaleChanged;
@@ -92,6 +97,7 @@ final class SettingsPage extends StatelessWidget {
   final TextEditingController providerController;
   final BackupRestorePreview? restorePreview;
   final bool scanning;
+  final bool sidecarTransferRunning;
   final List<LibrarySource> sources;
 
   @override
@@ -113,6 +119,9 @@ final class SettingsPage extends StatelessWidget {
     final backupPanel = BackupPanel(
       labels: labels,
       onExportBackup: onExportBackup,
+      onExportPhotoSidecars: onExportPhotoSidecars,
+      onImportPhotoSidecars: onImportPhotoSidecars,
+      sidecarTransferRunning: sidecarTransferRunning,
       onPreviewRestore: onPreviewRestore,
       onRestoreBackup: onRestoreBackup,
       restorePreview: restorePreview,
@@ -697,6 +706,9 @@ final class BackupPanel extends StatelessWidget {
   const BackupPanel({
     required this.labels,
     required this.onExportBackup,
+    required this.onExportPhotoSidecars,
+    required this.onImportPhotoSidecars,
+    required this.sidecarTransferRunning,
     required this.onPreviewRestore,
     required this.onRestoreBackup,
     required this.restorePreview,
@@ -704,6 +716,9 @@ final class BackupPanel extends StatelessWidget {
 
   final UiStrings labels;
   final VoidCallback onExportBackup;
+  final VoidCallback onExportPhotoSidecars;
+  final VoidCallback onImportPhotoSidecars;
+  final bool sidecarTransferRunning;
   final VoidCallback onPreviewRestore;
   final VoidCallback onRestoreBackup;
   final BackupRestorePreview? restorePreview;
@@ -768,6 +783,47 @@ final class BackupPanel extends StatelessWidget {
               labels,
               'Backups include ChronoPic metadata, memories, favorites, generated fields, and settings. Original media files are referenced by path, not copied.',
               '备份包含 ChronoPic 元数据、记忆、收藏、生成字段和设置。原始媒体文件按路径引用，不会复制。',
+            ),
+            style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
+          ),
+          const SizedBox(height: 14),
+          Wrap(
+            spacing: 12,
+            runSpacing: 12,
+            children: [
+              OutlinedButton.icon(
+                key: const Key('export-photo-sidecars'),
+                onPressed: sidecarTransferRunning
+                    ? null
+                    : onExportPhotoSidecars,
+                icon: sidecarTransferRunning
+                    ? const SizedBox.square(
+                        dimension: 18,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Icon(Icons.description_outlined),
+                label: Text(
+                  _localized(labels, 'Export Photo Sidecars', '导出照片 Sidecar'),
+                ),
+              ),
+              OutlinedButton.icon(
+                key: const Key('import-photo-sidecars'),
+                onPressed: sidecarTransferRunning
+                    ? null
+                    : onImportPhotoSidecars,
+                icon: const Icon(Icons.drive_folder_upload_outlined),
+                label: Text(
+                  _localized(labels, 'Import Photo Sidecars', '导入照片 Sidecar'),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Text(
+            _localized(
+              labels,
+              'Sidecars preserve captions, tags, favorites, and photo metadata without modifying original media. A matching import replaces those catalog values. Import matches files by SHA-256; unmatched or ambiguous files are reported and skipped.',
+              'Sidecar 会保存说明、标签、收藏和照片元数据，不修改原始媒体。匹配导入会替换图库中的这些字段。导入时按 SHA-256 匹配；未匹配或存在歧义的文件会报告并跳过。',
             ),
             style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
           ),
