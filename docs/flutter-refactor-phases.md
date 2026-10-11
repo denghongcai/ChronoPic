@@ -1627,8 +1627,7 @@ Exit gate:
 ## Phase 16: Photo Metadata Sidecars
 
 Status:
-implemented and locally verified on 2026-10-12; release publication is tracked
-separately in the active step log.
+implemented, locally verified, and published in `v0.1.14` on 2026-10-12.
 
 Purpose:
 provide portable per-photo JSON metadata without modifying original media or

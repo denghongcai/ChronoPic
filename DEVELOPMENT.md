@@ -6,7 +6,7 @@ no longer built or released as the product.
 
 ## Repository Status
 
-- Latest verified release: `v0.1.13`
+- Latest verified release: `v0.1.14`
 - Flutter workspace: [`chronopic_flutter/`](chronopic_flutter/)
 - Runtime/tooling: Flutter stable, Dart 3.13+
 - Planning source: [PLAN.md](PLAN.md)
@@ -88,6 +88,7 @@ Windows product artifacts are not currently released.
 
 Release version values are kept aligned in the root `package.json` (used for
 Linux archive naming) and `chronopic_flutter/apps/chronopic/pubspec.yaml`.
+Both currently identify `v0.1.14`.
 After version updates and verification, publish a `v*` tag to run the release
 workflow. Confirm its `flutter-android` and `flutter-linux` jobs and verify the
 uploaded assets before describing the release as complete.

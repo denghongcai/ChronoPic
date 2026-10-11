@@ -1,7 +1,6 @@
 # Flutter Photo Metadata Sidecars
 
-Status: implemented and locally verified; release publication is tracked in the
-active Flutter step log.
+Status: implemented, locally verified, and published in `v0.1.14`.
 
 ## Goal
 

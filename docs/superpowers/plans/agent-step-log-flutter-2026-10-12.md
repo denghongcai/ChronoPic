@@ -39,5 +39,26 @@ Verification:
 - Scene 7 persistence was covered by app-service restart tests, including imported sidecar data. Electron-specific Playwright scenes were skipped because Electron is reference-only and unchanged; the active Flutter UI, service, build, and launch paths were exercised.
 - `git diff --check` — clean.
 
-Next: finalize the `v0.1.14` version metadata, publish the tag, and record the
-tag-release workflow result before updating `AGENTS.md` Current State.
+Next: assess the remaining candidates in `PLAN.md` Active Direction.
+
+### 2026-10-12 Step 281 — Publish v0.1.14
+
+- Confirmed root package version `0.1.14` and Flutter app version
+  `0.1.14+14`; created commit `e87e4b0` and annotated tag `v0.1.14`.
+- Pushed `main`; CI run `38156987087` passed both `verify` and `flutter` jobs,
+  including the Electron reference E2E suites, Dart/Flutter checks, and Android
+  debug build.
+- Pushed `v0.1.14`; release workflow run `38157340230` passed
+  `prepare-release`, `flutter-android`, and `flutter-linux`. Android signed
+  APK/AAB artifacts were built and uploaded by CI; Linux release archive and
+  checksum were also built and uploaded.
+- Verified the public release at
+  https://github.com/denghongcai/ChronoPic/releases/tag/v0.1.14:
+  it is published (not draft or prerelease) and has all six expected assets.
+- Downloaded all six public assets and ran
+  `node chronopic_flutter/tool/release/verify_flutter_release_artifacts.mjs android linux`
+  with the downloaded artifacts; SHA-256 checksums and Linux archive contents
+  passed.
+- Updated `README.md`, `DEVELOPMENT.md`, `PLAN.md`, `AGENTS.md`, and Phase 16
+  records to identify `v0.1.14` as the current release and sidecar metadata
+  portability as complete.
