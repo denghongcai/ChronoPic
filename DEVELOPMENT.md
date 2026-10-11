@@ -9,7 +9,7 @@ This document is for contributors and code agents working on ChronoPic. The user
 - Package manager: `pnpm@10.0.0`
 - Runtime baseline: Node.js 24
 - Planning source: [PLAN.md](PLAN.md)
-- Execution log: [AGENTS.md](AGENTS.md)
+- Execution log: [docs/superpowers/plans/agent-step-log-flutter-line.md](docs/superpowers/plans/agent-step-log-flutter-line.md) (active line; Electron-era history in [docs/superpowers/plans/agent-step-log-electron-line.md](docs/superpowers/plans/agent-step-log-electron-line.md))
 - Manual verification script: [docs/agent-verification-script.md](docs/agent-verification-script.md)
 
 ## Setup
@@ -88,7 +88,7 @@ What the main E2E suites cover:
 - `e2e:backup`: exports a JSON backup, previews conflicts, restores into a clean data directory, and verifies authored metadata, favorites, memories, memberships, locale, and map settings.
 - `e2e:packaged`: launches the packaged executable or app bundle directly rather than [apps/desktop/dist/main/main.js](apps/desktop/dist/main/main.js).
 
-For broader product validation after a phase or meaningful implementation slice, follow [docs/agent-verification-script.md](docs/agent-verification-script.md) and record evidence in [AGENTS.md](AGENTS.md).
+For broader product validation after a phase or meaningful implementation slice, follow [docs/agent-verification-script.md](docs/agent-verification-script.md) and record evidence in the active step log under `docs/superpowers/plans/` and update the Current State section in [AGENTS.md](AGENTS.md).
 
 ## Local Packaging
 
@@ -217,7 +217,7 @@ pnpm run package:verify -- <target>
 
 - `PRD.md` records the original product and architecture direction.
 - [PLAN.md](PLAN.md) is the stable implementation plan and roadmap.
-- [AGENTS.md](AGENTS.md) is the local execution record and must be updated after meaningful implementation or verification steps.
+- [AGENTS.md](AGENTS.md) is the agent working-instruction surface (working rules + current state); full step entries go to the active step log under `docs/superpowers/plans/`.
 - [docs/agent-verification-script.md](docs/agent-verification-script.md) is the director script for manual product verification after completing plan items.
 
-When implementation work changes a planned phase or checklist item, update both [PLAN.md](PLAN.md) and [AGENTS.md](AGENTS.md) before considering the work complete.
+When implementation work changes a planned phase or checklist item, update [PLAN.md](PLAN.md), the active step log under `docs/superpowers/plans/`, and the Current State section of [AGENTS.md](AGENTS.md) before considering the work complete.

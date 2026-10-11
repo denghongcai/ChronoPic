@@ -360,7 +360,7 @@ Deliverables:
   Chinese locale,
   and restart persistence.
 - Fix Flutter UI and functional gaps in focused slices and rerun both Electron and Flutter verification after each slice.
-- Keep screenshots under ignored `test-results/` and record paths/results in `AGENTS.md`.
+- Keep screenshots under ignored `test-results/` and record paths/results in the active step log under `docs/superpowers/plans/`.
 
 Status:
 
@@ -802,7 +802,7 @@ Deliverables:
   commands,
   decisions,
   skipped scenes,
-  and remaining accepted differences in `AGENTS.md`.
+  and remaining accepted differences in the active step log under `docs/superpowers/plans/`.
 
 Reference surfaces:
 
@@ -977,7 +977,7 @@ Version rule:
   Gradle plugin,
   or release tool,
   check the current stable version from official sources and record the selected
-  version in `AGENTS.md`.
+  version in the active step log under `docs/superpowers/plans/`.
 
 Exit gate:
 

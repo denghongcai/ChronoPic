@@ -6,7 +6,7 @@ Use this script after completing any `PLAN.md` phase, phase checklist item, or m
 
 ## When To Run
 
-Run this script before marking a `PLAN.md` item complete and before adding a completion entry to `AGENTS.md`.
+Run this script before marking a `PLAN.md` item complete and before adding a completion entry to the active step log under `docs/superpowers/plans/`.
 
 Run it again near the end of a larger phase if multiple slices were implemented.
 
@@ -15,7 +15,7 @@ If a change is docs-only and has no runtime/UI impact, record why runtime Playwr
 ## Preflight
 
 1. Read the current `PLAN.md` item being completed.
-2. Read the latest relevant `AGENTS.md` entries.
+2. Read the latest relevant step-log entries and the Current State section of `AGENTS.md`.
 3. Check `git status --short` and identify which files changed.
 4. Map the change to affected user flows:
    - first-run setup
@@ -197,7 +197,7 @@ Before marking the plan item complete:
    - `pnpm build`
    - `pnpm run e2e:runtime` when runtime behavior is affected
 2. Run the selected Playwright scenes above manually or with temporary ad hoc Playwright code.
-3. Record the evidence in `AGENTS.md`:
+3. Record the evidence in the active step log under `docs/superpowers/plans/`:
    - scenes run
    - commands run
    - screenshots or report paths if created
