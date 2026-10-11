@@ -186,11 +186,15 @@ final class ChronoPicIndexerService {
         MediaReadResult? read;
         final PhotoAiResult ai;
         if (aiClient.isEnabled) {
-          read = await mediaSource.readAsset(asset.id);
+          // Electron `resolvePhotoInput` parity: only image assets contribute
+          // bytes to the AI call. Non-image assets get a text-only prompt, so
+          // their original media is never read here.
+          final isImage = mime.startsWith('image/');
+          read = isImage ? await mediaSource.readAsset(asset.id) : null;
           final datetimeMs = asset.metadata.datetime;
           ai = await aiClient.analyzePhoto(
             photoId: asset.id,
-            bytes: read.bytes,
+            bytes: read?.bytes ?? const <int>[],
             mime: mime,
             datetime: datetimeMs != null
                 ? DateTime.fromMillisecondsSinceEpoch(datetimeMs)

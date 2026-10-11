@@ -87,4 +87,74 @@ void main() {
       'disabled',
     );
   });
+
+  test('non-image assets skip original reads for AI enrichment', () async {
+    final recordingClient = _RecordingAiClient();
+    final repository = ChronoPicRepository();
+    final indexer = ChronoPicIndexerService(
+      repository: repository,
+      mediaSource: FixtureMediaSource(
+        assets: <MediaAsset>[
+          asset('photo-image', 100),
+          const MediaAsset(
+            id: 'clip-video',
+            path: '/fixture/clip-video.mp4',
+            metadata: MediaAssetMetadata(
+              size: 9,
+              updatedAt: 100,
+              mime: 'video/mp4',
+              datetime: 100,
+            ),
+          ),
+        ],
+        bytesById: <String, Uint8List>{
+          'photo-image': Uint8List.fromList(<int>[1, 2, 3]),
+          'clip-video': Uint8List.fromList(<int>[1, 2, 3, 4, 5, 6, 7, 8, 9]),
+        },
+      ),
+      aiClient: recordingClient,
+    );
+
+    final stats = await indexer.scanLibrary();
+    expect(stats.imported, 2);
+    expect(stats.errors, 0);
+
+    final videoCall = recordingClient.calls
+        .singleWhere((call) => call.mime == 'video/mp4');
+    expect(videoCall.bytes, isEmpty);
+    final imageCall = recordingClient.calls
+        .singleWhere((call) => call.mime == 'image/png');
+    expect(imageCall.bytes, <int>[1, 2, 3]);
+  });
+}
+
+final class _RecordingAiClient implements ChronoPicAiClient {
+  final calls = <({String mime, List<int> bytes})>[];
+
+  @override
+  bool get isEnabled => true;
+
+  @override
+  Future<PhotoAiResult> analyzePhoto({
+    required String photoId,
+    required List<int> bytes,
+    required String mime,
+    DateTime? datetime,
+    double? lat,
+    double? lng,
+    String? path,
+    PhotoAiContext context = const PhotoAiContext(),
+  }) async {
+    calls.add((mime: mime, bytes: bytes));
+    return const PhotoAiResult(status: AiPipelineStatus.completed);
+  }
+
+  @override
+  Future<MemoryAiResult> analyzeMemory({
+    required Memory memory,
+    required List<PhotoRecord> photos,
+    MemoryAIContext context = const MemoryAIContext(),
+  }) async {
+    return const MemoryAiResult(status: AiPipelineStatus.disabled);
+  }
 }

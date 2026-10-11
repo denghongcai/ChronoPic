@@ -4,25 +4,59 @@ import 'dart:io';
 
 import 'package:chronopic_ai/chronopic_ai.dart';
 import 'package:chronopic_domain/chronopic_domain.dart';
+import 'package:openai_dart/openai_dart.dart';
 import 'package:test/test.dart';
+
+/// Captures request facts from the fake server.
+final class _RequestCapture {
+  String path = '';
+  String? authorization;
+  String body = '';
+}
 
 /// Starts a local fake OpenAI-compatible SSE server.
 ///
 /// Mirrors the known llama.cpp quirk: the endpoint returns
 /// `text/event-stream` responses even though the client always requests
-/// streaming, so the fake server always emits SSE chunks.
-Future<HttpServer> _startFakeServer({
-  required List<String> chunks,
-  required void Function(String rawBody) onRequest,
+/// streaming, so the fake server always emits SSE chunks. The server is
+/// registered with [addTearDown] so failing tests do not leak it.
+Future<HttpServer> _startFakeServer(
+  _RequestCapture capture, {
+  List<String> chunks = const <String>[],
+  int statusCode = 200,
+  bool inlineSseError = false,
 }) async {
   final server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
+  addTearDown(() => server.close(force: true));
   server.listen((req) async {
-    onRequest(await utf8.decodeStream(req));
+    capture
+      ..path = req.uri.toString()
+      ..authorization = req.headers.value(HttpHeaders.authorizationHeader)
+      ..body = await utf8.decodeStream(req);
+    if (statusCode != 200) {
+      req.response.statusCode = statusCode;
+      req.response.headers.contentType = ContentType.json;
+      req.response.write(
+        jsonEncode({
+          'error': {'message': 'boom', 'type': 'server_error'},
+        }),
+      );
+      await req.response.close();
+      return;
+    }
     req.response.headers.contentType = ContentType(
       'text',
       'event-stream',
       charset: 'utf-8',
     );
+    if (inlineSseError) {
+      req.response.write(
+        'data: {"error": {"message": "inference failed", '
+        '"type": "server_error"}}\n\n',
+      );
+      await req.response.close();
+      return;
+    }
     for (final chunk in chunks) {
       req.response.write(
         'data: ${jsonEncode({
@@ -36,6 +70,15 @@ Future<HttpServer> _startFakeServer({
     await req.response.close();
   });
   return server;
+}
+
+OpenAiCompatibleAiClient _clientFor(HttpServer server) {
+  return OpenAiCompatibleAiClient(
+    providerName: 'test-provider',
+    model: 'test-model',
+    apiKey: 'sk-test',
+    baseUrl: 'http://localhost:${server.port}/v1',
+  );
 }
 
 Memory _memory() => const Memory(
@@ -119,25 +162,19 @@ PhotoRecord _photo({
 
 void main() {
   test('analyzePhoto streams, sends data-URL image, parses strict JSON', () async {
-    String? capturedBody;
+    final capture = _RequestCapture();
     final server = await _startFakeServer(
+      capture,
       chunks: [
         '{"caption":"City night","summary":"A city street at night.","labels":["city","night"]}',
       ],
-      onRequest: (body) => capturedBody = body,
     );
-    final client = OpenAiCompatibleAiClient(
-      providerName: 'test-provider',
-      model: 'test-model',
-      apiKey: 'sk-test',
-      baseUrl: 'http://localhost:${server.port}/v1',
-    );
+    final client = _clientFor(server);
     final result = await client.analyzePhoto(
       photoId: 'p1',
       bytes: [1, 2, 3],
       mime: 'image/png',
     );
-    await server.close(force: true);
 
     expect(result.status, AiPipelineStatus.completed);
     expect(result.generatedCaption, 'City night');
@@ -146,58 +183,70 @@ void main() {
     expect(result.provider, 'test-provider');
     expect(result.model, 'test-model');
     expect(result.error, isNull);
-    expect(capturedBody!, contains('"stream":true'));
-    expect(capturedBody!, contains('data:image/png;base64,'));
-    expect(capturedBody!, contains('English (en-US)'));
+    expect(capture.body, contains('"stream":true'));
+    expect(capture.body, contains('data:image/png;base64,'));
+    expect(capture.body, contains('English (en-US)'));
+    // Request hygiene: bearer auth, model field, chat-completions path.
+    expect(capture.authorization, 'Bearer sk-test');
+    expect(capture.body, contains('"model":"test-model"'));
+    expect(capture.path, '/v1/chat/completions');
   });
 
   test('text split across multiple SSE events is accumulated', () async {
-    String? capturedBody;
+    final capture = _RequestCapture();
     final server = await _startFakeServer(
+      capture,
       chunks: [
         '{"caption":"City',
         ' night","summary":"A city street',
         ' at night.","labels":["city","night"]}',
       ],
-      onRequest: (body) => capturedBody = body,
     );
-    final client = OpenAiCompatibleAiClient(
-      providerName: 'test-provider',
-      model: 'test-model',
-      apiKey: 'sk-test',
-      baseUrl: 'http://localhost:${server.port}/v1',
-    );
-    final result = await client.analyzePhoto(
+    final result = await _clientFor(server).analyzePhoto(
       photoId: 'p1',
       bytes: [1, 2, 3],
       mime: 'image/png',
     );
-    await server.close(force: true);
 
-    expect(capturedBody!, contains('"stream":true'));
+    expect(capture.body, contains('"stream":true'));
     expect(result.status, AiPipelineStatus.completed);
     expect(result.generatedCaption, 'City night');
     expect(result.summary, 'A city street at night.');
     expect(result.generatedLabels, ['city', 'night']);
   });
 
+  test('non-image mime sends a text-only prompt and still parses JSON', () async {
+    final capture = _RequestCapture();
+    final server = await _startFakeServer(
+      capture,
+      chunks: [
+        '{"caption":"Clip title","summary":"A short clip.","labels":["clip"]}',
+      ],
+    );
+    final result = await _clientFor(server).analyzePhoto(
+      photoId: 'v1',
+      bytes: <int>[1, 2, 3, 4],
+      mime: 'video/mp4',
+    );
+
+    expect(result.status, AiPipelineStatus.completed);
+    expect(result.generatedCaption, 'Clip title');
+    expect(result.generatedLabels, ['clip']);
+    expect(capture.body, contains('"stream":true'));
+    expect(capture.body, isNot(contains('image_url')));
+    expect(capture.body, isNot(contains('data:video/mp4;base64,')));
+  });
+
   test('non-JSON model output surfaces a failed result', () async {
     final server = await _startFakeServer(
+      _RequestCapture(),
       chunks: ['not json at all'],
-      onRequest: (_) {},
     );
-    final client = OpenAiCompatibleAiClient(
-      providerName: 'test-provider',
-      model: 'test-model',
-      apiKey: 'sk-test',
-      baseUrl: 'http://localhost:${server.port}/v1',
-    );
-    final result = await client.analyzePhoto(
+    final result = await _clientFor(server).analyzePhoto(
       photoId: 'p1',
       bytes: [1, 2, 3],
       mime: 'image/png',
     );
-    await server.close(force: true);
 
     expect(result.status, AiPipelineStatus.failed);
     expect(result.error, contains('non-JSON'));
@@ -208,29 +257,22 @@ void main() {
   });
 
   test('zh-CN output locale is threaded into the prompt', () async {
-    String? capturedBody;
+    final capture = _RequestCapture();
     final server = await _startFakeServer(
+      capture,
       chunks: [
         '{"caption":"城市夜晚","summary":"夜晚的城市街道。","labels":["城市","夜晚"]}',
       ],
-      onRequest: (body) => capturedBody = body,
     );
-    final client = OpenAiCompatibleAiClient(
-      providerName: 'test-provider',
-      model: 'test-model',
-      apiKey: 'sk-test',
-      baseUrl: 'http://localhost:${server.port}/v1',
-    );
-    final result = await client.analyzePhoto(
+    final result = await _clientFor(server).analyzePhoto(
       photoId: 'p1',
       bytes: [1, 2, 3],
       mime: 'image/png',
       context: const PhotoAiContext(outputLocale: 'zh-CN'),
     );
-    await server.close(force: true);
 
-    expect(capturedBody!, contains('Simplified Chinese (zh-CN)'));
-    expect(capturedBody!, isNot(contains('English (en-US)')));
+    expect(capture.body, contains('Simplified Chinese (zh-CN)'));
+    expect(capture.body, isNot(contains('English (en-US)')));
     expect(result.status, AiPipelineStatus.completed);
     expect(result.generatedCaption, '城市夜晚');
   });
@@ -257,20 +299,14 @@ void main() {
   });
 
   test('memory analysis is text-only and maps title/description/labels', () async {
-    String? capturedBody;
+    final capture = _RequestCapture();
     final server = await _startFakeServer(
+      capture,
       chunks: [
         '{"title":"Weekend trip","description":"A weekend by the coast.","labels":["trip","coast"]}',
       ],
-      onRequest: (body) => capturedBody = body,
     );
-    final client = OpenAiCompatibleAiClient(
-      providerName: 'test-provider',
-      model: 'test-model',
-      apiKey: 'sk-test',
-      baseUrl: 'http://localhost:${server.port}/v1',
-    );
-    final result = await client.analyzeMemory(
+    final result = await _clientFor(server).analyzeMemory(
       memory: _memory(),
       photos: [
         _photo(
@@ -287,7 +323,6 @@ void main() {
         _photo(path: '/lib/b.jpg'),
       ],
     );
-    await server.close(force: true);
 
     expect(result.status, AiPipelineStatus.completed);
     expect(result.generatedName, 'Weekend trip');
@@ -297,15 +332,15 @@ void main() {
     expect(result.model, 'test-model');
     expect(result.error, isNull);
 
-    expect(capturedBody!, contains('"stream":true'));
-    expect(capturedBody!, isNot(contains('data:image')));
+    expect(capture.body, contains('"stream":true'));
+    expect(capture.body, isNot(contains('data:image')));
     // Saved memory values and the sample set are present.
-    expect(capturedBody!, contains('Saved memory name: Saved name.'));
-    expect(capturedBody!, contains('Saved description: Saved description.'));
-    expect(capturedBody!, contains('date=2024-05-01; gps=36.0,120.0; '
+    expect(capture.body, contains('Saved memory name: Saved name.'));
+    expect(capture.body, contains('Saved description: Saved description.'));
+    expect(capture.body, contains('date=2024-05-01; gps=36.0,120.0; '
         'caption=Coast at dawn; summary=Sunrise over the coast.; '
         'labels=beach, sunrise, ocean'));
-    expect(capturedBody!, contains('date=unknown-date; gps=unknown-gps; '
+    expect(capture.body, contains('date=unknown-date; gps=unknown-gps; '
         'caption=b.jpg; summary=no-summary; labels=no-tags'));
   });
 
@@ -392,24 +427,60 @@ void main() {
 
   test('memory non-JSON output surfaces a failed result', () async {
     final server = await _startFakeServer(
+      _RequestCapture(),
       chunks: ['<think>reasoning only</think> still not json'],
-      onRequest: (_) {},
     );
-    final client = OpenAiCompatibleAiClient(
-      providerName: 'test-provider',
-      model: 'test-model',
-      apiKey: 'sk-test',
-      baseUrl: 'http://localhost:${server.port}/v1',
-    );
-    final result = await client.analyzeMemory(
+    final result = await _clientFor(server).analyzeMemory(
       memory: _memory(),
       photos: const <PhotoRecord>[],
     );
-    await server.close(force: true);
 
     expect(result.status, AiPipelineStatus.failed);
     expect(result.error, contains('non-JSON'));
     expect(result.provider, 'test-provider');
     expect(result.model, 'test-model');
+  });
+
+  test('HTTP error responses throw a typed ApiException', () async {
+    final server = await _startFakeServer(
+      _RequestCapture(),
+      statusCode: 500,
+    );
+    await expectLater(
+      _clientFor(server).analyzePhoto(
+        photoId: 'p1',
+        bytes: [1, 2, 3],
+        mime: 'image/png',
+      ),
+      throwsA(isA<ApiException>()),
+    );
+    await expectLater(
+      _clientFor(server).analyzeMemory(
+        memory: _memory(),
+        photos: const <PhotoRecord>[],
+      ),
+      throwsA(isA<ApiException>()),
+    );
+  });
+
+  test('inline SSE error events throw a typed StreamException', () async {
+    final server = await _startFakeServer(
+      _RequestCapture(),
+      inlineSseError: true,
+    );
+    await expectLater(
+      _clientFor(server).analyzePhoto(
+        photoId: 'p1',
+        bytes: [1, 2, 3],
+        mime: 'image/png',
+      ),
+      throwsA(
+        isA<StreamException>().having(
+          (error) => error.message,
+          'message',
+          contains('inference failed'),
+        ),
+      ),
+    );
   });
 }

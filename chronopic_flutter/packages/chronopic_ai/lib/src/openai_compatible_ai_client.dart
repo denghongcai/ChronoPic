@@ -15,10 +15,19 @@ import 'prompts.dart';
 /// Server-Sent-Events even for non-streaming requests, so the non-streaming
 /// `create` call is never used.
 ///
+/// Image gating (Electron `resolvePhotoInput` parity): only `image/*` mimes are
+/// sent as data-URL image parts. Non-image assets get the text-only prompt and
+/// their bytes are ignored, so callers should not read original media for them.
+///
+/// [baseUrl] must include the `/v1` segment (e.g. `http://host:8080/v1`);
+/// normalization of partially specified base URLs lands later with the
+/// settings factory.
+///
 /// Error contract: model output that contains no parseable JSON object
 /// resolves to a `failed` result carrying provider/model and an error message.
-/// Transport/network failures propagate as exceptions; callers (the enrichment
-/// orchestration) are responsible for catching them.
+/// Transport failures throw typed `OpenAIException`s (HTTP error statuses as
+/// `ApiException` subclasses, inline SSE error events as `StreamException`);
+/// callers (the enrichment orchestration) are responsible for catching them.
 final class OpenAiCompatibleAiClient implements ChronoPicAiClient {
   OpenAiCompatibleAiClient({
     required this.providerName,
@@ -50,20 +59,22 @@ final class OpenAiCompatibleAiClient implements ChronoPicAiClient {
     String? path,
     PhotoAiContext context = const PhotoAiContext(),
   }) async {
-    final dataUrl = 'data:$mime;base64,${base64Encode(bytes)}';
-    final text = await _streamText(
-      ChatMessage.user([
-        ContentPart.text(buildPhotoAnalysisPrompt(
-          mime: mime,
-          datetime: datetime,
-          lat: lat,
-          lng: lng,
-          path: path,
-          context: context,
-        )),
-        ContentPart.imageUrl(dataUrl),
-      ]),
-    );
+    // Electron `resolvePhotoInput` parity: only images contribute bytes to the
+    // request; non-image mimes fall back to the text-only prompt.
+    final isImage = mime.startsWith('image/');
+    final parts = <ContentPart>[
+      ContentPart.text(buildPhotoAnalysisPrompt(
+        mime: mime,
+        datetime: datetime,
+        lat: lat,
+        lng: lng,
+        path: path,
+        context: context,
+      )),
+      if (isImage)
+        ContentPart.imageUrl('data:$mime;base64,${base64Encode(bytes)}'),
+    ];
+    final text = await _streamText(ChatMessage.user(parts));
 
     final payload = extractJsonObject(text);
     if (payload == null) {

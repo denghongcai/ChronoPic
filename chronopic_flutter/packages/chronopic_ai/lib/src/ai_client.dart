@@ -41,7 +41,7 @@ final class MemoryAiResult {
 }
 
 /// Extra context threaded into photo prompts.
-class PhotoAiContext {
+final class PhotoAiContext {
   const PhotoAiContext({this.outputLocale});
 
   /// Desired output language for generated caption/summary/labels, e.g.
@@ -57,7 +57,13 @@ class PhotoAiContext {
 /// draft. (The TypeScript reference additionally distinguishes an explicit
 /// `null` meaning "the draft was cleared"; no current caller uses that, so Dart
 /// treats absent and null identically.)
-class MemoryAIContext {
+///
+/// The `MemoryAIContext` vs `PhotoAiContext` casing split is deliberate
+/// TypeScript parity: the Electron reference names these types
+/// `MemoryAIContext` and `PhotoAIContext`, and the photo type is respelled
+/// here because `AI`-initial acronyms are flagged by Dart's `camel_case_types`
+/// lint.
+final class MemoryAIContext {
   const MemoryAIContext({this.name, this.description, this.outputLocale});
 
   final String? name;

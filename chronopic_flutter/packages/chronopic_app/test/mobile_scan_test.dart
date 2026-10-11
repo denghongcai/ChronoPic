@@ -119,7 +119,7 @@ void main() {
     final firstSource = FixtureMediaSource(
       assets: <MediaAsset>[
         _asset('asset-ok', updatedAt: 1000),
-        _asset('asset-failed', updatedAt: 2000),
+        _asset('asset-failed', updatedAt: 2000, mime: 'image/jpeg'),
       ],
       bytesById: <String, Uint8List>{
         'asset-ok': Uint8List.fromList(<int>[1]),
@@ -140,7 +140,7 @@ void main() {
     final retrySource = FixtureMediaSource(
       assets: <MediaAsset>[
         _asset('asset-ok', updatedAt: 1000),
-        _asset('asset-failed', updatedAt: 2000),
+        _asset('asset-failed', updatedAt: 2000, mime: 'image/jpeg'),
       ],
       bytesById: <String, Uint8List>{
         'asset-ok': Uint8List.fromList(<int>[1]),
