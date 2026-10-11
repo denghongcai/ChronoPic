@@ -37,17 +37,13 @@ entries.
 
 ## Current State
 
-- Latest step: **Step 278** (2026-10-12) — Final-review polish: the memory
-  AI-suggestions dialog's in-flight guard now throws a localized error that the
-  modal dialog renders inline (previously a stale un-enriched memory was adopted
-  as fake success; the shell banner was hidden behind the dialog). Sibling photo
-  and queue guards verified UI-unreachable/visible and unchanged. (Step 277 was
-  the Flutter real AI provider phase: `OpenAiCompatibleAiClient`, AI client
-  factory, photo + memory enrichment orchestration, and the inspector /
-  memory-dialog / notification queue surfaces.)
 - Latest step: **Step 279** (2026-10-12) — published `v0.1.13` with the real AI
   provider stack; main CI and the tag release workflow both passed, and the
   Android job built the signed artifacts in CI without a manual fallback.
+  (Step 277 was the Flutter real AI provider phase — `OpenAiCompatibleAiClient`,
+  AI client factory, photo + memory enrichment orchestration, and the inspector /
+  memory-dialog / notification queue surfaces; Step 278 was its final-review
+  polish for the memory dialog's in-flight guard.)
 - Release line: Flutter (`chronopic_flutter/`); latest release **v0.1.13**
   (Android APK/AAB + Linux x64 tarball via tag-triggered GitHub Actions).
 - The Electron app is reference/migration-only and no longer released.
