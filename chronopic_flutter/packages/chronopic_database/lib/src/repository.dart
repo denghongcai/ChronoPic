@@ -391,6 +391,19 @@ final class ChronoPicRepository {
     final semantic = record.semantic;
     final updated = _replaceRecord(
       record,
+      // Bump photo updatedAt on every enrichment transition (Electron
+      // infra-db parity) so failed photos sink in updatedAt-asc retry order.
+      photo: Photo(
+        id: record.photo.id,
+        path: record.photo.path,
+        hash: record.photo.hash,
+        size: record.photo.size,
+        mime: record.photo.mime,
+        thumbnailPath: record.photo.thumbnailPath,
+        favorite: record.photo.favorite,
+        createdAt: record.photo.createdAt,
+        updatedAt: DateTime.now().millisecondsSinceEpoch,
+      ),
       semantic: Semantic(
         photoId: semantic.photoId,
         labels: semantic.labels,

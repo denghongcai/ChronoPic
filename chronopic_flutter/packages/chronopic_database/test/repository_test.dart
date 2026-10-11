@@ -224,6 +224,7 @@ void main() {
       () {
         final repository = ChronoPicRepository()
           ..restoreBackup(fixtureBackup());
+        final before = DateTime.now().millisecondsSinceEpoch;
 
         final updated = repository.updatePhotoSemanticEnrichment(
           'photo-city',
@@ -248,12 +249,14 @@ void main() {
         expect(updated.semantic.labels, ['city']);
         expect(updated.semantic.caption, isNull);
         expect(updated.photo.path, '/fixture/chronopic/library/backup-city.png');
+        expect(updated.photo.updatedAt, greaterThanOrEqualTo(before));
         expect(updated.indexState.aiProcessed, isTrue);
       },
     );
 
     test('photo failed transition keeps previous generated fields', () {
       final repository = ChronoPicRepository()..restoreBackup(fixtureBackup());
+      final before = DateTime.now().millisecondsSinceEpoch;
 
       final updated = repository.updatePhotoSemanticEnrichment(
         'photo-lake',
@@ -275,6 +278,7 @@ void main() {
       expect(updated.semantic.aiModel, 'fixture-vision-model');
       expect(updated.semantic.labels, ['backup', 'lake']);
       expect(updated.semantic.caption, 'Manual lake caption');
+      expect(updated.photo.updatedAt, greaterThanOrEqualTo(before));
       expect(updated.indexState.aiProcessed, isFalse);
     });
 

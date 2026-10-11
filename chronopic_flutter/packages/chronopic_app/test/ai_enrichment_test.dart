@@ -8,11 +8,17 @@ import 'package:test/test.dart';
 /// Recording fake so tests can inspect exactly what the app service sends to
 /// the AI client without any network access.
 final class _RecordingAiClient implements ChronoPicAiClient {
-  _RecordingAiClient({this.failingPhotoIds = const <String>{}});
+  _RecordingAiClient({
+    this.failingPhotoIds = const <String>{},
+    this.throwingPhotoIds = const <String>{},
+  });
 
   final Set<String> failingPhotoIds;
+  final Set<String> throwingPhotoIds;
 
   final List<String> photoIds = <String>[];
+  final List<List<int>> photoBytes = <List<int>>[];
+  final List<String> photoMimes = <String>[];
   final List<PhotoAiContext> photoContexts = <PhotoAiContext>[];
   final List<MemoryAIContext> memoryContexts = <MemoryAIContext>[];
   final List<List<PhotoRecord>> memoryPhotos = <List<PhotoRecord>>[];
@@ -32,7 +38,12 @@ final class _RecordingAiClient implements ChronoPicAiClient {
     PhotoAiContext context = const PhotoAiContext(),
   }) async {
     photoIds.add(photoId);
+    photoBytes.add(bytes);
+    photoMimes.add(mime);
     photoContexts.add(context);
+    if (throwingPhotoIds.contains(photoId)) {
+      throw StateError('transport blew up for $photoId');
+    }
     if (failingPhotoIds.contains(photoId)) {
       return PhotoAiResult(
         status: AiPipelineStatus.failed,
@@ -132,26 +143,32 @@ ChronoPicAppService _fixtureService() {
 
 void main() {
   group('photo semantic enrichment', () {
-    test('success writes generated fields and preserves manual fields', () async {
-      final service = _fixtureService();
+    test(
+      'success writes generated fields and preserves manual fields',
+      () async {
+        final service = _fixtureService();
 
-      final updated = await service.enrichPhotoSemantic(
-        'photo-city',
-        aiClient: const FixtureSuccessAiClient(),
-      );
+        final updated = await service.enrichPhotoSemantic(
+          'photo-city',
+          aiClient: const FixtureSuccessAiClient(),
+        );
 
-      expect(updated.semantic.aiStatus, AiPipelineStatus.completed);
-      expect(updated.semantic.aiError, isNull);
-      expect(updated.semantic.generatedLabels, <String>['fixture', 'image']);
-      expect(updated.semantic.generatedCaption, 'Generated caption for photo-city');
-      expect(updated.semantic.summary, 'Generated summary for photo-city.');
-      expect(updated.semantic.aiProvider, 'fixture-provider');
-      expect(updated.semantic.aiModel, 'fixture-model');
-      expect(updated.semantic.aiProcessedAt, isNotNull);
-      // Manual (user-authored) fields are never touched.
-      expect(updated.semantic.labels, <String>['city']);
-      expect(updated.semantic.caption, isNull);
-    });
+        expect(updated.semantic.aiStatus, AiPipelineStatus.completed);
+        expect(updated.semantic.aiError, isNull);
+        expect(updated.semantic.generatedLabels, <String>['fixture', 'image']);
+        expect(
+          updated.semantic.generatedCaption,
+          'Generated caption for photo-city',
+        );
+        expect(updated.semantic.summary, 'Generated summary for photo-city.');
+        expect(updated.semantic.aiProvider, 'fixture-provider');
+        expect(updated.semantic.aiModel, 'fixture-model');
+        expect(updated.semantic.aiProcessedAt, isNotNull);
+        // Manual (user-authored) fields are never touched.
+        expect(updated.semantic.labels, <String>['city']);
+        expect(updated.semantic.caption, isNull);
+      },
+    );
 
     test('failed result writes failed status and preserves fields', () async {
       final service = _fixtureService();
@@ -169,7 +186,10 @@ void main() {
       expect(updated.semantic.caption, 'Manual lake caption');
       expect(updated.semantic.generatedLabels, <String>['water', 'travel']);
       expect(updated.semantic.generatedCaption, 'Generated lake caption');
-      expect(updated.semantic.summary, 'A generated summary for the lake fixture.');
+      expect(
+        updated.semantic.summary,
+        'A generated summary for the lake fixture.',
+      );
     });
 
     test('unknown photo throws before any state transition', () {
@@ -201,6 +221,53 @@ void main() {
       );
 
       expect(service.getPhoto('photo-city')!.semantic.aiError, isNull);
+    });
+
+    test(
+      'unavailable original file falls back to text-only, not an empty image part',
+      () async {
+        final repository = ChronoPicRepository();
+        final service = ChronoPicAppService(repository);
+        // Absolute path pointing at a file that does not exist.
+        repository.upsertPhotoRecord(
+          _seedRecord('photo-unreadable', aiStatus: AiPipelineStatus.pending),
+        );
+        final client = _RecordingAiClient();
+
+        final updated = await service.enrichPhotoSemantic(
+          'photo-unreadable',
+          aiClient: client,
+        );
+
+        // Electron parity: no resolvable file means the text-only prompt, and
+        // enrichment still completes instead of failing at the provider.
+        expect(updated.semantic.aiStatus, AiPipelineStatus.completed);
+        expect(client.photoBytes.single, isEmpty);
+        expect(client.photoMimes.single, 'image/png');
+      },
+    );
+
+    test('transport exception maps to a clean failed message', () async {
+      final repository = ChronoPicRepository();
+      final service = ChronoPicAppService(repository);
+      repository.upsertPhotoRecord(
+        _seedRecord('photo-transport', aiStatus: AiPipelineStatus.pending),
+      );
+      final client = _RecordingAiClient(
+        throwingPhotoIds: <String>{'photo-transport'},
+      );
+
+      final updated = await service.enrichPhotoSemantic(
+        'photo-transport',
+        aiClient: client,
+      );
+
+      expect(updated.semantic.aiStatus, AiPipelineStatus.failed);
+      expect(updated.semantic.aiError, 'transport blew up for photo-transport');
+      expect(updated.semantic.aiProcessedAt, isNotNull);
+      // Manual fields survive the transport failure.
+      expect(updated.semantic.labels, <String>['manual']);
+      expect(updated.semantic.caption, 'Manual photo-transport caption');
     });
   });
 
@@ -358,25 +425,47 @@ void main() {
       final repository = ChronoPicRepository();
       final service = ChronoPicAppService(repository);
       repository.upsertPhotoRecord(
-        _seedRecord('photo-pending', aiStatus: AiPipelineStatus.pending, updatedAt: 1001),
+        _seedRecord(
+          'photo-pending',
+          aiStatus: AiPipelineStatus.pending,
+          updatedAt: 1001,
+        ),
       );
       repository.upsertPhotoRecord(
-        _seedRecord('photo-failed', aiStatus: AiPipelineStatus.failed, updatedAt: 1002),
+        _seedRecord(
+          'photo-failed',
+          aiStatus: AiPipelineStatus.failed,
+          updatedAt: 1002,
+        ),
       );
       repository.upsertPhotoRecord(
-        _seedRecord('photo-disabled', aiStatus: AiPipelineStatus.disabled, updatedAt: 1003),
+        _seedRecord(
+          'photo-disabled',
+          aiStatus: AiPipelineStatus.disabled,
+          updatedAt: 1003,
+        ),
       );
       repository.upsertPhotoRecord(
-        _seedRecord('photo-done', aiStatus: AiPipelineStatus.completed, updatedAt: 1004),
+        _seedRecord(
+          'photo-done',
+          aiStatus: AiPipelineStatus.completed,
+          updatedAt: 1004,
+        ),
       );
-      final client = _RecordingAiClient(failingPhotoIds: <String>{'photo-failed'});
+      final client = _RecordingAiClient(
+        failingPhotoIds: <String>{'photo-failed'},
+      );
 
       final summary = await service.enrichPendingSemantics(aiClient: client);
 
       expect(summary.processed, 3);
       expect(summary.completed, 2);
       expect(summary.failed, 1);
-      expect(client.photoIds, <String>['photo-pending', 'photo-failed', 'photo-disabled']);
+      expect(client.photoIds, <String>[
+        'photo-pending',
+        'photo-failed',
+        'photo-disabled',
+      ]);
 
       expect(
         service.getPhoto('photo-pending')!.semantic.aiStatus,
@@ -402,17 +491,54 @@ void main() {
       final service = ChronoPicAppService(repository);
       for (var i = 0; i < 5; i++) {
         repository.upsertPhotoRecord(
-          _seedRecord('photo-q$i', aiStatus: AiPipelineStatus.pending, updatedAt: 1000 + i),
+          _seedRecord(
+            'photo-q$i',
+            aiStatus: AiPipelineStatus.pending,
+            updatedAt: 1000 + i,
+          ),
         );
       }
       final client = _RecordingAiClient();
 
-      final summary = await service.enrichPendingSemantics(limit: 2, aiClient: client);
+      final summary = await service.enrichPendingSemantics(
+        limit: 2,
+        aiClient: client,
+      );
 
       expect(summary.processed, 2);
       expect(summary.completed, 2);
       expect(client.photoIds, hasLength(2));
     });
+
+    test(
+      'limit above the default query cap still processes every match',
+      () async {
+        final repository = ChronoPicRepository();
+        final service = ChronoPicAppService(repository);
+        const total = 70;
+        for (var i = 0; i < total; i++) {
+          repository.upsertPhotoRecord(
+            _seedRecord(
+              'photo-big$i',
+              aiStatus: AiPipelineStatus.pending,
+              updatedAt: 1000 + i,
+            ),
+          );
+        }
+        final client = _RecordingAiClient();
+
+        final summary = await service.enrichPendingSemantics(
+          limit: total,
+          aiClient: client,
+        );
+
+        // Without a per-bucket limit the domain default (60) would truncate the
+        // candidate pool before `take(limit)` runs.
+        expect(summary.processed, total);
+        expect(summary.completed, total);
+        expect(client.photoIds, hasLength(total));
+      },
+    );
   });
 
   group('output locale resolution', () {

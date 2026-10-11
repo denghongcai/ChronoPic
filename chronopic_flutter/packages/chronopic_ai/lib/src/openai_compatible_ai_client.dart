@@ -61,8 +61,10 @@ final class OpenAiCompatibleAiClient implements ChronoPicAiClient {
     PhotoAiContext context = const PhotoAiContext(),
   }) async {
     // Electron `resolvePhotoInput` parity: only images contribute bytes to the
-    // request; non-image mimes fall back to the text-only prompt.
-    final isImage = mime.startsWith('image/');
+    // request; non-image mimes fall back to the text-only prompt. Empty bytes
+    // also mean "no image input" so callers whose file resolution failed (or
+    // whose source is text-only) never produce an empty image data URL.
+    final isImage = mime.startsWith('image/') && bytes.isNotEmpty;
     final parts = <ContentPart>[
       ContentPart.text(buildPhotoAnalysisPrompt(
         mime: mime,

@@ -219,12 +219,27 @@ final class ChronoPicAppService {
     String photoId, {
     PhotoAiContext? context,
     ChronoPicAiClient? aiClient,
-  }) async {
-    final client = aiClient ?? _defaultAiClient();
+  }) {
+    final settings = createBackup().settings;
+    final client = aiClient ?? createAiClient(settings.ai);
     if (!client.isEnabled) {
       throw StateError('AI enrichment is not configured');
     }
+    return _enrichPhotoWith(
+      client: client,
+      outputLocale:
+          context?.outputLocale ?? _resolveOutputLocale(settings.locale),
+      photoId: photoId,
+    );
+  }
 
+  /// Enrichment worker with client and output locale already resolved so a
+  /// batch run does not re-serialize settings for every photo.
+  Future<PhotoRecord> _enrichPhotoWith({
+    required ChronoPicAiClient client,
+    required String outputLocale,
+    required String photoId,
+  }) async {
     final photo = repository.getPhoto(photoId);
     if (photo == null) {
       throw StateError('Photo not found: $photoId');
@@ -249,9 +264,7 @@ final class ChronoPicAppService {
         lat: photo.metadata.lat,
         lng: photo.metadata.lng,
         path: photo.photo.path,
-        context: PhotoAiContext(
-          outputLocale: context?.outputLocale ?? _defaultOutputLocale(),
-        ),
+        context: PhotoAiContext(outputLocale: outputLocale),
       );
 
       if (analysis.status == AiPipelineStatus.failed) {
@@ -282,7 +295,7 @@ final class ChronoPicAppService {
       final updated = repository.updatePhotoSemanticEnrichment(
         photoId,
         aiStatus: AiPipelineStatus.failed,
-        aiError: error.toString(),
+        aiError: _enrichmentErrorMessage(error),
         aiProcessedAt: now,
       );
       _persistIfConfigured();
@@ -293,12 +306,18 @@ final class ChronoPicAppService {
   /// Processes a bounded batch of photos whose AI state is `pending`, `failed`,
   /// or `disabled` (the disabled bucket keeps late-configured libraries
   /// enrichable without a re-index), one photo at a time.
-  Future<({int processed, int completed, int failed})>
-  enrichPendingSemantics({int limit = 12, PhotoAiContext? context, ChronoPicAiClient? aiClient}) async {
-    final client = aiClient ?? _defaultAiClient();
+  Future<({int processed, int completed, int failed})> enrichPendingSemantics({
+    int limit = 12,
+    PhotoAiContext? context,
+    ChronoPicAiClient? aiClient,
+  }) async {
+    final settings = createBackup().settings;
+    final client = aiClient ?? createAiClient(settings.ai);
     if (!client.isEnabled) {
       throw StateError('AI enrichment is not configured');
     }
+    final outputLocale =
+        context?.outputLocale ?? _resolveOutputLocale(settings.locale);
 
     final queue = <PhotoRecord>[
       for (final status in <AiPipelineStatus>[
@@ -306,21 +325,24 @@ final class ChronoPicAppService {
         AiPipelineStatus.pending,
         AiPipelineStatus.failed,
       ])
-        ...repository.listPhotos(PhotoFilter(
-          aiStatus: status,
-          sortBy: PhotoSortBy.updatedAt,
-          sortDirection: SortDirection.asc,
-        )),
+        ...repository.listPhotos(
+          PhotoFilter(
+            aiStatus: status,
+            limit: limit,
+            sortBy: PhotoSortBy.updatedAt,
+            sortDirection: SortDirection.asc,
+          ),
+        ),
     ]..sort((a, b) => a.photo.updatedAt.compareTo(b.photo.updatedAt));
     final batch = queue.take(limit).toList();
 
     var completed = 0;
     var failed = 0;
     for (final photo in batch) {
-      final updated = await enrichPhotoSemantic(
-        photo.photo.id,
-        context: context,
-        aiClient: client,
+      final updated = await _enrichPhotoWith(
+        client: client,
+        outputLocale: outputLocale,
+        photoId: photo.photo.id,
       );
       if (updated.semantic.aiStatus == AiPipelineStatus.completed) {
         completed += 1;
@@ -329,11 +351,7 @@ final class ChronoPicAppService {
       }
     }
 
-    return (
-      processed: batch.length,
-      completed: completed,
-      failed: failed,
-    );
+    return (processed: batch.length, completed: completed, failed: failed);
   }
 
   /// Runs memory-level AI synthesis over a sampled subset of the memory's
@@ -343,10 +361,13 @@ final class ChronoPicAppService {
     MemoryAIContext? context,
     ChronoPicAiClient? aiClient,
   }) async {
-    final client = aiClient ?? _defaultAiClient();
+    final settings = createBackup().settings;
+    final client = aiClient ?? createAiClient(settings.ai);
     if (!client.isEnabled) {
       throw StateError('AI enrichment is not configured');
     }
+    final outputLocale =
+        context?.outputLocale ?? _resolveOutputLocale(settings.locale);
 
     final memory = repository.getMemory(memoryId);
     if (memory == null) {
@@ -355,7 +376,8 @@ final class ChronoPicAppService {
 
     final photos = repository.listPhotosByMemory(memoryId).toList()
       ..sort(
-        (a, b) => (b.metadata.datetime ?? 0).compareTo(a.metadata.datetime ?? 0),
+        (a, b) =>
+            (b.metadata.datetime ?? 0).compareTo(a.metadata.datetime ?? 0),
       );
     final sample = photos.take(_memoryAnalysisPhotoLimit).toList();
 
@@ -384,7 +406,7 @@ final class ChronoPicAppService {
         context: MemoryAIContext(
           name: context?.name,
           description: context?.description,
-          outputLocale: context?.outputLocale ?? _defaultOutputLocale(),
+          outputLocale: outputLocale,
         ),
       );
 
@@ -416,7 +438,7 @@ final class ChronoPicAppService {
       final updated = repository.updateMemorySemanticEnrichment(
         memoryId,
         aiStatus: AiPipelineStatus.failed,
-        aiError: error.toString(),
+        aiError: _enrichmentErrorMessage(error),
         aiProcessedAt: now,
       );
       _persistIfConfigured();
@@ -424,20 +446,27 @@ final class ChronoPicAppService {
     }
   }
 
-  ChronoPicAiClient _defaultAiClient() =>
-      createAiClient(createBackup().settings.ai);
-
   /// Resolves the default AI output locale from persisted locale settings,
   /// mirroring the Electron `resolveAIOutputLocale` behavior: an explicit AI
   /// output locale wins; `follow-ui` falls back to the UI locale.
-  String _defaultOutputLocale() {
-    final locale = createBackup().settings.locale;
+  String _resolveOutputLocale(LocaleSettings locale) {
     return switch (locale.aiOutputLocale) {
       AiOutputLocale.zhCN => 'zh-CN',
       AiOutputLocale.enUS => 'en-US',
       AiOutputLocale.followUi =>
         locale.locale == LocaleSetting.zhCN ? 'zh-CN' : 'en-US',
     };
+  }
+
+  /// Electron catch-parity (`error instanceof Error && error.message ? ... :
+  /// "Unknown AI enrichment error"`): prefer the error's own message when the
+  /// type exposes one, else `toString()`, with a non-empty fallback.
+  String _enrichmentErrorMessage(Object error) {
+    if (error is StateError && error.message.isNotEmpty) {
+      return error.message;
+    }
+    final text = error.toString();
+    return text.isEmpty ? 'Unknown AI enrichment error' : text;
   }
 
   /// Electron `resolvePhotoInput` parity: prefer an absolute thumbnail (it is
