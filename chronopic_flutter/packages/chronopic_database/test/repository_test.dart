@@ -319,6 +319,7 @@ void main() {
       () {
         final repository = ChronoPicRepository()
           ..restoreBackup(fixtureBackup());
+        final before = DateTime.now().millisecondsSinceEpoch;
 
         final updated = repository.updateMemorySemanticEnrichment(
           'memory-weekend',
@@ -347,6 +348,7 @@ void main() {
         );
         expect(updated.coverPhotoId, 'photo-lake');
         expect(updated.photoCount, 1);
+        expect(updated.updatedAt, greaterThanOrEqualTo(before));
       },
     );
 

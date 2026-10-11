@@ -13,6 +13,10 @@ final class ChronoPicAppService {
     _loadPersistedBackup();
   }
 
+  /// Upper bound on how many photos a single memory synthesis call may sample,
+  /// matching the Electron reference (`enrichMemorySemantic` limit: 24).
+  static const int _memoryAnalysisPhotoLimit = 24;
+
   factory ChronoPicAppService.persistent({
     ChronoPicRepository? repository,
     String? dataFilePath,
@@ -77,7 +81,7 @@ final class ChronoPicAppService {
 
   Future<IndexerStats> scanDesktopDirectory(
     String path, {
-    ChronoPicAiClient aiClient = const DisabledAiClient(),
+    ChronoPicAiClient? aiClient,
   }) async {
     return scanMediaSource(
       path,
@@ -89,7 +93,7 @@ final class ChronoPicAppService {
   Future<IndexerStats> scanMediaSource(
     String path,
     MediaSourceAdapter mediaSource, {
-    ChronoPicAiClient aiClient = const DisabledAiClient(),
+    ChronoPicAiClient? aiClient,
     Future<bool> Function()? shouldPause,
     void Function(ScanProgress progress)? onProgress,
   }) async {
@@ -97,7 +101,7 @@ final class ChronoPicAppService {
     final indexer = ChronoPicIndexerService(
       repository: repository,
       mediaSource: mediaSource,
-      aiClient: aiClient,
+      aiClient: aiClient ?? createAiClient(createBackup().settings.ai),
       thumbnailDirectory: _thumbnailDirectoryFor(path),
       shouldPause: shouldPause,
       onProgress: onProgress,
@@ -202,6 +206,265 @@ final class ChronoPicAppService {
     return record;
   }
 
+  // ─── AI enrichment orchestration ────────────────────────────────────────────
+
+  /// Runs photo semantic enrichment through the repository state machine:
+  /// `processing` → `completed` / `failed`, preserving manual fields.
+  ///
+  /// The AI client defaults to one built from persisted settings; tests may
+  /// inject a fixture client through [aiClient]. Non-JSON model output arrives
+  /// as a `failed` result from the client; transport exceptions are caught and
+  /// mapped to the `failed` transition (Electron reference parity).
+  Future<PhotoRecord> enrichPhotoSemantic(
+    String photoId, {
+    PhotoAiContext? context,
+    ChronoPicAiClient? aiClient,
+  }) async {
+    final client = aiClient ?? _defaultAiClient();
+    if (!client.isEnabled) {
+      throw StateError('AI enrichment is not configured');
+    }
+
+    final photo = repository.getPhoto(photoId);
+    if (photo == null) {
+      throw StateError('Photo not found: $photoId');
+    }
+
+    repository.updatePhotoSemanticEnrichment(
+      photoId,
+      aiStatus: AiPipelineStatus.processing,
+      aiError: null,
+    );
+
+    final now = DateTime.now().millisecondsSinceEpoch;
+    try {
+      final input = await _resolvePhotoInput(photo);
+      final analysis = await client.analyzePhoto(
+        photoId: photoId,
+        bytes: input?.bytes ?? const <int>[],
+        mime: input?.mime ?? photo.photo.mime,
+        datetime: photo.metadata.datetime == null
+            ? null
+            : DateTime.fromMillisecondsSinceEpoch(photo.metadata.datetime!),
+        lat: photo.metadata.lat,
+        lng: photo.metadata.lng,
+        path: photo.photo.path,
+        context: PhotoAiContext(
+          outputLocale: context?.outputLocale ?? _defaultOutputLocale(),
+        ),
+      );
+
+      if (analysis.status == AiPipelineStatus.failed) {
+        final updated = repository.updatePhotoSemanticEnrichment(
+          photoId,
+          aiStatus: AiPipelineStatus.failed,
+          aiError: analysis.error ?? 'Unknown AI enrichment error',
+          aiProcessedAt: now,
+        );
+        _persistIfConfigured();
+        return updated;
+      }
+
+      final updated = repository.updatePhotoSemanticEnrichment(
+        photoId,
+        aiStatus: AiPipelineStatus.completed,
+        aiError: null,
+        generatedLabels: analysis.generatedLabels,
+        generatedCaption: analysis.generatedCaption,
+        summary: analysis.summary,
+        aiProvider: analysis.provider,
+        aiModel: analysis.model,
+        aiProcessedAt: now,
+      );
+      _persistIfConfigured();
+      return updated;
+    } catch (error) {
+      final updated = repository.updatePhotoSemanticEnrichment(
+        photoId,
+        aiStatus: AiPipelineStatus.failed,
+        aiError: error.toString(),
+        aiProcessedAt: now,
+      );
+      _persistIfConfigured();
+      return updated;
+    }
+  }
+
+  /// Processes a bounded batch of photos whose AI state is `pending`, `failed`,
+  /// or `disabled` (the disabled bucket keeps late-configured libraries
+  /// enrichable without a re-index), one photo at a time.
+  Future<({int processed, int completed, int failed})>
+  enrichPendingSemantics({int limit = 12, PhotoAiContext? context, ChronoPicAiClient? aiClient}) async {
+    final client = aiClient ?? _defaultAiClient();
+    if (!client.isEnabled) {
+      throw StateError('AI enrichment is not configured');
+    }
+
+    final queue = <PhotoRecord>[
+      for (final status in <AiPipelineStatus>[
+        AiPipelineStatus.disabled,
+        AiPipelineStatus.pending,
+        AiPipelineStatus.failed,
+      ])
+        ...repository.listPhotos(PhotoFilter(
+          aiStatus: status,
+          sortBy: PhotoSortBy.updatedAt,
+          sortDirection: SortDirection.asc,
+        )),
+    ]..sort((a, b) => a.photo.updatedAt.compareTo(b.photo.updatedAt));
+    final batch = queue.take(limit).toList();
+
+    var completed = 0;
+    var failed = 0;
+    for (final photo in batch) {
+      final updated = await enrichPhotoSemantic(
+        photo.photo.id,
+        context: context,
+        aiClient: client,
+      );
+      if (updated.semantic.aiStatus == AiPipelineStatus.completed) {
+        completed += 1;
+      } else {
+        failed += 1;
+      }
+    }
+
+    return (
+      processed: batch.length,
+      completed: completed,
+      failed: failed,
+    );
+  }
+
+  /// Runs memory-level AI synthesis over a sampled subset of the memory's
+  /// photos (newest first), preserving authored memory metadata.
+  Future<Memory> enrichMemorySemantic(
+    String memoryId, {
+    MemoryAIContext? context,
+    ChronoPicAiClient? aiClient,
+  }) async {
+    final client = aiClient ?? _defaultAiClient();
+    if (!client.isEnabled) {
+      throw StateError('AI enrichment is not configured');
+    }
+
+    final memory = repository.getMemory(memoryId);
+    if (memory == null) {
+      throw StateError('Memory not found: $memoryId');
+    }
+
+    final photos = repository.listPhotosByMemory(memoryId).toList()
+      ..sort(
+        (a, b) => (b.metadata.datetime ?? 0).compareTo(a.metadata.datetime ?? 0),
+      );
+    final sample = photos.take(_memoryAnalysisPhotoLimit).toList();
+
+    if (sample.isEmpty) {
+      final updated = repository.updateMemorySemanticEnrichment(
+        memoryId,
+        aiStatus: AiPipelineStatus.failed,
+        aiError: 'Memory has no photos to analyze',
+        aiProcessedAt: DateTime.now().millisecondsSinceEpoch,
+      );
+      _persistIfConfigured();
+      return updated;
+    }
+
+    repository.updateMemorySemanticEnrichment(
+      memoryId,
+      aiStatus: AiPipelineStatus.processing,
+      aiError: null,
+    );
+
+    final now = DateTime.now().millisecondsSinceEpoch;
+    try {
+      final analysis = await client.analyzeMemory(
+        memory: memory,
+        photos: sample,
+        context: MemoryAIContext(
+          name: context?.name,
+          description: context?.description,
+          outputLocale: context?.outputLocale ?? _defaultOutputLocale(),
+        ),
+      );
+
+      if (analysis.status == AiPipelineStatus.failed) {
+        final updated = repository.updateMemorySemanticEnrichment(
+          memoryId,
+          aiStatus: AiPipelineStatus.failed,
+          aiError: analysis.error ?? 'Unknown AI enrichment error',
+          aiProcessedAt: now,
+        );
+        _persistIfConfigured();
+        return updated;
+      }
+
+      final updated = repository.updateMemorySemanticEnrichment(
+        memoryId,
+        aiStatus: AiPipelineStatus.completed,
+        aiError: null,
+        generatedName: analysis.generatedName,
+        generatedDescription: analysis.generatedDescription,
+        generatedLabels: analysis.generatedLabels,
+        aiProvider: analysis.provider,
+        aiModel: analysis.model,
+        aiProcessedAt: now,
+      );
+      _persistIfConfigured();
+      return updated;
+    } catch (error) {
+      final updated = repository.updateMemorySemanticEnrichment(
+        memoryId,
+        aiStatus: AiPipelineStatus.failed,
+        aiError: error.toString(),
+        aiProcessedAt: now,
+      );
+      _persistIfConfigured();
+      return updated;
+    }
+  }
+
+  ChronoPicAiClient _defaultAiClient() =>
+      createAiClient(createBackup().settings.ai);
+
+  /// Resolves the default AI output locale from persisted locale settings,
+  /// mirroring the Electron `resolveAIOutputLocale` behavior: an explicit AI
+  /// output locale wins; `follow-ui` falls back to the UI locale.
+  String _defaultOutputLocale() {
+    final locale = createBackup().settings.locale;
+    return switch (locale.aiOutputLocale) {
+      AiOutputLocale.zhCN => 'zh-CN',
+      AiOutputLocale.enUS => 'en-US',
+      AiOutputLocale.followUi =>
+        locale.locale == LocaleSetting.zhCN ? 'zh-CN' : 'en-US',
+    };
+  }
+
+  /// Electron `resolvePhotoInput` parity: prefer an absolute thumbnail (it is
+  /// always a jpeg), else the original file for image mimes, else no image
+  /// input at all. Unreadable files fall back to the text-only prompt instead
+  /// of failing the enrichment run.
+  Future<_PhotoFileInput?> _resolvePhotoInput(PhotoRecord record) async {
+    final photo = record.photo;
+    final String preferredPath;
+    final String preferredMime;
+    if (photo.thumbnailPath != null && File(photo.thumbnailPath!).isAbsolute) {
+      preferredPath = photo.thumbnailPath!;
+      preferredMime = 'image/jpeg';
+    } else if (photo.mime.startsWith('image/')) {
+      preferredPath = photo.path;
+      preferredMime = photo.mime;
+    } else {
+      return null;
+    }
+    try {
+      final bytes = await File(preferredPath).readAsBytes();
+      return _PhotoFileInput(bytes: bytes, mime: preferredMime);
+    } catch (_) {
+      return null;
+    }
+  }
+
   List<Memory> listMemories() => repository.listMemories();
 
   Memory? getMemory(String memoryId) => repository.getMemory(memoryId);
@@ -273,4 +536,13 @@ final class ChronoPicAppService {
         .replaceAll('=', '');
     return Directory('$base/chronopic_flutter/thumbnails/$encoded');
   }
+}
+
+/// Resolved file input handed to the AI client for photo analysis, mirroring
+/// the Electron `FileInput` shape (`data` + `mediaType`).
+final class _PhotoFileInput {
+  const _PhotoFileInput({required this.bytes, required this.mime});
+
+  final List<int> bytes;
+  final String mime;
 }

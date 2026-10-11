@@ -389,7 +389,6 @@ final class ChronoPicRepository {
   }) {
     final record = _requirePhoto(photoId);
     final semantic = record.semantic;
-    final nextAiStatus = aiStatus;
     final updated = _replaceRecord(
       record,
       semantic: Semantic(
@@ -406,7 +405,7 @@ final class ChronoPicRepository {
             ? semantic.summary
             : summary as String?,
         embeddingRef: semantic.embeddingRef,
-        aiStatus: nextAiStatus,
+        aiStatus: aiStatus,
         aiProvider: aiProvider == _unchanged
             ? semantic.aiProvider
             : aiProvider as String?,
@@ -421,7 +420,7 @@ final class ChronoPicRepository {
       indexState: IndexState(
         photoId: record.indexState.photoId,
         indexed: record.indexState.indexed,
-        aiProcessed: nextAiStatus == AiPipelineStatus.completed,
+        aiProcessed: aiStatus == AiPipelineStatus.completed,
         error: record.indexState.error,
         lastIndexedAt: record.indexState.lastIndexedAt,
         duplicateOf: record.indexState.duplicateOf,
