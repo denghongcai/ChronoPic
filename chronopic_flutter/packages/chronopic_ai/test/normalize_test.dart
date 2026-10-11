@@ -63,6 +63,26 @@ void main() {
     test('falls through to candidates when no fenced block exists', () {
       expect(extractJsonObject('{"bad": } {"good":1}'), <String, Object?>{'good': 1});
     });
+
+    test('returns null for a fenced non-object array', () {
+      expect(extractJsonObject('```json\n["a","b"]\n```'), isNull);
+    });
+
+    test('strips uppercase think blocks before parsing', () {
+      expect(extractJsonObject('<THINK>x</THINK>{"a":1}'), <String, Object?>{
+        'a': 1,
+      });
+    });
+
+    test('returns null for empty input', () {
+      expect(extractJsonObject(''), isNull);
+    });
+
+    test('bare-object fast path handles nested json', () {
+      expect(extractJsonObject('{"a": {"b": 1}}'), <String, Object?>{
+        'a': <String, Object?>{'b': 1},
+      });
+    });
   });
 
   group('normalizeLabels', () {

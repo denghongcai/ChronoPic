@@ -37,6 +37,13 @@ String? normalizeText(Object? value) {
 /// Tolerates `<think>` reasoning blocks, fenced code blocks, and surrounding
 /// prose. Returns `null` when no parseable object exists, and short-circuits to
 /// `null` when a fenced block is present but its content fails to parse.
+///
+/// Note on the prose-fallback candidate regex: it is non-greedy
+/// (`\{[\s\S]*?\}`), so it cannot parse prose-wrapped *nested* JSON such as
+/// `result: {"a": {"b": 1}} end` — the first candidate `{"a": {"b": 1}` is
+/// unbalanced and fails to parse. The bare-object fast path (input starting
+/// with `{` and ending with `}`) does handle nesting, because the whole input
+/// is parsed as one JSON document.
 Map<String, Object?>? extractJsonObject(String input) {
   final trimmed = input.replaceAll(_thinkBlock, '').trim();
 
