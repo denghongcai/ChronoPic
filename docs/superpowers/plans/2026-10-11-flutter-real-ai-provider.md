@@ -472,10 +472,11 @@ git commit -m "Add OpenAI-compatible streaming AI client to Flutter"
 - Modify: `chronopic_flutter/packages/chronopic_ai/lib/chronopic_ai.dart` (export)
 
 **Step 1: Write the failing test** —
-`createAiClient(AiSettings)` returns `DisabledAiClient` when `isEnabled`
-settings are incomplete (any of apiKey/baseURL/model empty) and returns an
-`OpenAiCompatibleAiClient` (check `isEnabled == true`, provider/model fields)
-when all four fields are present. Use `AiSettings` from domain.
+`createAiClient(AiSettings)` returns `DisabledAiClient` when settings are
+incomplete (any of apiKey/baseURL/model empty **or whitespace-only**, matching
+`getAiReadiness` trim semantics) and returns an `OpenAiCompatibleAiClient`
+(check `isEnabled == true`, provider/model fields) when all three credentials
+are present. Use `AiSettings` from domain.
 
 **Step 2: Run to verify it fails.**
 
@@ -483,14 +484,21 @@ when all four fields are present. Use `AiSettings` from domain.
 
 ```dart
 ChronoPicAiClient createAiClient(AiSettings settings) {
-  if (settings.apiKey.isEmpty || settings.baseURL.isEmpty || settings.model.isEmpty) {
+  final apiKey = settings.apiKey.trim();
+  final baseURL = settings.baseURL.trim();
+  final model = settings.model.trim();
+  if (apiKey.isEmpty || baseURL.isEmpty || model.isEmpty) {
     return const DisabledAiClient();
   }
+  final providerName = settings.providerName.trim();
   return OpenAiCompatibleAiClient(
-    providerName: settings.providerName.isEmpty ? 'openai-compatible' : settings.providerName,
-    model: settings.model,
-    apiKey: settings.apiKey,
-    baseUrl: settings.baseURL,
+    // Deliberate readiness/client split (Electron parity): getAiReadiness
+    // requires providerName for configured:true, while the client falls back
+    // to the openai-compatible default so pre-provider settings keep working.
+    providerName: providerName.isEmpty ? 'openai-compatible' : providerName,
+    model: model,
+    apiKey: apiKey,
+    baseUrl: baseURL, // must already include /v1; no normalization here
   );
 }
 ```

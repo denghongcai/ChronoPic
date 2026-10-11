@@ -44,6 +44,30 @@ void main() {
       expect(client, isA<DisabledAiClient>());
     });
 
+    test('treats whitespace-only apiKey as missing', () {
+      final client = createAiClient(settings(apiKey: '   '));
+      expect(client.isEnabled, isFalse);
+      expect(client, isA<DisabledAiClient>());
+    });
+
+    test('treats whitespace-only baseURL as missing', () {
+      final client = createAiClient(settings(baseURL: '   '));
+      expect(client.isEnabled, isFalse);
+      expect(client, isA<DisabledAiClient>());
+    });
+
+    test('treats whitespace-only model as missing', () {
+      final client = createAiClient(settings(model: '\t'));
+      expect(client.isEnabled, isFalse);
+      expect(client, isA<DisabledAiClient>());
+    });
+
+    test('defaults whitespace-only providerName to openai-compatible', () {
+      final client =
+          createAiClient(settings(providerName: '  ')) as OpenAiCompatibleAiClient;
+      expect(client.providerName, 'openai-compatible');
+    });
+
     test('returns OpenAiCompatibleAiClient for complete settings', () {
       final client = createAiClient(
         settings(
@@ -68,6 +92,23 @@ void main() {
       final client =
           createAiClient(settings()) as OpenAiCompatibleAiClient;
       expect(client.providerName, 'openai-compatible');
+    });
+
+    test(
+        'factory and readiness split deliberately on providerName '
+        '(Electron parity: readiness requires it, client defaults it)', () {
+      final settingsWithoutProvider = settings(providerName: '');
+      // Readiness gate: providerName is a required credential.
+      expect(getAiReadiness(settingsWithoutProvider).configured, isFalse);
+      // Factory gate: credentials apiKey/baseURL/model alone enable the client.
+      final client = createAiClient(settingsWithoutProvider);
+      expect(client.isEnabled, isTrue);
+    });
+
+    test('factory and readiness agree on missing apiKey', () {
+      final incomplete = settings(apiKey: ' ');
+      expect(getAiReadiness(incomplete).configured, isFalse);
+      expect(createAiClient(incomplete).isEnabled, isFalse);
     });
   });
 }

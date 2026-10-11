@@ -19,9 +19,10 @@ import 'prompts.dart';
 /// sent as data-URL image parts. Non-image assets get the text-only prompt and
 /// their bytes are ignored, so callers should not read original media for them.
 ///
-/// [baseUrl] must include the `/v1` segment (e.g. `http://host:8080/v1`);
-/// normalization of partially specified base URLs lands later with the
-/// settings factory.
+/// [baseUrl] must already include the `/v1` segment (e.g.
+/// `http://host:8080/v1`); neither this client nor [createAiClient] normalizes
+/// partially specified base URLs — user-facing guidance belongs to the
+/// settings form.
 ///
 /// Error contract: model output that contains no parseable JSON object
 /// resolves to a `failed` result carrying provider/model and an error message.
