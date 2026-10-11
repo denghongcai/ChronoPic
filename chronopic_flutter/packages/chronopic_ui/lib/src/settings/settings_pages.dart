@@ -634,12 +634,18 @@ final class NotificationPage extends StatelessWidget {
     required this.onRetryQueue,
     required this.onSettings,
     required this.onViewMemories,
+    this.aiBusy = false,
+    this.onEnrichPending,
   });
 
+  /// True while an AI enrichment run is in flight; queue actions are disabled
+  /// so a second tap cannot start a parallel run (the service has no locking).
+  final bool aiBusy;
   final AiReadiness aiReadiness;
   final Map<AiPipelineStatus, int> aiStatusCounts;
   final List<MemoryCandidate> candidates;
   final UiStrings labels;
+  final VoidCallback? onEnrichPending;
   final VoidCallback onRetryQueue;
   final VoidCallback onSettings;
   final VoidCallback onViewMemories;
@@ -649,10 +655,12 @@ final class NotificationPage extends StatelessWidget {
     return KeyedSubtree(
       key: const Key('notifications-page'),
       child: NotificationCenterPanel(
+        aiBusy: aiBusy,
         aiReadiness: aiReadiness,
         aiStatusCounts: aiStatusCounts,
         candidates: candidates,
         labels: labels,
+        onEnrichPending: onEnrichPending,
         onRetryQueue: onRetryQueue,
         onViewMemories: onViewMemories,
       ),
@@ -1212,12 +1220,16 @@ final class NotificationCenterPanel extends StatelessWidget {
     required this.labels,
     required this.onRetryQueue,
     required this.onViewMemories,
+    this.aiBusy = false,
+    this.onEnrichPending,
   });
 
+  final bool aiBusy;
   final AiReadiness aiReadiness;
   final Map<AiPipelineStatus, int> aiStatusCounts;
   final List<MemoryCandidate> candidates;
   final UiStrings labels;
+  final VoidCallback? onEnrichPending;
   final VoidCallback onRetryQueue;
   final VoidCallback onViewMemories;
 
@@ -1284,10 +1296,22 @@ final class NotificationCenterPanel extends StatelessWidget {
                   _localized(labels, '$ready READY', '$ready 条就绪'),
                   _Tone.success,
                 ),
+                if (!aiReadiness.configured)
+                  _NotificationChipData(
+                    _localized(labels, 'AI NOT CONFIGURED', 'AI 未配置'),
+                    _Tone.warning,
+                  ),
               ],
               actionLabel: _localized(labels, 'Enrich Queue', '丰富队列'),
               actionKey: const Key('retry-ai-queue-button'),
               onAction: onRetryQueue,
+              secondaryActionLabel: _localized(
+                labels,
+                'Enrich Pending',
+                '处理待生成',
+              ),
+              secondaryActionKey: const Key('enrich-pending-button'),
+              onSecondaryAction: aiBusy ? null : onEnrichPending,
             ),
             const SizedBox(height: 24),
             _NotificationCard(
@@ -1332,6 +1356,9 @@ final class _NotificationCard extends StatelessWidget {
     required this.onAction,
     required this.title,
     this.footnote,
+    this.onSecondaryAction,
+    this.secondaryActionKey,
+    this.secondaryActionLabel,
   });
 
   final Key actionKey;
@@ -1340,6 +1367,9 @@ final class _NotificationCard extends StatelessWidget {
   final String description;
   final String? footnote;
   final VoidCallback onAction;
+  final VoidCallback? onSecondaryAction;
+  final Key? secondaryActionKey;
+  final String? secondaryActionLabel;
   final String title;
 
   @override
@@ -1384,10 +1414,22 @@ final class _NotificationCard extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 16),
-          OutlinedButton(
-            key: actionKey,
-            onPressed: onAction,
-            child: Text(actionLabel),
+          Column(
+            children: [
+              OutlinedButton(
+                key: actionKey,
+                onPressed: onAction,
+                child: Text(actionLabel),
+              ),
+              if (secondaryActionLabel != null) ...[
+                const SizedBox(height: 8),
+                OutlinedButton(
+                  key: secondaryActionKey,
+                  onPressed: onSecondaryAction,
+                  child: Text(secondaryActionLabel!),
+                ),
+              ],
+            ],
           ),
         ],
       ),

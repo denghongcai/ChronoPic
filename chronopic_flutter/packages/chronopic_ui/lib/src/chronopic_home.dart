@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:chronopic_ai/chronopic_ai.dart';
 import 'package:chronopic_app/chronopic_app.dart';
 import 'package:chronopic_domain/chronopic_domain.dart';
 import 'package:chronopic_media/chronopic_media.dart';
@@ -61,11 +62,17 @@ final class ChronoPicHome extends StatefulWidget {
     this.service,
     this.entryModeOverride,
     this.mobileMediaSourceFactory,
+    this.aiClient,
   });
 
   final ChronoPicAppService? service;
   final ChronoPicEntryMode? entryModeOverride;
   final MobileMediaSourceFactory? mobileMediaSourceFactory;
+
+  /// Optional AI client override. Production leaves this null so enrichment
+  /// builds its client from persisted settings; tests inject a fixture client
+  /// through the same `aiClient` parameter the app service exposes.
+  final ChronoPicAiClient? aiClient;
 
   @override
   State<ChronoPicHome> createState() => _ChronoPicHomeState();
@@ -136,6 +143,7 @@ final class _ChronoPicHomeState extends State<ChronoPicHome> {
   int _photoResultLimit = _photoPageSize;
   bool _hasMoreVisiblePhotos = false;
   MediaSourceAdapter? _activeMobileMediaSource;
+  bool _aiEnrichmentRunning = false;
 
   @override
   void initState() {
@@ -278,15 +286,22 @@ final class _ChronoPicHomeState extends State<ChronoPicHome> {
         );
       case _DesktopPage.memoryDetail:
         return MemoryDetailPage(
+          aiConfigured: aiReadiness.configured,
           labels: labels,
           memory: selectedMemory,
           memoryTitleController: _memoryTitleController,
           memoryDescriptionController: _memoryDescriptionController,
           onAddSelectedToMemory: _addSelectedToMemory,
           onBackToMemories: () => setState(() => _page = _DesktopPage.memories),
+          onEnrichMemory: _enrichMemoryAi,
+          onOpenAiSuggestions: _openMemoryAiSuggestions,
           onRemoveSelectedFromMemory: _removeSelectedFromMemory,
           onSaveMemory: _saveSelectedMemory,
           onSetCover: _setSelectedAsMemoryCover,
+          onUseAiDescriptionSuggestion: (value) =>
+              setState(() => _memoryDescriptionController.text = value),
+          onUseAiTitleSuggestion: (value) =>
+              setState(() => _memoryTitleController.text = value),
           selected: _selected,
         );
       case _DesktopPage.settings:
@@ -328,10 +343,12 @@ final class _ChronoPicHomeState extends State<ChronoPicHome> {
         );
       case _DesktopPage.notifications:
         return NotificationPage(
+          aiBusy: _aiEnrichmentRunning,
           aiReadiness: aiReadiness,
           aiStatusCounts: aiStatusCounts,
           candidates: memoryCandidates,
           labels: labels,
+          onEnrichPending: _enrichPendingSemantics,
           onRetryQueue: _retryAiQueue,
           onSettings: () => setState(() => _page = _DesktopPage.settings),
           onViewMemories: () => setState(() => _page = _DesktopPage.memories),
@@ -339,6 +356,8 @@ final class _ChronoPicHomeState extends State<ChronoPicHome> {
       case _DesktopPage.home:
         return HomePage(
           activeFilterLabels: _activeFilterLabels(),
+          aiBusy: _aiEnrichmentRunning,
+          aiConfigured: aiReadiness.configured,
           aiStatus: _aiStatusFilter,
           browseMode: _browseMode,
           catalogPhotoCount: catalogPhotoCount,
@@ -379,6 +398,7 @@ final class _ChronoPicHomeState extends State<ChronoPicHome> {
           onOpenMemories: () => setState(() => _page = _DesktopPage.memories),
           onOpenSettings: () => setState(() => _page = _DesktopPage.settings),
           onFavorites: _showFavorites,
+          onGeneratePhotoAi: _generateSelectedPhotoAi,
           onSaveCaption: _saveCaption,
           onSaveDatetime: _saveDatetime,
           onSaveTags: _saveTags,
@@ -1636,6 +1656,140 @@ final class _ChronoPicHomeState extends State<ChronoPicHome> {
         _l10n,
         'Retried $count failed AI items',
         '已重试 $count 个失败的 AI 项目',
+      ),
+    );
+  }
+
+  String get _aiNotConfiguredMessage => _tr(
+    'AI enrichment is not configured. Set it up in Settings.',
+    '未配置 AI 增强。请到设置中配置。',
+  );
+
+  /// Batch-processes the pending/failed/disabled AI queue. The single-flight
+  /// guard is required: the app service has no internal locking, so a second
+  /// tap while a run is in flight must be ignored here.
+  Future<void> _enrichPendingSemantics() async {
+    if (_aiEnrichmentRunning) return;
+    setState(() => _aiEnrichmentRunning = true);
+    try {
+      final result = await _service.enrichPendingSemantics(
+        aiClient: widget.aiClient,
+      );
+      if (!mounted) return;
+      setState(() {
+        _status = _localized(
+          _l10n,
+          'AI queue enriched: ${result.processed} processed, ${result.completed} completed, ${result.failed} failed.',
+          'AI 队列已处理：共 ${result.processed} 项，成功 ${result.completed} 项，失败 ${result.failed} 项。',
+        );
+      });
+    } on StateError {
+      if (!mounted) return;
+      setState(() => _status = _aiNotConfiguredMessage);
+    } on Object catch (error) {
+      if (!mounted) return;
+      setState(
+        () => _status = _labelValue(
+          _tr('AI queue enrichment failed', 'AI 队列处理失败'),
+          '$error',
+        ),
+      );
+    } finally {
+      if (mounted) setState(() => _aiEnrichmentRunning = false);
+    }
+  }
+
+  /// Generates AI metadata for the selected photo. Generated caption, summary,
+  /// and labels are stored separately from user-authored fields and never
+  /// overwrite the manual caption/tags drafts.
+  Future<void> _generateSelectedPhotoAi() async {
+    final selected = _selected;
+    if (selected == null || _aiEnrichmentRunning) return;
+    setState(() => _aiEnrichmentRunning = true);
+    try {
+      final updated = await _service.enrichPhotoSemantic(
+        selected.photo.id,
+        aiClient: widget.aiClient,
+      );
+      if (!mounted) return;
+      setState(() {
+        if (_selected?.photo.id == updated.photo.id) _selected = updated;
+        _status = updated.semantic.aiStatus == AiPipelineStatus.completed
+            ? _tr(
+                'Generated AI metadata. Review it alongside your own edits.',
+                'AI 元数据已生成。请与自己的编辑对照审阅。',
+              )
+            : _labelValue(
+                _tr('AI enrichment failed', 'AI 生成失败'),
+                updated.semantic.aiError ?? '',
+              );
+      });
+    } on StateError {
+      if (!mounted) return;
+      setState(() => _status = _aiNotConfiguredMessage);
+    } on Object catch (error) {
+      if (!mounted) return;
+      setState(
+        () => _status = _labelValue(
+          _tr('AI enrichment failed', 'AI 生成失败'),
+          '$error',
+        ),
+      );
+    } finally {
+      if (mounted) setState(() => _aiEnrichmentRunning = false);
+    }
+  }
+
+  /// Generates memory-level AI suggestions. Returned to the suggestions
+  /// dialog; nothing is applied to the authored title/description until the
+  /// user explicitly copies a suggestion into a draft and saves.
+  Future<Memory> _enrichMemoryAi(String memoryId) async {
+    final current = _service.getMemory(memoryId);
+    if (current == null) {
+      throw StateError('Memory not found: $memoryId');
+    }
+    if (_aiEnrichmentRunning) return current;
+    setState(() => _aiEnrichmentRunning = true);
+    try {
+      final updated = await _service.enrichMemorySemantic(
+        memoryId,
+        aiClient: widget.aiClient,
+      );
+      if (mounted) {
+        setState(
+          () => _status = _tr(
+            'AI story suggestions ready. Apply them to drafts before saving.',
+            'AI 故事建议已生成。请先应用到草稿再保存。',
+          ),
+        );
+      }
+      return updated;
+    } on StateError {
+      if (mounted) setState(() => _status = _aiNotConfiguredMessage);
+      rethrow;
+    } finally {
+      if (mounted) setState(() => _aiEnrichmentRunning = false);
+    }
+  }
+
+  Future<void> _openMemoryAiSuggestions() async {
+    final memoryId = _selectedMemoryId;
+    if (memoryId == null) return;
+    final memory = _service.getMemory(memoryId);
+    if (memory == null) return;
+    final dialogContext = _navigatorKey.currentContext;
+    if (dialogContext == null) return;
+    await showDialog<void>(
+      context: dialogContext,
+      builder: (context) => _MemoryAiSuggestionsDialog(
+        aiConfigured: _service.getAiSetupReadiness().configured,
+        labels: _l10n,
+        memory: memory,
+        onEnrich: _enrichMemoryAi,
+        onUseDescriptionSuggestion: (value) =>
+            setState(() => _memoryDescriptionController.text = value),
+        onUseTitleSuggestion: (value) =>
+            setState(() => _memoryTitleController.text = value),
       ),
     );
   }

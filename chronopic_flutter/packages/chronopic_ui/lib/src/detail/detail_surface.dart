@@ -6,6 +6,9 @@ final class DetailSurface extends StatelessWidget {
     required this.dateController,
     required this.photos,
     required this.labels,
+    this.aiBusy = false,
+    this.aiConfigured = true,
+    this.onGenerateAi,
     required this.onAddToMemory,
     required this.onCloseFocused,
     required this.onOpenGallery,
@@ -25,7 +28,14 @@ final class DetailSurface extends StatelessWidget {
   final TextEditingController captionController;
   final TextEditingController dateController;
   final bool focusedMode;
+
+  /// True while an AI enrichment run is in flight; the generate action is
+  /// disabled so a second tap cannot start a parallel run (the app service
+  /// has no internal locking).
+  final bool aiBusy;
+  final bool aiConfigured;
   final UiStrings labels;
+  final VoidCallback? onGenerateAi;
   final VoidCallback onAddToMemory;
   final VoidCallback onCloseFocused;
   final ValueChanged<BuildContext> onOpenGallery;
@@ -46,11 +56,14 @@ final class DetailSurface extends StatelessWidget {
     final selected = record;
     if (focusedMode && selected != null) {
       return _FocusedDetailSurface(
+        aiBusy: aiBusy,
+        aiConfigured: aiConfigured,
         captionController: captionController,
         dateController: dateController,
         labels: labels,
         onAddToMemory: onAddToMemory,
         onCloseFocused: onCloseFocused,
+        onGenerateAi: onGenerateAi,
         onOpenGallery: onOpenGallery,
         onRollback: onRollback,
         onSaveCaption: onSaveCaption,
@@ -142,11 +155,14 @@ final class DetailSurface extends StatelessWidget {
 
 final class _FocusedDetailSurface extends StatelessWidget {
   const _FocusedDetailSurface({
+    required this.aiBusy,
+    required this.aiConfigured,
     required this.captionController,
     required this.dateController,
     required this.labels,
     required this.onAddToMemory,
     required this.onCloseFocused,
+    required this.onGenerateAi,
     required this.onOpenGallery,
     required this.onRollback,
     required this.onSaveCaption,
@@ -161,12 +177,15 @@ final class _FocusedDetailSurface extends StatelessWidget {
     required this.timeController,
   });
 
+  final bool aiBusy;
+  final bool aiConfigured;
   final TextEditingController captionController;
   final TextEditingController dateController;
   final UiStrings labels;
   final VoidCallback onAddToMemory;
   final VoidCallback onCloseFocused;
   final ValueChanged<BuildContext> onOpenGallery;
+  final VoidCallback? onGenerateAi;
   final VoidCallback onRollback;
   final VoidCallback onSaveCaption;
   final VoidCallback onSaveDatetime;
@@ -381,9 +400,12 @@ final class _FocusedDetailSurface extends StatelessWidget {
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(20),
           child: _FocusedDetailInspector(
+            aiBusy: aiBusy,
+            aiConfigured: aiConfigured,
             captionController: captionController,
             dateController: dateController,
             labels: labels,
+            onGenerateAi: onGenerateAi,
             onOpenGallery: () => onOpenGallery(context),
             onRollback: onRollback,
             onSaveCaption: onSaveCaption,
@@ -569,9 +591,12 @@ final class _FocusedViewerButton extends StatelessWidget {
 
 final class _FocusedDetailInspector extends StatelessWidget {
   const _FocusedDetailInspector({
+    required this.aiBusy,
+    required this.aiConfigured,
     required this.captionController,
     required this.dateController,
     required this.labels,
+    required this.onGenerateAi,
     required this.onOpenGallery,
     required this.onRollback,
     required this.onSaveCaption,
@@ -584,9 +609,12 @@ final class _FocusedDetailInspector extends StatelessWidget {
     required this.timeController,
   });
 
+  final bool aiBusy;
+  final bool aiConfigured;
   final TextEditingController captionController;
   final TextEditingController dateController;
   final UiStrings labels;
+  final VoidCallback? onGenerateAi;
   final VoidCallback onOpenGallery;
   final VoidCallback onRollback;
   final VoidCallback onSaveCaption;
@@ -685,6 +713,14 @@ final class _FocusedDetailInspector extends StatelessWidget {
         ),
         const SizedBox(height: 14),
         _AiInsightCard(labels: labels, record: record),
+        const SizedBox(height: 14),
+        _AiEnrichmentBlock(
+          aiBusy: aiBusy,
+          aiConfigured: aiConfigured,
+          labels: labels,
+          onGenerate: onGenerateAi,
+          record: record,
+        ),
         const SizedBox(height: 14),
         Wrap(
           spacing: 10,
@@ -935,6 +971,135 @@ final class _AiInsightCard extends StatelessWidget {
               accentColor: Colors.red.shade700,
             ),
           ],
+        ],
+      ),
+    );
+  }
+}
+
+/// AI pipeline status plus the explicit generate action for the focused
+/// inspector. Generated content lives in [_AiInsightCard]; this block only
+/// reports pipeline state and triggers a run — it never writes into the
+/// manual caption/tags edit fields.
+final class _AiEnrichmentBlock extends StatelessWidget {
+  const _AiEnrichmentBlock({
+    required this.aiBusy,
+    required this.aiConfigured,
+    required this.labels,
+    required this.onGenerate,
+    required this.record,
+  });
+
+  final bool aiBusy;
+  final bool aiConfigured;
+  final UiStrings labels;
+  final VoidCallback? onGenerate;
+  final PhotoRecord record;
+
+  String _statusLabel(AiPipelineStatus status) {
+    return switch (status) {
+      AiPipelineStatus.disabled => _localized(labels, 'AI: disabled', 'AI：已停用'),
+      AiPipelineStatus.pending => _localized(labels, 'AI: pending', 'AI：待处理'),
+      AiPipelineStatus.processing => _localized(
+        labels,
+        'AI: processing',
+        'AI：处理中',
+      ),
+      AiPipelineStatus.completed => _localized(
+        labels,
+        'AI: completed',
+        'AI：已完成',
+      ),
+      AiPipelineStatus.failed => _localized(labels, 'AI: failed', 'AI：失败'),
+    };
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final semantic = record.semantic;
+    final failed = semantic.aiStatus == AiPipelineStatus.failed;
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: failed ? Colors.red.shade50 : Colors.grey.shade50,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(
+          color: failed ? Colors.red.shade200 : const Color(0xffeadfd6),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Wrap(
+            spacing: 8,
+            runSpacing: 6,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            children: [
+              Chip(
+                key: const Key('photo-ai-status-chip'),
+                visualDensity: VisualDensity.compact,
+                backgroundColor: failed ? Colors.red.shade50 : Colors.white,
+                side: BorderSide(
+                  color: failed ? Colors.red.shade200 : Colors.grey.shade300,
+                ),
+                label: Text(
+                  _statusLabel(semantic.aiStatus),
+                  style: TextStyle(
+                    color: failed ? Colors.red.shade700 : Colors.grey.shade700,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ),
+              if (!aiConfigured)
+                Chip(
+                  key: const Key('photo-ai-not-configured-chip'),
+                  visualDensity: VisualDensity.compact,
+                  backgroundColor: Colors.grey.shade100,
+                  side: BorderSide(color: Colors.grey.shade300),
+                  label: Text(
+                    _localized(labels, 'AI NOT CONFIGURED', 'AI 未配置'),
+                    style: TextStyle(
+                      color: Colors.grey.shade600,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                ),
+            ],
+          ),
+          if (failed && semantic.aiError != null) ...[
+            const SizedBox(height: 6),
+            Text(
+              semantic.aiError!,
+              style: TextStyle(color: Colors.red.shade700, fontSize: 12),
+            ),
+          ],
+          const SizedBox(height: 10),
+          Text(
+            _localized(
+              labels,
+              'Generated caption, summary, and tags stay separate from your edits.',
+              '生成的标题、摘要和标签与用户编辑分开保存。',
+            ),
+            style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
+          ),
+          const SizedBox(height: 10),
+          FilledButton.icon(
+            key: const Key('generate-photo-ai-button'),
+            onPressed: aiBusy ? null : onGenerate,
+            icon: aiBusy
+                ? const SizedBox(
+                    width: 14,
+                    height: 14,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Icon(Icons.auto_awesome),
+            label: Text(
+              _localized(labels, 'Generate AI Metadata', '生成 AI 元数据'),
+            ),
+          ),
         ],
       ),
     );

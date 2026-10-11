@@ -530,18 +530,30 @@ final class MemoryDetailPage extends StatelessWidget {
     required this.onRemoveSelectedFromMemory,
     required this.onSaveMemory,
     required this.onSetCover,
+    required this.onUseAiDescriptionSuggestion,
+    required this.onUseAiTitleSuggestion,
     required this.selected,
+    this.aiConfigured = true,
+    this.onEnrichMemory,
+    this.onOpenAiSuggestions,
   });
 
+  /// Whether AI enrichment is configured; drives the muted not-configured
+  /// state inside the AI suggestions dialog.
+  final bool aiConfigured;
   final UiStrings labels;
   final Memory? memory;
   final TextEditingController memoryDescriptionController;
   final TextEditingController memoryTitleController;
   final VoidCallback onAddSelectedToMemory;
   final VoidCallback onBackToMemories;
+  final Future<Memory> Function(String memoryId)? onEnrichMemory;
+  final VoidCallback? onOpenAiSuggestions;
   final VoidCallback onRemoveSelectedFromMemory;
   final VoidCallback onSaveMemory;
   final VoidCallback onSetCover;
+  final ValueChanged<String> onUseAiDescriptionSuggestion;
+  final ValueChanged<String> onUseAiTitleSuggestion;
   final PhotoRecord? selected;
 
   @override
@@ -567,6 +579,7 @@ final class MemoryDetailPage extends StatelessWidget {
         _MemoryDetailHero(
           labels: labels,
           memory: memory!,
+          onOpenAiSuggestions: onOpenAiSuggestions,
           onRemoveSelectedFromMemory: onRemoveSelectedFromMemory,
           onSetCover: onSetCover,
           selected: selected,
@@ -597,10 +610,12 @@ final class _MemoryDetailHero extends StatelessWidget {
     required this.onRemoveSelectedFromMemory,
     required this.onSetCover,
     required this.selected,
+    this.onOpenAiSuggestions,
   });
 
   final UiStrings labels;
   final Memory memory;
+  final VoidCallback? onOpenAiSuggestions;
   final VoidCallback onRemoveSelectedFromMemory;
   final VoidCallback onSetCover;
   final PhotoRecord? selected;
@@ -636,6 +651,12 @@ final class _MemoryDetailHero extends StatelessWidget {
                         Chip(label: Text(memory.source.name.toUpperCase())),
                       ],
                     ),
+                  ),
+                  IconButton(
+                    key: const Key('memory-ai-suggest-button'),
+                    onPressed: onOpenAiSuggestions,
+                    tooltip: _localized(labels, 'AI Suggestions', 'AI 建议'),
+                    icon: const Icon(Icons.auto_awesome_outlined),
                   ),
                   IconButton(
                     key: const Key('memory-hero-set-cover-button'),
@@ -1012,6 +1033,284 @@ final class _MemoryCover extends StatelessWidget {
     return _MediaFallbackSurface(
       key: Key('memory-cover-${memory.id}'),
       label: memory.name,
+    );
+  }
+}
+
+/// Electron Step 90 parity: AI memory suggestions live behind one explicit
+/// compact action. Suggestions are shown here and can only be copied into the
+/// memory draft fields — the persisted name/description change only when the
+/// user saves the memory form afterwards.
+final class _MemoryAiSuggestionsDialog extends StatefulWidget {
+  const _MemoryAiSuggestionsDialog({
+    required this.aiConfigured,
+    required this.labels,
+    required this.memory,
+    required this.onEnrich,
+    required this.onUseDescriptionSuggestion,
+    required this.onUseTitleSuggestion,
+  });
+
+  final bool aiConfigured;
+  final UiStrings labels;
+  final Memory memory;
+  final Future<Memory> Function(String memoryId) onEnrich;
+  final ValueChanged<String> onUseDescriptionSuggestion;
+  final ValueChanged<String> onUseTitleSuggestion;
+
+  @override
+  State<_MemoryAiSuggestionsDialog> createState() =>
+      _MemoryAiSuggestionsDialogState();
+}
+
+final class _MemoryAiSuggestionsDialogState
+    extends State<_MemoryAiSuggestionsDialog> {
+  Memory? _current;
+  bool _generating = false;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _current = widget.memory;
+  }
+
+  String _statusLabel(AiPipelineStatus status) {
+    return switch (status) {
+      AiPipelineStatus.disabled => _localized(
+        widget.labels,
+        'AI: disabled',
+        'AI：已停用',
+      ),
+      AiPipelineStatus.pending => _localized(
+        widget.labels,
+        'AI: pending',
+        'AI：待处理',
+      ),
+      AiPipelineStatus.processing => _localized(
+        widget.labels,
+        'AI: processing',
+        'AI：处理中',
+      ),
+      AiPipelineStatus.completed => _localized(
+        widget.labels,
+        'AI: completed',
+        'AI：已完成',
+      ),
+      AiPipelineStatus.failed => _localized(
+        widget.labels,
+        'AI: failed',
+        'AI：失败',
+      ),
+    };
+  }
+
+  Future<void> _generate() async {
+    if (_generating) return;
+    setState(() {
+      _generating = true;
+      _error = null;
+    });
+    try {
+      final updated = await widget.onEnrich(widget.memory.id);
+      if (!mounted) return;
+      setState(() => _current = updated);
+    } on Object catch (error) {
+      if (!mounted) return;
+      setState(() => _error = '$error');
+    } finally {
+      if (mounted) setState(() => _generating = false);
+    }
+  }
+
+  void _useTitle(String value) {
+    widget.onUseTitleSuggestion(value);
+    Navigator.of(context).pop();
+  }
+
+  void _useDescription(String value) {
+    widget.onUseDescriptionSuggestion(value);
+    Navigator.of(context).pop();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final labels = widget.labels;
+    final memory = _current ?? widget.memory;
+    final failed = memory.aiStatus == AiPipelineStatus.failed;
+    return AlertDialog(
+      key: const Key('memory-ai-suggestions-dialog'),
+      title: Text(_localized(labels, 'AI Suggestions', 'AI 建议')),
+      content: SizedBox(
+        width: 460,
+        child: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Wrap(
+                spacing: 8,
+                runSpacing: 6,
+                crossAxisAlignment: WrapCrossAlignment.center,
+                children: [
+                  Chip(
+                    key: const Key('memory-ai-status-chip'),
+                    visualDensity: VisualDensity.compact,
+                    backgroundColor: failed ? Colors.red.shade50 : Colors.white,
+                    side: BorderSide(
+                      color: failed
+                          ? Colors.red.shade200
+                          : Colors.grey.shade300,
+                    ),
+                    label: Text(
+                      _statusLabel(memory.aiStatus),
+                      style: TextStyle(
+                        color: failed
+                            ? Colors.red.shade700
+                            : Colors.grey.shade700,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  ),
+                  if (!widget.aiConfigured)
+                    Chip(
+                      visualDensity: VisualDensity.compact,
+                      backgroundColor: Colors.grey.shade100,
+                      side: BorderSide(color: Colors.grey.shade300),
+                      label: Text(
+                        _localized(labels, 'AI NOT CONFIGURED', 'AI 未配置'),
+                        style: TextStyle(
+                          color: Colors.grey.shade600,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+              if (failed && memory.aiError != null) ...[
+                const SizedBox(height: 8),
+                Text(
+                  memory.aiError!,
+                  style: TextStyle(color: Colors.red.shade700, fontSize: 12),
+                ),
+              ],
+              if (_error != null) ...[
+                const SizedBox(height: 8),
+                Text(
+                  _error!,
+                  key: const Key('memory-ai-dialog-error'),
+                  style: TextStyle(color: Colors.red.shade700, fontSize: 12),
+                ),
+              ],
+              const SizedBox(height: 12),
+              Text(
+                _localized(
+                  labels,
+                  'Suggestions never overwrite your title or description. Use a suggestion to fill the draft, then save the memory.',
+                  '建议不会覆盖你的标题或描述。使用建议会填入草稿，保存记忆后才会生效。',
+                ),
+                style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
+              ),
+              const SizedBox(height: 16),
+              FilledButton.icon(
+                key: const Key('memory-ai-generate-button'),
+                onPressed: _generating ? null : _generate,
+                icon: _generating
+                    ? const SizedBox(
+                        width: 14,
+                        height: 14,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Icon(Icons.auto_awesome),
+                label: Text(
+                  _localized(labels, 'Generate AI Story', '生成 AI 故事'),
+                ),
+              ),
+              const SizedBox(height: 16),
+              if (memory.generatedName != null) ...[
+                Text(
+                  _localized(labels, 'SUGGESTED TITLE', '建议标题'),
+                  style: TextStyle(
+                    color: Colors.grey.shade600,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: 2,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Text(memory.generatedName!),
+                const SizedBox(height: 6),
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: TextButton.icon(
+                    key: const Key('use-ai-title-button'),
+                    onPressed: () => _useTitle(memory.generatedName!),
+                    icon: const Icon(Icons.copy, size: 16),
+                    label: Text(_localized(labels, 'Use suggestion', '使用建议')),
+                  ),
+                ),
+              ],
+              if (memory.generatedDescription != null) ...[
+                const SizedBox(height: 8),
+                Text(
+                  _localized(labels, 'SUGGESTED DESCRIPTION', '建议描述'),
+                  style: TextStyle(
+                    color: Colors.grey.shade600,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: 2,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Text(memory.generatedDescription!),
+                const SizedBox(height: 6),
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: TextButton.icon(
+                    key: const Key('use-ai-description-button'),
+                    onPressed: () =>
+                        _useDescription(memory.generatedDescription!),
+                    icon: const Icon(Icons.copy, size: 16),
+                    label: Text(_localized(labels, 'Use suggestion', '使用建议')),
+                  ),
+                ),
+              ],
+              if (memory.generatedLabels.isNotEmpty) ...[
+                const SizedBox(height: 8),
+                Text(
+                  _localized(labels, 'GENERATED TAGS', '生成标签'),
+                  style: TextStyle(
+                    color: Colors.grey.shade600,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: 2,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 6,
+                  children: [
+                    for (final label in memory.generatedLabels)
+                      Chip(
+                        visualDensity: VisualDensity.compact,
+                        label: Text(label),
+                      ),
+                  ],
+                ),
+              ],
+            ],
+          ),
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: Text(_localized(labels, 'Close', '关闭')),
+        ),
+      ],
     );
   }
 }

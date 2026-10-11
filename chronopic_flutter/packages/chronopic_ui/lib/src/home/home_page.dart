@@ -3,6 +3,8 @@ part of '../chronopic_home.dart';
 final class HomePage extends StatelessWidget {
   const HomePage({
     required this.activeFilterLabels,
+    required this.aiBusy,
+    required this.aiConfigured,
     required this.aiStatus,
     required this.browseMode,
     required this.catalogPhotoCount,
@@ -38,6 +40,7 @@ final class HomePage extends StatelessWidget {
     required this.onOpenMemories,
     required this.onOpenSettings,
     required this.onFavorites,
+    required this.onGeneratePhotoAi,
     required this.onRollback,
     required this.onSaveCaption,
     required this.onSaveDatetime,
@@ -67,6 +70,8 @@ final class HomePage extends StatelessWidget {
   });
 
   final List<String> activeFilterLabels;
+  final bool aiBusy;
+  final bool aiConfigured;
   final AiPipelineStatus? aiStatus;
   final BrowseMode browseMode;
   final int catalogPhotoCount;
@@ -102,6 +107,7 @@ final class HomePage extends StatelessWidget {
   final VoidCallback onOpenMemories;
   final VoidCallback onOpenSettings;
   final VoidCallback onFavorites;
+  final VoidCallback onGeneratePhotoAi;
   final VoidCallback onRollback;
   final VoidCallback onSaveCaption;
   final VoidCallback onSaveDatetime;
@@ -214,6 +220,8 @@ final class HomePage extends StatelessWidget {
           child: DetailSurface(
             captionController: captionController,
             dateController: dateController,
+            aiBusy: aiBusy,
+            aiConfigured: aiConfigured,
             focusedMode: true,
             labels: labels,
             onAddToMemory: onAddToMemory,
@@ -224,6 +232,7 @@ final class HomePage extends StatelessWidget {
             onSaveDatetime: onSaveDatetime,
             onSaveTags: onSaveTags,
             onSelectPhoto: onSelectPhoto,
+            onGenerateAi: onGeneratePhotoAi,
             onToggleFavorite: onToggleFavorite,
             photos: viewerPhotos,
             record: selected,
@@ -368,6 +377,8 @@ final class HomePage extends StatelessWidget {
                   if (detailFirst && selected != null) ...[
                     const SizedBox(height: 14),
                     DetailSurface(
+                      aiBusy: aiBusy,
+                      aiConfigured: aiConfigured,
                       captionController: captionController,
                       dateController: dateController,
                       labels: labels,
@@ -378,6 +389,7 @@ final class HomePage extends StatelessWidget {
                       onSaveCaption: onSaveCaption,
                       onSaveDatetime: onSaveDatetime,
                       onSaveTags: onSaveTags,
+                      onGenerateAi: onGeneratePhotoAi,
                       onSelectPhoto: onSelectPhoto,
                       onToggleFavorite: onToggleFavorite,
                       photos: viewerPhotos,

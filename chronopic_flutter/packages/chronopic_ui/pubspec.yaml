@@ -5,6 +5,8 @@ environment:
 resolution: workspace
 
 dependencies:
+  chronopic_ai:
+    path: ../chronopic_ai
   chronopic_app:
     path: ../chronopic_app
   chronopic_database:
