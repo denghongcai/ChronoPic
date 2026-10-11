@@ -6487,3 +6487,50 @@ Final-review polish on the AI phase:
   - `flutter analyze` — no issues.
   - repo root `git diff --check` — clean.
 - Next: unchanged from Step 277.
+
+### 2026-10-12 Step 279
+
+- Published `v0.1.13` — the Flutter real AI provider phase.
+- Noted during release that the previous main CI run (`38122729043`, commit
+  `910aa80`) had failed: the `flutter` job's Dart analyze step flagged
+  `unawaited_return_in_try_block` at `indexer_service.dart:344`. That was the
+  pre-existing latent bug (unawaited `Isolate.run` swallowing thumbnail-write
+  exceptions) exposed by CI's Flutter-stable clone (3.47.7) diverging from the
+  then-local toolchain (3.41.9); it was already fixed in `a867d25` during this
+  phase's toolchain upgrade.
+- Pushed `main` at `e20b02f` ("Prepare v0.1.13 release").
+- Main CI run `38154442716` passed:
+  `verify` and `flutter` jobs both green.
+- Built and verified local release artifacts:
+  signed Android APK/AAB via the `.tmp/release-signing` keystore,
+  Linux tarball `chronopic-flutter-linux-x64-0.1.13.tar.gz`,
+  all six assets passing
+  `node chronopic_flutter/tool/release/verify_flutter_release_artifacts.mjs android linux`.
+- Created and pushed annotated tag `v0.1.13`
+  at `e20b02f8f56c4d74deab05da75d1090ccf8e76ef`.
+- Release workflow run `38154851929` completed successfully with all three
+  jobs green:
+  `prepare-release`,
+  `flutter-linux`,
+  and `flutter-android`.
+  This was the first tag release since the signing secrets were configured
+  where the Android job built and uploaded the signed artifacts in CI without
+  a manual local re-upload fallback.
+- Public release URL:
+  `https://github.com/denghongcai/ChronoPic/releases/tag/v0.1.13`.
+- Verified the GitHub Release after publication:
+  `isDraft=false`,
+  `isPrerelease=false`,
+  six expected Flutter assets.
+- Downloaded the public assets into `.tmp/release-verify/v0.1.13` and verified:
+  `sha256sum -c chronopic-flutter-android-release.apk.sha256`,
+  `sha256sum -c chronopic-flutter-android-release.aab.sha256`,
+  `sha256sum -c chronopic-flutter-linux-x64-0.1.13.tar.gz.sha256`,
+  and
+  `tar -tzf chronopic-flutter-linux-x64-0.1.13.tar.gz | grep '(^|/)chronopic$'`.
+- Result:
+  `v0.1.13` is public with CI-built and post-download verified Flutter
+  Android APK/AAB, Linux x64 tarball, and matching checksum assets.
+  The real AI provider stack ships in this release, but the live-endpoint
+  smoke was skipped (LAN endpoint unreachable from this machine); client
+  behaviour is covered by the local fake-SSE-server tests.

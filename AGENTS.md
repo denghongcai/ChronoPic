@@ -45,7 +45,10 @@ entries.
   the Flutter real AI provider phase: `OpenAiCompatibleAiClient`, AI client
   factory, photo + memory enrichment orchestration, and the inspector /
   memory-dialog / notification queue surfaces.)
-- Release line: Flutter (`chronopic_flutter/`); latest release **v0.1.12**
+- Latest step: **Step 279** (2026-10-12) — published `v0.1.13` with the real AI
+  provider stack; main CI and the tag release workflow both passed, and the
+  Android job built the signed artifacts in CI without a manual fallback.
+- Release line: Flutter (`chronopic_flutter/`); latest release **v0.1.13**
   (Android APK/AAB + Linux x64 tarball via tag-triggered GitHub Actions).
 - The Electron app is reference/migration-only and no longer released.
 - Flutter phases 1-15 are complete, including the mobile native experience
