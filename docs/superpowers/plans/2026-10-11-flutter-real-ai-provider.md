@@ -8,6 +8,35 @@
 
 **Tech Stack:** Flutter 3.47.7 stable / Dart 3.13.5 (toolchain upgraded mid-phase at user request; was 3.41.9/3.11.5), `openai_dart ^10.0.1` (latest stable, published 2026-10-04; temporarily pinned to ^8.1.0 on the old toolchain, restored after the upgrade — verified per the Step 235 dependency version rule), existing `chronopic_domain` models (`AiSettings`, `SemanticState`, `Memory` with generated fields, `AiPipelineStatus`).
 
+## Status (2026-10-11): COMPLETE
+
+All tasks are implemented, verified, and committed. Execution history is in
+[agent-step-log-flutter-line.md](agent-step-log-flutter-line.md) Step 277;
+phase record in
+[docs/flutter-refactor-phases.md](../../flutter-refactor-phases.md) Phase 15.
+
+- Task 1 — complete (`1ff29db`, hardened `43664f6`).
+- Task 2 — complete (`991c26d`); review fixes: image input gated to
+  `image/*` mimes and transport errors pinned as tested `failed` results
+  (`16cfbe7`); dependency restored to `^10.0.1` after the toolchain upgrade
+  (`a867d25`).
+- Task 3 — complete (`b5cf84d`); review fix: factory gates aligned with
+  `getAiReadiness` trim semantics, empty `providerName` still builds a working
+  client (`46e4a46`).
+- Task 4 — complete (`bb1dba0`).
+- Task 5 — complete (`d3e202c`); review fixes: fallback semantics, queue
+  limit cap, `updatedAt` parity, per-photo `createBackup()` cost removed,
+  error-message cleanup (`896a991`).
+- Task 6 — complete (`d6d6cd2`).
+- Task 7 — complete (`ab058e9` polish: StateError mislabeling fix + pin test,
+  `retry-ai-queue-button` busy gate, dead `onEnrichMemory` prop removed,
+  `memory-ai-not-configured-chip` key, "already running" guard feedback;
+  batch refresh verified as already satisfied by the derived-build +
+  setState structure). Full gate green (analyze, 89 Dart tests, 12 database
+  tests, 32 Flutter tests, Linux + Android debug builds, `git diff --check`).
+  Live endpoint smoke skipped: `http://192.168.1.39:8888/v1` refused
+  connections (endpoint unreachable).
+
 ---
 
 ## Context For The Implementing Engineer

@@ -11,15 +11,18 @@ backup JSON migration; it is no longer released.
 
 ## Active Direction
 
-No numbered phase is currently in progress. The next phase should be promoted
-from the strongest open candidates:
+No numbered phase is currently in progress. The Flutter real AI provider phase
+(Step 277) landed photo/memory enrichment, the pending/failed/disabled queue,
+and the AI UI surfaces; the remaining AI-related work is smaller follow-up, not
+a provider gap. The next phase should be promoted from the strongest open
+candidates:
 
-1. **AI / Map configuration validation** — Settings can save AI and map
-   credentials and show presence/configured states, but the provider
-   abstractions expose no live health probe or test-connection path.
-2. **Metadata portability** — sidecar metadata export/import. JSON sidecars
+1. **Metadata portability** — sidecar metadata export/import. JSON sidecars
    first; EXIF writeback stays out of scope until backup/rollback guarantees
    are stronger.
+2. **AI / Map configuration live validation** — real AI enrichment is landed,
+   but Settings still has no live health probe or test-connection path for
+   saved AI and map credentials; a smaller candidate than a full phase.
 3. **iOS live verification** — metadata and runners are scaffolded, but the
    required permission/import/restart/restore evidence is blocked on
    macOS/Xcode tooling.

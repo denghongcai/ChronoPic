@@ -1540,3 +1540,86 @@ Exit gate:
   `build/app/outputs/flutter-apk/app-debug.apk`.
 - `git diff --check` passes.
 - iOS live verification remains blocked until macOS/Xcode evidence exists.
+
+## Phase 15: Flutter Real AI Provider
+
+Status:
+completed locally on 2026-10-11.
+
+Source input:
+the Electron reference AI stack
+(`packages/services-ai-pipeline` prompts/normalization and
+`packages/application` enrichment orchestration)
+plus the user request that AI enrichment work on the Flutter release line
+without the Electron app.
+
+Purpose:
+port the real OpenAI-compatible streaming AI client, the photo/memory
+prompts, enrichment orchestration, and the product AI surfaces to Flutter so
+`AiSettings` saved in Settings produce working enrichment instead of the
+previous disabled/fixture-only clients.
+
+Plan:
+
+- [docs/superpowers/plans/2026-10-11-flutter-real-ai-provider.md](superpowers/plans/2026-10-11-flutter-real-ai-provider.md)
+
+Completed work:
+
+- Ported `extractJsonObject`, `normalizeLabels`, and `normalizeText` to
+  `chronopic_ai` with hardened red/green test coverage.
+- Added `OpenAiCompatibleAiClient` on `openai_dart` streaming completions
+  (SSE-only transport, matching the known endpoint quirk), photo and memory
+  prompts ported verbatim, data-URL image input gated to `image/*` mimes,
+  strict-JSON extraction, and `failed` results for non-JSON output and
+  transport errors, proven against a local fake SSE server.
+- Added `createAiClient(AiSettings)` so scan and enrichment construct the
+  real client from persisted settings, with factory gates aligned to
+  `getAiReadiness` trim semantics and a deliberate readiness/client split for
+  empty `providerName`.
+- Added repository `updatePhotoSemanticEnrichment` /
+  `updateMemorySemanticEnrichment` that never touch manual or authored fields.
+- Added app-service `enrichPhotoSemantic`, `enrichMemorySemantic` (sampled
+  memory photos; empty memory → `failed` with the exact Electron message),
+  and `enrichPendingSemantics` over `pending`/`failed`/`disabled` with limit
+  capping, single settings resolution, `updatedAt` parity, and Electron-catch
+  error-message parity.
+- Exposed AI actions in the UI: photo inspector generate button with generated
+  content display, memory AI suggestions dialog with use-suggestion-fills-draft
+  only, and Notifications `Enrich Pending`; error paths distinguish
+  unconfigured AI from not-found/other StateErrors, queue actions share the
+  in-flight gate, and the memory-side guard surfaces "already running"
+  feedback.
+- Toolchain upgraded at user request: Flutter 3.41.9 → 3.47.7
+  (Dart 3.13.5), `openai_dart ^8.1.0` → `^10.0.1`.
+
+Verification evidence:
+
+- `1ff29db` Port AI output normalization helpers to Flutter
+- `43664f6` Harden Flutter JSON extraction tests and docs
+- `991c26d` Add OpenAI-compatible streaming AI client to Flutter
+- `16cfbe7` Gate AI image input to image mimes and pin transport errors
+- `a867d25` Upgrade Flutter toolchain to 3.47.7 and openai_dart to 10.0.1
+- `b5cf84d` Add AI client factory from persisted settings
+- `46e4a46` Align AI client factory gates with readiness semantics
+- `bb1dba0` Add semantic enrichment update methods to repository
+- `d3e202c` Add AI enrichment orchestration to Flutter app service
+- `896a991` Fix enrichment fallback, queue limits, and updatedAt parity
+- `d6d6cd2` Expose AI enrichment actions in Flutter UI
+- `ab058e9` Polish AI surface feedback and batch refresh
+- Final gate (from `chronopic_flutter/`): `flutter analyze` clean;
+  `dart test packages/chronopic_ai/test packages/chronopic_app/test
+  packages/chronopic_media/test packages/chronopic_domain/test` 89 passed;
+  `packages/chronopic_database` `dart test test` 12 passed;
+  `flutter test packages/chronopic_ui/test apps/chronopic/test` 32 passed;
+  `flutter build linux --debug` and `flutter build apk --debug` built;
+  repo-root `git diff --check` clean.
+- Live endpoint smoke was skipped: `http://192.168.1.39:8888/v1` refused
+  connections during the gate, so no live `analyzePhoto` was run; the fake
+  SSE transport tests remain the verified client path.
+
+Exit gate:
+
+- All plan tasks complete; full local gate green as recorded above.
+- Live-provider smoke remains unverified until the user's local endpoint is
+  reachable again; AI/map configuration live validation (test-connection
+  path) is still absent and remains a `PLAN.md` candidate.

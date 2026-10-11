@@ -6347,3 +6347,104 @@ Follow `AGENTS.md` Working Rules for where new steps are appended.
   `git diff --check` passed;
   no live references to the deleted `Next Immediate Tasks` section remain;
   runtime/E2E scenes were skipped because no application code changed.
+
+### 2026-10-11 Step 277
+
+- Executed the Flutter real AI provider phase end to end
+  (`docs/superpowers/plans/2026-10-11-flutter-real-ai-provider.md`), porting
+  the Electron AI enrichment stack to the Flutter release line.
+- Task 1 (`1ff29db`, hardened in `43664f6`):
+  ported `extractJsonObject`, `normalizeLabels`, and `normalizeText` from
+  `packages/services-ai-pipeline/src/internal.ts` into
+  `chronopic_flutter/packages/chronopic_ai/lib/src/normalize.dart`, with
+  red/green tests for bare/think-block/fenced/mixed JSON extraction and
+  label/text normalization.
+- Task 2 (`991c26d`): added a real `OpenAiCompatibleAiClient` backed by
+  `openai_dart` streaming chat completions
+  (`createStream` only — the known SSE-even-for-non-streaming endpoint quirk
+  from Electron Step 59), photo and memory prompts ported verbatim from the
+  Electron reference, data-URL image input, strict-JSON extraction, and
+  `failed` results for non-JSON model output, proven against a local fake SSE
+  server instead of mocked parsing.
+- Review-loop fix (`16cfbe7`): gated image input to `image/*` mimes (video and
+  unknown mimes send text-only prompts, matching the Electron
+  `resolvePhotoInput` decision) and pinned transport errors as test-covered
+  `failed` results.
+- Toolchain (`a867d25`, user-requested): upgraded Flutter 3.41.9 → 3.47.7
+  (Dart 3.11.5 → 3.13.5) and restored the dependency deviation:
+  `openai_dart ^8.1.0` → `^10.0.1` (latest stable, published 2026-10-04;
+  8.1.0 had been a temporary pin because 10.0.x needed Dart >=3.12).
+- Task 3 (`b5cf84d`, review fix `46e4a46`): added `createAiClient(AiSettings)`
+  so scan and enrichment paths construct the real client from persisted
+  settings; review aligned the factory gate with `getAiReadiness` trim
+  semantics while keeping the deliberate readiness/client split where an empty
+  `providerName` still produces a working openai-compatible client with the
+  default provider name.
+- Task 4 (`bb1dba0`): added `updatePhotoSemanticEnrichment` and
+  `updateMemorySemanticEnrichment` to `ChronoPicRepository` in the existing
+  field-by-field rebuild style; generated fields never touch manual
+  caption/tags or authored memory name/description.
+- Task 5 (`d3e202c`, review fix `896a991`): added app-service orchestration —
+  `enrichPhotoSemantic`, `enrichMemorySemantic` (sampled memory photos,
+  datetime desc; empty memory → `failed` with
+  `Memory has no photos to analyze`), and `enrichPendingSemantics` covering
+  `pending` + `failed` + `disabled` (configured-late libraries stay
+  enrichable). Review fixes: correct non-configured fallback semantics, a
+  queue limit cap so the union of per-status queries cannot exceed `limit`,
+  and `updatedAt` parity so enrichment state changes bump photo `updatedAt`
+  like Electron.
+- Review fix (part of `896a991`/`d3e202c` follow-ups): removed the
+  per-photo `createBackup()` cost in batch runs by resolving settings/client
+  once per run, and cleaned error-message handling to prefer the error's own
+  message with a non-empty fallback (Electron catch parity).
+- Task 6 (`d6d6cd2`): exposed AI actions in the UI — photo inspector
+  `generate-photo-ai-button` with generated caption/summary/labels display,
+  memory AI suggestions behind `memory-ai-suggest-button` with
+  use-suggestion-fills-draft (never auto-apply), and Notifications
+  `enrich-pending-button`; covered by the new
+  `packages/chronopic_ui/test/ai_surfaces_test.dart`.
+- Task 7 fold-in polish (`ab058e9`):
+  - StateError mislabeling: the three enrich catch paths now show the
+    not-configured message only when AI is actually unconfigured; not-found
+    and other StateErrors surface verbatim via a `_aiStateErrorStatus`
+    helper.
+  - Pinned with a widget test: enriching a photo removed behind the shell's
+    back shows `Photo not found: photo-city`, not the not-configured message
+    (verified red before the fix).
+  - `retry-ai-queue-button` now shares the `aiBusy` gate with
+    `enrich-pending-button` (`_NotificationCard.onAction` became nullable);
+    pinned by an in-flight widget test.
+  - Removed the dead `onEnrichMemory` prop from `MemoryDetailPage` and its
+    shell call site (the dialog takes the handler directly).
+  - Added the `memory-ai-not-configured-chip` stable key to the memory
+    dialog's not-configured chip, matching the photo-side twin.
+  - `_enrichMemoryAi` now surfaces a localized "enrichment already running"
+    status when the in-flight guard fires instead of silently returning the
+    un-enriched memory as fake success.
+  - Batch refresh: verified already satisfied structurally — browse data is
+    re-derived in `build()` and every `_enrichPendingSemantics` completion
+    path calls `setState`, so no extra refresh line was needed.
+- Full verification gate (all from `chronopic_flutter/` unless noted):
+  - `flutter analyze` — no issues.
+  - `dart test packages/chronopic_ai/test packages/chronopic_app/test
+    packages/chronopic_media/test packages/chronopic_domain/test` — 89 tests
+    passed.
+  - `cd packages/chronopic_database && dart test test` — 12 tests passed.
+  - `flutter test packages/chronopic_ui/test apps/chronopic/test` — 32 tests
+    passed (including 8 AI-surface tests).
+  - `cd apps/chronopic && flutter build linux --debug` — built
+    `build/linux/x64/debug/bundle/chronopic`.
+  - `cd apps/chronopic && flutter build apk --debug` — built
+    `build/app/outputs/flutter-apk/app-debug.apk`.
+  - repo root `git diff --check` — clean.
+- Live endpoint smoke (Part C): skipped — endpoint unreachable.
+  `curl http://192.168.1.39:8888/v1/models` returned connection refused
+  (HTTP 000, TCP connect refused), so no throwaway `analyzePhoto` script was
+  run. The fake-SSE-server transport tests remain the client's verified path.
+- Agent verification scenes: Scene 8 (settings/locale/AI) is covered by the
+  AI-surface widget tests and the analysis/build gates above; no Electron
+  runtime scenes were run because this phase changes only the Flutter line
+  and the Electron reference app was neither modified nor released.
+- Next: choose the next phase from `PLAN.md` Active Direction — sidecar
+  metadata export/import, AI/map config live validation (a test-connection
+  path is still absent), or iOS live verification (blocked on macOS/Xcode).

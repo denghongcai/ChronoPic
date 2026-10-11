@@ -37,15 +37,19 @@ entries.
 
 ## Current State
 
-- Latest step: **Step 276** (2026-10-11) — restructured agent docs:
-  `AGENTS.md` reduced to working rules + Current State, step log and completed
-  plan phases archived under `docs/superpowers/plans/`, `PLAN.md` trimmed to
-  active direction/backlog/constraints.
+- Latest step: **Step 277** (2026-10-11) — Flutter real AI provider phase
+  complete: `OpenAiCompatibleAiClient` (openai_dart streaming), AI client
+  factory from persisted settings, repository/app-service photo + memory
+  enrichment orchestration with a pending/failed/disabled queue, and photo
+  inspector / memory suggestions / notification queue UI surfaces.
 - Release line: Flutter (`chronopic_flutter/`); latest release **v0.1.12**
   (Android APK/AAB + Linux x64 tarball via tag-triggered GitHub Actions).
 - The Electron app is reference/migration-only and no longer released.
-- Flutter phases 1-14 are complete, including the mobile native experience
-  redesign, lazy thumbnail/count pipeline, and mobile memory creation flow.
+- Flutter phases 1-15 are complete, including the mobile native experience
+  redesign, lazy thumbnail/count pipeline, mobile memory creation flow, and
+  the real AI provider stack (Flutter toolchain now 3.47.7,
+  `openai_dart ^10.0.1`).
 - Known open candidates (see `PLAN.md` Active Direction):
-  AI/Map configuration live validation, sidecar metadata export/import,
-  iOS live verification (blocked on macOS/Xcode).
+  sidecar metadata export/import, AI/Map configuration live validation
+  (no test-connection path yet), iOS live verification (blocked on
+  macOS/Xcode).
