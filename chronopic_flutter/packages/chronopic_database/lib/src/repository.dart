@@ -376,6 +376,63 @@ final class ChronoPicRepository {
     return updated;
   }
 
+  PhotoRecord updatePhotoSemanticEnrichment(
+    String photoId, {
+    required AiPipelineStatus aiStatus,
+    Object? aiError = _unchanged,
+    Object? generatedLabels = _unchanged,
+    Object? generatedCaption = _unchanged,
+    Object? summary = _unchanged,
+    Object? aiProvider = _unchanged,
+    Object? aiModel = _unchanged,
+    Object? aiProcessedAt = _unchanged,
+  }) {
+    final record = _requirePhoto(photoId);
+    final semantic = record.semantic;
+    final nextAiStatus = aiStatus;
+    final updated = _replaceRecord(
+      record,
+      semantic: Semantic(
+        photoId: semantic.photoId,
+        labels: semantic.labels,
+        caption: semantic.caption,
+        generatedLabels: generatedLabels == _unchanged
+            ? semantic.generatedLabels
+            : List<String>.of(generatedLabels as List<String>),
+        generatedCaption: generatedCaption == _unchanged
+            ? semantic.generatedCaption
+            : generatedCaption as String?,
+        summary: summary == _unchanged
+            ? semantic.summary
+            : summary as String?,
+        embeddingRef: semantic.embeddingRef,
+        aiStatus: nextAiStatus,
+        aiProvider: aiProvider == _unchanged
+            ? semantic.aiProvider
+            : aiProvider as String?,
+        aiModel: aiModel == _unchanged
+            ? semantic.aiModel
+            : aiModel as String?,
+        aiProcessedAt: aiProcessedAt == _unchanged
+            ? semantic.aiProcessedAt
+            : aiProcessedAt as int?,
+        aiError: aiError == _unchanged ? semantic.aiError : aiError as String?,
+      ),
+      indexState: IndexState(
+        photoId: record.indexState.photoId,
+        indexed: record.indexState.indexed,
+        aiProcessed: nextAiStatus == AiPipelineStatus.completed,
+        error: record.indexState.error,
+        lastIndexedAt: record.indexState.lastIndexedAt,
+        duplicateOf: record.indexState.duplicateOf,
+        sourceUpdatedAt: record.indexState.sourceUpdatedAt,
+        missingAt: record.indexState.missingAt,
+      ),
+    );
+    _photos[photoId] = updated;
+    return updated;
+  }
+
   PhotoRecord rollbackLatestEdit(String photoId) {
     final editIndex = _editHistory.lastIndexWhere(
       (edit) => edit.photoId == photoId && edit.rolledBackAt == null,
@@ -506,6 +563,51 @@ final class ChronoPicRepository {
       memory,
       name: name,
       description: description,
+      updatedAt: DateTime.now().millisecondsSinceEpoch,
+    );
+    _memories[memoryId] = updated;
+    return updated;
+  }
+
+  Memory updateMemorySemanticEnrichment(
+    String memoryId, {
+    required AiPipelineStatus aiStatus,
+    Object? aiError = _unchanged,
+    Object? generatedName = _unchanged,
+    Object? generatedDescription = _unchanged,
+    Object? generatedLabels = _unchanged,
+    Object? aiProvider = _unchanged,
+    Object? aiModel = _unchanged,
+    Object? aiProcessedAt = _unchanged,
+  }) {
+    final memory = _requireMemory(memoryId);
+    final updated = Memory(
+      id: memory.id,
+      name: memory.name,
+      description: memory.description,
+      coverPhotoId: memory.coverPhotoId,
+      coverThumbnailPath: memory.coverThumbnailPath,
+      photoCount: memory.photoCount,
+      generatedName: generatedName == _unchanged
+          ? memory.generatedName
+          : generatedName as String?,
+      generatedDescription: generatedDescription == _unchanged
+          ? memory.generatedDescription
+          : generatedDescription as String?,
+      generatedLabels: generatedLabels == _unchanged
+          ? memory.generatedLabels
+          : List<String>.of(generatedLabels as List<String>),
+      aiStatus: aiStatus,
+      aiProvider: aiProvider == _unchanged
+          ? memory.aiProvider
+          : aiProvider as String?,
+      aiModel: aiModel == _unchanged ? memory.aiModel : aiModel as String?,
+      aiProcessedAt: aiProcessedAt == _unchanged
+          ? memory.aiProcessedAt
+          : aiProcessedAt as int?,
+      aiError: aiError == _unchanged ? memory.aiError : aiError as String?,
+      source: memory.source,
+      createdAt: memory.createdAt,
       updatedAt: DateTime.now().millisecondsSinceEpoch,
     );
     _memories[memoryId] = updated;
@@ -764,12 +866,13 @@ final class ChronoPicRepository {
     PhotoRecord record, {
     Photo? photo,
     Semantic? semantic,
+    IndexState? indexState,
   }) {
     return PhotoRecord(
       photo: photo ?? record.photo,
       metadata: record.metadata,
       semantic: semantic ?? record.semantic,
-      indexState: record.indexState,
+      indexState: indexState ?? record.indexState,
     );
   }
 
