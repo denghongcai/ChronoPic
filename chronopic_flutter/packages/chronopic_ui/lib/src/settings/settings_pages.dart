@@ -1304,7 +1304,7 @@ final class NotificationCenterPanel extends StatelessWidget {
               ],
               actionLabel: _localized(labels, 'Enrich Queue', '丰富队列'),
               actionKey: const Key('retry-ai-queue-button'),
-              onAction: onRetryQueue,
+              onAction: aiBusy ? null : onRetryQueue,
               secondaryActionLabel: _localized(
                 labels,
                 'Enrich Pending',
@@ -1353,9 +1353,9 @@ final class _NotificationCard extends StatelessWidget {
     required this.actionLabel,
     required this.chips,
     required this.description,
-    required this.onAction,
     required this.title,
     this.footnote,
+    this.onAction,
     this.onSecondaryAction,
     this.secondaryActionKey,
     this.secondaryActionLabel,
@@ -1366,7 +1366,7 @@ final class _NotificationCard extends StatelessWidget {
   final List<_NotificationChipData> chips;
   final String description;
   final String? footnote;
-  final VoidCallback onAction;
+  final VoidCallback? onAction;
   final VoidCallback? onSecondaryAction;
   final Key? secondaryActionKey;
   final String? secondaryActionLabel;

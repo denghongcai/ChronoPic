@@ -534,7 +534,6 @@ final class MemoryDetailPage extends StatelessWidget {
     required this.onUseAiTitleSuggestion,
     required this.selected,
     this.aiConfigured = true,
-    this.onEnrichMemory,
     this.onOpenAiSuggestions,
   });
 
@@ -547,7 +546,6 @@ final class MemoryDetailPage extends StatelessWidget {
   final TextEditingController memoryTitleController;
   final VoidCallback onAddSelectedToMemory;
   final VoidCallback onBackToMemories;
-  final Future<Memory> Function(String memoryId)? onEnrichMemory;
   final VoidCallback? onOpenAiSuggestions;
   final VoidCallback onRemoveSelectedFromMemory;
   final VoidCallback onSaveMemory;
@@ -1175,6 +1173,7 @@ final class _MemoryAiSuggestionsDialogState
                   ),
                   if (!widget.aiConfigured)
                     Chip(
+                      key: const Key('memory-ai-not-configured-chip'),
                       visualDensity: VisualDensity.compact,
                       backgroundColor: Colors.grey.shade100,
                       side: BorderSide(color: Colors.grey.shade300),

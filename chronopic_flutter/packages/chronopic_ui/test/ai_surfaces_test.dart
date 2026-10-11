@@ -260,6 +260,88 @@ void main() {
     expect(blocking.callCount, 1);
     expect(find.textContaining('1 processed'), findsOneWidget);
   });
+
+  testWidgets('retry-ai-queue-button is disabled while a run is in flight', (
+    tester,
+  ) async {
+    final repository = ChronoPicRepository()..restoreBackup(_backup());
+    final blocking = _BlockingAiClient();
+    await pumpDesktop(
+      tester,
+      ChronoPicHome(
+        service: ChronoPicAppService(repository),
+        aiClient: blocking,
+      ),
+    );
+
+    await tester.tap(find.byKey(const Key('notifications-nav')));
+    await tester.pumpAndSettle();
+    final retry = find.byKey(const Key('retry-ai-queue-button'));
+    final enrich = find.byKey(const Key('enrich-pending-button'));
+    expect(tester.widget<OutlinedButton>(retry).onPressed, isNotNull);
+
+    await tester.ensureVisible(enrich);
+    await tester.tap(enrich);
+    await flushRealAsync(tester);
+    await tester.pump();
+
+    // Both queue actions share the busy gate while the run is in flight.
+    expect(tester.widget<OutlinedButton>(retry).onPressed, isNull);
+    expect(tester.widget<OutlinedButton>(enrich).onPressed, isNull);
+
+    blocking.completer.complete();
+    await flushRealAsync(tester);
+    await tester.pumpAndSettle();
+    expect(tester.widget<OutlinedButton>(retry).onPressed, isNotNull);
+  });
+
+  testWidgets(
+    'enriching a photo that no longer exists surfaces the real error instead of the not-configured message',
+    (tester) async {
+      final repository = ChronoPicRepository()..restoreBackup(_backup());
+      await pumpDesktop(
+        tester,
+        ChronoPicHome(
+          service: ChronoPicAppService(repository),
+          aiClient: const FixtureSuccessAiClient(),
+        ),
+      );
+
+      await openFocusedDetail(tester, 'photo-city');
+
+      // AI stays configured here; the selected photo disappears behind the
+      // shell's back (for example removed by a concurrent scan), so the
+      // not-found StateError must reach the user verbatim.
+      final full = _backup();
+      repository.restoreBackup(
+        ChronoPicBackup(
+          app: full.app,
+          schemaVersion: full.schemaVersion,
+          exportedAt: full.exportedAt,
+          settings: full.settings,
+          librarySources: full.librarySources,
+          photos: full.photos
+              .where((record) => record.photo.id != 'photo-city')
+              .toList(),
+          memories: full.memories,
+          memoryPhotos: full.memoryPhotos
+              .where((membership) => membership.photoId != 'photo-city')
+              .toList(),
+          editHistory: full.editHistory,
+          memoryCandidates: const <MemoryCandidate>[],
+        ),
+      );
+
+      final generate = find.byKey(const Key('generate-photo-ai-button'));
+      await tester.ensureVisible(generate);
+      await tester.tap(generate);
+      await flushRealAsync(tester);
+      await tester.pumpAndSettle();
+
+      expect(find.textContaining('Photo not found: photo-city'), findsWidgets);
+      expect(find.textContaining('not configured'), findsNothing);
+    },
+  );
 }
 
 ChronoPicBackup _backup({AiSettings? ai}) {

@@ -293,7 +293,6 @@ final class _ChronoPicHomeState extends State<ChronoPicHome> {
           memoryDescriptionController: _memoryDescriptionController,
           onAddSelectedToMemory: _addSelectedToMemory,
           onBackToMemories: () => setState(() => _page = _DesktopPage.memories),
-          onEnrichMemory: _enrichMemoryAi,
           onOpenAiSuggestions: _openMemoryAiSuggestions,
           onRemoveSelectedFromMemory: _removeSelectedFromMemory,
           onSaveMemory: _saveSelectedMemory,
@@ -1665,6 +1664,17 @@ final class _ChronoPicHomeState extends State<ChronoPicHome> {
     '未配置 AI 增强。请到设置中配置。',
   );
 
+  /// Distinguishes a genuinely unconfigured AI setup from other StateError
+  /// failures (for example `Photo not found` or `Memory not found`) so the
+  /// not-configured message is never shown for an unrelated enrichment error.
+  String _aiStateErrorStatus(StateError error, {required String failedLabel}) {
+    final unconfigured =
+        !_service.getAiSetupReadiness().configured ||
+        error.message == 'AI enrichment is not configured';
+    if (unconfigured) return _aiNotConfiguredMessage;
+    return _labelValue(failedLabel, error.message);
+  }
+
   /// Batch-processes the pending/failed/disabled AI queue. The single-flight
   /// guard is required: the app service has no internal locking, so a second
   /// tap while a run is in flight must be ignored here.
@@ -1683,9 +1693,14 @@ final class _ChronoPicHomeState extends State<ChronoPicHome> {
           'AI 队列已处理：共 ${result.processed} 项，成功 ${result.completed} 项，失败 ${result.failed} 项。',
         );
       });
-    } on StateError {
+    } on StateError catch (error) {
       if (!mounted) return;
-      setState(() => _status = _aiNotConfiguredMessage);
+      setState(
+        () => _status = _aiStateErrorStatus(
+          error,
+          failedLabel: _tr('AI queue enrichment failed', 'AI 队列处理失败'),
+        ),
+      );
     } on Object catch (error) {
       if (!mounted) return;
       setState(
@@ -1724,9 +1739,14 @@ final class _ChronoPicHomeState extends State<ChronoPicHome> {
                 updated.semantic.aiError ?? '',
               );
       });
-    } on StateError {
+    } on StateError catch (error) {
       if (!mounted) return;
-      setState(() => _status = _aiNotConfiguredMessage);
+      setState(
+        () => _status = _aiStateErrorStatus(
+          error,
+          failedLabel: _tr('AI enrichment failed', 'AI 生成失败'),
+        ),
+      );
     } on Object catch (error) {
       if (!mounted) return;
       setState(
@@ -1748,7 +1768,17 @@ final class _ChronoPicHomeState extends State<ChronoPicHome> {
     if (current == null) {
       throw StateError('Memory not found: $memoryId');
     }
-    if (_aiEnrichmentRunning) return current;
+    if (_aiEnrichmentRunning) {
+      // Surface the in-flight guard instead of silently returning the
+      // un-enriched memory as if generation had succeeded.
+      setState(
+        () => _status = _tr(
+          'AI enrichment is already running. Try again when it finishes.',
+          'AI 增强正在进行中，请稍后再试。',
+        ),
+      );
+      return current;
+    }
     setState(() => _aiEnrichmentRunning = true);
     try {
       final updated = await _service.enrichMemorySemantic(
@@ -1764,8 +1794,15 @@ final class _ChronoPicHomeState extends State<ChronoPicHome> {
         );
       }
       return updated;
-    } on StateError {
-      if (mounted) setState(() => _status = _aiNotConfiguredMessage);
+    } on StateError catch (error) {
+      if (mounted) {
+        setState(
+          () => _status = _aiStateErrorStatus(
+            error,
+            failedLabel: _tr('AI enrichment failed', 'AI 生成失败'),
+          ),
+        );
+      }
       rethrow;
     } finally {
       if (mounted) setState(() => _aiEnrichmentRunning = false);
