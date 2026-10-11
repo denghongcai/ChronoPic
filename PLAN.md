@@ -61,7 +61,7 @@ archive files except to correct factual errors.
 - Durable Flutter phase tracker:
   [docs/flutter-refactor-phases.md](docs/flutter-refactor-phases.md).
 
-Latest release: **v0.1.12**.
+Latest release: **v0.1.13**.
 
 ## Product Scope Constraints
 
