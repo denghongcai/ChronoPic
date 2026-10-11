@@ -6,7 +6,7 @@
 
 **Architecture:** Add a real `OpenAiCompatibleAiClient` to `chronopic_ai` behind the existing `ChronoPicAiClient` interface, backed by `openai_dart` streaming chat completions. Port the JSON/label normalization helpers and both prompts verbatim from `packages/services-ai-pipeline`. Add enrichment orchestration (processing/completed/failed state machine, non-destructive to manual fields) to `chronopic_app`, and expose Generate/Apply actions in `chronopic_ui`.
 
-**Tech Stack:** Dart 3.11 / Flutter 3.41 stable, `openai_dart ^8.1.0` (10.0.1/9.0.0 require Dart >=3.12; the Flutter 3.41.9 stable toolchain ships Dart 3.11.5, so ^8.1.0 is the latest resolvable stable — verified per the Step 235 dependency version rule), existing `chronopic_domain` models (`AiSettings`, `SemanticState`, `Memory` with generated fields, `AiPipelineStatus`).
+**Tech Stack:** Flutter 3.47.7 stable / Dart 3.13.5 (toolchain upgraded mid-phase at user request; was 3.41.9/3.11.5), `openai_dart ^10.0.1` (latest stable, published 2026-10-04; temporarily pinned to ^8.1.0 on the old toolchain, restored after the upgrade — verified per the Step 235 dependency version rule), existing `chronopic_domain` models (`AiSettings`, `SemanticState`, `Memory` with generated fields, `AiPipelineStatus`).
 
 ---
 

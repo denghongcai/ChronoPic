@@ -352,7 +352,7 @@ final class ChronoPicIndexerService {
         '${base64Url.encode(utf8.encode(asset.id)).replaceAll('=', '')}.jpg';
     final file = File('${directory.path}/$filename');
     try {
-      return Isolate.run(
+      return await Isolate.run(
         () => _writeThumbnailFile(
           assetId: asset.id,
           bytes: bytes,
