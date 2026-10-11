@@ -6,7 +6,7 @@
 
 **Architecture:** Add a real `OpenAiCompatibleAiClient` to `chronopic_ai` behind the existing `ChronoPicAiClient` interface, backed by `openai_dart` streaming chat completions. Port the JSON/label normalization helpers and both prompts verbatim from `packages/services-ai-pipeline`. Add enrichment orchestration (processing/completed/failed state machine, non-destructive to manual fields) to `chronopic_app`, and expose Generate/Apply actions in `chronopic_ui`.
 
-**Tech Stack:** Dart 3.11 / Flutter 3.41 stable, `openai_dart ^10.0.1` (latest stable on pub.dev, published 2026-10-04 — verified per the Step 235 dependency version rule), existing `chronopic_domain` models (`AiSettings`, `SemanticState`, `Memory` with generated fields, `AiPipelineStatus`).
+**Tech Stack:** Dart 3.11 / Flutter 3.41 stable, `openai_dart ^8.1.0` (10.0.1/9.0.0 require Dart >=3.12; the Flutter 3.41.9 stable toolchain ships Dart 3.11.5, so ^8.1.0 is the latest resolvable stable — verified per the Step 235 dependency version rule), existing `chronopic_domain` models (`AiSettings`, `SemanticState`, `Memory` with generated fields, `AiPipelineStatus`).
 
 ---
 
@@ -249,12 +249,13 @@ git commit -m "Port AI output normalization helpers to Flutter"
 
 **Step 1: Record the dependency version** (project rule from Step 235 — check
 the latest stable from the official source and record it):
-`openai_dart 10.0.1` — latest stable on pub.dev, published 2026-10-04.
+`openai_dart 8.1.0` — latest stable resolvable with Dart 3.11.5 (10.0.x needs Dart >=3.12).
 Add it:
 
 ```bash
-cd chronopic_flutter/packages/chronopic_ai && flutter pub add openai_dart:^10.0.1
+cd chronopic_flutter/packages/chronopic_ai && flutter pub add openai_dart:^8.1.0
 ```
+> Implemented as `^8.1.0`, not 10.0.1: 10.0.x requires Dart >=3.12, toolchain ships 3.11.5 (deviation recorded in the step log).
 
 **Step 2: Write the failing test** for `OpenAiCompatibleAiClient.analyzePhoto`
 using a **local fake SSE server** (real streaming end-to-end, no mocks of the
