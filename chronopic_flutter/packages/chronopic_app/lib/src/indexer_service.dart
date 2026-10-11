@@ -187,10 +187,17 @@ final class ChronoPicIndexerService {
         final PhotoAiResult ai;
         if (aiClient.isEnabled) {
           read = await mediaSource.readAsset(asset.id);
+          final datetimeMs = asset.metadata.datetime;
           ai = await aiClient.analyzePhoto(
             photoId: asset.id,
             bytes: read.bytes,
             mime: mime,
+            datetime: datetimeMs != null
+                ? DateTime.fromMillisecondsSinceEpoch(datetimeMs)
+                : null,
+            lat: asset.metadata.lat,
+            lng: asset.metadata.lng,
+            path: asset.path,
           );
         } else {
           ai = const PhotoAiResult(status: AiPipelineStatus.disabled);
