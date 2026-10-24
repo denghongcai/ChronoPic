@@ -106,3 +106,27 @@ Verification:
 Next: verify the Flutter Linux first frame in a desktop-capable session, then
 close Phase 17; afterward prioritize Flutter Map browse completion or iOS live
 verification.
+
+### 2026-10-25 Step 283 — Publish v0.1.15
+
+- Updated aligned release versions to root `0.1.15` and Flutter app
+  `0.1.15+15`; committed Phase 17 as `725b44779a2882358c4c49626112526d0b961cbc`
+  and created annotated tag `v0.1.15`.
+- Pushed `main` and the release tag. GitHub Release workflow `40124271584`
+  completed successfully: `prepare-release`, `flutter-android`, and
+  `flutter-linux` passed.
+- Verified the public Release is published with all six expected Android/Linux
+  assets. Downloaded all assets and ran
+  `node chronopic_flutter/tool/release/verify_flutter_release_artifacts.mjs android linux`;
+  SHA-256 files and Linux archive contents passed.
+- Main CI workflow `40124271598`: Flutter job passed. Electron reference
+  `verify` job failed at `Install Playwright browsers`; GitHub's public job
+  summary did not expose the underlying download error. The release workflow
+  and its Flutter validation/builds passed independently.
+- Updated `PLAN.md`, `DEVELOPMENT.md`, and `AGENTS.md` to identify `v0.1.15` as
+  the latest verified release. Phase 17 remains active only for the unresolved
+  Scene 1 desktop first-frame check; the Xvfb window was unmapped.
+- `git diff --check` — clean after this post-release record update.
+
+Next: verify the Linux first frame in a desktop-capable session, close Phase 17,
+and then consider Flutter Map browse completion or iOS live verification.

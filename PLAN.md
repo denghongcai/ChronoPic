@@ -11,13 +11,13 @@ backup JSON migration; it is no longer released.
 
 ## Active Direction
 
-Flutter Phase 17's AI connection-check implementation is in place, and its
+Flutter Phase 17's AI connection-check implementation shipped in `v0.1.15`;
 automated tests and Linux/Android debug builds pass. Keep the phase active until
 the Linux first-frame launch is visually verified in a desktop-capable session;
-the current headless Xvfb run leaves the window unmapped. Phase 16 added portable
-JSON photo metadata sidecars; the full backup format remains the option for
-Memories, settings, generated fields, and edit history. EXIF writeback remains
-out of scope.
+the headless Xvfb run leaves the window unmapped. Phase 16 added portable JSON
+photo metadata sidecars; the full backup format remains the option for Memories,
+settings, generated fields, and edit history. EXIF writeback remains out of
+scope.
 
 Active phase plan:
 [docs/superpowers/plans/2026-10-22-flutter-ai-provider-connection-validation.md](docs/superpowers/plans/2026-10-22-flutter-ai-provider-connection-validation.md).
@@ -70,7 +70,7 @@ archived; do not edit archive files except to correct factual errors.
 - Durable Flutter phase tracker:
   [docs/flutter-refactor-phases.md](docs/flutter-refactor-phases.md).
 
-Latest release: **v0.1.14**.
+Latest release: **v0.1.15**.
 
 ## Product Scope Constraints
 

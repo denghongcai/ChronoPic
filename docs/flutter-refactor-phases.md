@@ -1669,9 +1669,9 @@ Exit evidence:
 ## Phase 17: Flutter AI Provider Connection Validation
 
 Status:
-implementation and automated verification complete on 2026-10-22; Scene 1
-desktop visual verification remains open because the headless Xvfb host does
-not map the Flutter window.
+published in `v0.1.15` on 2026-10-25; automated verification is complete, but
+Scene 1 desktop visual verification remains open because the headless Xvfb host
+does not map the Flutter window.
 
 Plan:
 

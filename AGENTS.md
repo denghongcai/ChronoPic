@@ -38,12 +38,13 @@ entries.
 
 ## Current State
 
-- Latest step: **Step 282** (2026-10-22) — implemented the Phase 17
-  metadata-only AI provider connection check, localized Settings feedback, and
-  draft/save separation. Automated tests and Linux/Android debug builds pass;
-  the Linux first-frame visual check remains open because Xvfb leaves the
+- Latest step: **Step 283** (2026-10-25) — published `v0.1.15` with the Phase
+  17 AI provider connection check. Release jobs passed and all six public
+  assets were downloaded and checksum-verified. The main CI Flutter job passed;
+  the Electron reference `verify` job failed at Playwright browser installation.
+  Phase 17's Linux first-frame visual check remains open because Xvfb leaves the
   window unmapped. See the active step log for evidence and skipped scenes.
-- Release line: Flutter (`chronopic_flutter/`); latest release **v0.1.14**
+- Release line: Flutter (`chronopic_flutter/`); latest release **v0.1.15**
   (Android APK/AAB + Linux x64 tarball via tag-triggered GitHub Actions).
 - The Electron app is reference/migration-only and no longer released.
 - Flutter phases 1-16 are complete, including portable photo metadata sidecars,
