@@ -10,6 +10,9 @@ import 'package:crypto/crypto.dart';
 
 import 'indexer_service.dart';
 
+typedef AiConnectionChecker =
+    Future<AiConnectionCheckResult> Function(AiSettings settings);
+
 final class PhotoSidecarBatchResult {
   const PhotoSidecarBatchResult({
     required this.processed,
@@ -21,7 +24,12 @@ final class PhotoSidecarBatchResult {
 }
 
 final class ChronoPicAppService {
-  ChronoPicAppService(this.repository, {this.persistencePath}) {
+  ChronoPicAppService(
+    this.repository, {
+    this.persistencePath,
+    AiConnectionChecker? aiConnectionChecker,
+  }) : _aiConnectionChecker =
+           aiConnectionChecker ?? ((settings) => checkAiConnection(settings)) {
     _loadPersistedBackup();
   }
 
@@ -41,6 +49,7 @@ final class ChronoPicAppService {
 
   final ChronoPicRepository repository;
   final String? persistencePath;
+  final AiConnectionChecker _aiConnectionChecker;
 
   static String defaultPersistencePath() {
     final dataHome =
@@ -328,6 +337,9 @@ final class ChronoPicAppService {
 
   AiReadiness getAiSetupReadiness() =>
       getAiReadiness(createBackup().settings.ai);
+
+  Future<AiConnectionCheckResult> testAiConnection(AiSettings settings) =>
+      _aiConnectionChecker(settings);
 
   BackupSettings updateAiSettings(AiSettings aiSettings) {
     final settings = repository.updateAiSettings(aiSettings);

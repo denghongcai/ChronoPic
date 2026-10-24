@@ -62,3 +62,47 @@ Next: assess the remaining candidates in `PLAN.md` Active Direction.
 - Updated `README.md`, `DEVELOPMENT.md`, `PLAN.md`, `AGENTS.md`, and Phase 16
   records to identify `v0.1.14` as the current release and sidecar metadata
   portability as complete.
+
+### 2026-10-22 Step 282 — Implement Phase 17 AI Connection Check
+
+- Added a bounded, 8-second authenticated `GET /models` connection check for
+  unsaved OpenAI-compatible AI settings. It compares the configured model id,
+  limits the response body to 1 MiB, disables redirects, and returns typed
+  secret-safe results without photo upload or inference.
+- Wired draft settings through the app service without persistence. Settings
+  now provides localized success/failure feedback, disables controls in flight,
+  clears stale results on edits, and keeps Save independent from Test.
+- Added local HTTP transport tests, app-service no-persist and restart tests,
+  and Settings widget coverage for success, unauthorized failure, in-flight
+  state, stale-result clearing, and separate Save behavior.
+- Corrected Flutter Map documentation: the Map surface remains a placeholder;
+  saved AMap credentials are not consumed by Flutter.
+
+Verification:
+
+- From `chronopic_flutter/`, `dart test packages/chronopic_ai/test
+  packages/chronopic_app/test packages/chronopic_media/test
+  packages/chronopic_domain/test packages/chronopic_database/test` — 114 passed.
+- From `chronopic_flutter/`, `flutter test packages/chronopic_ui/test
+  apps/chronopic/test` — 35 passed.
+- From `chronopic_flutter/`, `dart analyze packages/chronopic_ai
+  packages/chronopic_app packages/chronopic_ui apps/chronopic` — no issues.
+- From `chronopic_flutter/apps/chronopic/`, `flutter build linux --debug` and
+  `flutter build apk --debug` — built. Android emitted upcoming Gradle 8.14,
+  AGP 8.11.1, and Kotlin 2.2.20 support warnings.
+- Scene 7: app-service tests confirm draft checks do not persist and saved AI
+  settings survive restart. Scene 8: Settings tests cover success, safe
+  unauthorized feedback, in-flight disablement, stale-result clearing, and
+  save/test separation.
+- Scene 1 was attempted under Xvfb with isolated `XDG_DATA_HOME`. The process
+  started and exposed a Dart VM service, but the window remained 10x10 and
+  unmapped; the screenshot was black, also with software rendering. The Linux
+  first-frame visual check remains open for a desktop-capable session.
+- Electron Playwright scenes were skipped because Electron is reference-only.
+  Real-provider smoke was skipped because no reachable user endpoint was
+  configured; iOS live verification remains blocked on macOS/Xcode.
+- `git diff --check` — clean after the documentation update.
+
+Next: verify the Flutter Linux first frame in a desktop-capable session, then
+close Phase 17; afterward prioritize Flutter Map browse completion or iOS live
+verification.

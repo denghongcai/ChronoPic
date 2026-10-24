@@ -11,14 +11,23 @@ backup JSON migration; it is no longer released.
 
 ## Active Direction
 
-No numbered phase is currently in progress. Flutter Phase 16 added portable
+Flutter Phase 17's AI connection-check implementation is in place, and its
+automated tests and Linux/Android debug builds pass. Keep the phase active until
+the Linux first-frame launch is visually verified in a desktop-capable session;
+the current headless Xvfb run leaves the window unmapped. Phase 16 added portable
 JSON photo metadata sidecars; the full backup format remains the option for
 Memories, settings, generated fields, and edit history. EXIF writeback remains
-out of scope. The next phase should be promoted from the remaining candidates:
+out of scope.
 
-1. **AI / Map configuration live validation** — real AI enrichment is landed,
-   but Settings still has no live health probe or test-connection path for
-   saved AI and map credentials; a smaller candidate than a full phase.
+Active phase plan:
+[docs/superpowers/plans/2026-10-22-flutter-ai-provider-connection-validation.md](docs/superpowers/plans/2026-10-22-flutter-ai-provider-connection-validation.md).
+
+Further candidates after Phase 17:
+
+1. **Flutter Map browse completion** — Flutter's Map surface is currently a
+   static error placeholder, and saved AMap settings are not consumed by a
+   Flutter map renderer. Choose a rendering/provider approach before wiring
+   those credentials into the release app.
 2. **iOS live verification** — metadata and runners are scaffolded, but the
    required permission/import/restart/restore evidence is blocked on
    macOS/Xcode tooling.
@@ -41,8 +50,8 @@ current product risk is re-evaluated.
 
 ## Completed Phases
 
-All implementation phases are complete. Details are archived; do not edit
-archive files except to correct factual errors.
+Flutter Phases 1-16 are complete; Phase 17 is active. Completed details are
+archived; do not edit archive files except to correct factual errors.
 
 - **Electron line** (Phases 1 – 4.26, Phase 5 Editing and History):
   [docs/superpowers/plans/electron-development-plan-archive.md](docs/superpowers/plans/electron-development-plan-archive.md)

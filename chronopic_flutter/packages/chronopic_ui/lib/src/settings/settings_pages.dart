@@ -52,6 +52,7 @@ final class SettingsPage extends StatelessWidget {
     required this.onPreviewRestore,
     required this.onRestoreBackup,
     required this.onSaveAiSettings,
+    required this.onTestAiConnection,
     required this.onSaveLocaleSettings,
     required this.onSaveMapSettings,
     required this.onScanLibrary,
@@ -89,6 +90,8 @@ final class SettingsPage extends StatelessWidget {
   final VoidCallback onPreviewRestore;
   final VoidCallback onRestoreBackup;
   final VoidCallback onSaveAiSettings;
+  final Future<AiConnectionCheckResult> Function(AiSettings settings)
+  onTestAiConnection;
   final VoidCallback onSaveLocaleSettings;
   final VoidCallback onSaveMapSettings;
   final VoidCallback onScanLibrary;
@@ -134,6 +137,7 @@ final class SettingsPage extends StatelessWidget {
       labels: labels,
       modelController: modelController,
       onSaveSettings: onSaveAiSettings,
+      onTestConnection: onTestAiConnection,
       providerController: providerController,
     );
     final backupPathPanel = BackupPathPanel(
@@ -964,6 +968,7 @@ final class AiSettingsPanel extends StatelessWidget {
     required this.labels,
     required this.modelController,
     required this.onSaveSettings,
+    required this.onTestConnection,
     required this.providerController,
   });
 
@@ -974,6 +979,8 @@ final class AiSettingsPanel extends StatelessWidget {
   final UiStrings labels;
   final TextEditingController modelController;
   final VoidCallback onSaveSettings;
+  final Future<AiConnectionCheckResult> Function(AiSettings settings)
+  onTestConnection;
   final TextEditingController providerController;
 
   @override
@@ -1094,59 +1101,276 @@ final class AiSettingsPanel extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 14),
-          Wrap(
-            spacing: 12,
-            runSpacing: 12,
-            children: [
-              SizedBox(
-                width: 220,
-                child: TextField(
-                  key: const Key('ai-provider-field'),
-                  controller: providerController,
-                  decoration: InputDecoration(
-                    labelText: _localized(labels, 'Provider', '服务商'),
-                  ),
-                ),
-              ),
-              SizedBox(
-                width: 260,
-                child: TextField(
-                  key: const Key('ai-base-url-field'),
-                  controller: baseUrlController,
-                  decoration: const InputDecoration(labelText: 'Base URL'),
-                ),
-              ),
-              SizedBox(
-                width: 220,
-                child: TextField(
-                  key: const Key('ai-model-field'),
-                  controller: modelController,
-                  decoration: InputDecoration(
-                    labelText: _localized(labels, 'Model', '模型'),
-                  ),
-                ),
-              ),
-              SizedBox(
-                width: 220,
-                child: TextField(
-                  key: const Key('ai-api-key-field'),
-                  controller: apiKeyController,
-                  obscureText: true,
-                  decoration: InputDecoration(
-                    labelText: _localized(labels, 'API key', 'API 密钥'),
-                  ),
-                ),
-              ),
-              FilledButton.icon(
-                key: const Key('save-ai-settings-button'),
-                onPressed: onSaveSettings,
-                icon: const Icon(Icons.save_outlined),
-                label: Text(_localized(labels, 'Save AI Settings', '保存 AI 设置')),
-              ),
-            ],
+          _AiSettingsForm(
+            apiKeyController: apiKeyController,
+            baseUrlController: baseUrlController,
+            labels: labels,
+            modelController: modelController,
+            onSaveSettings: onSaveSettings,
+            onTestConnection: onTestConnection,
+            providerController: providerController,
           ),
         ],
       ),
+    );
+  }
+}
+
+final class _AiSettingsForm extends StatefulWidget {
+  const _AiSettingsForm({
+    required this.apiKeyController,
+    required this.baseUrlController,
+    required this.labels,
+    required this.modelController,
+    required this.onSaveSettings,
+    required this.onTestConnection,
+    required this.providerController,
+  });
+
+  final TextEditingController apiKeyController;
+  final TextEditingController baseUrlController;
+  final UiStrings labels;
+  final TextEditingController modelController;
+  final VoidCallback onSaveSettings;
+  final Future<AiConnectionCheckResult> Function(AiSettings settings)
+  onTestConnection;
+  final TextEditingController providerController;
+
+  @override
+  State<_AiSettingsForm> createState() => _AiSettingsFormState();
+}
+
+final class _AiSettingsFormState extends State<_AiSettingsForm> {
+  bool _testingConnection = false;
+  AiConnectionCheckResult? _connectionResult;
+
+  UiStrings get _labels => widget.labels;
+
+  void _clearResult(String _) {
+    if (_connectionResult == null) return;
+    setState(() => _connectionResult = null);
+  }
+
+  Future<void> _testConnection() async {
+    setState(() {
+      _testingConnection = true;
+      _connectionResult = null;
+    });
+    AiConnectionCheckResult result;
+    try {
+      result = await widget.onTestConnection(
+        AiSettings(
+          apiKey: widget.apiKeyController.text.trim(),
+          baseURL: widget.baseUrlController.text.trim(),
+          model: widget.modelController.text.trim(),
+          providerName: widget.providerController.text.trim(),
+        ),
+      );
+    } on Object {
+      result = AiConnectionCheckResult(
+        status: AiConnectionStatus.networkError,
+        model: widget.modelController.text.trim(),
+      );
+    }
+    if (!mounted) return;
+    setState(() {
+      _testingConnection = false;
+      _connectionResult = result;
+    });
+  }
+
+  String _connectionMessage(AiConnectionCheckResult result) {
+    final model = result.model;
+    return switch (result.status) {
+      AiConnectionStatus.connected => _localized(
+        _labels,
+        'Connection succeeded. "$model" is listed. This check does not run inference.',
+        '连接成功，模型“$model”已列出。此检查不会运行推理。',
+      ),
+      AiConnectionStatus.incompleteSettings => _localized(
+        _labels,
+        'Complete all AI settings before testing the connection.',
+        '请先填写完整的 AI 设置，再测试连接。',
+      ),
+      AiConnectionStatus.invalidBaseUrl => _localized(
+        _labels,
+        'Enter an HTTP or HTTPS API base URL without query/fragment data or embedded credentials.',
+        '请输入有效的 HTTP 或 HTTPS API Base URL，不要包含查询参数、片段或内嵌凭据。',
+      ),
+      AiConnectionStatus.unauthorized => _localized(
+        _labels,
+        'The provider rejected this API key. Check the key and try again.',
+        '服务商拒绝了此 API 密钥。请检查密钥后重试。',
+      ),
+      AiConnectionStatus.forbidden => _localized(
+        _labels,
+        'The API key does not have access to this provider. Check its permissions.',
+        '此 API 密钥没有访问权限。请检查密钥权限。',
+      ),
+      AiConnectionStatus.modelNotListed => _localized(
+        _labels,
+        'The endpoint responded, but "$model" was not in its model list. Some compatible providers do not expose a complete catalog.',
+        '端点已响应，但模型列表中没有“$model”。部分兼容服务不会提供完整模型目录。',
+      ),
+      AiConnectionStatus.endpointUnavailable => _localized(
+        _labels,
+        'The models endpoint was not found. Check that the Base URL includes the provider API root, usually /v1.',
+        '找不到模型接口。请检查 Base URL 是否包含服务商 API 根路径，通常为 /v1。',
+      ),
+      AiConnectionStatus.rateLimited => _localized(
+        _labels,
+        'The provider rate-limited this check. Wait briefly and retry.',
+        '服务商限制了本次检查频率。请稍候再试。',
+      ),
+      AiConnectionStatus.providerError => _localized(
+        _labels,
+        'The provider returned a server error. Check its status and retry.',
+        '服务商返回了服务器错误。请检查服务状态后重试。',
+      ),
+      AiConnectionStatus.invalidResponse => _localized(
+        _labels,
+        'The provider returned an unexpected model list response.',
+        '服务商返回了无法识别的模型目录响应。',
+      ),
+      AiConnectionStatus.timedOut => _localized(
+        _labels,
+        'The connection timed out. Check the URL and provider availability.',
+        '连接超时。请检查 URL 和服务商是否可用。',
+      ),
+      AiConnectionStatus.networkError => _localized(
+        _labels,
+        'Could not reach the provider. Check the URL and network connection.',
+        '无法连接服务商。请检查 URL 和网络连接。',
+      ),
+    };
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final enabled = !_testingConnection;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Wrap(
+          spacing: 12,
+          runSpacing: 12,
+          children: [
+            SizedBox(
+              width: 220,
+              child: TextField(
+                key: const Key('ai-provider-field'),
+                controller: widget.providerController,
+                enabled: enabled,
+                onChanged: _clearResult,
+                decoration: InputDecoration(
+                  labelText: _localized(_labels, 'Provider', '服务商'),
+                ),
+              ),
+            ),
+            SizedBox(
+              width: 260,
+              child: TextField(
+                key: const Key('ai-base-url-field'),
+                controller: widget.baseUrlController,
+                enabled: enabled,
+                onChanged: _clearResult,
+                decoration: const InputDecoration(labelText: 'Base URL'),
+              ),
+            ),
+            SizedBox(
+              width: 220,
+              child: TextField(
+                key: const Key('ai-model-field'),
+                controller: widget.modelController,
+                enabled: enabled,
+                onChanged: _clearResult,
+                decoration: InputDecoration(
+                  labelText: _localized(_labels, 'Model', '模型'),
+                ),
+              ),
+            ),
+            SizedBox(
+              width: 220,
+              child: TextField(
+                key: const Key('ai-api-key-field'),
+                controller: widget.apiKeyController,
+                enabled: enabled,
+                onChanged: _clearResult,
+                obscureText: true,
+                decoration: InputDecoration(
+                  labelText: _localized(_labels, 'API key', 'API 密钥'),
+                ),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        Wrap(
+          spacing: 12,
+          runSpacing: 12,
+          crossAxisAlignment: WrapCrossAlignment.center,
+          children: [
+            OutlinedButton.icon(
+              key: const Key('test-ai-connection-button'),
+              onPressed: _testingConnection ? null : _testConnection,
+              icon: _testingConnection
+                  ? const SizedBox.square(
+                      dimension: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Icon(Icons.link_outlined),
+              label: Text(
+                _testingConnection
+                    ? _localized(_labels, 'Testing...', '正在测试…')
+                    : _localized(_labels, 'Test Connection', '测试连接'),
+              ),
+            ),
+            FilledButton.icon(
+              key: const Key('save-ai-settings-button'),
+              onPressed: enabled ? widget.onSaveSettings : null,
+              icon: const Icon(Icons.save_outlined),
+              label: Text(_localized(_labels, 'Save AI Settings', '保存 AI 设置')),
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        Text(
+          _localized(
+            _labels,
+            'Checks provider access and model listing only; it does not send a photo or generate content.',
+            '仅检查服务访问权限和模型目录，不会发送照片或生成内容。',
+          ),
+          style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
+        ),
+        if (_connectionResult case final result?) ...[
+          const SizedBox(height: 10),
+          Container(
+            key: const Key('ai-connection-result'),
+            width: double.infinity,
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: result.connected
+                  ? Colors.green.shade50
+                  : Colors.red.shade50,
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(
+                color: result.connected
+                    ? Colors.green.shade200
+                    : Colors.red.shade200,
+              ),
+            ),
+            child: Text(
+              _connectionMessage(result),
+              key: const Key('ai-connection-result-message'),
+              style: TextStyle(
+                color: result.connected
+                    ? Colors.green.shade900
+                    : Colors.red.shade900,
+              ),
+            ),
+          ),
+        ],
+      ],
     );
   }
 }

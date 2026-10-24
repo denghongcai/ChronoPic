@@ -41,7 +41,7 @@ new releases use the Flutter line.
 - Scan folders and build a local index
 - Extract photo time, location, camera, and related metadata
 - Generate local thumbnails
-- Browse photos in waterfall, map, and timeline views
+- Browse photos in waterfall and timeline views
 - Search paths, captions, tags, AI-generated fields, and Memory content
 - Open detail and immersive gallery views
 - Edit captions, tags, and datetimes
@@ -54,7 +54,7 @@ new releases use the Flutter line.
 - Review AI queue and Memory candidates from Notifications
 - Switch between English and Simplified Chinese UI
 - Set AI output language separately from UI language
-- Configure Gaode/AMap for optional map browsing
+- Map browsing is not yet available in the Flutter release line
 - Export local JSON backups
 - Export and import per-photo JSON sidecars for captions, tags, favorites, and metadata
 - Preview restore conflicts
@@ -87,7 +87,10 @@ AI-powered enrichment can generate captions, summaries, tags, Memory suggestions
 
 ### Maps
 
-Map browsing uses Gaode/AMap Web JS API settings. If no map key is configured, normal browsing, search, Memories, and backup still work.
+Map browsing is not yet available in the Flutter release line. The current Map
+surface is a placeholder, and migrated AMap credentials are preserved in
+settings/backup but are not used by Flutter. Waterfall/timeline browsing,
+search, Memories, and backup remain available.
 
 ## Backup And Restore
 

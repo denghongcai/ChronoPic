@@ -38,13 +38,11 @@ entries.
 
 ## Current State
 
-- Latest step: **Step 281** (2026-10-12) — published `v0.1.14` with portable
-  JSON photo metadata sidecars; main CI and the tag release workflow both
-  passed, and all six public Android/Linux release assets were downloaded and
-  checksum-verified.
-  (Step 280 implemented versioned sidecar export/import with SHA-256 matching,
-  invalid/ambiguous-file reporting, localized Settings actions, and the
-  documentation rollover.)
+- Latest step: **Step 282** (2026-10-22) — implemented the Phase 17
+  metadata-only AI provider connection check, localized Settings feedback, and
+  draft/save separation. Automated tests and Linux/Android debug builds pass;
+  the Linux first-frame visual check remains open because Xvfb leaves the
+  window unmapped. See the active step log for evidence and skipped scenes.
 - Release line: Flutter (`chronopic_flutter/`); latest release **v0.1.14**
   (Android APK/AAB + Linux x64 tarball via tag-triggered GitHub Actions).
 - The Electron app is reference/migration-only and no longer released.
@@ -54,5 +52,6 @@ entries.
   the real AI provider stack (Flutter toolchain now 3.47.7,
   `openai_dart ^10.0.1`).
 - Known open candidates (see `PLAN.md` Active Direction):
-  AI/Map configuration live validation (no test-connection path yet), iOS live
-  verification (blocked on macOS/Xcode).
+  Phase 17's Linux first-frame visual verification, Flutter Map browse
+  completion (placeholder only; saved AMap credentials are not consumed), and
+  iOS live verification (blocked on macOS/Xcode).

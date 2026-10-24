@@ -1621,8 +1621,7 @@ Exit gate:
 
 - All plan tasks complete; full local gate green as recorded above.
 - Live-provider smoke remains unverified until the user's local endpoint is
-  reachable again; AI/map configuration live validation (test-connection
-  path) is still absent and remains a `PLAN.md` candidate.
+  reachable again. The separate test-connection path is promoted to Phase 17.
 
 ## Phase 16: Photo Metadata Sidecars
 
@@ -1666,3 +1665,63 @@ Exit evidence:
 - Flutter Linux app launched in an isolated X server and remained responsive for 15 seconds.
 - Electron-specific Playwright scenes were skipped because Electron is reference-only and unchanged; Flutter widget, service persistence, build, and desktop launch checks covered the active release line.
 - `git diff --check` — clean.
+
+## Phase 17: Flutter AI Provider Connection Validation
+
+Status:
+implementation and automated verification complete on 2026-10-22; Scene 1
+desktop visual verification remains open because the headless Xvfb host does
+not map the Flutter window.
+
+Plan:
+
+- [docs/superpowers/plans/2026-10-22-flutter-ai-provider-connection-validation.md](superpowers/plans/2026-10-22-flutter-ai-provider-connection-validation.md)
+
+Purpose:
+let users validate the current OpenAI-compatible AI settings from Settings
+before saving them or starting photo enrichment.
+The check uses the provider's authenticated `GET /models` endpoint and never
+uploads photos or calls a generation endpoint. A successful result confirms
+model-catalog access, not successful inference.
+
+Scope:
+
+- Add typed connection results for incomplete settings,
+  invalid URL,
+  authentication/access errors,
+  missing model,
+  endpoint errors,
+  invalid responses,
+  timeout,
+  and network failure.
+- Run the check against unsaved form values with an 8-second timeout and a
+  bounded response body.
+- Keep checking separate from saving and clear stale results after any field
+  edit.
+- Show localized, actionable, secret-safe status copy.
+- Test transport and UI behavior against local fakes; no real provider secret is
+  required.
+
+Explicit non-goals:
+
+- No image or text generation during the check.
+- No credential persistence or mutation as a side effect of checking.
+- No AMap test-connection action: the Flutter Map surface is still a fixed
+  placeholder and does not consume the saved AMap settings. Map browse
+  completion is a separate candidate in `PLAN.md`.
+- No real-provider success claim without a reachable configured endpoint.
+- No iOS live verification claim from this Linux workstation.
+
+Exit gate:
+
+- Focused AI transport, app-service, and Settings UI tests pass.
+- Flutter analyze and complete UI/app test suites pass.
+- Linux and Android debug builds pass.
+- The Flutter Linux binary starts, but the Xvfb window remains unmapped and the
+  captured screen is black; verify the first frame in a desktop-capable session
+  before closing this phase.
+- `git diff --check` passes.
+- Scene 1, Scene 7, and Scene 8 adaptations for the Flutter release line are
+  recorded in the active step log; Electron-only scenes are skipped because
+  Electron is reference-only.
+- iOS remains blocked until macOS/Xcode evidence exists.

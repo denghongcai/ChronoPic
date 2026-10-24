@@ -331,6 +331,7 @@ final class _ChronoPicHomeState extends State<ChronoPicHome> {
           onPreviewRestore: _previewRestore,
           onRestoreBackup: _restoreBackup,
           onSaveAiSettings: _saveAiSettings,
+          onTestAiConnection: _service.testAiConnection,
           onSaveLocaleSettings: _saveCurrentLocaleSettings,
           onSaveMapSettings: _saveMapSettings,
           sidecarTransferRunning: _sidecarTransferRunning,

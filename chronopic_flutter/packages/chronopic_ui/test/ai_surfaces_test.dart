@@ -408,6 +408,142 @@ void main() {
       expect(find.textContaining('not configured'), findsNothing);
     },
   );
+
+  testWidgets(
+    'AI settings test draft connection without saving and clears stale result after edits',
+    (tester) async {
+      final repository = ChronoPicRepository()
+        ..restoreBackup(_backup(ai: _emptyAiSettings));
+      AiSettings? checkedSettings;
+      final service = ChronoPicAppService(
+        repository,
+        aiConnectionChecker: (settings) async {
+          checkedSettings = settings;
+          return AiConnectionCheckResult(
+            status: AiConnectionStatus.connected,
+            model: settings.model,
+          );
+        },
+      );
+      await pumpDesktop(tester, ChronoPicHome(service: service));
+      await tester.tap(find.byKey(const Key('settings-nav')));
+      await tester.pumpAndSettle();
+
+      await tester.enterText(
+        find.byKey(const Key('ai-provider-field')),
+        'local-provider',
+      );
+      await tester.enterText(
+        find.byKey(const Key('ai-base-url-field')),
+        'https://provider.example/v1',
+      );
+      await tester.enterText(
+        find.byKey(const Key('ai-model-field')),
+        'photo-model',
+      );
+      await tester.enterText(
+        find.byKey(const Key('ai-api-key-field')),
+        'secret-test-key',
+      );
+      final testConnection = find.byKey(const Key('test-ai-connection-button'));
+      await tester.ensureVisible(testConnection);
+      await tester.tap(testConnection);
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(const Key('ai-connection-result')), findsOneWidget);
+      expect(find.textContaining('photo-model'), findsWidgets);
+      expect(find.textContaining('Connection succeeded'), findsOneWidget);
+      final resultMessage = tester.widget<Text>(
+        find.byKey(const Key('ai-connection-result-message')),
+      );
+      expect(resultMessage.data, isNot(contains('secret-test-key')));
+      expect(checkedSettings?.apiKey, 'secret-test-key');
+      expect(checkedSettings?.baseURL, 'https://provider.example/v1');
+      expect(checkedSettings?.model, 'photo-model');
+      expect(checkedSettings?.providerName, 'local-provider');
+      expect(service.createBackup().settings.ai.apiKey, isEmpty);
+
+      final save = find.byKey(const Key('save-ai-settings-button'));
+      await tester.ensureVisible(save);
+      await tester.tap(save);
+      await tester.pumpAndSettle();
+      expect(service.createBackup().settings.ai.apiKey, 'secret-test-key');
+      expect(find.byKey(const Key('ai-connection-result')), findsOneWidget);
+
+      await tester.enterText(
+        find.byKey(const Key('ai-model-field')),
+        'changed-model',
+      );
+      await tester.pump();
+      expect(find.byKey(const Key('ai-connection-result')), findsNothing);
+    },
+  );
+
+  testWidgets(
+    'AI connection check disables settings while pending and shows safe failure copy',
+    (tester) async {
+      final repository = ChronoPicRepository()
+        ..restoreBackup(_backup(ai: _emptyAiSettings));
+      final response = Completer<AiConnectionCheckResult>();
+      final service = ChronoPicAppService(
+        repository,
+        aiConnectionChecker: (_) => response.future,
+      );
+      await pumpDesktop(tester, ChronoPicHome(service: service));
+      await tester.tap(find.byKey(const Key('settings-nav')));
+      await tester.pumpAndSettle();
+
+      await tester.enterText(
+        find.byKey(const Key('ai-provider-field')),
+        'local-provider',
+      );
+      await tester.enterText(
+        find.byKey(const Key('ai-base-url-field')),
+        'https://provider.example/v1',
+      );
+      await tester.enterText(
+        find.byKey(const Key('ai-model-field')),
+        'photo-model',
+      );
+      await tester.enterText(
+        find.byKey(const Key('ai-api-key-field')),
+        'secret-test-key',
+      );
+
+      final testConnection = find.byKey(const Key('test-ai-connection-button'));
+      await tester.ensureVisible(testConnection);
+      await tester.tap(testConnection);
+      await tester.pump();
+      expect(tester.widget<OutlinedButton>(testConnection).onPressed, isNull);
+      expect(find.text('Testing...'), findsOneWidget);
+      expect(
+        tester
+            .widget<TextField>(find.byKey(const Key('ai-api-key-field')))
+            .enabled,
+        isFalse,
+      );
+
+      response.complete(
+        const AiConnectionCheckResult(
+          status: AiConnectionStatus.unauthorized,
+          model: 'photo-model',
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(
+        find.text(
+          'The provider rejected this API key. Check the key and try again.',
+        ),
+        findsOneWidget,
+      );
+      final resultMessage = tester.widget<Text>(
+        find.byKey(const Key('ai-connection-result-message')),
+      );
+      expect(resultMessage.data, isNot(contains('secret-test-key')));
+      expect(resultMessage.data, isNot(contains('raw response')));
+    },
+  );
 }
 
 ChronoPicBackup _backup({AiSettings? ai}) {
